@@ -1,4 +1,4 @@
-//! **What a wall holds**: the roster, the conversation list, the decision
+//! **What a workspace holds**: the roster, the conversation list, the decision
 //! queue and the live tail — four of the five reads a day of work is made of
 //! (bl-6ae7). The fifth is the conversation itself, and it is next door
 //! ([`super::chat`]) because a transcript is a different shape: a listing of
@@ -19,7 +19,7 @@ mod convs;
 
 pub(super) use convs::conversations;
 
-/// **The roster.** One row a wall, and the derivation's own currency under it.
+/// **The roster.** One row a workspace, and the derivation's own currency under it.
 ///
 /// The empty arm is a fact plus the one act that follows it: a world
 /// bootstraps its first workspace when a conversation is started in it (yog
@@ -55,7 +55,7 @@ pub(super) fn workspaces(roster: &Workspaces) -> String {
 
 /// **The decision queue**: everything waiting on the operator, anywhere.
 ///
-/// The wall is on every row because the queue's subject is every wall at once
+/// The workspace is on every row because the queue's subject is every workspace at once
 /// — it is the one read whose rows come from more than one of them.
 pub(super) fn attention(rows: &[QueueRow]) -> String {
     let painted = rows
@@ -122,7 +122,7 @@ pub(super) fn follow(stream: &Stream) -> String {
     // else, over and over; printing the frame's own shape there said the same
     // eight characters forever and nothing about progress, and printing
     // nothing at all is the silence this word was fixed for. What is left to
-    // say is which kind of work the engine says is going on, once per frame,
+    // say is which kind of work the server says is going on, once per frame,
     // which is a heartbeat.
     //
     // **And it rides the gutter, because it is the seat talking about the
@@ -183,11 +183,11 @@ pub(crate) fn held_at(agent: &str, workspace: &str, held: &Held, secs: i64) -> S
 }
 
 /// **The line a watch says while it waits for a driver to take mail** (bl-87ab,
-/// bl-3ecd) — which conversation, the rest the engine reported, and how much is
+/// bl-3ecd) — which conversation, the rest the server reported, and how much is
 /// waiting. It is said once per watch, not once per look: the hold is the
 /// answer and a quarter-second drumbeat of it would be worse than the silence.
 ///
-/// It names the state the engine gave rather than hiding it, because that
+/// It names the state the server gave rather than hiding it, because that
 /// reading is true and it is the one an operator will see again in
 /// `conversations` a second later. What it adds is the fact that makes the
 /// at-rest sentence false here: mail nobody has taken yet.
@@ -204,7 +204,7 @@ pub(crate) fn waiting_on_mail(agent: &str, state: &str, deposits: usize) -> Stri
 
 /// **One tool call, whole.** What ran and on which machine — REMOTE §5.1
 /// presents a routed tool as `<client>_<tool>`, so the name is the box — the
-/// input the engine already bounded, and how it ended.
+/// input the server already bounded, and how it ended.
 ///
 /// **The status is the presence of an exit code** and never a third reading:
 /// absent is a call in flight. And a call whose opening half this reader never

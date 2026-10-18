@@ -11,7 +11,7 @@
 //! **diagnostics** in weak ink ([`diagnostics`]) — the state slot first,
 //! where the notice stands while there is one. The name at the right end is
 //! the switcher's door (bl-4e55). Nothing seat-wide stands here: the waiting
-//! and engine counts are the seat panel's, the switcher's and `/attention`'s.
+//! and server counts are the seat panel's, the switcher's and `/attention`'s.
 //!
 //! **A notice too long for the line is never cut** (bl-7e3e; bl-3d0f ruled
 //! why: the half a cut sentence loses is the remedy) **and never costs a
@@ -46,7 +46,7 @@ pub const LEAD: &str = theme::glyph::LEAD;
 /// What parts one fact from the next.
 pub const SEP: &str = theme::glyph::SEP;
 /// The right end where nothing is aimed.
-pub const ENGINES: &str = "engines";
+pub const SERVERS: &str = "servers";
 
 /// **What a run opens**: a completion-menu row fired by its word, or a
 /// selector's dropup.
@@ -91,13 +91,13 @@ pub fn selected(model: &Model) -> Option<crate::reply::convs::ConvRow> {
     model.rows().into_iter().find(|row| row.root_id == *id)
 }
 
-/// **The right end**: the conversation, the wall, or the window — and the
+/// **The right end**: the conversation, the workspace, or the window — and the
 /// door to the switcher, wherever it stands.
 pub fn name(model: &Model) -> Run {
     let text = match (selected(model), &model.aim) {
         (Some(row), _) => row.display,
         (None, Some(aim)) => aim.address.clone(),
-        (None, None) => ENGINES.to_owned(),
+        (None, None) => SERVERS.to_owned(),
     };
     Run {
         door: door(model, crate::ui::switcher::WORD).map(Door::Row),

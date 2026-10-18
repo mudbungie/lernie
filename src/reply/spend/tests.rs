@@ -86,7 +86,7 @@ fn a_figure_that_is_not_one_refuses_naming_what_was_wrong() {
     );
 }
 
-/// **A cost under its key, both ways** — present it is the engine's money and
+/// **A cost under its key, both ways** — present it is the server's money and
 /// its floor count; absent it is a count no table priced, never a zero.
 #[test]
 fn a_cost_reads_where_it_rode_and_is_none_where_it_did_not() {
@@ -103,7 +103,7 @@ fn a_cost_reads_where_it_rode_and_is_none_where_it_did_not() {
     assert_eq!(cost(bare.as_object().expect("an object"), "cost"), Ok(None));
 }
 
-/// A cost that rode and says no money is not one the engine writes, and the
+/// A cost that rode and says no money is not one the server writes, and the
 /// refusal names the key it sat under.
 #[test]
 fn a_present_cost_with_no_money_refuses_by_name() {

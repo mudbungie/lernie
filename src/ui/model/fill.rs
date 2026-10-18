@@ -5,7 +5,7 @@
 //! # Why a menu item ever needs this
 //!
 //! `crate::ui::convs::menu` fires the acts on a conversation row that take the
-//! wall and the conversation and nothing else. Two of the acts on that row take
+//! workspace and the conversation and nothing else. Two of the acts on that row take
 //! a **third** parameter — `flag`'s reason and `delete-agent`'s arming — and
 //! each has a box of its own on the composer's second row
 //! (`crate::ui::composer::acts`). A menu cannot hold that box: the composer is
@@ -43,7 +43,7 @@ use super::Model;
 /// menu (`crate::ui::convs::menu`).
 ///
 /// **The third is the draft itself, in the composer's other mode** (DESIGN
-/// §4.39, bl-b9a3): the `+` on an engine's row lands the caret in the box that
+/// §4.39, bl-b9a3): the `+` on a server's row lands the caret in the box that
 /// begins a conversation, which is the same navigation the menu items are and
 /// wanted no second field to say so.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -54,7 +54,7 @@ pub enum Fill {
     /// (`crate::ui::composer::acts::ARM`).
     Arming,
     /// What a conversation is begun FOR
-    /// (`crate::ui::composer::start::goal`), asked for by a wall's `+ new`
+    /// (`crate::ui::composer::start::goal`), asked for by a workspace's `+ new`
     /// (`crate::ui::model::Model::begin_at`).
     Goal,
 }

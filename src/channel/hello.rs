@@ -7,13 +7,13 @@
 //! decoration.** Until the four-component split one crate shipped both ends of
 //! every connection and the wire could not skew. A seat is installed on the
 //! operator's own laptop or phone and upgraded on that device's schedule,
-//! while the engine it dials is upgraded on the server's — so the day the two
+//! while the server it dials is upgraded on its own box's — so the day the two
 //! disagree about what a frame means is a day that will arrive, and it must
 //! arrive as a sentence rather than as a gesture answered wrongly.
 //!
 //! **The seat writes and confirms; it never admits.** A seat dials and is
 //! never dialled, so there is exactly one half of the exchange here. The
-//! engine's half — refusing a peer in band on the connection it opened — is
+//! server's half — refusing a peer in band on the connection it opened — is
 //! the server's, and a seat that carried it would be a seat that listens.
 //!
 //! **The frame carries a second key and it can refuse nothing** (REMOTE §3.2).
@@ -22,7 +22,7 @@
 //! SPELL beside what it must AGREE about. The major is answered by equality;
 //! the edition is answered by [`super::edition::spells`], which greys one
 //! control rather than refusing one connection. An end that states no edition
-//! is at the floor, which is the least an engine of this major can be.
+//! is at the floor, which is the least a server of this major can be.
 //!
 //! **A mismatch is fail-closed and the refusal names both versions**, which is
 //! REMOTE §3's requirement rather than a nicety: the sentence *is* the upgrade
@@ -56,7 +56,7 @@ const KEY: &str = "protocol";
 /// it is answered by strict equality; the edition is a capability question and
 /// it is answered by greying one control. An end that states no edition is at
 /// the [`edition::FLOOR`] — every path of this major stamped at or below it is
-/// required, so the floor is not a guess, it is the least an engine of this
+/// required, so the floor is not a guess, it is the least a server of this
 /// major can be.
 const EDITION: &str = "edition";
 
@@ -79,9 +79,9 @@ pub fn state(w: &mut dyn Write) -> io::Result<()> {
     frame::write_value(w, &json!({ KEY: PROTOCOL, EDITION: edition::EDITION }))
 }
 
-/// Read the engine's preface, refuse a mismatch — as the one [`Reach`] every
+/// Read the server's preface, refuse a mismatch — as the one [`Reach`] every
 /// other thing that can go wrong with this transport already arrives as, so
-/// nothing above here carries a case for it — and answer what the engine can
+/// nothing above here carries a case for it — and answer what the server can
 /// SPELL.
 ///
 /// **The classification splits where the four collapsed cases do not.** A peer
@@ -97,7 +97,7 @@ pub fn state(w: &mut dyn Write) -> io::Result<()> {
 /// a number nobody stated.
 pub fn confirm(r: &mut dyn Read) -> Result<u32, Reach> {
     let stated = frame::read_value(r)
-        .map_err(|e| Reach::Unanswered(format!("the engine stated no version: {e}")))?;
+        .map_err(|e| Reach::Unanswered(format!("the server stated no version: {e}")))?;
     let peer = stated.as_ref().and_then(|frame| frame.get(KEY)?.as_u64());
     if peer == Some(u64::from(PROTOCOL)) {
         return Ok(spelled(stated.as_ref()));
@@ -105,12 +105,12 @@ pub fn confirm(r: &mut dyn Read) -> Result<u32, Reach> {
     Err(Reach::Unsent(mismatch(peer)))
 }
 
-/// **What the engine can spell**, off a preface this end has already agreed
+/// **What the server can spell**, off a preface this end has already agreed
 /// the major of.
 ///
 /// Absent, unstated and out of range are one answer — [`edition::FLOOR`] — and
-/// they are one answer because they are one fact: an engine of this major that
-/// said nothing about editions is an engine of this major, and this major
+/// they are one answer because they are one fact: a server of this major that
+/// said nothing about editions is a server of this major, and this major
 /// requires every path at or below the floor. There is nothing here to refuse
 /// on, which is the whole difference between the two keys.
 fn spelled(stated: Option<&serde_json::Value>) -> u32 {
@@ -124,8 +124,8 @@ fn spelled(stated: Option<&serde_json::Value>) -> u32 {
 fn mismatch(peer: Option<u64>) -> String {
     let peer = peer.map_or_else(|| UNSTATED.to_owned(), |v| v.to_string());
     format!(
-        "this lernie speaks protocol {PROTOCOL} and the engine speaks {peer} — \
-         update whichever is older, lernie or the engine, until both match"
+        "this lernie speaks protocol {PROTOCOL} and the server speaks {peer} — \
+         update whichever is older, lernie or the server, until both match"
     )
 }
 

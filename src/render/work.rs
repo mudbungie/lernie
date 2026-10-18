@@ -1,4 +1,4 @@
-//! **What one wall's agents changed** — the diff a person reads, rather than
+//! **What one workspace's agents changed** — the diff a person reads, rather than
 //! the row of counters the wire carries (bl-2e1d).
 //!
 //! # This wire is a numstat and never a patch
@@ -17,7 +17,7 @@
 //! - **a totals line**, folded over the churn, so how big a change is reads
 //!   off one line rather than out of a column to add up.
 //! - **an explicit cut.** `truncated` was decoded and dropped, so a listing
-//!   the engine stopped early read as the whole change. That is the one
+//!   the server stopped early read as the whole change. That is the one
 //!   reading on this surface that states something the frame does not (DESIGN
 //!   §4.37), and it is the rule the worktree listing already holds with its
 //!   own `(truncated)`.
@@ -36,7 +36,7 @@ use crate::reply::diff::{Churn, Diff};
 
 use super::parts::{clause, line, line_over, listing, things, when};
 
-/// **What one wall's agents changed** — a header a row, the churn under it,
+/// **What one workspace's agents changed** — a header a row, the churn under it,
 /// and an explicit mark wherever something was left out.
 pub(super) fn work(rows: &[Diff]) -> String {
     let painted = rows.iter().map(row).collect();
@@ -94,10 +94,10 @@ fn body(row: &Diff) -> Option<String> {
 }
 
 /// **The line an elision is said on.** The count it dropped is genuinely not
-/// on this wire — the engine truncates to its own bound and says only that it
+/// on this wire — the server truncates to its own bound and says only that it
 /// did — so the sentence states what it knows and names what it does not,
 /// rather than implying a whole listing by saying nothing.
-const CUT: &str = "… the engine stopped listing here — how many more files \
+const CUT: &str = "… the server stopped listing here — how many more files \
                    changed is not on the wire";
 
 /// **How big the change is, in one line.** The file count, the churn summed

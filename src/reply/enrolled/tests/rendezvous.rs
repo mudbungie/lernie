@@ -1,5 +1,5 @@
 //! **The rendezvous pair** (yog's `docs/REMOTE.md` §8.4, edition 20; yog
-//! bl-9043): read off the engine's own fixture, re-said byte for byte, refused
+//! bl-9043): read off the server's own fixture, re-said byte for byte, refused
 //! by halves, and still inside the symbol this seat draws.
 
 use serde_json::{Map, Value};
@@ -8,8 +8,8 @@ use super::super::{Enrolled, Handoff, PUBLIC, SALT, enrolled};
 use crate::qr::Symbol;
 use crate::test_support::corpus::{fixture, root};
 
-/// The engine's own frames for this kind, vendored: a loopback engine's first
-/// and a rendezvous-holding engine's second.
+/// The server's own frames for this kind, vendored: a loopback server's first
+/// and a rendezvous-holding server's second.
 fn frames() -> Vec<Map<String, Value>> {
     fixture(&root().join("answers").join("enrolled.json"))
         .frames
@@ -23,12 +23,12 @@ fn read_frame(at: usize) -> Enrolled {
     enrolled(frames().get(at).expect("the fixture carries the frame")).expect("it reads")
 }
 
-/// **The engine's envelope, byte for byte, with the pair.** The literal is
-/// what the engine's encoder writes for this frame — `serde_json`'s sorted key
+/// **The server's envelope, byte for byte, with the pair.** The literal is
+/// what the server's encoder writes for this frame — `serde_json`'s sorted key
 /// order, compact, `ok` and `kind` gone — so an envelope that re-said only the
 /// six (the defect) or re-ordered a key fails here in a sentence showing both.
 #[test]
-fn the_pair_is_read_and_re_said_exactly_as_the_engine_says_it() {
+fn the_pair_is_read_and_re_said_exactly_as_the_server_says_it() {
     let held = read_frame(1);
     assert_eq!(
         held.rendezvous,
@@ -43,7 +43,7 @@ fn the_pair_is_read_and_re_said_exactly_as_the_engine_says_it() {
     );
 }
 
-/// **A loopback engine sends neither, and the envelope carries neither** —
+/// **A loopback server sends neither, and the envelope carries neither** —
 /// the six it always carried, byte for byte.
 #[test]
 fn a_loopback_enrollment_has_no_pair_and_the_envelope_says_none() {
@@ -71,7 +71,7 @@ fn half_a_pair_refuses_and_names_both_keys() {
 }
 
 /// **The caption stays material-free** with the pair aboard: the salt is
-/// shared with the engine, and a scrollback keeps what it is shown.
+/// shared with the server, and a scrollback keeps what it is shown.
 #[test]
 fn the_caption_says_nothing_of_the_pair() {
     let said = read_frame(1).caption();

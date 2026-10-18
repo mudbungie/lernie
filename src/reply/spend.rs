@@ -2,13 +2,13 @@
 //! §9.7; bl-d2af).
 //!
 //! One figure, read by the two listings that carry one — the board's rows
-//! ([`super::board`]) and one wall's bound balls ([`super::balls`]) — because
+//! ([`super::board`]) and one workspace's bound balls ([`super::balls`]) — because
 //! upstream writes it with one encoder and a second reading of it here would
 //! be a second protocol.
 //!
 //! # The money is upstream's own rendering, and this seat does not compute one
 //!
-//! `usd` is a string the engine derived from a price table this seat does not
+//! `usd` is a string the server derived from a price table this seat does not
 //! have. So it rides verbatim and is painted as it arrived: a seat that
 //! multiplied tokens by a rate of its own would be quietly disagreeing with
 //! the box that holds the rates, which is the failure mode REMOTE §9.17 names
@@ -29,14 +29,14 @@ use serde_json::{Map, Value};
 use super::fields;
 use super::steps::Spend;
 
-/// **One figure**: the four counters and their total, what money the engine
+/// **One figure**: the four counters and their total, what money the server
 /// put on them, and what the sum is over.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Figure {
     /// The counters, in the shape every spend on this wire has
     /// ([`super::steps::Spend`], read from there rather than restated).
     pub tokens: Spend,
-    /// The money, as the engine rendered it, or none where no rate priced it.
+    /// The money, as the server rendered it, or none where no rate priced it.
     pub cost: Option<Cost>,
     /// What the figure sums over.
     pub attribution: Attribution,
@@ -48,7 +48,7 @@ pub struct Figure {
 pub struct Attribution {
     /// `conversations` or `workspace` today, carried verbatim.
     pub kind: String,
-    /// The engine's own clause, absent where the classification says it all.
+    /// The server's own clause, absent where the classification says it all.
     pub label: Option<String>,
 }
 
@@ -62,7 +62,7 @@ pub(crate) fn figure(value: &Value) -> Result<Figure, String> {
     })
 }
 
-/// **What the engine put on a count**: its own rendering of the money, and
+/// **What the server put on a count**: its own rendering of the money, and
 /// how many of the tokens under it no rate priced.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Cost {
@@ -84,7 +84,7 @@ impl Cost {
 }
 
 /// **A count and the cost beside it, as one clause** — `N tokens — $x`, or
-/// the count alone where the engine put no money on it. The one sentence
+/// the count alone where the server put no money on it. The one sentence
 /// every surface that paints a token count says it in (yog DESIGN §3.5).
 pub fn priced(count: String, cost: Option<&Cost>) -> String {
     match cost {
@@ -105,7 +105,7 @@ pub(crate) fn money(obj: &Map<String, Value>) -> Result<Option<Cost>, String> {
     }))
 }
 
-/// **A cost under its own key**, absent where the engine has no price table.
+/// **A cost under its own key**, absent where the server has no price table.
 /// Present, it is a priced figure and must say its money.
 pub(crate) fn cost(obj: &Map<String, Value>, key: &str) -> Result<Option<Cost>, String> {
     fields::nested(obj, key, |held| {

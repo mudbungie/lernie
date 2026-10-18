@@ -5,20 +5,20 @@ use super::edition;
 use super::hello::PROTOCOL;
 use super::material::{CHAIN, KEY, Material, read_dir};
 use super::{Channel, server_name};
-use crate::test_support::engine::{Answer, Engine, HOLD};
+use crate::test_support::server::{Answer, HOLD, Server};
 use crate::test_support::{Scratch, mint};
 use serde_json::{Value, json};
 
-/// A scratch box with an engine standing at the far end, answering the n-th
+/// A scratch box with a server standing at the far end, answering the n-th
 /// dial with the n-th entry of `script`.
-fn wired(protocol: u32, script: Vec<impl Into<Answer>>) -> (Scratch, Engine, Material) {
+fn wired(protocol: u32, script: Vec<impl Into<Answer>>) -> (Scratch, Server, Material) {
     let scratch = Scratch::new();
     mint::material(scratch.path());
-    let engine = Engine::start(scratch.path(), protocol, script);
+    let server = Server::start(scratch.path(), protocol, script);
     let held = read_dir(scratch.path(), crate::channel::material::Whose::Own)
         .expect("readable")
         .expect("provisioned");
-    (scratch, engine, held)
+    (scratch, server, held)
 }
 
 /// An answer of one frame: the ordinary shape.
@@ -27,26 +27,26 @@ fn answered() -> Value {
 }
 
 /// **Nothing is dialled when a channel opens**, and what it answers about
-/// itself is read off the address rather than off any engine.
+/// itself is read off the address rather than off any server.
 #[test]
 fn opening_a_channel_dials_nothing_and_names_the_address() {
     let scratch = Scratch::new();
-    let held = mint::provisioned(scratch.path(), "engine.example:9000");
+    let held = mint::provisioned(scratch.path(), "server.example:9000");
     let channel = Channel::open(&held).expect("opened");
-    assert_eq!(channel.address(), "engine.example:9000");
+    assert_eq!(channel.address(), "server.example:9000");
 }
 
 /// One ask: this end's preface and its request go out in the same breath, the
-/// engine is handed exactly those two frames, and the answer comes back as the
+/// server is handed exactly those two frames, and the answer comes back as the
 /// value it sent.
 #[test]
 fn one_ask_states_a_version_carries_the_request_and_answers_the_reply() {
-    let (_scratch, engine, held) = wired(PROTOCOL, vec![vec![answered()]]);
+    let (_scratch, server, held) = wired(PROTOCOL, vec![vec![answered()]]);
     let channel = Channel::open(&held).expect("opened");
     let request = json!({"op": "workspaces"});
     assert_eq!(channel.ask(&request), Ok(vec![answered()]));
     assert_eq!(
-        engine.heard(),
+        server.heard(),
         vec![
             json!({ "protocol": PROTOCOL, "edition": edition::EDITION }),
             request
@@ -56,17 +56,17 @@ fn one_ask_states_a_version_carries_the_request_and_answers_the_reply() {
 }
 
 /// **A channel answers for the floor until it has dialled, and for what the
-/// engine stated afterwards.**
+/// server stated afterwards.**
 ///
-/// The floor is the least an engine of this major can be, so a channel that has
+/// The floor is the least a server of this major can be, so a channel that has
 /// never dialled already answers about every field this major REQUIRES — which
 /// is the whole reply surface until the first addition lands. The other arm,
 /// where an edition is short of a path's stamp and the control greys, is
 /// `super::edition::tests`': at the cut nothing is stamped above the floor, so
-/// there is no path on the wire that any engine could fail to spell.
+/// there is no path on the wire that any server could fail to spell.
 #[test]
 fn a_channel_spells_this_majors_required_fields_before_and_after_a_dial() {
-    let (_scratch, _engine, held) = wired(PROTOCOL, vec![vec![answered()]]);
+    let (_scratch, _server, held) = wired(PROTOCOL, vec![vec![answered()]]);
     let channel = Channel::open(&held).expect("opened");
     assert!(channel.spells("reply/workspaces", "/rows/[]/name"));
     assert_eq!(
@@ -81,18 +81,18 @@ fn a_channel_spells_this_majors_required_fields_before_and_after_a_dial() {
 #[test]
 fn an_answer_of_many_frames_reads_back_through_the_same_ask() {
     let rows = vec![json!({"n": 1}), json!({"n": 2}), json!({"n": 3})];
-    let (_scratch, _engine, held) = wired(PROTOCOL, vec![rows.clone()]);
+    let (_scratch, _server, held) = wired(PROTOCOL, vec![rows.clone()]);
     let channel = Channel::open(&held).expect("opened");
     assert_eq!(channel.ask(&json!({"op": "conversations"})), Ok(rows));
 }
 
 /// **A follower is handed each frame as it arrives, and may stop.** `false`
-/// ends the read without a word to the engine — dropping the connection is the
+/// ends the read without a word to the server — dropping the connection is the
 /// word — and the frames after it are never taken.
 #[test]
 fn a_follower_takes_frames_one_at_a_time_and_can_stop_early() {
     let rows = vec![json!({"n": 1}), json!({"n": 2}), json!({"n": 3})];
-    let (_scratch, _engine, held) = wired(PROTOCOL, vec![rows]);
+    let (_scratch, _server, held) = wired(PROTOCOL, vec![rows]);
     let channel = Channel::open(&held).expect("opened");
     let mut taken = Vec::new();
     channel
@@ -105,30 +105,30 @@ fn a_follower_takes_frames_one_at_a_time_and_can_stop_early() {
 }
 
 /// **A read whose frames replace is answered by its first frame** (REMOTE
-/// §14.1, bl-09e1). The engine holds the line after the answer at connect, so
+/// §14.1, bl-09e1). The server holds the line after the answer at connect, so
 /// a reader that collected to the terminator would wait out the hold; the ask
 /// takes the one frame and drops the line, well inside it.
 #[test]
 fn a_replacing_read_is_answered_by_its_first_frame_without_waiting_out_the_hold() {
     let first = json!({"ok": true, "kind": "attention", "rows": []});
     let held = Answer::Held(vec![first.clone(), json!({"n": 2})]);
-    let (_scratch, _engine, material) = wired(PROTOCOL, vec![held]);
+    let (_scratch, _server, material) = wired(PROTOCOL, vec![held]);
     let channel = Channel::open(&material).expect("opened");
     let began = std::time::Instant::now();
     assert_eq!(channel.ask(&crate::verbs::attention()), Ok(vec![first]));
     assert!(began.elapsed() < HOLD, "the ask waited out the hold");
 }
 
-/// **One connection per ask.** Two asks are two dials, and the engine sees both
+/// **One connection per ask.** Two asks are two dials, and the server sees both
 /// requests.
 #[test]
 fn each_ask_is_its_own_connection() {
-    let (_scratch, engine, held) = wired(PROTOCOL, vec![vec![answered()], vec![answered()]]);
+    let (_scratch, server, held) = wired(PROTOCOL, vec![vec![answered()], vec![answered()]]);
     let channel = Channel::open(&held).expect("opened");
     for op in ["workspaces", "board"] {
         assert!(channel.ask(&json!({ "op": op })).is_ok());
     }
-    let ops: Vec<String> = engine
+    let ops: Vec<String> = server
         .heard()
         .iter()
         .filter_map(|v| v.get("op")?.as_str().map(str::to_owned))
@@ -136,12 +136,12 @@ fn each_ask_is_its_own_connection() {
     assert_eq!(ops, ["workspaces", "board"]);
 }
 
-/// An engine that ends the stream without answering is an empty answer here,
+/// A server that ends the stream without answering is an empty answer here,
 /// and not an error: what to make of a stream with nothing in it belongs to the
 /// layer above, which is the only one that knows what it asked for.
 #[test]
-fn an_engine_that_answers_nothing_ends_the_stream() {
-    let (_scratch, _engine, held) = wired(PROTOCOL, vec![vec![]]);
+fn an_server_that_answers_nothing_ends_the_stream() {
+    let (_scratch, _server, held) = wired(PROTOCOL, vec![vec![]]);
     let channel = Channel::open(&held).expect("opened");
     assert_eq!(channel.ask(&json!({"op": "workspaces"})), Ok(Vec::new()));
 }
@@ -149,8 +149,8 @@ fn an_engine_that_answers_nothing_ends_the_stream() {
 /// **Version skew refuses fail-closed and names both versions** (REMOTE §3),
 /// before a frame of the answer is decoded.
 #[test]
-fn an_engine_of_another_protocol_refuses_and_names_both_versions() {
-    let (_scratch, _engine, held) = wired(PROTOCOL + 1, vec![vec![answered()]]);
+fn an_server_of_another_protocol_refuses_and_names_both_versions() {
+    let (_scratch, _server, held) = wired(PROTOCOL + 1, vec![vec![answered()]]);
     let channel = Channel::open(&held).expect("opened");
     let reach = channel
         .ask(&json!({"op": "workspaces"}))
@@ -164,16 +164,16 @@ fn an_engine_of_another_protocol_refuses_and_names_both_versions() {
         "{refusal}"
     );
     assert!(
-        refusal.contains(&format!("engine speaks {}", PROTOCOL + 1)),
+        refusal.contains(&format!("server speaks {}", PROTOCOL + 1)),
         "{refusal}"
     );
 }
 
-/// An engine nothing is listening at is one sentence naming the address. Port 1
+/// A server nothing is listening at is one sentence naming the address. Port 1
 /// is below the ephemeral range and unbindable without privilege, so no other
 /// test's freed port can answer this dial.
 #[test]
-fn an_engine_that_is_not_there_names_the_address_it_dialled() {
+fn an_server_that_is_not_there_names_the_address_it_dialled() {
     let scratch = Scratch::new();
     let held = mint::provisioned(scratch.path(), "127.0.0.1:1");
     let channel = Channel::open(&held).expect("opened");
@@ -188,12 +188,12 @@ fn an_engine_that_is_not_there_names_the_address_it_dialled() {
     assert!(refusal.contains("connect 127.0.0.1:1"), "{refusal}");
 }
 
-/// **An engine this box does not trust gets no boundary at all.** The handshake
+/// **A server this box does not trust gets no boundary at all.** The handshake
 /// fails inside rustls, so the refusal is a transport sentence and no frame of
 /// the gesture is ever read by anyone.
 #[test]
-fn an_engine_the_anchors_do_not_cover_never_reaches_the_boundary() {
-    let (_scratch, engine, mut held) = wired(PROTOCOL, vec![vec![answered()]]);
+fn an_server_the_anchors_do_not_cover_never_reaches_the_boundary() {
+    let (_scratch, server, mut held) = wired(PROTOCOL, vec![vec![answered()]]);
     let elsewhere = Scratch::new();
     mint::material(elsewhere.path());
     held.anchors = elsewhere.join(super::material::ANCHORS);
@@ -225,35 +225,35 @@ fn an_engine_the_anchors_do_not_cover_never_reaches_the_boundary() {
         why.contains("the seat mints nothing"),
         "and the act, which is not a mint: {why}"
     );
-    assert_eq!(engine.heard(), Vec::<Value>::new(), "nothing was said");
+    assert_eq!(server.heard(), Vec::<Value>::new(), "nothing was said");
 }
 
-/// **An engine that will not accept this box's leaf refuses the same way.** The
+/// **A server that will not accept this box's leaf refuses the same way.** The
 /// mint's own CA issued both ends here, so what fails is the client half: a
-/// chain the engine's verifier cannot chain to its anchors.
+/// chain the server's verifier cannot chain to its anchors.
 #[test]
-fn a_leaf_the_engine_will_not_accept_never_reaches_the_boundary() {
-    let (scratch, engine, mut held) = wired(PROTOCOL, vec![vec![answered()]]);
+fn a_leaf_the_server_will_not_accept_never_reaches_the_boundary() {
+    let (scratch, server, mut held) = wired(PROTOCOL, vec![vec![answered()]]);
     let elsewhere = Scratch::new();
     mint::material(elsewhere.path());
     held.chain = elsewhere.join(CHAIN);
     held.key = elsewhere.join(KEY);
     let channel = Channel::open(&held).expect("opened");
     assert!(channel.ask(&json!({"op": "workspaces"})).is_err());
-    assert_eq!(engine.heard(), Vec::<Value>::new(), "nothing was said");
+    assert_eq!(server.heard(), Vec::<Value>::new(), "nothing was said");
     assert!(scratch.path().is_dir());
 }
 
-/// The engine's name comes off the address and from nowhere else: an IP
+/// The server's name comes off the address and from nowhere else: an IP
 /// literal is an IP identity — bracketed or not — and anything else is a DNS
 /// name.
 #[test]
-fn the_engine_s_name_is_read_off_the_address() {
+fn the_server_s_name_is_read_off_the_address() {
     for address in [
         "127.0.0.1:9000",
         "[::1]:9000",
-        "engine.example:9000",
-        "engine.example",
+        "server.example:9000",
+        "server.example",
     ] {
         assert!(server_name(address).is_ok(), "{address}");
     }
@@ -268,7 +268,7 @@ fn the_engine_s_name_is_read_off_the_address() {
 #[test]
 fn a_write_that_is_not_a_handshake_is_said_in_the_transport_s_own_words() {
     let scratch = Scratch::new();
-    let held = mint::provisioned(scratch.path(), "engine.example:9000");
+    let held = mint::provisioned(scratch.path(), "server.example:9000");
     let channel = Channel::open(&held).expect("opened");
     let said = channel.wrote(&std::io::Error::other("the pipe went away"));
     assert_eq!(said, "send: the pipe went away");

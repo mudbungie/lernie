@@ -1,4 +1,4 @@
-//! **The covering panes whose subject is a FOCUS**: the aimed wall, one of its
+//! **The covering panes whose subject is a FOCUS**: the aimed workspace, one of its
 //! rows, or the selected conversation.
 //!
 //! Split from [`super`] at the design-time budget, and split again from
@@ -45,13 +45,13 @@ pub(crate) fn tuned() -> Model {
     }
 }
 
-/// **The seated model with the aimed wall pinned** (bl-7782) — the one screen
+/// **The seated model with the aimed workspace pinned** (bl-7782) — the one screen
 /// the `unpin` control exists on, because the pin pair are assertions and each
 /// row carries exactly the one that is not already true of it.
 pub(crate) fn pinned() -> Model {
     let mut model = seated();
     for chunk in &mut model.roster {
-        for row in &mut chunk.walls {
+        for row in &mut chunk.workspaces {
             row.pinned = Some(0);
         }
     }
@@ -70,7 +70,7 @@ pub(crate) fn provider(name: &str) -> crate::reply::providers::ProviderRow {
 }
 
 /// **The seated model with the login pane open and answered** (bl-e3c5): a row
-/// that can be signed in to and is being followed mid-flow, a row the engine
+/// that can be signed in to and is being followed mid-flow, a row the server
 /// has blocked, and a row asked what it offers — every sentence the pane can
 /// say about a row, on one screen.
 pub(crate) fn signing() -> Model {
@@ -158,7 +158,7 @@ pub(crate) fn lineage(name: &str) -> crate::reply::lineages::Lineage {
 }
 
 /// **The seated model with the config pane open, pointed at a file and
-/// answered** (bl-5c53): a lineage to index into, a typed setting the engine
+/// answered** (bl-5c53): a lineage to index into, a typed setting the server
 /// has faulted, a bounded one it has not, and the bytes they were read out of
 /// — every sentence the pane can say about a file, on one screen. And a
 /// reviewer's proposal named and answered whole (bl-a1d6), so both verdicts

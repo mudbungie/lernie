@@ -37,7 +37,7 @@ use super::files::{self, Preview};
 /// The kind token this reading answers to.
 pub(crate) const KIND: &str = "step";
 
-/// The sentence the engine writes above an unparseable record — its word, not
+/// The sentence the server writes above an unparseable record — its word, not
 /// one composed here, so the two faces say it alike.
 pub const UNPARSED: &str = "unparseable JSON — bytes verbatim below";
 
@@ -71,7 +71,7 @@ pub struct Step {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ToolCall {
     pub tool_id: String,
-    /// Whether the call ended non-zero, as the engine folded it — `false`
+    /// Whether the call ended non-zero, as the server folded it — `false`
     /// where the output is absent or carried no exit code.
     pub is_error: bool,
     pub input: Doc,
@@ -87,7 +87,7 @@ pub enum Doc {
     Json { raw: String },
     /// No bytes at all: missing, unreadable, or empty.
     Absent,
-    /// Bytes that are not JSON, kept verbatim under the engine's own note.
+    /// Bytes that are not JSON, kept verbatim under the server's own note.
     Unparsed { note: String, raw: String },
     /// A class this seat has no word for, carried verbatim to paint as itself.
     Unknown(String),

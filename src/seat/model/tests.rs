@@ -32,14 +32,14 @@ fn assigned(scratch: &Scratch, id: &str) -> (crate::cli::Verdict, Vec<String>) {
 }
 
 /// **An id the row does not offer is said, in full, and written anyway**
-/// (bl-1e5a). The list belongs to the provider and the engine validates at the
+/// (bl-1e5a). The list belongs to the provider and the server validates at the
 /// first live call, so the seat is not a second authority — what it buys is
 /// that the operator learns it now rather than a turn later, off a truncated
 /// failure on a row.
 #[test]
 fn an_id_the_provider_does_not_offer_is_named_beside_the_whole_row() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![vec![offers(&["opus-5", "sonnet-4"])], vec![wrote()]],
@@ -52,14 +52,14 @@ fn an_id_the_provider_does_not_offer_is_named_beside_the_whole_row() {
     assert!(said.contains("assigning it anyway"), "{said}");
     assert!(said.contains("opus-5, sonnet-4"), "{said}");
     assert!(
-        engine
+        server
             .heard()
             .contains(&json!({"op": "model", "workspace": "home",
                                         "role": "worker",
                                         "provider": "claude-session-direct",
                                         "model": "not-a-real-model-xyz"})),
         "{:?}",
-        engine.heard()
+        server.heard()
     );
 }
 

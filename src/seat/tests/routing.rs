@@ -1,4 +1,4 @@
-//! Which engine a gesture reaches, and what it carries there.
+//! Which server a gesture reaches, and what it carries there.
 
 use super::{ask, entry, flat, route, wired, yes};
 use crate::channel::entries::WORKSPACE;
@@ -7,20 +7,20 @@ use crate::render::Form;
 use crate::test_support::{Scratch, mint};
 use serde_json::json;
 
-/// **A gesture naming no workspace goes to the box's own engine**, which is
+/// **A gesture naming no workspace goes to the box's own server**, which is
 /// where every name no entry holds goes too.
 #[test]
 fn an_unaddressed_gesture_goes_to_the_flat_root() {
     let scratch = Scratch::new();
-    let engine = wired(&scratch, &flat(), vec![vec![yes()]]);
+    let server = wired(&scratch, &flat(), vec![vec![yes()]]);
     let verdict = ask(scratch.path(), &json!({"op": "workspaces"}), Form::Json);
     assert_eq!(verdict.code, 0);
     assert_eq!(verdict.stream, Stream::Out);
     assert_eq!(verdict.text, yes().to_string());
     assert!(
-        engine.heard().contains(&json!({"op": "workspaces"})),
+        server.heard().contains(&json!({"op": "workspaces"})),
         "{:?}",
-        engine.heard()
+        server.heard()
     );
 }
 
@@ -29,7 +29,7 @@ fn an_unaddressed_gesture_goes_to_the_flat_root() {
 #[test]
 fn a_name_an_entry_holds_goes_down_that_entry_s_channel() {
     let scratch = Scratch::new();
-    let engine = wired(&scratch, &entry("home"), vec![vec![yes()]]);
+    let server = wired(&scratch, &entry("home"), vec![vec![yes()]]);
     let verdict = ask(
         scratch.path(),
         &json!({"op": "conversations", "workspace": "home"}),
@@ -37,11 +37,11 @@ fn a_name_an_entry_holds_goes_down_that_entry_s_channel() {
     );
     assert_eq!(verdict.code, 0);
     assert!(
-        engine
+        server
             .heard()
             .contains(&json!({"op": "conversations", "workspace": "home"})),
         "{:?}",
-        engine.heard()
+        server.heard()
     );
 }
 
@@ -51,7 +51,7 @@ fn a_name_an_entry_holds_goes_down_that_entry_s_channel() {
 #[test]
 fn an_entry_that_renames_carries_the_host_s_name_across() {
     let scratch = Scratch::new();
-    let engine = wired(&scratch, &entry("home"), vec![vec![yes()]]);
+    let server = wired(&scratch, &entry("home"), vec![vec![yes()]]);
     std::fs::write(
         scratch.path().join(entry("home")).join(WORKSPACE),
         "personal",
@@ -67,11 +67,11 @@ fn an_entry_that_renames_carries_the_host_s_name_across() {
         0
     );
     assert!(
-        engine
+        server
             .heard()
             .contains(&json!({"op": "conversations", "workspace": "personal"})),
         "the gesture crossed in this box's spelling: {:?}",
-        engine.heard()
+        server.heard()
     );
 }
 
@@ -80,7 +80,7 @@ fn an_entry_that_renames_carries_the_host_s_name_across() {
 #[test]
 fn an_entry_that_renames_nothing_carries_the_envelope_unchanged() {
     let scratch = Scratch::new();
-    mint::provisioned(&scratch.path().join(entry("home")), "engine.example:9000");
+    mint::provisioned(&scratch.path().join(entry("home")), "server.example:9000");
     let envelope = json!({"op": "conversations", "workspace": "home", "extra": [1, 2]});
     let (_channel, carried) = route(scratch.path(), &envelope).sent.expect("routed");
     assert_eq!(carried, envelope);
@@ -88,7 +88,7 @@ fn an_entry_that_renames_nothing_carries_the_envelope_unchanged() {
 
 /// **An entry that exists is the answer to its name even when it cannot be
 /// dialled.** Falling through to the flat root would send a gesture to the
-/// wrong engine on the strength of a missing file — so a hollow entry refuses
+/// wrong server on the strength of a missing file — so a hollow entry refuses
 /// in its own words while the flat root stands ready beside it.
 #[test]
 fn a_hollow_entry_refuses_rather_than_falling_through_to_the_flat_root() {
@@ -117,7 +117,7 @@ fn a_hollow_entry_refuses_rather_than_falling_through_to_the_flat_root() {
 #[test]
 fn a_selector_naming_no_entry_refuses_instead_of_answering_from_the_flat_root() {
     let scratch = Scratch::new();
-    let engine = wired(&scratch, &flat(), vec![vec![yes()]]);
+    let server = wired(&scratch, &flat(), vec![vec![yes()]]);
     mint::provisioned(&scratch.path().join(entry("alpha")), "alpha.example:9000");
     let verdict = ask(
         scratch.path(),
@@ -132,25 +132,25 @@ fn a_selector_naming_no_entry_refuses_instead_of_answering_from_the_flat_root() 
         verdict.text
     );
     assert!(
-        verdict.text.contains(r#"(this box's own engine), "alpha""#),
+        verdict.text.contains(r#"(this box's own server), "alpha""#),
         "it says what this box does hold: {}",
         verdict.text
     );
     assert!(verdict.text.contains("`mv` it under"), "{}", verdict.text);
     assert!(
-        engine.heard().is_empty(),
+        server.heard().is_empty(),
         "nothing was asked of a channel nobody named: {:?}",
-        engine.heard()
+        server.heard()
     );
 }
 
 /// The escape hatch the refusal above must not close: a selector naming an
-/// entry this box DOES hold reaches that entry's engine, which is how an
+/// entry this box DOES hold reaches that entry's server, which is how an
 /// operator asks one channel for its roster.
 #[test]
-fn a_selector_naming_an_entry_reaches_that_entry_s_engine() {
+fn a_selector_naming_an_entry_reaches_that_entry_s_server() {
     let scratch = Scratch::new();
-    let engine = wired(&scratch, &entry("alpha"), vec![vec![yes()]]);
+    let server = wired(&scratch, &entry("alpha"), vec![vec![yes()]]);
     let verdict = ask(
         scratch.path(),
         &json!({"op": "workspaces", "workspace": "alpha"}),
@@ -158,11 +158,11 @@ fn a_selector_naming_an_entry_reaches_that_entry_s_engine() {
     );
     assert_eq!(verdict.code, 0);
     assert!(
-        engine
+        server
             .heard()
             .contains(&json!({"op": "workspaces", "workspace": "alpha"})),
         "{:?}",
-        engine.heard()
+        server.heard()
     );
 }
 
@@ -187,7 +187,7 @@ fn a_name_that_falls_through_to_an_unprovisioned_flat_root_names_itself() {
         verdict.text
     );
     assert!(
-        verdict.text.contains(r#"(this box's own engine), "alpha""#),
+        verdict.text.contains(r#"(this box's own server), "alpha""#),
         "{}",
         verdict.text
     );
@@ -204,13 +204,13 @@ fn a_name_that_falls_through_to_an_unprovisioned_flat_root_names_itself() {
 }
 
 /// **§8.2's fallthrough survives the refusals above**: a name no entry holds,
-/// on an op that takes a workspace, still reaches this box's own engine — which
-/// is where the flat engine's own workspaces live, and they are named nowhere
+/// on an op that takes a workspace, still reaches this box's own server — which
+/// is where the flat server's own workspaces live, and they are named nowhere
 /// this seat can read.
 #[test]
-fn a_name_no_entry_holds_still_reaches_the_flat_engine_when_the_op_takes_one() {
+fn a_name_no_entry_holds_still_reaches_the_flat_server_when_the_op_takes_one() {
     let scratch = Scratch::new();
-    let engine = wired(&scratch, &flat(), vec![vec![yes()]]);
+    let server = wired(&scratch, &flat(), vec![vec![yes()]]);
     mint::provisioned(&scratch.path().join(entry("alpha")), "alpha.example:9000");
     let verdict = ask(
         scratch.path(),
@@ -219,11 +219,11 @@ fn a_name_no_entry_holds_still_reaches_the_flat_engine_when_the_op_takes_one() {
     );
     assert_eq!(verdict.code, 0);
     assert!(
-        engine
+        server
             .heard()
             .contains(&json!({"op": "conversations", "workspace": "beta"})),
         "{:?}",
-        engine.heard()
+        server.heard()
     );
 }
 

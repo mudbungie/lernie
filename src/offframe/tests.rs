@@ -94,7 +94,7 @@ fn the_threads_carry_a_real_answer_to_a_real_frame() {
     // working. A bare sleep would be a race written down; a deadline is the
     // assertion that this finishes at all.
     let deadline = std::time::Instant::now() + HUNG;
-    while model.roster[0].walls.is_empty() && std::time::Instant::now() < deadline {
+    while model.roster[0].workspaces.is_empty() && std::time::Instant::now() < deadline {
         std::thread::sleep(Duration::from_millis(5));
         link.settle(&mut model);
     }
@@ -104,7 +104,7 @@ fn the_threads_carry_a_real_answer_to_a_real_frame() {
     }
     assert_eq!(
         model.roster[0]
-            .walls
+            .workspaces
             .first()
             .map(|row| row.workspace.clone()),
         Some("home".to_owned()),

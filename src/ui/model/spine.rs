@@ -21,7 +21,7 @@
 //! The composer already draws this line twice. A flag's reason is **taken** on
 //! firing, because what a flag says is said; an unmaking's arming is **cloned**,
 //! because the refusal is the common answer and clearing it would charge a
-//! retype for the engine's *no*. A fork's goal is the first of those — it was
+//! retype for the server's *no*. A fork's goal is the first of those — it was
 //! said, to a child that now exists — and its role is the second: a role is a
 //! name off a config lineage, the same name the next attempt off the same spine
 //! wants, and re-typing it per notch would be a toll on the ordinary act.

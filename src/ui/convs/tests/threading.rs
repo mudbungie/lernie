@@ -117,7 +117,7 @@ fn the_selected_row_is_raised_and_wears_the_brand() {
     );
 }
 
-/// Rows at the given depths, in the engine's own order.
+/// Rows at the given depths, in the server's own order.
 fn branch(depths: &[u64]) -> Vec<ConvRow> {
     depths
         .iter()
@@ -131,7 +131,7 @@ fn branch(depths: &[u64]) -> Vec<ConvRow> {
 }
 
 /// **A rail is a claim that the branch has another member coming**, and the
-/// truth table is the whole of it. The engine's order is a root followed by
+/// truth table is the whole of it. The server's order is a root followed by
 /// its descendants, deepest last, so the answer is the first row below this
 /// one that is not deeper than the level: at the level, the branch carries on;
 /// shallower, it ended here and a rail would be drawing a sibling that does

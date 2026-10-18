@@ -17,11 +17,11 @@ fn drafting(rates: &str) -> Model {
     model
 }
 
-/// **Opening asks every channel's table, and the aimed wall's roster** — the
+/// **Opening asks every channel's table, and the aimed workspace's roster** — the
 /// one the price control checks a row against. An unaimed seat asks the table
 /// alone.
 #[test]
-fn opening_asks_the_table_and_the_aimed_wall_s_providers() {
+fn opening_asks_the_table_and_the_aimed_workspace_s_providers() {
     let mut model = seated();
     model.begin_prices();
     assert!(model.pricing());
@@ -78,16 +78,16 @@ fn the_price_control_says_what_would_make_it_live() {
 }
 
 /// **The roster check runs where this seat holds the roster**: on the aimed
-/// wall's channel, against what that wall answered — and nowhere else, where
-/// the engine's own refusal names it.
+/// workspace's channel, against what that workspace answered — and nowhere else, where
+/// the server's own refusal names it.
 #[test]
-fn a_provider_the_aimed_wall_does_not_name_disables_the_control() {
+fn a_provider_the_aimed_workspace_does_not_name_disables_the_control() {
     let channel = own().channel;
     let mut model = drafting("3 15");
     model.providers = Some(vec![provider("otherhouse")]);
     assert_eq!(
         model.unpriceable(&channel).as_deref(),
-        Some("home has no provider row \"housevendor\" — the engine would refuse it")
+        Some("home has no provider row \"housevendor\" — the server would refuse it")
     );
     model.providers = Some(vec![provider("housevendor")]);
     assert_eq!(model.unpriceable(&channel), None);

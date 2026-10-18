@@ -8,7 +8,7 @@
 //!
 //! # One block, two subjects
 //!
-//! A ball that does not exist yet and a ball this wall holds. They are one
+//! A ball that does not exist yet and a ball this workspace holds. They are one
 //! block because authoring a ball's words is one act, which is the fold
 //! upstream's own `actions/verbs/balls/edit` already made — *"one vocabulary,
 //! so a fact balls learns is added in one place instead of in the roster, the
@@ -27,7 +27,7 @@ use super::super::Aim;
 use crate::reply::balls::BoundBall;
 
 /// **A ball's text being authored** — one that does not exist yet, or one the
-/// aimed wall holds.
+/// aimed workspace holds.
 ///
 /// One block with two subjects rather than two blocks, because it is one
 /// subject: authoring a ball's words. Upstream folds them the same way and
@@ -36,17 +36,17 @@ use crate::reply::balls::BoundBall;
 /// them"*.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Authoring {
-    /// The wall it was opened on, held rather than followed — see the module
+    /// The workspace it was opened on, held rather than followed — see the module
     /// doc.
     pub at: Aim,
     /// **The name its acts stamp `--as`**, taken once at the moment the block
-    /// opened, for the same reason the wall is.
+    /// opened, for the same reason the workspace is.
     pub name: String,
     /// The ball this is about, or `None` for one that does not exist yet.
     /// Every field a gesture about an existing ball needs is on it.
     pub ball: Option<BoundBall>,
     /// **Where a NEW ball is filed.** Typed, because nothing on this pane
-    /// names a project for a ball that does not exist — a wall's project is
+    /// names a project for a ball that does not exist — a workspace's project is
     /// not a fact on this wire. An existing ball carries its own.
     pub project: String,
     /// What it is called.
@@ -62,7 +62,7 @@ pub struct Authoring {
 }
 
 impl Authoring {
-    /// A block opened on a wall, about a ball or about none.
+    /// A block opened on a workspace, about a ball or about none.
     pub(super) fn of(at: Aim, name: String, ball: Option<BoundBall>) -> Self {
         Self {
             project: ball

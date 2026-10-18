@@ -12,7 +12,7 @@
 //! from a second set of their own — a fixture with a field the row grew is a
 //! fixture that stops compiling, and two of them is two places to fill it in.
 
-use crate::test_support::window::{pinned, seated, wall};
+use crate::test_support::window::{pinned, seated, workspace};
 use crate::ui::{Channel, Chunk, Enrolling, Model, Unmaking};
 
 /// The bar open, and its foot's list.
@@ -36,7 +36,7 @@ pub(crate) struct World {
     pub(crate) model: Model,
 }
 
-/// **The window with nothing in it**: no channel heard from, no wall, no
+/// **The window with nothing in it**: no channel heard from, no workspace, no
 /// conversation. It is the first thing a new operator sees, and the state in
 /// which every pane has to say what it has instead of showing it.
 ///
@@ -55,7 +55,7 @@ fn unprovisioned() -> World {
     }
 }
 
-/// **The window at work**: one channel, one wall aimed at, one conversation
+/// **The window at work**: one channel, one workspace aimed at, one conversation
 /// selected and one thing said in it. This is "the main screen" every other
 /// assertion is stated against.
 fn working() -> World {
@@ -65,7 +65,7 @@ fn working() -> World {
     }
 }
 
-/// **The window on a wall with nothing selected** — the composer's other
+/// **The window on a workspace with nothing selected** — the composer's other
 /// subject.
 ///
 /// It is a world rather than a variation because the seat has one box with two
@@ -91,7 +91,7 @@ fn enrolling() -> World {
     let aim = model
         .aim
         .clone()
-        .unwrap_or_else(|| panic!("the seated fixture is aimed at a wall"));
+        .unwrap_or_else(|| panic!("the seated fixture is aimed at a workspace"));
     model.enroll = Some(Enrolling::at(aim));
     World {
         name: "enrolling",
@@ -99,16 +99,16 @@ fn enrolling() -> World {
     }
 }
 
-/// **The window with one engine open and another closed** (bl-cff1; DESIGN
-/// §4.39) — the accordion's other state, and the only screen a CLOSED engine's
+/// **The window with one server open and another closed** (bl-cff1; DESIGN
+/// §4.39) — the accordion's other state, and the only screen a CLOSED server's
 /// row is on at all.
 ///
 /// It is a world for `crate::snapshot::parity`'s reason, one row kind over: a
-/// seat with one engine is always open over it, so the fold — a row with its
-/// walls beneath it beside a row with nothing beneath it — is a shape the walk
-/// never visits unless a world is this. The second engine holds walls
-/// deliberately: an engine folded over NOTHING would photograph the same
-/// picture an engine with nothing in it does.
+/// seat with one server is always open over it, so the fold — a row with its
+/// workspaces beneath it beside a row with nothing beneath it — is a shape the walk
+/// never visits unless a world is this. The second server holds workspaces
+/// deliberately: a server folded over NOTHING would photograph the same
+/// picture a server with nothing in it does.
 fn accordion() -> World {
     let mut model = seated();
     model.roster.push(Chunk {
@@ -118,7 +118,7 @@ fn accordion() -> World {
             dials: Some("127.0.0.1:7737".to_owned()),
         },
         held: crate::ui::Held::Heard,
-        walls: vec![wall("bench"), wall("annex")],
+        workspaces: vec![workspace("bench"), workspace("annex")],
         ..Chunk::default()
     });
     World {
@@ -139,7 +139,7 @@ fn slashing() -> World {
     }
 }
 
-/// **The same menu over a pinned wall**, because the row offered there is
+/// **The same menu over a pinned workspace**, because the row offered there is
 /// `unpin` and nowhere else is (§4.25).
 fn unpinning() -> World {
     let mut model = pinned();
@@ -161,8 +161,8 @@ fn switching() -> World {
     }
 }
 
-/// **The aimed wall pinned** (bl-7782): the only screen `unpin` is on.
-fn pinned_wall() -> World {
+/// **The aimed workspace pinned** (bl-7782): the only screen `unpin` is on.
+fn pinned_workspace() -> World {
     World {
         name: "pinned",
         model: pinned(),
@@ -181,7 +181,7 @@ fn unmaking() -> World {
     let aim = model
         .aim
         .clone()
-        .unwrap_or_else(|| panic!("the seated fixture is aimed at a wall"));
+        .unwrap_or_else(|| panic!("the seated fixture is aimed at a workspace"));
     model.unmaking = Some(Unmaking::at(aim));
     World {
         name: "unmaking",
@@ -194,7 +194,7 @@ fn unmaking() -> World {
 /// (`crate::ui::model::fill`), and so the one screen on which the composer's
 /// strip stands open with the acts it holds.
 ///
-/// It is a world for the pinned wall's reason: the strip is behind one
+/// It is a world for the pinned workspace's reason: the strip is behind one
 /// control, so the floor pair, the retarget, the flag and the deletion live
 /// on no screen the walk visits unless one is this. Photographed as the
 /// operator meets it — sent there, the strip open, the arming box empty and
@@ -238,7 +238,7 @@ pub(crate) fn all() -> Vec<World> {
         config(),
         settings(),
         accordion(),
-        pinned_wall(),
+        pinned_workspace(),
         slashing(),
         unpinning(),
         switching(),

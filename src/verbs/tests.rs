@@ -8,7 +8,7 @@ use crate::envelope::OP;
 use serde_json::json;
 
 /// **The verb IS the op.** One fact, not two, so a row cannot name a word an
-/// operator types and a different one the engine reads.
+/// operator types and a different one the server reads.
 #[test]
 fn every_verb_builds_an_envelope_whose_op_is_its_own_word() {
     for verb in table() {
@@ -27,7 +27,7 @@ fn every_verb_builds_an_envelope_whose_op_is_its_own_word() {
 
 /// The twenty-seven reads, the conversation's seventeen acts, the trail's two, the
 /// enrollment, the sign-in, the model assignment, the learning loop's settle,
-/// the ball family's three and the wall's own three, spelled out — so the roster is asserted rather than
+/// the ball family's three and the workspace's own three, spelled out — so the roster is asserted rather than
 /// merely iterated, and a verb added or dropped is a diff here.
 #[test]
 fn the_roster_is_the_verbs_the_seat_can_read_the_answers_to() {
@@ -226,8 +226,8 @@ fn a_wrong_tail_is_told_apart_from_a_wrong_count() {
 }
 
 /// **The cascade is the flag's one real site** (bl-9fd1), and the bare form is
-/// unchanged: a `stop` that raises nothing sends no `children` field, so an
-/// engine reads exactly the gesture this seat has always sent.
+/// unchanged: a `stop` that raises nothing sends no `children` field, so a
+/// server reads exactly the gesture this seat has always sent.
 #[test]
 fn the_stop_cascade_is_the_word_children_and_the_bare_form_says_nothing() {
     assert_eq!(

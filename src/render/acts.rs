@@ -68,7 +68,7 @@ pub(super) fn enrolled(enrolled: &Enrolled) -> String {
     )
 }
 
-/// **One sign-in run**, as the engine streamed it.
+/// **One sign-in run**, as the server streamed it.
 pub(super) fn login(signin: &Signin) -> String {
     listing(
         &line(vec![
@@ -84,7 +84,7 @@ pub(super) fn login(signin: &Signin) -> String {
     )
 }
 
-/// **What a wall can sign in to.**
+/// **What a workspace can sign in to.**
 pub(super) fn providers(rows: &[ProviderRow]) -> String {
     let painted = rows
         .iter()
@@ -98,7 +98,11 @@ pub(super) fn providers(rows: &[ProviderRow]) -> String {
             ])
         })
         .collect();
-    listing("providers", painted, "this wall can sign in to nothing")
+    listing(
+        "providers",
+        painted,
+        "this workspace can sign in to nothing",
+    )
 }
 
 /// **What one provider row is offering** — the list `lernie model` is checked
@@ -110,7 +114,7 @@ pub(super) fn models(rows: &[String]) -> String {
 /// **A parked call was answered**, how far the answer stands, and whether the
 /// release drove the conversation on.
 ///
-/// The reach is the engine's own reading and not an echo of what was asked: a
+/// The reach is the server's own reading and not an echo of what was asked: a
 /// wide answer on a destructive or credential-reaching call is narrowed there,
 /// so this line is the one place an operator learns what their instruction
 /// actually covered.
@@ -129,14 +133,14 @@ pub(super) fn answered(
 }
 
 /// **`seen` answered**: what it acted on, then the queue that remains on that
-/// engine — the same listing `attention` prints, because it is the same rows
+/// server — the same listing `attention` prints, because it is the same rows
 /// (bl-6802).
 pub(super) fn acknowledged(acked: &crate::reply::queue::Acknowledged) -> String {
     format!(
         "seen {}/{}\n{}",
         acked.workspace,
         acked.agent,
-        super::walls::attention(&acked.rows)
+        super::workspaces::attention(&acked.rows)
     )
 }
 

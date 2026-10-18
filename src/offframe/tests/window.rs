@@ -23,7 +23,7 @@ use serde_json::json;
 /// loop and a GL surface, which is why the entry point that holds them decides
 /// nothing.
 #[test]
-fn the_window_paints_what_a_real_engine_answered() {
+fn the_window_paints_what_a_real_server_answered() {
     let scratch = Scratch::new();
     let roster = json!({"ok": true, "kind": "workspaces",
                         "rows": [{"workspace": "home", "kind": "named", "attention": 2,
@@ -54,7 +54,7 @@ fn the_window_paints_what_a_real_engine_answered() {
     }
     assert!(
         painted.contains("home  2 waiting  running"),
-        "the engine's own answer never reached the glass:\n{painted}"
+        "the server's own answer never reached the glass:\n{painted}"
     );
 }
 
@@ -69,7 +69,7 @@ fn the_window_paints_what_a_real_engine_answered() {
 #[test]
 fn the_window_begins_a_conversation_in_two_acts_and_paints_the_minted_name() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![
@@ -103,7 +103,7 @@ fn the_window_begins_a_conversation_in_two_acts_and_paints_the_minted_name() {
         link.settle(&mut model);
         painted = window.text(|ctx| crate::ui::render(ctx, &mut model));
     }
-    let heard = engine.heard();
+    let heard = server.heard();
     assert!(
         heard
             .iter()

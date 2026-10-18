@@ -41,7 +41,7 @@ fn the_word_paths_are_the_string_ones_without_the_discriminant() {
     assert_eq!(words(&signature), vec!["/rows/[]/state".to_owned()]);
 }
 
-/// **Projection deletes what a stamp says the engine could not write**, at
+/// **Projection deletes what a stamp says the server could not write**, at
 /// every depth and through every element, and leaves everything at or below
 /// the asked-for edition exactly as it was.
 #[test]

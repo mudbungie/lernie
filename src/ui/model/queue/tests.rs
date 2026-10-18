@@ -25,11 +25,11 @@ fn it_opens_on_an_unaimed_seat_and_keeps_its_rows_when_it_shuts() {
 
 /// **Its subject is everything, so nothing on the glass retires it.** Aiming
 /// and selecting retire the tuning and records panes because those are about a
-/// wall and a conversation; this one is about neither.
+/// workspace and a conversation; this one is about neither.
 #[test]
 fn no_aim_and_no_selection_can_retire_it() {
     let mut model = queued();
-    model.aim_at("(this box's own engine)", "home");
+    model.aim_at("(this box's own server)", "home");
     model.select("c-2");
     assert!(
         model.showing(crate::ui::Listing::Queue),
@@ -39,7 +39,7 @@ fn no_aim_and_no_selection_can_retire_it() {
 }
 
 /// **A fan's answer replaces its own channel's section and no other** — the
-/// roster's rule, one noun over: a box serving three engines does not lose the
+/// roster's rule, one noun over: a box serving three servers does not lose the
 /// two that are fine.
 #[test]
 fn one_channel_s_answer_leaves_every_other_standing() {
@@ -69,25 +69,25 @@ fn one_channel_s_answer_leaves_every_other_standing() {
 }
 
 /// **A row is addressed off the roster, within its own channel's chunk**:
-/// the wall a queue row names is resolved where every other aim is resolved,
-/// and a wall this seat holds no name for ON THAT CHANNEL answers nothing —
+/// the workspace a queue row names is resolved where every other aim is resolved,
+/// and a workspace this seat holds no name for ON THAT CHANNEL answers nothing —
 /// a channel the roster does not hold included.
 #[test]
 fn a_row_resolves_against_its_own_channel_s_roster() {
     let model = queued();
     assert_eq!(
-        model.wall(&own(), "home"),
+        model.workspace(&own(), "home"),
         Some(Aim {
-            channel: "(this box's own engine)".to_owned(),
+            channel: "(this box's own server)".to_owned(),
             address: "home".to_owned(),
         })
     );
-    assert_eq!(model.wall(&own(), "elsewhere"), None);
-    assert_eq!(model.wall(&side().channel, "home"), None);
+    assert_eq!(model.workspace(&own(), "elsewhere"), None);
+    assert_eq!(model.workspace(&side().channel, "home"), None);
 }
 
-/// A second engine whose bootstrap wall is ALSO called `home` on its host,
-/// under an entry this box names `side` — the arrangement every two-engine seat has (bl-666f).
+/// A second server whose bootstrap workspace is ALSO called `home` on its host,
+/// under an entry this box names `side` — the arrangement every two-server seat has (bl-666f).
 fn side() -> crate::ui::Chunk {
     let mut chunk = crate::test_support::window::own();
     chunk.channel = Channel {
@@ -98,19 +98,19 @@ fn side() -> crate::ui::Chunk {
     chunk
 }
 
-/// **Two engines each holding `home`: a row aims at its OWN engine's**
+/// **Two servers each holding `home`: a row aims at its OWN server's**
 /// (bl-666f). Every door — the address, *go to it*, `seen`, `answer` and the
 /// ask box — resolves within the channel the row's section came down, so the
-/// second engine's row never reaches the first's wall.
+/// second server's row never reaches the first's workspace.
 #[test]
-fn two_engines_holding_the_same_wall_name_each_keep_their_rows() {
+fn two_servers_holding_the_same_workspace_name_each_keep_their_rows() {
     let mut model = queued();
     model.roster.push(side());
     let theirs = side().channel;
     let row = waiting("home", "c-401");
-    let aimed = model.wall(&theirs, "home").expect("their home");
+    let aimed = model.workspace(&theirs, "home").expect("their home");
     assert_eq!(aimed.channel, "side");
-    assert_ne!(aimed, model.wall(&own(), "home").expect("our home"));
+    assert_ne!(aimed, model.workspace(&own(), "home").expect("our home"));
     model.post_seen(&theirs, &row);
     model.post_answer(&theirs, &row, "pass", crate::verbs::capability::CALL);
     for posted in &model.outbox {
@@ -121,21 +121,21 @@ fn two_engines_holding_the_same_wall_name_each_keep_their_rows() {
     assert_eq!(model.aim, Some(aimed.clone()));
     assert_eq!(model.conversation.as_deref(), Some("c-401"));
     // The ask box is the same row only on the same channel: the selected
-    // conversation's id on the OTHER engine's `home` is not this one.
+    // conversation's id on the OTHER server's `home` is not this one.
     model.waiting = vec![Asking {
         channel: theirs.clone(),
         rows: vec![row.clone()],
     }];
     assert_eq!(crate::ui::ask::row(&model), Some((theirs, row)));
-    model.aim = model.wall(&own(), "home");
+    model.aim = model.workspace(&own(), "home");
     assert_eq!(crate::ui::ask::row(&model), None);
 }
 
 /// **The answer is composed against the resolved address**, and a row this
 /// seat cannot address composes nothing at all rather than a gesture aimed at a
-/// name the engine will refuse.
+/// name the server will refuse.
 #[test]
-fn seen_is_composed_only_where_the_wall_resolves() {
+fn seen_is_composed_only_where_the_workspace_resolves() {
     let mut model = queued();
     model.post_seen(&own(), &waiting("elsewhere", "c-3"));
     assert!(model.outbox.is_empty(), "no address, no gesture");
@@ -164,7 +164,7 @@ fn going_to_a_row_aims_selects_and_closes() {
     assert_eq!(
         model.aim,
         Some(Aim {
-            channel: "(this box's own engine)".to_owned(),
+            channel: "(this box's own server)".to_owned(),
             address: "home".to_owned(),
         })
     );
@@ -211,7 +211,7 @@ fn the_raise_says_it_landed_and_files_nothing() {
 }
 
 /// **`seen`'s receipt names the conversation as every other surface does**
-/// (bl-c887): its queue row's display first, the aimed wall's row where the
+/// (bl-c887): its queue row's display first, the aimed workspace's row where the
 /// queue holds none, and the internal id only where nothing names it.
 #[test]
 fn seen_names_the_conversation_by_its_name() {
@@ -228,7 +228,7 @@ fn seen_names_the_conversation_by_its_name() {
     assert_eq!(
         model.seen_name(&own(), &acked("20260830T051200Z-a1b2")),
         "port the paint probe",
-        "the aimed wall's row"
+        "the aimed workspace's row"
     );
     assert_eq!(model.seen_name(&own(), &acked("x-9")), "home/x-9");
     let receipt = crate::reply::read(&serde_json::json!({

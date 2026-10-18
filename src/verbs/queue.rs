@@ -3,7 +3,7 @@
 //!
 //! A fourth rows file, on the seam [`super::rows`]'s doc already draws three
 //! times: these are the ops whose subject is *what is waiting on the operator*
-//! rather than one wall, one conversation or one config. The queue pane
+//! rather than one workspace, one conversation or one config. The queue pane
 //! (`crate::ui::queue`) is the surface all three exist for, and each answers a
 //! kind `crate::reply` now decodes — the same admission test the conversation's
 //! acts and its records passed.
@@ -35,7 +35,7 @@ pub const ATTENTION: Verb = Verb {
     params: &[],
     flags: &[],
     summary: "everything waiting on you, across every workspace",
-    detail: "One row per conversation asking for you, anywhere an engine this \
+    detail: "One row per conversation asking for you, anywhere a server this \
              box holds can see: why it is asking, what it last said, how long \
              it has waited, whether a flag was raised on it and in whose \
              words, and the workspace and conversation to aim an answer at. It \
@@ -78,7 +78,7 @@ pub const SEEN: Verb = Verb {
 /// `docs/REMOTE.md` §14.1, PROTOCOL 10) — the one list of them, so no call
 /// site has to know which ops hold.
 ///
-/// An engine intake that can hold answers [`ATTENTION`] as a sequence: the
+/// A server intake that can hold answers [`ATTENTION`] as a sequence: the
 /// answer at connect, then a frame per change, until the follow lane's bounded
 /// hold ends. *"Frames replace; they never append"* and *"a seat paints the
 /// last frame it holds"* — so a one-shot ask of one of these is whole on its

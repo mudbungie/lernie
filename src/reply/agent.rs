@@ -4,7 +4,7 @@
 //!
 //! Upstream calls it *"the fat `Agent`… a projection, not a diet"*: what a
 //! list row says about a conversation is a glance, and this is the whole of
-//! what the engine holds — its descent, its liveness and why, what it has
+//! what the server holds — its descent, its liveness and why, what it has
 //! spent, how full its context is, what is in flight on it right now, and the
 //! invocation parked at its capability boundary.
 //!
@@ -17,12 +17,12 @@
 //! with nothing in flight, a seat mark at rest, a call that did not fail — and
 //! none of them is a tolerance.
 //!
-//! # Three facts ride as the engine's own rendering, and none is re-derived
+//! # Three facts ride as the server's own rendering, and none is re-derived
 //!
 //! [`Strip::facts`] is prose one derivation assembles with per-segment
 //! omission rules of its own, and upstream is explicit that *"a wire spelling
 //! of the parts would be a second place that decides what a strip says"*.
-//! [`Fullness::percent`] is the same call one number down: it is the engine's
+//! [`Fullness::percent`] is the same call one number down: it is the server's
 //! rounding of the two figures beside it and it is deliberately **not
 //! clamped**, so a context that has outgrown its window reads as `140%` — a
 //! seat that divided the two itself would be re-taking a decision upstream
@@ -41,7 +41,7 @@
 //! type, which is what keeps the seat saying one sentence about a park.
 //!
 //! **What that sharing costs is three fields this seat does not read**, and
-//! the cost is the point: `micro_usd` is the integer the engine rendered `usd`
+//! the cost is the point: `micro_usd` is the integer the server rendered `usd`
 //! from, `unpriced_tokens` says the money is a floor, and the attribution's
 //! `count` is the number its clause already spells. Nothing paints any of
 //! them, so [`super`]'s rung 4 rides them through unread — a field held for no
@@ -82,7 +82,7 @@ pub struct Agent {
     pub refused: bool,
     /// Why that call failed, in one clause. Absent where it did not.
     pub failure: Option<String>,
-    /// The marks it wears, in the engine's badge order and carried verbatim.
+    /// The marks it wears, in the server's badge order and carried verbatim.
     pub marks: Vec<String>,
     /// What is in flight anywhere in its conversation, verbatim. Absent at rest.
     pub flight: Option<String>,
@@ -90,7 +90,7 @@ pub struct Agent {
     pub held: Option<Held>,
     /// Whether the published snapshot carries it at all.
     pub present: bool,
-    /// **What the engine offers on it**, as a list rather than as a bool
+    /// **What the server offers on it**, as a list rather than as a bool
     /// apiece. Upstream calls them *"the four §8.2 gates"* and they are one
     /// answer to one question — *what may be done to this conversation* — so
     /// the reading is the set they describe. Three independent flags would be
@@ -110,7 +110,7 @@ pub struct Agent {
     pub context: Option<Fullness>,
 }
 
-/// **How full the context is**, and the engine's own percent.
+/// **How full the context is**, and the server's own percent.
 ///
 /// The percent rides rather than being divided out again: it is upstream's
 /// rounding of the two figures beside it and it is deliberately **not
@@ -126,7 +126,7 @@ pub struct Fullness {
     pub percent: u64,
 }
 
-/// **One thing the engine says may be done** to the conversation. A closed
+/// **One thing the server says may be done** to the conversation. A closed
 /// set, because the wire spells it as a fixed set of gates rather than as a
 /// vocabulary that can grow — a new gate is a new key and therefore a new
 /// reading, not an unknown token.
@@ -185,7 +185,7 @@ pub(crate) fn agent(obj: &Map<String, Value>) -> Result<Agent, String> {
 }
 
 /// **The gates, read as the set they describe.** Every one of the three is a
-/// required key, so an engine that stopped writing one refuses here rather
+/// required key, so a server that stopped writing one refuses here rather
 /// than answering a shorter list.
 fn offers(obj: &Map<String, Value>) -> Result<Vec<Offer>, String> {
     let gates = [
@@ -238,7 +238,7 @@ fn seat(value: &Value) -> Result<Seat, String> {
     })
 }
 
-/// The context reading, with the engine's own percent carried rather than
+/// The context reading, with the server's own percent carried rather than
 /// divided out again.
 fn fullness(obj: &Map<String, Value>) -> Result<Fullness, String> {
     Ok(Fullness {

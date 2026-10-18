@@ -45,7 +45,7 @@ fn a_receipt_replaces_the_notice_and_never_clears_it() {
 }
 
 /// **A retarget that had nothing to do says so, in the Annotation ink, on the
-/// glass** — the engine's sentence read back off the painted glyphs, not off
+/// glass** — the server's sentence read back off the painted glyphs, not off
 /// the model, and Escape puts it down.
 #[test]
 fn a_successful_run_paints_its_own_sentence_in_the_annotation_ink() {

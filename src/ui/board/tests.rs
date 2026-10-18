@@ -59,24 +59,24 @@ fn each_emptiness_says_which_one_it_is() {
     assert!(!glass.contains(NOT_ANSWERED), "{glass}");
 }
 
-/// **The wall's sentence and the union's are two sentences**, painted
-/// together: a seat that has aimed at a wall and heard from no channel is
+/// **The workspace's sentence and the union's are two sentences**, painted
+/// together: a seat that has aimed at a workspace and heard from no channel is
 /// waiting on both, and neither absence speaks for the other.
 #[test]
-fn an_aimed_seat_waits_on_the_wall_and_on_the_channels_separately() {
+fn an_aimed_seat_waits_on_the_workspace_and_on_the_channels_separately() {
     let mut model = Model {
         lookup: Some(crate::ui::Lookup::Board),
         ..seated()
     };
     let glass = painted(&mut model);
     assert!(glass.contains(NOT_ANSWERED), "{glass}");
-    assert!(glass.contains(super::wall::NOT_ANSWERED), "{glass}");
+    assert!(glass.contains(super::workspace::NOT_ANSWERED), "{glass}");
     assert!(!glass.contains(NOTHING), "{glass}");
 }
 
 /// **Every sentence the pane can say reaches the glass** — the row, its
 /// placement, its holder, its gates, its drones, its two figures, the loop's
-/// line, the binding table and the aimed wall's own half.
+/// line, the binding table and the aimed workspace's own half.
 #[test]
 fn every_line_the_pane_paints_reaches_the_glass() {
     let mut model = boarded();
@@ -127,7 +127,7 @@ fn a_channel_holding_nothing_gets_no_header() {
 }
 
 /// **A loop with no rows is still a section**, because a fleet running in a
-/// wall whose balls are all closed is exactly the thing an operator opens this
+/// workspace whose balls are all closed is exactly the thing an operator opens this
 /// pane to see.
 #[test]
 fn a_channel_with_a_loop_and_no_rows_still_says_so() {

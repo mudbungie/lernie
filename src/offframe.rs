@@ -10,25 +10,25 @@
 //! # Five, because they wait for different things
 //!
 //! The **asker** goes round the standing set at human cadence: every channel's
-//! roster, the aimed wall's conversations, the selected conversation's
+//! roster, the aimed workspace's conversations, the selected conversation's
 //! transcript. The **poster** sends what a click composed and files the receipt
 //! it earns, on its own thread because an act must not wait behind a read that
 //! is mid-pass. The **follow lane** holds one connection open on the focused
 //! conversation and is answered as the tail moves, which is a read that
 //! deliberately never finishes and must therefore never be in the serial pass.
-//! The **queue lane** asks `attention`, which an engine can take half a
+//! The **queue lane** asks `attention`, which a server can take half a
 //! minute to answer, so nothing else waits behind it (bl-5439).
 //!
 //! # Every pass is a function a test calls directly
 //!
 //! Each worker's body is `tick`, and a thread is [`pump`] around one. So the
-//! suite drives a real pass against the stand-in engine with no thread at all,
+//! suite drives a real pass against the stand-in server with no thread at all,
 //! and the one end-to-end beat is about the threading rather than about what
 //! the passes do.
 //!
 //! **A stop is seen between passes, not during one.** The follow lane is the
 //! case that matters: it is parked on a socket read, so it learns of a stop
-//! when the engine writes, when the connection closes, or when the transport's
+//! when the server writes, when the connection closes, or when the transport's
 //! own read timeout expires. That is not a leak — closing the window ends the
 //! process — and the alternative is a second signal path into a blocking read,
 //! which is a mechanism for a case that has no consequence.
@@ -83,9 +83,9 @@ pub(crate) fn down(
 }
 
 /// Every frame of one answer, in order. **An answer of no frames is reported as
-/// nothing**, which is what it is: the engine terminated the stream without
+/// nothing**, which is what it is: the server terminated the stream without
 /// saying anything, and a seat that invented a sentence for it would be
-/// speaking for an engine that did not.
+/// speaking for a server that did not.
 ///
 /// **Every frame carries the op it answers** (bl-693d), a read's as an act's:
 /// a refusal wears no `kind`, and the roster read's refusal is the one that

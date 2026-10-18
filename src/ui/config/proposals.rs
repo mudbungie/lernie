@@ -1,4 +1,4 @@
-//! **What a reviewer has staged for this wall's config, on the config pane**
+//! **What a reviewer has staged for this workspace's config, on the config pane**
 //! (bl-a1d6; yog's `docs/REMOTE.md` §9.22; DESIGN §4.30).
 //!
 //! Split from [`super`] at the design-time budget on a real seam: [`super`] is
@@ -7,9 +7,9 @@
 //! the same pane because it is the same subject one branch away, not a pane of
 //! its own.
 //!
-//! # The standing is the engine's word
+//! # The standing is the server's word
 //!
-//! A row says `fresh` or `stale` exactly as the engine read it in the pass
+//! A row says `fresh` or `stale` exactly as the server read it in the pass
 //! that read the lineages (REMOTE §9.4); nothing here infers one off an empty
 //! lineage list.
 //!
@@ -32,20 +32,20 @@ use crate::verbs::proposals::VERDICTS;
 
 /// The listing's own heading.
 pub const HEADING: &str = "staged proposals";
-/// What it says for a wall nobody has been answered about yet.
+/// What it says for a workspace nobody has been answered about yet.
 pub const NOT_ANSWERED: &str = "waiting to hear what a reviewer has staged";
-/// What it says for a wall with nothing staged — a fact, not a wait.
+/// What it says for a workspace with nothing staged — a fact, not a wait.
 pub const NOTHING_STAGED: &str = "nothing is staged for this workspace";
 /// What it says under a named row that has not answered whole yet.
 pub const NOT_WHOLE: &str = "waiting to hear this proposal whole";
-/// What it says for a named row the engine's listing no longer carries.
+/// What it says for a named row the server's listing no longer carries.
 pub const GONE: &str = "no longer staged — it was settled, or its branch went";
 /// The way out of a named row. It says what it leaves: the proposal stays
 /// staged and nothing is settled.
 pub const CLOSE: &str = "leave it staged";
 /// What the controls do.
 pub const PICK_HELP: &str = "reads this proposal whole, below";
-pub const CLOSE_HELP: &str = "puts the proposal down; it stays staged on the engine";
+pub const CLOSE_HELP: &str = "puts the proposal down; it stays staged on the server";
 pub const VERDICT_HELP: &str = "settles the proposal with this verdict; the id above arms it";
 /// What the arming box asks for.
 pub const ARM: &str = "the proposal's own id";
@@ -54,7 +54,7 @@ pub const NOT_ARMED: &str = "not armed — type the id above, exactly";
 /// What it says once it does.
 pub const ARMED: &str = "armed";
 /// What it says once a verdict has been asked for.
-pub const ASKED: &str = "asked — waiting for the engine";
+pub const ASKED: &str = "asked — waiting for the server";
 /// What each verdict does, said before it is offered.
 pub const VERDICTS_DO: &str = "accept puts it into the settings, and every conversation \
                                on them picks it up at its next step; reject throws it \
@@ -86,7 +86,7 @@ pub(super) fn render(ui: &mut egui::Ui, model: &mut Model) {
     }
 }
 
-/// **One row's line**: the engine's standing, the lineage it would move, its
+/// **One row's line**: the server's standing, the lineage it would move, its
 /// diffstat and the reviewer's subject — a pure function, so the row is read
 /// back as a value.
 pub fn line(row: &Proposal) -> String {
@@ -159,7 +159,7 @@ fn whole(ui: &mut egui::Ui, model: &mut Model, named: &Proposing) {
     }
 }
 
-/// **The message and diff, as the engine wrote them** — one monospace run,
+/// **The message and diff, as the server wrote them** — one monospace run,
 /// never wrapped, scrolling sideways where a line is longer than the pane.
 fn verbatim(ui: &mut egui::Ui, id: &str, text: &str) {
     egui::ScrollArea::horizontal().id_salt(id).show(ui, |ui| {

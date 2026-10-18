@@ -8,7 +8,7 @@ use serde_json::json;
 /// **The aim is the gate**, because every gesture the pane composes carries a
 /// workspace and a workspace is what an aim is.
 #[test]
-fn the_pane_opens_on_an_aimed_wall_and_on_nothing_else() {
+fn the_pane_opens_on_an_aimed_workspace_and_on_nothing_else() {
     let mut nowhere = Model::default();
     nowhere.begin_tuning();
     assert_eq!(nowhere.tuning, None, "nothing to configure");
@@ -21,14 +21,17 @@ fn the_pane_opens_on_an_aimed_wall_and_on_nothing_else() {
 }
 
 /// **Aiming elsewhere retires the pane and the rows with it.** The pane holds
-/// no aim of its own, so leaving it open would leave one wall's rows over
-/// another wall's controls.
+/// no aim of its own, so leaving it open would leave one workspace's rows over
+/// another workspace's controls.
 #[test]
-fn aiming_at_another_wall_closes_the_pane_and_forgets_what_it_showed() {
+fn aiming_at_another_workspace_closes_the_pane_and_forgets_what_it_showed() {
     let mut model = tuned();
-    model.aim_at("(this box's own engine)", "elsewhere");
+    model.aim_at("(this box's own server)", "elsewhere");
     assert_eq!(model.tuning, None);
-    assert_eq!(model.roles, None, "the old wall's answer is not this one's");
+    assert_eq!(
+        model.roles, None,
+        "the old workspace's answer is not this one's"
+    );
 }
 
 /// **The editor opens seeded from what is in force**, which is the whole point
@@ -123,12 +126,12 @@ fn posting_an_assignment_with_no_draft_open_composes_nothing() {
 }
 
 /// **The aim is read at the moment of composing**, so a pane left open over no
-/// wall composes nothing rather than a gesture addressed at nobody. It is
+/// workspace composes nothing rather than a gesture addressed at nobody. It is
 /// unreachable through the controls and is the reading that makes it so — for
 /// each of the three writes, because the door they share is generic and each
 /// spends its own copy of it.
 #[test]
-fn no_tuning_gesture_is_composed_with_no_wall_under_the_pane() {
+fn no_tuning_gesture_is_composed_with_no_workspace_under_the_pane() {
     let mut model = Model {
         tuning: Some(Tuning::Rows),
         ..Model::default()
@@ -143,7 +146,7 @@ fn no_tuning_gesture_is_composed_with_no_wall_under_the_pane() {
 /// **A roles answer is filed whether or not the pane is open.** The read is
 /// standing only while it is, so a frame arriving after it closed is the last
 /// one in flight — and dropping it would leave the next open blank for a beat
-/// over a wall this seat had already been told about.
+/// over a workspace this seat had already been told about.
 #[test]
 fn a_roles_answer_is_filed_through_the_one_door_open_pane_or_not() {
     let channel = crate::test_support::window::own().channel;

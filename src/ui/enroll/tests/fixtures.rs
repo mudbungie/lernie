@@ -40,7 +40,7 @@ pub(super) fn file(model: &mut Model) {
     model.absorb(&crate::ui::Channel::default(), crate::reply::read(&frame()));
 }
 
-/// A window aimed at a wall with an enrollment open on it.
+/// A window aimed at a workspace with an enrollment open on it.
 pub(super) fn opened() -> Model {
     let mut model = seated();
     model.begin_enrollment();

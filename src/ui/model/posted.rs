@@ -31,8 +31,8 @@
 //! The same argument, one field over (bl-4855). The poster reads *no
 //! workspace* as *every channel this box holds*, which is true of a window-level
 //! READ — a roster refresh, a verb table, a search — and false of a `config`
-//! write aimed at one engine's own `cadence.yaml`, which names no workspace
-//! either and would be written to every engine this box is a client of. The
+//! write aimed at one server's own `cadence.yaml`, which names no workspace
+//! either and would be written to every server this box is a client of. The
 //! envelope cannot tell them apart, because on the wire they are the same
 //! shape; the composing control can, for free, because it fired on a pane
 //! open on an aim.
@@ -41,7 +41,7 @@
 //! not a default — it is the assertion *every channel is my subject*. It is
 //! recorded at the control for [`Self::act`]'s reason and for
 //! `crate::offframe::poster`'s: **the aim is not read on the send pass at
-//! all**, because an operator may compose one gesture aimed at a wall on one
+//! all**, because an operator may compose one gesture aimed at a workspace on one
 //! channel and fire another at a row on a second before either leaves.
 
 use serde_json::Value;
@@ -93,7 +93,7 @@ impl Posted {
     }
 
     /// **Address it down one channel**, which is what a gesture naming no
-    /// workspace must do when its subject is one engine rather than all of
+    /// workspace must do when its subject is one server rather than all of
     /// them.
     #[must_use]
     pub fn down(self, channel: Channel) -> Self {

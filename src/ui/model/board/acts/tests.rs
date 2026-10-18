@@ -6,7 +6,7 @@ use serde_json::json;
 use crate::test_support::window::{boarded, own, panes::board::column, seated};
 use crate::ui::{Aim, Channel, Model};
 
-/// The block the fixture's wall opens on its one held ball.
+/// The block the fixture's workspace opens on its one held ball.
 fn amending() -> Model {
     let mut model = boarded();
     let ball = model
@@ -18,12 +18,12 @@ fn amending() -> Model {
     model
 }
 
-/// **The stamp is the wall's name as its ENGINE spells it.** A channel that
+/// **The stamp is the workspace's name as its SERVER spells it.** A channel that
 /// renames answers the host's name and not this box's leaf, because the
 /// rewrite `crate::seat::route` performs is on a `workspace` field none of
 /// these five has.
 #[test]
-fn the_stamp_is_the_engines_own_spelling_of_the_aimed_wall() {
+fn the_stamp_is_the_servers_own_spelling_of_the_aimed_workspace() {
     assert_eq!(boarded().stamp(), Some("home".to_owned()));
 
     let renaming = Model {
@@ -93,7 +93,7 @@ fn an_act_carries_the_channel_its_row_came_down() {
 }
 
 /// **Two facts refuse a claim and neither is a policy.** A ball somebody holds
-/// is not one to claim, and a ball on one engine cannot be claimed by a wall
+/// is not one to claim, and a ball on one server cannot be claimed by a workspace
 /// on another.
 #[test]
 fn a_claim_needs_an_unheld_row_on_the_aimed_channel() {
@@ -113,7 +113,7 @@ fn a_claim_needs_an_unheld_row_on_the_aimed_channel() {
     assert_eq!(model.claiming(&down, &held), None);
 
     let elsewhere = Channel {
-        name: "another engine".to_owned(),
+        name: "another server".to_owned(),
         named_there: None,
         dials: None,
     };

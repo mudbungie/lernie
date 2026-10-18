@@ -61,7 +61,7 @@ impl Grade {
 }
 
 /// **The material, and the picture of it.** What the pane paints once the
-/// engine has answered.
+/// server has answered.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Shown {
     /// The three fields that are not secret, as one line.
@@ -93,10 +93,10 @@ impl Shown {
 /// chosen, and the answer once there is one.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Enrolling {
-    /// The wall it enrolls into — the address a gesture must carry, which is
+    /// The workspace it enrolls into — the address a gesture must carry, which is
     /// what makes the pane composable without a second lookup.
     pub aim: Aim,
-    /// The new box's name, as typed. The engine is the authority on whether it
+    /// The new box's name, as typed. The server is the authority on whether it
     /// is a legal one (REMOTE §4.1: one path component, never `local`) and
     /// refuses in band, so nothing here judges it — a seat that judged it would
     /// be a second authority for a rule it does not own.
@@ -109,12 +109,12 @@ pub struct Enrolling {
     /// then see nothing. It is the record that the operator has already asked,
     /// and it is what stops a second click minting a second box.
     pub posted: bool,
-    /// The material and its picture, once the engine has answered.
+    /// The material and its picture, once the server has answered.
     pub shown: Option<Shown>,
 }
 
 impl Enrolling {
-    /// A fresh enrollment aimed at one wall, with nothing chosen but the
+    /// A fresh enrollment aimed at one workspace, with nothing chosen but the
     /// default grade.
     pub fn at(aim: Aim) -> Self {
         Self {
@@ -129,13 +129,13 @@ impl Enrolling {
     /// **Whether the act can be spent yet.** A name is the one thing the
     /// operator has to supply, and an empty one would spend a round trip to
     /// learn what this end already knows. Spent once, it is not ready again:
-    /// the engine refuses a second enrollment under one name, but the honest
+    /// the server refuses a second enrollment under one name, but the honest
     /// place to stop a double click is the control that made it.
     pub fn ready(&self) -> bool {
         !self.name.trim().is_empty() && !self.posted && self.shown.is_none()
     }
 
-    /// Whether the engine has been asked and has not yet answered.
+    /// Whether the server has been asked and has not yet answered.
     pub fn minting(&self) -> bool {
         self.posted && self.shown.is_none()
     }
@@ -143,9 +143,9 @@ impl Enrolling {
     /// The gesture this enrollment composes, built from the same row
     /// `lernie enroll` spends.
     ///
-    /// **It states no address**, so the engine's own is what the new box is
+    /// **It states no address**, so the server's own is what the new box is
     /// handed. The pane has no field for one and does not need a placeholder:
-    /// an operator sitting at a window is on a box that dialled this engine
+    /// an operator sitting at a window is on a box that dialled this server
     /// successfully, so an enrolment they compose here is for a device whose
     /// route they can state at the command line if it differs
     /// (`lernie enroll … --at <host>:<port>`, bl-971c). Adding the field is a

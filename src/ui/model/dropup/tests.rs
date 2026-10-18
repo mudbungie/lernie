@@ -21,7 +21,7 @@ fn each_list_is_the_held_rows_with_the_cursor_on_what_is_in_force() {
     model.drop_up(Selector::Workspace);
     assert_eq!(
         texts(&model),
-        vec!["home", crate::ui::roster::engine::FOUND]
+        vec!["home", crate::ui::roster::server::FOUND]
     );
     assert_eq!(last(&model), Some(crate::verbs::workspaces()));
     model.drop_up(Selector::Model);
@@ -69,9 +69,9 @@ fn the_worker_s_model_is_listed_before_the_listing() {
     );
 }
 
-/// **Nothing aimed asks only the roster**: a wall's read has no wall.
+/// **Nothing aimed asks only the roster**: a workspace's read has no workspace.
 #[test]
-fn nothing_aimed_asks_nothing_of_a_wall() {
+fn nothing_aimed_asks_nothing_of_a_workspace() {
     let mut model = Model::default();
     model.drop_up(Selector::Provider);
     assert_eq!(model.dropup.as_ref().and_then(|open| open.reload), None);
@@ -112,7 +112,7 @@ fn the_answer_lands_on_the_list_that_asked() {
     );
 }
 
-/// **Each pick fires its door**: a wall aims, a provider opens its models, a
+/// **Each pick fires its door**: a workspace aims, a provider opens its models, a
 /// model binds the worker, effort and priority tune it.
 #[test]
 fn each_pick_fires_its_door() {
@@ -193,8 +193,8 @@ fn each_pick_fires_its_door() {
         })
     );
     assert!(matches!(
-        Pick::Wall(model.aim.clone().unwrap_or_else(|| unreachable!())),
-        Pick::Wall(_)
+        Pick::Workspace(model.aim.clone().unwrap_or_else(|| unreachable!())),
+        Pick::Workspace(_)
     ));
 }
 

@@ -7,7 +7,7 @@
 //! *supposed* to stay open.
 //!
 //! **Every frame says what it is about, and the frame decides whether it is
-//! still wanted.** The engine was asked about a conversation and answers about
+//! still wanted.** The server was asked about a conversation and answers about
 //! that one, so a tail that arrives after the operator has moved on would paint
 //! one conversation's words under another's name. The guard is a pure
 //! comparison at the settle — where what is selected is known for certain —
@@ -22,7 +22,7 @@ use std::path::Path;
 use crate::reply::{Read, Reply, stream::Stream};
 use crate::state::{Link, Said};
 
-/// Hold the line on the focused conversation until it moves or the engine ends
+/// Hold the line on the focused conversation until it moves or the server ends
 /// the stream.
 ///
 /// **The fold's whole lifetime is this call**, and that is the whole of how
@@ -83,8 +83,8 @@ fn absorbed(fold: &mut Stream, frame: &serde_json::Value) -> Read {
 /// Whether the window is still looking at what this read is about.
 ///
 /// **Both halves**, because either can move: an operator who aims at another
-/// wall has left this conversation as surely as one who picks another
-/// conversation on the same wall.
+/// workspace has left this conversation as surely as one who picks another
+/// conversation on the same workspace.
 fn still_on(link: &Link, aim: &crate::ui::Aim, conversation: &str) -> bool {
     let standing = link.standing();
     standing.aim.as_ref() == Some(aim) && standing.conversation.as_deref() == Some(conversation)

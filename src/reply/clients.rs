@@ -74,7 +74,7 @@ pub struct ToolRow {
     /// The host's own words for what it does.
     pub description: String,
     /// **Whether the advertising box consents to run it at a working directory
-    /// the invocation names** (REMOTE §5.1) — the fact the engine's worktree
+    /// the invocation names** (REMOTE §5.1) — the fact the server's worktree
     /// lane routes on, and the one an operator cannot otherwise see.
     pub subject_cwd: bool,
 }
@@ -126,7 +126,7 @@ impl ClientRow {
 /// abandoned, which is the row an operator can safely remove. The other half —
 /// *how long ago* a machine that HAS dialled last spoke — is an age, and an
 /// age needs a `now`. This crate holds no clock and every other age on this
-/// surface is one the engine computed and sent (`age_secs`), so painting one
+/// surface is one the server computed and sent (`age_secs`), so painting one
 /// here would mean this seat asserting a time nobody handed it.
 pub const NEVER: &str = "never dialled";
 

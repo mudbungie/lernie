@@ -1,4 +1,4 @@
-//! The governing commit's reading: one enum rebuilt off one key, the engine's
+//! The governing commit's reading: one enum rebuilt off one key, the server's
 //! two wordings, and the strictness that names a field.
 
 use serde_json::json;
@@ -8,7 +8,7 @@ use super::{Governance, governing};
 /// **The followed arm**: a lineage named, the count `0`, and the sentence
 /// upstream writes for it.
 #[test]
-fn a_followed_conversation_names_its_lineage_and_wears_the_engines_sentence() {
+fn a_followed_conversation_names_its_lineage_and_wears_the_servers_sentence() {
     let read = governing(
         json!({
             "oid": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "short_oid": "bbbbbbbb",

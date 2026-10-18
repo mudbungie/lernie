@@ -3,22 +3,22 @@
 //!
 //! Split from [`sections`] at the line cap on the seam the pane itself has: a
 //! section is one channel — its header, its address, and what it has instead of
-//! walls — and a row is one workspace on it.
+//! workspaces — and a row is one workspace on it.
 
 use super::{NO_NAME_HERE, line, ordered, render};
 use crate::paint_probe::frame::Window;
 use crate::reply::roster::{WorkspaceKind, WsRow};
-use crate::test_support::window::{click, own, pane, seated, wall};
+use crate::test_support::window::{click, own, pane, seated, workspace};
 use crate::ui::{Aim, Channel, Chunk, Model};
 
-/// **The accordion**: which engine is open, what stands under it, and the
+/// **The accordion**: which server is open, what stands under it, and the
 /// order the rows are in.
 mod accordion;
 /// What the pane is painted IN: the state rules, the raise on the aimed row,
 /// the band entry that goes green, and the faint unaddressable row.
 mod paint;
 /// What a SECTION says: its header, its address, and what it has instead of
-/// walls.
+/// workspaces.
 mod sections;
 
 /// A row states what it is called, how it is classified and its rollups — and
@@ -26,32 +26,32 @@ mod sections;
 /// on every row teaches nothing and costs the one that says `3`.
 #[test]
 fn a_row_states_its_rollups_only_where_there_is_something_to_say() {
-    let quiet = line(&wall("home"));
+    let quiet = line(&workspace("home"));
     assert_eq!(quiet, "home  2 conversations  (named)");
     let busy = line(&WsRow {
         attention: 3,
         running: true,
-        ..wall("home")
+        ..workspace("home")
     });
     assert_eq!(busy, "home  3 waiting  running  2 conversations  (named)");
 }
 
 /// **Pinned first, in pin order**, then the rest by name. A rank rather than a
-/// flag is what makes this a sort the seat can do without reading the engine's
+/// flag is what makes this a sort the seat can do without reading the server's
 /// own pin list back.
 #[test]
 fn pinned_rows_are_hoisted_in_pin_order() {
     let pinned = |name: &str, rank: u64| WsRow {
         pinned: Some(rank),
-        ..wall(name)
+        ..workspace(name)
     };
-    let walls = vec![
-        wall("zed"),
+    let workspaces = vec![
+        workspace("zed"),
         pinned("second", 1),
-        wall("aardvark"),
+        workspace("aardvark"),
         pinned("first", 0),
     ];
-    let names: Vec<String> = ordered(&walls)
+    let names: Vec<String> = ordered(&workspaces)
         .into_iter()
         .map(|row| row.workspace)
         .collect();
@@ -60,7 +60,7 @@ fn pinned_rows_are_hoisted_in_pin_order() {
 
 /// **A row this seat holds no name for is painted, and painted as unreachable.**
 /// Dropping it would hide a workspace the operator has; addressing it by the
-/// entry's leaf would aim a gesture at a different wall.
+/// entry's leaf would aim a gesture at a different workspace.
 #[test]
 fn a_row_the_entry_does_not_name_is_shown_and_said_to_be_unreachable() {
     let mut model = Model {
@@ -70,7 +70,7 @@ fn a_row_the_entry_does_not_name_is_shown_and_said_to_be_unreachable() {
                 named_there: Some("personal".to_owned()),
                 dials: None,
             },
-            walls: vec![wall("personal"), wall("somebody-elses")],
+            workspaces: vec![workspace("personal"), workspace("somebody-elses")],
             ..Chunk::default()
         }],
         ..Model::default()
@@ -81,8 +81,8 @@ fn a_row_the_entry_does_not_name_is_shown_and_said_to_be_unreachable() {
     assert_eq!(
         super::track(&model),
         vec![
-            super::Step::Stand(crate::ui::Stand::Engine("home".to_owned())),
-            super::Step::Wall(Aim {
+            super::Step::Stand(crate::ui::Stand::Server("home".to_owned())),
+            super::Step::Workspace(Aim {
                 channel: "home".to_owned(),
                 address: "home".to_owned(),
             }),
@@ -96,10 +96,10 @@ fn a_row_the_entry_does_not_name_is_shown_and_said_to_be_unreachable() {
 }
 
 /// **Clicking a row aims the window at it**, and clears everything that was
-/// about the wall it left: a conversation list from another workspace standing
+/// about the workspace it left: a conversation list from another workspace standing
 /// under a new header is the worst kind of stale, because it reads as current.
 #[test]
-fn a_click_aims_the_window_and_drops_what_was_about_the_last_wall() {
+fn a_click_aims_the_window_and_drops_what_was_about_the_last_workspace() {
     let mut model = seated();
     model.aim = None;
     let window = Window::new();
@@ -109,11 +109,14 @@ fn a_click_aims_the_window_and_drops_what_was_about_the_last_wall() {
     assert_eq!(
         model.aim,
         Some(Aim {
-            channel: "(this box's own engine)".to_owned(),
+            channel: "(this box's own server)".to_owned(),
             address: "home".to_owned(),
         })
     );
-    assert!(model.convs.is_empty(), "the last wall's list went with it");
+    assert!(
+        model.convs.is_empty(),
+        "the last workspace's list went with it"
+    );
     assert_eq!(model.conversation, None);
     assert!(model.transcript.entries.is_empty());
 }
@@ -124,9 +127,9 @@ fn a_click_aims_the_window_and_drops_what_was_about_the_last_wall() {
 fn an_unknown_classification_is_painted_as_its_own_word() {
     let mut model = Model {
         roster: vec![Chunk {
-            walls: vec![WsRow {
+            workspaces: vec![WsRow {
                 kind: WorkspaceKind::Unknown("sealed".to_owned()),
-                ..wall("archive")
+                ..workspace("archive")
             }],
             ..own()
         }],

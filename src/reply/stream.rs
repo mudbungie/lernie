@@ -7,10 +7,10 @@
 //! > Absorb every frame of a read, in order, onto an empty fold. What you hold
 //! > after the last frame you have received is what you paint.
 //!
-//! [`Stream::absorb`] is that operation, and it is the engine's own — the two
+//! [`Stream::absorb`] is that operation, and it is the server's own — the two
 //! ends agree by contract (`fold(a).absorb(fold(b)) == fold(a ++ b)` on any
 //! line boundary) rather than by coincidence. A read starts holding nothing
-//! and the engine's reader opens at byte zero, so the FIRST frame of any read
+//! and the server's reader opens at byte zero, so the FIRST frame of any read
 //! is the whole tail so far: a seat that dropped a connection mid-answer
 //! re-asks and is whole on its first frame, with nothing to reconcile. The
 //! one-shot answer is the same rule with one frame in it.
@@ -43,7 +43,7 @@ pub mod window;
 use window::Window;
 
 /// This reply's kind token. One word for the query and the reply alike, on the
-/// engine's side; this end only ever reads it.
+/// server's side; this end only ever reads it.
 pub(crate) const KIND: &str = "follow";
 
 /// What one read of the tail says — every fact off one pass, so they cannot
@@ -68,7 +68,7 @@ pub struct Stream {
 
 impl Stream {
     /// **Absorb the fold of what landed after this one's** — the whole of the
-    /// §5.5 reassembly, and the engine's own operation (`Stream::absorb` in
+    /// §5.5 reassembly, and the server's own operation (`Stream::absorb` in
     /// yog's `src/git_tree/streaming.rs`) rather than a second reading of the
     /// same bytes. Text accretes in stream order and the newer delta kind wins
     /// where the later frame had one at all, which is exactly
@@ -136,9 +136,9 @@ fn append(slot: &mut Option<String>, more: Option<String>) {
 
 /// Which kind of content the last delta carried.
 ///
-/// **Rung 3, and this is a deliberate divergence from the engine's own
+/// **Rung 3, and this is a deliberate divergence from the server's own
 /// reader**, which refuses an unrecognised token here. The two readers are not
-/// doing the same job: the engine's decodes bytes the engine wrote, so a
+/// doing the same job: the server's decodes bytes the server wrote, so a
 /// mismatch there means its own codec has drifted and refusing is the
 /// diagnosis. This one is the last reader of somebody else's answer, and
 /// refusing would throw away an entire accumulated turn to avoid painting one

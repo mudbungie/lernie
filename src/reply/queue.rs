@@ -1,8 +1,8 @@
 //! **The decision queue** — one row per conversation asking for the operator,
-//! anywhere this engine can see (yog's `docs/REMOTE.md` §6, §9.10, §9.11;
+//! anywhere this server can see (yog's `docs/REMOTE.md` §6, §9.10, §9.11;
 //! PROTOCOL 3 and 4; bl-f0ef).
 //!
-//! It is the engine's *what needs you*: a flattened roster across every
+//! It is the server's *what needs you*: a flattened roster across every
 //! enumerated workspace, filtered to the rows that are asking. `attention` asks
 //! for the whole of it, and `seen` answers with [`Acknowledged`] (PROTOCOL 12,
 //! bl-6802) — the item acted on **and the queue that remains**, re-derived after
@@ -48,7 +48,7 @@ pub(crate) const KIND: &str = "attention";
 pub(crate) const ACKNOWLEDGED: &str = "acknowledged";
 
 /// **`seen`'s receipt**: the conversation acted on, addressed as its host
-/// names it, and the whole queue that remains on that engine after the write.
+/// names it, and the whole queue that remains on that server after the write.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Acknowledged {
     pub workspace: String,
@@ -77,7 +77,7 @@ pub struct QueueRow {
     pub display: String,
     /// The badge state, on the conversation list's own vocabulary.
     pub state: AgentState,
-    /// Whether the engine could observe that state at all.
+    /// Whether the server could observe that state at all.
     pub uncertain: bool,
     /// The row's first-line preview.
     pub preview: String,
@@ -86,14 +86,14 @@ pub struct QueueRow {
     pub age_secs: i64,
     /// How many conversations under it are also asking.
     pub pending: u64,
-    /// **Why it is asking**, in the engine's own open vocabulary — rung 3, so
+    /// **Why it is asking**, in the server's own open vocabulary — rung 3, so
     /// a word this build does not know paints as itself.
     pub signals: Vec<String>,
-    /// **Why it is asking, in the engine's own sentence** (PROTOCOL 12,
+    /// **Why it is asking, in the server's own sentence** (PROTOCOL 12,
     /// bl-5507) — the signals read out with their remedy, e.g. *was cut off at
     /// its output cap — nothing was committed; raise the role's
     /// max_output_tokens…*. A missing key and an empty string are both `None`:
-    /// an engine that wrote no sentence has said nothing, and the signal words
+    /// a server that wrote no sentence has said nothing, and the signal words
     /// stand in ([`QueueRow::why`]).
     pub says: Option<String>,
     /// Why its latest model call failed, in one clause (§9.10).
@@ -126,12 +126,12 @@ pub struct Held {
     pub reason: String,
     /// **The scope words an answer may take for this hold** (yog bl-0da6;
     /// bl-da16), in the wire's own order — `call` alone for a secret or
-    /// destructive call, which the engine answers for the call in front of
+    /// destructive call, which the server answers for the call in front of
     /// the operator and never for a class of calls to come, all three
     /// otherwise. It rides the row because the classification does: a seat
     /// that read the permitted reach out of `reason`'s prose would be
-    /// re-deriving at this end what the engine already decided. **Empty is
-    /// *the engine did not say*** — an older engine wrote no such key — and
+    /// re-deriving at this end what the server already decided. **Empty is
+    /// *the server did not say*** — an older server wrote no such key — and
     /// the seat then offers every reach it knows and lets the refusal land on
     /// the rule, as it did before the key existed.
     pub scopes: Vec<String>,
@@ -139,7 +139,7 @@ pub struct Held {
 
 impl QueueRow {
     /// **Why it is asking, as one line** — the one place that choice is made,
-    /// for every surface that paints a row: the engine's own sentence where it
+    /// for every surface that paints a row: the server's own sentence where it
     /// wrote one, the raw signal words joined by `sep` only where it did not,
     /// and none where it named nothing.
     pub fn why(&self, sep: &str) -> Option<String> {

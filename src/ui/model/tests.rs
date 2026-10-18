@@ -4,28 +4,31 @@
 use super::{Channel, Chunk, Model, Notice};
 use crate::reply::roster::Workspaces;
 use crate::reply::{Read, Reply, read};
-use crate::test_support::window::{own, wall};
+use crate::test_support::window::{own, workspace};
 use serde_json::json;
 
 /// **The three addressing cases, and the third is a real one.** This box's own
-/// engine rewrites nothing; an entry resolves by its leaf and by nothing else;
-/// and an entry's engine may answer a row the entry does not name, which no
+/// server rewrites nothing; an entry resolves by its leaf and by nothing else;
+/// and an entry's server may answer a row the entry does not name, which no
 /// envelope this seat can write will reach.
 #[test]
 fn a_channel_says_what_a_gesture_must_carry_or_that_it_cannot_say() {
     let flat = Channel {
-        name: "(this box's own engine)".to_owned(),
+        name: "(this box's own server)".to_owned(),
         named_there: None,
         dials: None,
     };
-    assert_eq!(flat.address(&wall("home")), Some("home".to_owned()));
+    assert_eq!(flat.address(&workspace("home")), Some("home".to_owned()));
     let entry = Channel {
         name: "home".to_owned(),
         named_there: Some("personal".to_owned()),
         dials: None,
     };
-    assert_eq!(entry.address(&wall("personal")), Some("home".to_owned()));
-    assert_eq!(entry.address(&wall("somebody-elses")), None);
+    assert_eq!(
+        entry.address(&workspace("personal")),
+        Some("home".to_owned())
+    );
+    assert_eq!(entry.address(&workspace("somebody-elses")), None);
 }
 
 /// **Nothing that arrives is dropped.** An answer is filed; a refusal and an
@@ -63,7 +66,7 @@ fn every_frame_becomes_content_or_a_visible_notice() {
 }
 
 /// A roster answer replaces **its own channel's** rows and leaves every other
-/// channel standing — a box serving three engines does not lose the two that
+/// channel standing — a box serving three servers does not lose the two that
 /// are fine.
 #[test]
 fn a_roster_answer_replaces_one_channel_and_leaves_the_others() {
@@ -79,7 +82,7 @@ fn a_roster_answer_replaces_one_channel_and_leaves_the_others() {
     model.absorb(
         &other,
         Read::Answer(Reply::Workspaces(Workspaces {
-            rows: vec![wall("theirs")],
+            rows: vec![workspace("theirs")],
             stale: Some("4m behind".to_owned()),
             growth: None,
         })),
@@ -93,7 +96,7 @@ fn a_roster_answer_replaces_one_channel_and_leaves_the_others() {
         Read::Answer(Reply::Workspaces(Workspaces::default())),
     );
     assert_eq!(model.roster.len(), 2);
-    assert!(model.roster[1].walls.is_empty());
+    assert!(model.roster[1].workspaces.is_empty());
     assert_eq!(model.roster[1].stale, None);
 }
 
@@ -132,7 +135,7 @@ fn each_kind_lands_in_the_pane_that_paints_it() {
 #[test]
 fn a_channel_can_be_held_before_it_has_answered() {
     let held = Chunk::of(own().channel);
-    assert!(held.walls.is_empty());
+    assert!(held.workspaces.is_empty());
     assert_eq!(held.stale, None);
 }
 
@@ -142,7 +145,7 @@ fn a_channel_can_be_held_before_it_has_answered() {
 ///
 /// The two halves that matter are asserted here rather than in the sentence:
 /// an answer says whether the conversation is running again, and a floor says
-/// whether one **stands** — which is the engine's re-derivation, so a
+/// whether one **stands** — which is the server's re-derivation, so a
 /// `restore` under a still-floored ancestor reads as still floored.
 #[test]
 fn the_boundary_s_two_receipts_become_the_bar_s_one_line() {
@@ -194,7 +197,7 @@ fn the_boundary_s_two_receipts_become_the_bar_s_one_line() {
 /// optional identity is a FACT rather than a blank: no commit means the
 /// delivery landed nothing, no source ref means there was none, and whether a
 /// retirement also took the ref is the project's own declared retention — the
-/// engine's answer, never this seat's prediction (§4.36).
+/// server's answer, never this seat's prediction (§4.36).
 #[test]
 fn the_candidate_family_s_two_receipts_become_the_bar_s_one_line() {
     let mut model = Model::default();

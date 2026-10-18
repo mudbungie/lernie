@@ -5,7 +5,7 @@ use serde_json::{Map, Value, json};
 use super::{Enrolled, MARKER, VERSION, enrolled};
 use crate::reply::{Read, Reply, read};
 
-/// A whole answer, as the engine writes one.
+/// A whole answer, as the server writes one.
 fn frame() -> Value {
     json!({
         "ok": true,
@@ -135,5 +135,5 @@ fn the_caption_names_the_box_and_never_the_material() {
     }
 }
 
-/// The rendezvous pair, against the engine's own fixture.
+/// The rendezvous pair, against the server's own fixture.
 mod rendezvous;

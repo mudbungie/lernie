@@ -19,7 +19,7 @@ use crate::test_support::wire::{flat, wired};
 #[test]
 fn a_deposit_not_yet_taken_holds_the_watch_instead_of_ending_it() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![
@@ -50,7 +50,7 @@ fn a_deposit_not_yet_taken_holds_the_watch_instead_of_ending_it() {
     assert!(line.contains("at rest (stopped)"), "{line}");
     assert!(line.contains("Ctrl-C"), "{line}");
     assert!(line.starts_with("┊ "), "the seat's own narration: {line}");
-    assert_eq!(asked(&engine).len(), 7, "{:?}", asked(&engine));
+    assert_eq!(asked(&server).len(), 7, "{:?}", asked(&server));
 }
 
 /// **An inbox this seat could not READ is no mail.** Every way the probe can
@@ -60,17 +60,17 @@ fn a_deposit_not_yet_taken_holds_the_watch_instead_of_ending_it() {
 #[test]
 fn an_inbox_that_cannot_be_read_ends_the_watch_on_the_state() {
     for answer in [
-        crate::test_support::engine::Answer::Frames(vec![
+        crate::test_support::server::Answer::Frames(vec![
             json!({"ok": false, "error": "no such conversation"}),
         ]),
-        crate::test_support::engine::Answer::Hangup,
+        crate::test_support::server::Answer::Hangup,
     ] {
         let scratch = Scratch::new();
         wired(
             &scratch,
             &flat(),
             vec![
-                crate::test_support::engine::Answer::Frames(vec![agent("quiescent")]),
+                crate::test_support::server::Answer::Frames(vec![agent("quiescent")]),
                 answer,
             ],
         );
@@ -194,10 +194,10 @@ fn a_held_conversation_ends_the_watch_naming_the_call_and_the_answer() {
 #[test]
 fn a_park_ends_the_watch_without_asking_what_is_waiting() {
     let scratch = Scratch::new();
-    let engine = wired(&scratch, &flat(), vec![vec![holding()]]);
+    let server = wired(&scratch, &flat(), vec![vec![holding()]]);
     let (verdict, _) = watched(&scratch);
     assert_eq!(verdict.code, 0, "{}", verdict.text);
-    let ops: Vec<String> = asked(&engine)
+    let ops: Vec<String> = asked(&server)
         .iter()
         .map(|frame| frame["op"].as_str().unwrap_or_default().to_owned())
         .collect();

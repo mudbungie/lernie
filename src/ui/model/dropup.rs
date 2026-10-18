@@ -2,15 +2,15 @@
 //! the rule is open, where its cursor stands, and whether the read it posted
 //! has been answered.
 //!
-//! A selector opens on what this seat already holds — the roster's walls,
+//! A selector opens on what this seat already holds — the roster's workspaces,
 //! the providers read, one provider's models, the provider row's levels —
 //! and posts the read that refreshes that list in the same gesture. The list
-//! is the engine's answer and lives where every answer lives; what is held
+//! is the server's answer and lives where every answer lives; what is held
 //! here is only the question of whether the refresh has come back, because
 //! that is what the mark on the segment says.
 //!
 //! **A pick is the door the role tuning fires for the worker role**, or the
-//! switcher's own aim for a wall — never a second spelling of either.
+//! switcher's own aim for a workspace — never a second spelling of either.
 
 use super::{Aim, Model, Posted};
 use crate::reply::Reply;
@@ -34,7 +34,7 @@ pub enum Selector {
 pub enum Reload {
     /// Posted, and nothing has come back.
     Asked,
-    /// The answer landed; the list is the engine's latest.
+    /// The answer landed; the list is the server's latest.
     Landed,
 }
 
@@ -54,7 +54,7 @@ pub struct Dropup {
 /// **What picking a row does.**
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Pick {
-    Wall(Aim),
+    Workspace(Aim),
     /// `+ new workspace` on the named channel (bl-673e; DESIGN §4.44).
     Found(String),
     Provider(String),
@@ -177,8 +177,8 @@ impl Model {
         };
         let asked = self.dropup.take().and_then(|open| open.provider);
         match choice.pick {
-            Pick::Wall(aim) => {
-                self.engines.opening(&aim.channel);
+            Pick::Workspace(aim) => {
+                self.servers.opening(&aim.channel);
                 self.aim_at(&aim.channel, &aim.address);
             }
             Pick::Found(channel) => self.begin_founding(&channel),

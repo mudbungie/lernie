@@ -16,7 +16,7 @@
 //! build has no word for, which is [`super`]'s rung 3: an unknown *kind* here
 //! refuses nothing, because the listing beside it is entirely readable, and
 //! the word paints as itself. What this seat *composes* is the bare read only
-//! (`crate::verbs::records`), so a live preview arrives only from an engine
+//! (`crate::verbs::records`), so a live preview arrives only from a server
 //! answering somebody else's gesture — and is painted rather than dropped,
 //! because an answer that arrived is an answer.
 
@@ -57,7 +57,7 @@ pub struct FileRow {
     pub dir: bool,
 }
 
-/// A bounded preview — the engine's three classes, and the rung-3 arm for a
+/// A bounded preview — the server's three classes, and the rung-3 arm for a
 /// fourth this build has no word for.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Preview {

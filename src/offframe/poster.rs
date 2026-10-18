@@ -41,7 +41,7 @@
 //! entries and falls through to the flat root when there is none — which is
 //! right for `lernie ask`, where the operator named one channel by hand, and
 //! wrong for a frame. A window that composed `workspaces` would have asked
-//! this box's own engine and said nothing about the rest, which is bl-0d54's
+//! this box's own server and said nothing about the rest, which is bl-0d54's
 //! defect one surface over.
 //!
 //! So the poster asks the envelope instead: a gesture with no workspace field
@@ -53,13 +53,13 @@
 //!
 //! **Addressing it to none is what a window-level READ means, and it was never
 //! what every workspace-less gesture means** (bl-4855). `config` on one
-//! engine's own `cadence.yaml` names no workspace and is not about every
-//! engine; fanning it would write the operator's text onto every engine this
+//! server's own `cadence.yaml` names no workspace and is not about every
+//! server; fanning it would write the operator's text onto every server this
 //! box is a client of. So the fan is [`legs`]'s empty-input case rather than
 //! its rule, and the composer states the address the way the read half already
 //! does — the pane's file read is asked down the aimed channel by name
-//! (`crate::offframe::asker::wall`), and its write is composed the same way. That is what lets a frame reach the three window-level reads
-//! at all — the roster refresh, the engines' own verb table and a search —
+//! (`crate::offframe::asker::workspace`), and its write is composed the same way. That is what lets a frame reach the three window-level reads
+//! at all — the roster refresh, the servers' own verb table and a search —
 //! and it is why each answer is stamped with the channel it came down rather
 //! than with the aim — which is now true of the routed path as well
 //! ([`routed`], bl-c70d): the aim is not read on this pass at all.
@@ -75,7 +75,7 @@ use crate::ui::Posted;
 /// **A fanned gesture is stamped by its leg** and a routed one by
 /// [`crate::seat::route`], which is the one place the channel is chosen; the
 /// aim is read for neither. An aim is where a gesture was *composed*, and an
-/// operator may compose one aimed at a wall on one channel while a control
+/// operator may compose one aimed at a workspace on one channel while a control
 /// fires at a row on another — so a receipt stamped with the aim is filed under
 /// a channel the gesture never went down, and a gesture composed with no aim
 /// earned a stamp naming nothing at all (bl-c70d).

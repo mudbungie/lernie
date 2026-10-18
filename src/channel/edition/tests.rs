@@ -64,7 +64,7 @@ fn the_floor_and_the_edition_are_read_back_out_of_the_corpus() {
 
 /// **The ledger holds exactly the post-floor paths**, both directions. A path
 /// the corpus stamps above the floor and this list does not carry would be
-/// painted as though every engine could spell it; a row the corpus does not
+/// painted as though every server could spell it; a row the corpus does not
 /// stamp would grey a control over a field that is required.
 #[test]
 fn the_ledger_holds_exactly_what_the_corpus_stamps_above_the_floor() {
@@ -100,7 +100,7 @@ fn the_deprecation_list_is_the_corpus_own() {
     );
 }
 
-/// **A path at or below the floor is required, so every engine of this major
+/// **A path at or below the floor is required, so every server of this major
 /// spells it.** That is the whole reason the ledger only carries what is above:
 /// there is nothing to discover below it.
 #[test]
@@ -109,12 +109,12 @@ fn a_path_the_ledger_does_not_carry_reads_as_the_floor() {
     assert!(spells(FLOOR, "reply/workspaces", "/rows/[]/name"));
 }
 
-/// **A post-floor path is spelled by a newer engine and not by an older one**,
+/// **A post-floor path is spelled by a newer server and not by an older one**,
 /// which is the one question this module exists to answer. Asked against a
 /// ledger the test states, because at the cut the vendored one is empty and an
 /// arm nothing has run is an arm nobody has evidence about.
 #[test]
-fn a_post_floor_path_is_greyed_by_an_engine_that_cannot_spell_it() {
+fn a_post_floor_path_is_greyed_by_an_server_that_cannot_spell_it() {
     let grown: &[(&str, &str, u32)] = &[("reply/follow", "/rows/[]/parked", FLOOR + 2)];
     assert_eq!(stamp(grown, "reply/follow", "/rows/[]/parked"), FLOOR + 2);
     assert!(!spells_at(grown, FLOOR, "reply/follow", "/rows/[]/parked"));
@@ -130,7 +130,7 @@ fn a_post_floor_path_is_greyed_by_an_engine_that_cannot_spell_it() {
         "reply/follow",
         "/rows/[]/parked"
     ));
-    // A path the same engine has always had is spelled at any edition, and a
+    // A path the same server has always had is spelled at any edition, and a
     // shape that is not this one is a different question with the same key.
     assert!(spells_at(grown, FLOOR, "reply/follow", "/rows/[]/says"));
     assert!(spells_at(grown, FLOOR, "reply/steps", "/rows/[]/parked"));

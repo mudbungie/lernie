@@ -158,9 +158,9 @@ run_case 'ahead of the registry on a version it never published -> leaves the lo
 run_case 'newest yanked -> rolls the box back a version' \
     tip_yanked 0.1.5 rolled_back_to_4
 # The era fence. With every seat release yanked the newest live version is the
-# agent-loop engine's, and installing it would replace the operator's window
+# agent loop's, and installing it would replace the operator's window
 # with a different program that happens to share its name.
-run_case 'every seat release yanked -> refuses the engine-era version' \
+run_case 'every seat release yanked -> refuses the litany-era version' \
     seat_gone 0.1.5 refused_fence
 run_case 'nothing live at all -> refuses, installs nothing' \
     all_yanked 0.1.5 refused_empty

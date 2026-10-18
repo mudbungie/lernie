@@ -6,16 +6,16 @@
 # THE TAG SPELLING, chosen rather than inherited. `v0.1.0` — bare, no crate
 # prefix.
 #
-# The sibling engine crate tags `litany-v{version}`, and copying that here would
+# The sibling litany crate tags `litany-v{version}`, and copying that here would
 # be cargo-culting the answer to a question this repository does not have. That
-# prefix exists because the engine's repository holds BOTH eras of the name in
-# ONE history: the `v0.0.1`..`v0.0.11` tags of the `lernie`-era engine are
+# prefix exists because litany's repository holds BOTH eras of the name in
+# ONE history: the `v0.0.1`..`v0.0.11` tags of the `lernie`-era agent loop are
 # already in it, so a bare `v0.0.12` would have been ambiguous and a bare
-# `v0.1.0` would have read as the next engine release.
+# `v0.1.0` would have read as the next litany release.
 #
 # This repository was founded fresh for the seat. It has no tags at all, it will
-# never carry an engine commit, and it holds exactly one crate — so `v<version>`
-# names one thing here and always will. The engine-era `lernie` tags are in the
+# never carry an litany commit, and it holds exactly one crate — so `v<version>`
+# names one thing here and always will. The litany-era `lernie` tags are in the
 # OTHER repository's history, where they stay; nothing this tree pushes can
 # collide with them. One crate, one line of tags, the plainest spelling that is
 # unambiguous.
@@ -40,9 +40,9 @@ git_tag_name = "v{{ version }}"
 changelog_update = false
 
 # NO SEMVER CHECK, because there is nothing coherent to check against. This
-# crate's published line is `0.0.0`..`0.0.11` — the agent-loop ENGINE, a
+# crate's published line is `0.0.0`..`0.0.11` — the agent loop, a
 # different program that happened to hold this name first (DESIGN §0, the
-# fence). Comparing the seat's API surface against the engine's would compare
+# fence). Comparing the seat's API surface against litany's would compare
 # two unrelated crates and report a wall of breaking changes that mean nothing.
 # The version rule the fence states is what separates the eras, and a test
 # enforces it (`src/cli/tests.rs`); an API diff across it is noise.

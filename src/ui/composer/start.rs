@@ -1,7 +1,7 @@
 //! **The start half of the composer**: where a conversation is begun.
 //!
 //! It is a **mode of the composer and not a pane beside it**, and that is this
-//! ball's one layout decision. A wall with no conversation selected already had
+//! ball's one layout decision. A workspace with no conversation selected already had
 //! a box that refused — *pick a workspace and a conversation to say anything* —
 //! and that refusal was the start's own case wearing a sentence: there is
 //! nothing to say to, so the thing to do is begin one. A second box would be
@@ -12,9 +12,9 @@
 //! So the composer is one control with two subjects, decided by what is
 //! selected and by nothing else:
 //!
-//! - no wall aimed at → nothing to say and nothing to begin;
-//! - a wall, no conversation → **this**, the start;
-//! - a wall and a conversation → the deposit.
+//! - no workspace aimed at → nothing to say and nothing to begin;
+//! - a workspace, no conversation → **this**, the start;
+//! - a workspace and a conversation → the deposit.
 //!
 //! **A start in flight paints its sentence instead of the box**, which is how a
 //! second start is refused: not by a disarmed control, but by there being no
@@ -41,22 +41,22 @@
 
 use crate::ui::{Aim, Fill, Model};
 
-/// **What the box asks for, naming the wall the Enter begins on** (§4.42
+/// **What the box asks for, naming the workspace the Enter begins on** (§4.42
 /// item 3; bl-9031). A start's goal is what the conversation is *for*, which
 /// is a different question from what to say to one that exists; and with two
-/// walls on one engine the box is the one place the operator is looking when
+/// workspaces on one server the box is the one place the operator is looking when
 /// the Enter decides where the conversation lands. While `/plan` has said the
 /// next start is a plan, the hint's tail says so instead.
-pub fn goal(wall: &str, plan: bool) -> String {
+pub fn goal(workspace: &str, plan: bool) -> String {
     let tail = if plan {
         "begun as a plan"
     } else {
         "Enter begins it"
     };
-    format!("what this conversation on {wall} is for — {tail}")
+    format!("what this conversation on {workspace} is for — {tail}")
 }
 
-/// **What the box says on a wall whose worker reaches no model yet**
+/// **What the box says on a workspace whose worker reaches no model yet**
 /// (bl-7a77): the worker role's provider row holds no credential, so a goal
 /// typed now would be refused — the hint names the two doors and the pick
 /// before the operator types one. It stands in the goal's place, not after
@@ -66,7 +66,7 @@ pub const UNSIGNED: &str = "no provider yet — /login or /config, then pick one
 pub const START_HELP: &str =
     "the first message of a new conversation on this workspace; Enter begins it";
 
-/// **Whether the aimed wall's worker reaches no model yet**: its provider's
+/// **Whether the aimed workspace's worker reaches no model yet**: its provider's
 /// row in the provider table is bare (`ProviderRow::bare`). Both reads stand
 /// on the aim; where either has not answered, nothing is claimed.
 pub fn unsigned(model: &Model) -> bool {
@@ -81,7 +81,7 @@ pub fn unsigned(model: &Model) -> bool {
 }
 
 /// **The start's own sentence, with the doors it names** (bl-7a77): a
-/// refused start says the engine's remedy — *sign in first … /config
+/// refused start says the server's remedy — *sign in first … /config
 /// brazen* — and each menu row it names stands after it as a link in the
 /// brand that fires that row, as the notice's doors do on the rule.
 fn said(ui: &mut egui::Ui, model: &mut Model, line: &str) {
@@ -128,7 +128,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
     //
     // **Both halves of the start ride this one control** (`crate::ui::act`):
     // the click composes `prepare`, and the `prompt` that finishes it is fired
-    // by the frame when the engine's reply lands (`crate::ui::model::start`),
+    // by the frame when the server's reply lands (`crate::ui::model::start`),
     // from no widget at all. A walk over the accessibility tree can only ever
     // see the control that begins the pair, so both tokens ride it.
     let slashed = crate::ui::slash::parsed(&model.draft).is_some();
@@ -150,7 +150,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
         START_HELP,
     );
     crate::ui::act::tag(&entry, &[crate::verbs::PREPARE, crate::verbs::PROMPT]);
-    // **The `+` on an engine's row lands the caret here** (§4.39): the control
+    // **The `+` on a server's row lands the caret here** (§4.39): the control
     // is on the other column and the box is this one, so what crosses between
     // them is a request the frame that paints the box answers.
     if wanted {

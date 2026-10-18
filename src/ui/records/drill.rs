@@ -8,10 +8,10 @@
 //!
 //! # Bytes, not trees
 //!
-//! Every record is painted as the bytes the engine read, monospaced. That is
+//! Every record is painted as the bytes the server read, monospaced. That is
 //! the whole promise of the drill-in: a parsed tree loses key order, spacing
 //! and number spelling, so a rendering of one could not answer *what does the
-//! file say*. The engine's own note above an unparseable record is repeated
+//! file say*. The server's own note above an unparseable record is repeated
 //! rather than reworded, for the reason every sentence in this pane is.
 //!
 //! # A record that is not there is a sentence, and it is not an empty one
@@ -30,7 +30,7 @@ pub const OPEN: &str = "records…";
 /// The word that puts them away.
 pub const CLOSE: &str = "hide";
 /// What the door does, either way.
-pub const OPEN_HELP: &str = "reads this step's bytes, events and tool calls off the engine";
+pub const OPEN_HELP: &str = "reads this step's bytes, events and tool calls off the server";
 pub const CLOSE_HELP: &str = "folds this step's records away";
 /// Said in place of a record with no bytes.
 pub const NO_BYTES: &str = "no bytes — missing, unreadable, or empty";
@@ -121,7 +121,7 @@ fn record(ui: &mut egui::Ui, head: &str, doc: &Doc) {
 }
 
 /// **The line a tool call wears**: which call it was, and whether it ended in
-/// error — the engine's own fold of the exit code, never re-derived.
+/// error — the server's own fold of the exit code, never re-derived.
 pub fn headline(call: &ToolCall) -> String {
     if call.is_error {
         return format!("{} — {ERRORED}", call.tool_id);
@@ -129,7 +129,7 @@ pub fn headline(call: &ToolCall) -> String {
     call.tool_id.clone()
 }
 
-/// The engine's own framing above a record it could not parse, or the seat's
+/// The server's own framing above a record it could not parse, or the seat's
 /// sentence for a class it has no reading of. `None` for a record that parsed,
 /// which needs no sentence at all.
 pub fn framing(doc: &Doc) -> Option<String> {

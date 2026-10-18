@@ -1,4 +1,4 @@
-//! **One wall's row**, the band of per-wall controls that hangs off the aimed
+//! **One workspace's row**, the band of per-workspace controls that hangs off the aimed
 //! one ([`controls`]), and the conversations that stand beneath it.
 //!
 //! Split from [`super`] at the design-time budget on the seam that module's own
@@ -6,7 +6,7 @@
 //! *the ops whose subject is every channel*, and this is *one workspace* — the
 //! line it wears, whether this seat can address it at all, and what an operator
 //! can do to it once it is aimed at. The first changes when a section grows a
-//! sentence; this one when a wall-level op lands a control.
+//! sentence; this one when a workspace-level op lands a control.
 
 use crate::reply::roster::WsRow;
 use crate::ui::{Aim, Model, convs, theme};
@@ -14,7 +14,7 @@ use crate::ui::{Aim, Model, convs, theme};
 /// **What a row this seat cannot address says instead of being hidden.**
 ///
 /// Dropping it would hide a workspace the operator has; addressing it by the
-/// entry's leaf would aim a gesture at a different wall. So it is painted, and
+/// entry's leaf would aim a gesture at a different workspace. So it is painted, and
 /// painted as what it is.
 ///
 /// The wording states the FACT rather than a verdict (bl-77df). It used to read
@@ -26,7 +26,7 @@ use crate::ui::{Aim, Model, convs, theme};
 pub const NO_NAME_HERE: &str =
     "this box has no connection set up for it, so nothing here can reach it";
 
-/// **The word on the control that floats this wall to the front of the strip**,
+/// **The word on the control that floats this workspace to the front of the strip**,
 /// offered on an aimed row that is not pinned.
 pub const PIN: &str = "pin";
 /// **And the one that takes it back out**, offered where it is pinned. Two
@@ -34,12 +34,12 @@ pub const PIN: &str = "pin";
 /// control names the act it fires (`crate::verbs::workspace`).
 pub const UNPIN: &str = "unpin";
 
-/// **The row that begins a conversation on this wall** (§4.42 item 7, §4.39's
-/// `+` moved under the wall it begins on). A glyph and a word: `+` alone at
-/// the far edge of the engine's row was the one control a first-time operator
+/// **The row that begins a conversation on this workspace** (§4.42 item 7, §4.39's
+/// `+` moved under the workspace it begins on). A glyph and a word: `+` alone at
+/// the far edge of the server's row was the one control a first-time operator
 /// did not find.
 pub const NEW: &str = "+ new";
-/// What a wall's row does, what `+ new` does, and what a nameless wall is.
+/// What a workspace's row does, what `+ new` does, and what a nameless workspace is.
 pub const AIM_HELP: &str =
     "aims the window at this workspace: its conversations, its settings, its providers";
 pub const NEW_HELP: &str =
@@ -47,14 +47,14 @@ pub const NEW_HELP: &str =
 pub const NO_NAME_HELP: &str =
     "a workspace this box has no name for, so nothing here can aim at it";
 
-/// One wall: selectable when this seat can address it, a plain line when it
+/// One workspace: selectable when this seat can address it, a plain line when it
 /// cannot.
 ///
-/// **The eight per-wall controls hang off the aimed row and off no other**,
+/// **The eight per-workspace controls hang off the aimed row and off no other**,
 /// because
 /// an enrollment mints the pair `(client, workspace)` and the workspace is
 /// exactly what an aim is. Offering it on every row would be offering it before
-/// the operator had said which wall — and the answer to that question is
+/// the operator had said which workspace — and the answer to that question is
 /// already on the screen, once.
 pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: Option<Aim>, row: &WsRow, reveal: bool) {
     let Some(aim) = aim else {
@@ -86,15 +86,15 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: Option<Aim>, row: &WsRo
         None
     };
     let seat = theme::paint::row(ui, &line(row), theme::INK, state, aimed, 0.0, AIM_HELP);
-    // **`+ new` stands last under every wall**, under the conversations where
-    // the wall is aimed and straight under its row where it is not — read
-    // after the wall's own click, so the begin is where a frame that fired
+    // **`+ new` stands last under every workspace**, under the conversations where
+    // the workspace is aimed and straight under its row where it is not — read
+    // after the workspace's own click, so the begin is where a frame that fired
     // both ends (`begin`).
     let offer = |ui: &mut egui::Ui, model: &mut Model| begin(ui, model, &aim, reveal);
     // **The read this gesture reaches**, not the one that painted the row
     // (yog's `docs/PARITY.md` §2: the interactable a query owes a seat is the
-    // affordance that reaches the view it populates). Aiming at a wall is what
-    // makes this seat read that wall's conversations.
+    // affordance that reaches the view it populates). Aiming at a workspace is what
+    // makes this seat read that workspace's conversations.
     crate::ui::act::tag(&seat, &[crate::verbs::CONVERSATIONS.word]);
     if aimed && reveal {
         seat.scroll_to_me(None);
@@ -106,21 +106,21 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: Option<Aim>, row: &WsRo
         offer(ui, model);
         return;
     }
-    // **All eight per-wall controls hang off the aimed row and off no other**,
+    // **All eight per-workspace controls hang off the aimed row and off no other**,
     // and all eight stand down while a pane already covers the conversation:
     // what they open would replace what is standing there, so offering them is
     // offering to lose it without saying so.
     //
     // **They are ONE compact strip under the row, indented, in the order the
     // ledger reads them** (`docs/STYLE.md` §2, DESIGN §4.20): the acts on the
-    // wall as an object, a short verb apiece, wrapping at the column's width,
+    // workspace as an object, a short verb apiece, wrapping at the column's width,
     // with the destructive one last (bl-f251). A column of eight full-width
     // controls under a row would read as eight more rows.
-    // **And under the strip, this wall's conversations** (DESIGN §4.39): the
+    // **And under the strip, this workspace's conversations** (DESIGN §4.39): the
     // rows the middle column used to paint, standing where the operator's own
-    // sentence put them. They hang off the AIMED wall and off no other,
-    // because the standing read set asks about one wall (§4.12) and a seat
-    // that painted rows under a wall nobody has asked about would be painting
+    // sentence put them. They hang off the AIMED workspace and off no other,
+    // because the standing read set asks about one workspace (§4.12) and a seat
+    // that painted rows under a workspace nobody has asked about would be painting
     // an emptiness it has no evidence for. Unlike the controls they stand
     // under a covering pane: a covering pane replaces the CONVERSATION, and
     // the list beside it goes on being the list.
@@ -128,10 +128,10 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: Option<Aim>, row: &WsRo
     offer(ui, model);
 }
 
-/// **`+ new`**: aim the wall, clear the selection, ask for the caret in the
+/// **`+ new`**: aim the workspace, clear the selection, ask for the caret in the
 /// start, and close the switcher on the way (`Model::begin_at`).
 ///
-/// **It stands down while a pane covers the conversation** — the per-wall
+/// **It stands down while a pane covers the conversation** — the per-workspace
 /// controls' own rule: what it does is put the caret in the composer's box,
 /// and the composer stands down under every covering pane but the switcher.
 fn begin(ui: &mut egui::Ui, model: &mut Model, aim: &crate::ui::Aim, reveal: bool) {
@@ -169,7 +169,7 @@ pub(super) fn standing_row(
     seat.clicked()
 }
 
-/// One wall's line: what it is called, then the state it is in, then the
+/// One workspace's line: what it is called, then the state it is in, then the
 /// facts that never change what the operator does next.
 ///
 /// **The order is what survives the cut** (bl-cecd). The row is one run elided
@@ -181,8 +181,8 @@ pub(super) fn standing_row(
 /// are stated only when they are non-zero — a roster of `0 waiting` on every
 /// row teaches nothing and costs the one that says `3`.
 ///
-/// **The ledger column** (REMOTE §9.23, DESIGN §4.41) is what the wall has
-/// cost, whole, where the engine priced it — after the state and before the
+/// **The ledger column** (REMOTE §9.23, DESIGN §4.41) is what the workspace has
+/// cost, whole, where the server priced it — after the state and before the
 /// weak facts, because money is what an operator scans a roster for second.
 pub fn line(row: &WsRow) -> String {
     let mut said = vec![row.workspace.clone()];

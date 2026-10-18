@@ -40,7 +40,7 @@
 # all nine of the family's ops are gone from this ledger: `balls`, `board`,
 # `workspace-balls` and `marks` are painted, `assign` hangs on a board row, and
 # `create`, `update`, `release` and `close` hang in the authoring block the
-# aimed wall's section opens (`crate::ui::board::acts`, DESIGN §4.35). None of
+# aimed workspace's section opens (`crate::ui::board::acts`, DESIGN §4.35). None of
 # the five acts is fanned — each is addressed down the channel its row came
 # down — which was the question bl-f7ae existed to settle. What the two balls
 # did NOT surface is per-form rather than per-op, so it is recorded by count
@@ -53,7 +53,7 @@
 # both rows are gone from here.
 
 # bl-a43a landed the fleet pane — `fleet`, `disband`, `arm`, `disarm`, `scan`,
-# `science` and `work-diff` all carry a control on the aimed wall
+# `science` and `work-diff` all carry a control on the aimed workspace
 # (`src/ui/fleet.rs`, DESIGN §4.32), so all seven rows are gone from here. What
 # it did NOT surface is the `work-diff` form that names a ball and a path and
 # answers that one file's patch; that is one op with one control, so this
@@ -95,7 +95,7 @@
 # `model` all carry controls on `src/ui/tuning.rs` and are gone from this
 # ledger. What it did not build is the config FILE itself, and bl-5c53 built
 # the read half of that: `config` and `lineages` both carry controls on
-# `src/ui/config.rs` and `src/ui/roster/wall.rs` and are gone from here too.
+# `src/ui/config.rs` and `src/ui/roster/workspace.rs` and are gone from here too.
 #
 # THE WRITE IS BUILT TOO, AND THIS LEDGER NEVER COULD HAVE SAID SO EITHER WAY.
 # It is per-op, and `config` is one op that is a read or a write depending on
@@ -115,7 +115,7 @@
 # inside `src/ui/find.rs`; all three are gone from this ledger.
 #
 # What it did NOT close is upstream's and is not a missing surface here: a
-# `search` hit spells its workspace and its project as the ENGINE's own
+# `search` hit spells its workspace and its project as the SERVER's own
 # absolute path rather than as the name every gesture carries, so a hit cannot
 # be fed to the act whose keys it spells (yog bl-ef16, the recurrence of yog
 # bl-22ab). The rows are read and the reason is on the glass; there is no line
@@ -152,7 +152,7 @@
 # carried after the panes above emptied it. bl-9bbb landed the seat's half: the
 # decode and the pane in one commit, as §4.9 asks, with `doctor` tagged on the
 # roster strip's control beside the verb table's — bare from an unaimed seat,
-# naming the wall from an aimed one. The line is gone.
+# naming the workspace from an aimed one. The line is gone.
 
 # The learning loop's two arrived at PROTOCOL 18 (yog bl-dd88, REMOTE §9.22),
 # and bl-c515 landed their wire half — the decode, both gestures and the command

@@ -1,5 +1,5 @@
 //! The staged proposals: the row, the two depths one op answers at, and the
-//! standing the engine reads for this seat rather than leaving it to infer.
+//! standing the server reads for this seat rather than leaving it to infer.
 
 use crate::reply::{Read, Reply, read};
 use serde_json::{Value, json};
@@ -54,7 +54,7 @@ fn naming_a_proposal_answers_it_whole_beside_the_listing() {
 }
 
 /// **An empty `lineages` is the stale case and says so.** Nothing is inferred
-/// from it: `fresh` is the engine's own answer, read in the pass that read the
+/// from it: `fresh` is the server's own answer, read in the pass that read the
 /// lineages, and the seat paints the sentence rather than a blank column.
 #[test]
 fn a_stale_proposal_names_its_standing_and_what_it_no_longer_moves() {

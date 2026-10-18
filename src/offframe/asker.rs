@@ -4,24 +4,24 @@
 //! the decision queue is open, for what is asking on it (bl-f0ef), and, while
 //! the trail is open, for what has crossed its boundary (bl-4c48) — which is
 //! what makes all three a **union across channels**, composed here
-//! rather than anywhere on the wire. The aimed wall is asked for its
+//! rather than anywhere on the wire. The aimed workspace is asked for its
 //! conversations, and — while the tuning pane is open on it — for what its
 //! roles are set to, and — while the login pane is open on it — for what it
 //! can sign in to (bl-e3c5). The selected conversation is asked for its
 //! transcript,
 //! and — while the records pane is open on it — for its steps, its worktree's
 //! files (bl-2cf7), its spine and the config commit governing it (bl-b52c),
-//! and the wall's lineages a workflow mark can name (bl-ed20).
+//! and the workspace's lineages a workflow mark can name (bl-ed20).
 //!
 //! **The roles read is standing rather than one-shot**, which is what lets
-//! every control on that pane state the engine's fact instead of this end's
+//! every control on that pane state the server's fact instead of this end's
 //! prediction: a tuning act is composed, sent, and read back on the next beat.
 //! A pane that wrote its own row would be holding a second opinion about a file
 //! it does not own, and the three writes go through a `litany config` that can
 //! refuse.
 //!
 //! **A channel that will not answer costs only itself.** Each leg reports its
-//! own outcome, so a box holding three channels with one engine down still gets
+//! own outcome, so a box holding three channels with one server down still gets
 //! the two that are up — REMOTE §8.2's *"a refusal is one entry's, never the
 //! set's"*, one layer above the file it was written about.
 
@@ -31,8 +31,8 @@ use serde_json::Value;
 
 use super::down;
 
-/// The questions that name one workspace, asked of the aimed wall.
-mod wall;
+/// The questions that name one workspace, asked of the aimed workspace.
+mod workspace;
 use crate::state::{Link, Open, Said};
 use crate::ui::Channel;
 
@@ -49,7 +49,7 @@ use crate::ui::Channel;
 /// **That seam is the wire's own** ([`crate::verbs::Verb::addresses_a_workspace`]):
 /// a question with no workspace field has no way to name a channel, so it goes
 /// down every one and the pane is the union; a question with one goes down the
-/// aimed wall's alone. A pane that asks at BOTH widths therefore appears in
+/// aimed workspace's alone. A pane that asks at BOTH widths therefore appears in
 /// both halves — which is a fact about its four ops rather than a special case
 /// (`crate::ui::board`, DESIGN §4.31).
 ///
@@ -73,7 +73,7 @@ pub fn tick(link: &Link, root: &Path) {
     focused(link, root, &standing);
 }
 
-/// **The selection this pass has asked about**: the channel and wall it is on,
+/// **The selection this pass has asked about**: the channel and workspace it is on,
 /// and its id. A pair rather than the id alone, because a selection moves when
 /// either half does.
 type Asked = Option<(Channel, crate::ui::Aim, String)>;
@@ -92,18 +92,18 @@ fn caught_up(link: &Link, root: &Path, asked: Asked) -> Asked {
     if selection != asked
         && let Some((channel, aim, conversation)) = &selection
     {
-        wall::selected(link, root, &now, channel, &aim.address, conversation);
+        workspace::selected(link, root, &now, channel, &aim.address, conversation);
     }
     selection
 }
 
-/// **The nest under the aim**: the aimed wall's questions and the panes keyed
-/// on it — [`wall`]'s. The selected conversation's are [`caught_up`]'s.
+/// **The nest under the aim**: the aimed workspace's questions and the panes keyed
+/// on it — [`workspace`]'s. The selected conversation's are [`caught_up`]'s.
 fn focused(link: &Link, root: &Path, standing: &crate::state::Standing) {
     let Some((channel, aim)) = standing.aimed() else {
         return;
     };
-    wall::ask(link, root, standing, &channel, &aim);
+    workspace::ask(link, root, standing, &channel, &aim);
 }
 
 /// **The questions that name no workspace**, asked of one channel — the caller
@@ -116,7 +116,7 @@ fn fanned(link: &Link, root: &Path, standing: &crate::state::Standing, channel: 
         channel,
     );
     // **The queue is not asked here** (bl-5439): `attention` can take the
-    // engine half a minute, and a serial pass that waited for it starved
+    // server half a minute, and a serial pass that waited for it starved
     // every read behind it — the trail, the board, the records and the
     // transcript's re-read. It has a lane of its own (`super::queue`).
     // **And the trail fans on the same terms** (bl-4c48): `ops` names no

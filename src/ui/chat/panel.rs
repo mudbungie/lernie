@@ -3,9 +3,9 @@
 //! selected — the baseline's session panel, with this seat's facts in it.
 //!
 //! A framed card, one line a fact, in the ink scale: the conversation's name
-//! and the wall and engine it is on; the model that answered and what it has
+//! and the workspace and server it is on; the model that answered and what it has
 //! spent (§4.41's words); where it hangs where it hangs under anything
-//! (§4.29). The seat's card names each engine this seat reaches with its dial
+//! (§4.29). The seat's card names each server this seat reaches with its dial
 //! state and what it holds, the seat's own version, and the ways in — the
 //! verbs, the conversation, the model and the provider, because those are
 //! what a window with nothing selected is for and none of them is on the
@@ -29,8 +29,8 @@ pub const WAYS: [&str; 4] = [
 /// What parts one way from the next.
 pub const PART: &str = " · ";
 
-/// **The way to a wall where there is none** (bl-673e): the switcher's row
-/// that founds one, named on the card because a fresh engine holds nothing
+/// **The way to a workspace where there is none** (bl-673e): the switcher's row
+/// that founds one, named on the card because a fresh server holds nothing
 /// this seat is in and the card is the first thing it reads.
 pub const FOUNDING: &str = "Ctrl+X then + new workspace to found one";
 
@@ -103,23 +103,23 @@ pub fn conversation(ui: &mut egui::Ui, model: &Model, id: &str) {
     });
 }
 
-/// **The seat's card**: each engine with its dial state, the version, the
+/// **The seat's card**: each server with its dial state, the version, the
 /// queue's door while anything waits, and the ways in. Answers whether the
 /// door was clicked.
 pub fn seat(ui: &mut egui::Ui, model: &Model) -> bool {
     let mut asked = false;
     card(ui, |ui| {
         line(ui, &version(), theme::INK);
-        // **One line an engine, not a channel** (bl-13b9): two names for one
+        // **One line a server, not a channel** (bl-13b9): two names for one
         // address are one server, counted once (`crate::ui::model::fold`).
-        for engine in model.folded() {
-            let header = engine.header();
+        for server in model.folded() {
+            let header = server.header();
             // **The dial state first** (bl-4cac): a channel that will not dial
             // says the wire's own sentence, whole and in the error accent — as
-            // does an engine that refused the roster (bl-693d) — and one not
+            // does a server that refused the roster (bl-693d) — and one not
             // heard from yet says so. None has counts worth painting, because a
-            // count off walls nobody can reach reads as a healthy engine.
-            let state = engine.held();
+            // count off workspaces nobody can reach reads as a healthy server.
+            let state = server.held();
             if let Some(why) = state.said() {
                 line(
                     ui,
@@ -136,10 +136,10 @@ pub fn seat(ui: &mut egui::Ui, model: &Model) -> bool {
                 );
                 continue;
             }
-            let held = engine.walls();
-            let walls = held.len();
-            let conversations: u64 = held.iter().map(|wall| wall.agents).sum();
-            let asking: u64 = held.iter().map(|wall| wall.attention).sum();
+            let held = server.workspaces();
+            let workspaces = held.len();
+            let conversations: u64 = held.iter().map(|workspace| workspace.agents).sum();
+            let asking: u64 = held.iter().map(|workspace| workspace.attention).sum();
             let waiting = if asking > 0 {
                 format!(", {asking} waiting")
             } else {
@@ -147,7 +147,7 @@ pub fn seat(ui: &mut egui::Ui, model: &Model) -> bool {
             };
             let said = format!(
                 "{header} — {}, {}{waiting}",
-                crate::render::counted(walls as u64, "workspace"),
+                crate::render::counted(workspaces as u64, "workspace"),
                 crate::render::counted(conversations, "conversation"),
             );
             let ink = if asking > 0 {

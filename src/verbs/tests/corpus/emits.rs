@@ -117,7 +117,7 @@ fn rebuilt(frame: &Value) -> Option<Value> {
     // below — which composes exactly the row's parameters and its raised flags
     // — declines the `--at` form on arity alone. It is composed here through
     // the same door both faces use, absence and all: `address` unstated is the
-    // engine's own, which is a value rather than a field left short.
+    // server's own, which is a value rather than a field left short.
     if op == ENROLL.word {
         return Some(enroll(
             text(obj, envelope::WORKSPACE),
@@ -186,7 +186,7 @@ fn rebuilt(frame: &Value) -> Option<Value> {
             )
         }),
         // The candidate family's three. Each is declined where the frame omits
-        // `ball` — the engine's own focused-ball form, which a seat has no way
+        // `ball` — the server's own focused-ball form, which a seat has no way
         // to mean — and `fan`'s prepared body goes through the seat's REAL
         // reader before being handed back, exactly as `prompt`'s does.
         FAN => obj.contains_key("ball").then(|| {

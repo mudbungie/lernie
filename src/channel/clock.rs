@@ -3,7 +3,7 @@
 //!
 //! Two questions and nothing else: how long ago something happened
 //! ([`Clock::now`], monotonic — what a held connection's silence is measured
-//! against) and what the wall says ([`Clock::unix`] — what a BEP 44 sequence
+//! against) and what the workspace says ([`Clock::unix`] — what a BEP 44 sequence
 //! number is drawn from, so a call written by a later run of this seat is
 //! newer than one written by an earlier run without the seat keeping a file).
 //! `Arc<dyn Clock>` rather than a generic, so the channel's public surface

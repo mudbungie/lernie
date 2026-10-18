@@ -10,13 +10,13 @@
 //! command build one object and there is no second spelling of a gesture to
 //! drift.
 //!
-//! **One box with two subjects, decided by what is selected.** A wall with a
-//! conversation on it is spoken to; a wall with none is where one is *begun*
+//! **One box with two subjects, decided by what is selected.** A workspace with a
+//! conversation on it is spoken to; a workspace with none is where one is *begun*
 //! ([`start`]) — which used to be a refusal, and was the start's own case
 //! wearing a sentence. A second box beside this one would be the same box
 //! twice, each with its own Enter.
 //!
-//! **With no wall aimed the box still stands** (bl-2cb0), because it is also
+//! **With no workspace aimed the box still stands** (bl-2cb0), because it is also
 //! where every slash verb is typed (`crate::ui::slash`) and the window's own
 //! verbs — the queue, help, the doctor — need no aim: a seat that has aimed
 //! at nothing is the one most likely to ask what is waiting on it. Prose
@@ -24,7 +24,7 @@
 //! Enter on it deposits nothing and leaves the draft standing.
 //!
 //! **The one case with no box at all** is a conversation this window started
-//! and the engine cannot resolve yet: there is a selection, and nothing this
+//! and the server cannot resolve yet: there is a selection, and nothing this
 //! seat composed against it would be answered
 //! (`crate::ui::model::claim`).
 
@@ -39,7 +39,7 @@ pub mod found;
 /// The half that begins a conversation rather than continuing one.
 pub mod start;
 
-/// **What the field says with no wall aimed at** — neither a deposit nor a
+/// **What the field says with no workspace aimed at** — neither a deposit nor a
 /// start has anywhere to go, so the hint says so and then names what the field
 /// still does ([`UNAIMED`]), dropped from the right as [`hint`] drops.
 pub const NOWHERE: &str = "nothing is aimed";
@@ -137,8 +137,8 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     // this seat knows it: the minted name resolves nowhere until its driver
     // writes the branch (`crate::ui::model::claim`). So the box and its
     // controls stand down and the start's own sentence stands in their place —
-    // a gesture composed here would be one this end knew the engine would
-    // refuse. It is not a wedge: the claim retires on the engine's next
+    // a gesture composed here would be one this end knew the server would
+    // refuse. It is not a wedge: the claim retires on the server's next
     // listing, and one arrow key leaves it before then.
     if let Some(held) = model.start.clone().filter(|_| model.pending().is_some()) {
         ui.label(held.line());

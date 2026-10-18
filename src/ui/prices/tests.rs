@@ -40,7 +40,7 @@ fn a_section_says_its_table_its_bound_and_why_an_act_is_not_live() {
     }
 }
 
-/// **The two emptinesses**: nobody has answered, and an engine that prices
+/// **The two emptinesses**: nobody has answered, and a server that prices
 /// nothing — which is a fact about its counts, not a wait.
 #[test]
 fn each_emptiness_says_which_one_it_is() {

@@ -166,7 +166,7 @@ fn a_recognised_word_with_extra_words_is_not_recognised() {
 
 /// **A mistyped grade is settled here, and costs no connection** (bl-07b9).
 /// The set is closed, it is small, and this binary already holds it — the
-/// engine's own `unknown grade "OPERATOR"` is true, arrives after a full round
+/// server's own `unknown grade "OPERATOR"` is true, arrives after a full round
 /// trip, and names neither of the two words that would have worked.
 #[test]
 fn a_grade_that_is_not_one_of_the_two_refuses_before_anything_is_dialled() {

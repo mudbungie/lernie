@@ -1,21 +1,21 @@
 //! **What a SECTION says**: its header, the address it dials, and what it has
-//! instead of walls when it has none.
+//! instead of workspaces when it has none.
 //!
 //! Split from [`super`] at the line cap on the seam the pane itself has: a
 //! section is one channel and a row is one workspace on it. The two fail for
 //! different reasons — a section fails about a relationship, a row about a
 //! name.
 
-use super::super::{NO_WALLS, NOT_ANSWERED, header, render};
-use crate::test_support::window::{own, pane, wall};
+use super::super::{NO_WORKSPACES, NOT_ANSWERED, header, render};
+use crate::test_support::window::{own, pane, workspace};
 use crate::ui::{Channel, Chunk, Model};
 
 /// **Every empty section says which emptiness it is** (bl-08b6): nothing has
 /// answered down it yet, this box cannot dial it and knows why off its own
-/// files, or the engine answered and holds no workspace.
+/// files, or the server answered and holds no workspace.
 ///
 /// The pane used to have one sentence, for an empty ROSTER — and an empty
-/// roster is unreachable, because every box holds its own engine's slot
+/// roster is unreachable, because every box holds its own server's slot
 /// whether or not anything is provisioned in it. So the box the sentence was
 /// written for got a section header over a blank.
 #[test]
@@ -26,13 +26,13 @@ fn every_empty_section_says_which_emptiness_it_is() {
             crate::ui::Held::Unheld("nothing provisioned at /home/u/wire".to_owned()),
             "nothing provisioned at /home/u/wire".to_owned(),
         ),
-        (crate::ui::Held::Heard, NO_WALLS.to_owned()),
+        (crate::ui::Held::Heard, NO_WORKSPACES.to_owned()),
     ] {
         let mut model = Model {
             roster: vec![Chunk { held, ..own() }],
             ..Model::default()
         };
-        model.roster[0].walls.clear();
+        model.roster[0].workspaces.clear();
         let painted = pane(|ui| render(ui, &mut model));
         assert!(painted.contains(&expected), "{expected:?}:\n{painted}");
     }
@@ -53,12 +53,12 @@ fn a_renamed_channel_says_both_names_and_an_unrenamed_one_says_one() {
         "home (named \"personal\" on its host)"
     );
     assert_eq!(header(&entry("home")), "home");
-    assert_eq!(header(&own().channel), "(this box's own engine)");
+    assert_eq!(header(&own().channel), "(this box's own server)");
 }
 
-/// The engine's currency notes ride with the rows they are about.
+/// The server's currency notes ride with the rows they are about.
 #[test]
-fn a_channel_says_how_current_its_answer_is_when_the_engine_did() {
+fn a_channel_says_how_current_its_answer_is_when_the_server_did() {
     let mut model = Model {
         roster: vec![Chunk {
             stale: Some("derivation 4m behind".to_owned()),
@@ -134,7 +134,7 @@ fn an_answer_clears_the_channel_s_own_sentence() {
         &own().channel,
         crate::reply::Read::Answer(crate::reply::Reply::Workspaces(
             crate::reply::roster::Workspaces {
-                rows: vec![wall("home")],
+                rows: vec![workspace("home")],
                 stale: None,
                 growth: None,
             },
@@ -149,7 +149,7 @@ fn an_answer_clears_the_channel_s_own_sentence() {
 /// the last thing it did say, and they are worth keeping while it is down —
 /// REMOTE §8.2's *"that channel's workspaces painted unreachable"*.
 #[test]
-fn a_dead_channel_keeps_the_walls_it_last_answered_under_its_sentence() {
+fn a_dead_channel_keeps_the_workspaces_it_last_answered_under_its_sentence() {
     let mut model = Model {
         roster: vec![own()],
         ..Model::default()
@@ -162,10 +162,10 @@ fn a_dead_channel_keeps_the_walls_it_last_answered_under_its_sentence() {
 
 /// **The section header carries the address it dials** (bl-77df), which is the
 /// one fact that explains a duplicate: an entry whose `address` file holds what
-/// this box's own engine listens on paints every workspace of that engine
+/// this box's own server listens on paints every workspace of that server
 /// twice, under two headers, and the window used to say nothing on either.
 /// `lernie entries` has always printed it. **And since bl-13b9 the duplicate
-/// is one row**: the two channels fold into one engine, the address said once
+/// is one row**: the two channels fold into one server, the address said once
 /// and the other name beside it.
 #[test]
 fn a_section_header_names_the_address_it_dials() {
@@ -189,8 +189,8 @@ fn a_section_header_names_the_address_it_dials() {
         .collect();
     assert_eq!(
         carrying,
-        vec!["(this box's own engine) — 127.0.0.1:7737 — also held as lab"],
-        "one engine, both names, the listener said once:\n{painted}"
+        vec!["(this box's own server) — 127.0.0.1:7737 — also held as lab"],
+        "one server, both names, the listener said once:\n{painted}"
     );
 }
 
@@ -206,7 +206,7 @@ fn a_channel_with_nothing_to_dial_names_no_address() {
     assert!(
         painted
             .lines()
-            .any(|line| line == "(this box's own engine)"),
+            .any(|line| line == "(this box's own server)"),
         "{painted}"
     );
 }

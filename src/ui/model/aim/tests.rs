@@ -4,7 +4,7 @@
 use crate::test_support::window::seated;
 use crate::ui::{Aim, Model};
 
-/// The aim is a pair, because two channels may both hold a wall called `home`
+/// The aim is a pair, because two channels may both hold a workspace called `home`
 /// and a seat that matched on the name alone would resolve the wrong channel.
 #[test]
 fn the_aim_is_a_channel_and_an_address_together() {

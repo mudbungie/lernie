@@ -1,21 +1,21 @@
-//! **Text found across the world an engine can see** — balls, workspaces and
+//! **Text found across the world a server can see** — balls, workspaces and
 //! conversations, one row per hit (yog's `docs/REMOTE.md` §3).
 //!
 //! A hit says where it is, which field of that thing carried the needle, how
-//! far into it, and the words around it. The engine also says what it could
+//! far into it, and the words around it. The server also says what it could
 //! **not** read, per subject, which is a different claim from finding nothing
 //! there — so the two ride as two fields and this seat keeps them two.
 //!
 //! # A hit is read and not acted on, and that is upstream's defect
 //!
 //! yog bl-ef16 records that a search row addresses its workspace and its
-//! project by the **engine's own absolute path** while every gesture this box
+//! project by the **server's own absolute path** while every gesture this box
 //! composes carries a name (REMOTE §8's *"paths never cross the wire"*, and
 //! its identify/locate rule). So the keys a row spells are the keys the acts
 //! take and the values are not, and feeding one back earns `unknown
 //! workspace`. This seat therefore paints the address as the text it is and
 //! offers no control that spends it — see `crate::ui::find`. Guessing a name
-//! off a path here would be the mis-aim `crate::ui::Model::wall` exists to
+//! off a path here would be the mis-aim `crate::ui::Model::workspace` exists to
 //! refuse, one layer down.
 //!
 //! # Every address field is optional, because a hit is one of three things
@@ -23,7 +23,7 @@
 //! A ball hit carries `project` and `id`, a workspace hit carries `workspace`,
 //! and a conversation hit carries `workspace` and `agent`. Rather than branch
 //! on `at` — which is [`super`]'s rung 3 and rides verbatim, so a subject a
-//! newer engine grew would fall off a closed set — the fields are read as
+//! newer server grew would fall off a closed set — the fields are read as
 //! options and whatever is there is painted in order.
 
 use serde_json::{Map, Value};
@@ -41,15 +41,15 @@ pub struct Hit {
     pub at: String,
     /// Which field of that thing the needle was in.
     pub field: String,
-    /// The words around it, as the engine cut them.
+    /// The words around it, as the server cut them.
     pub excerpt: String,
     /// How far into the field the needle starts.
     pub offset: u64,
-    /// The project a ball hit is in, as the engine names it.
+    /// The project a ball hit is in, as the server names it.
     pub project: Option<String>,
     /// The ball's id.
     pub id: Option<String>,
-    /// The workspace, as the engine names it.
+    /// The workspace, as the server names it.
     pub workspace: Option<String>,
     /// The conversation.
     pub agent: Option<String>,
@@ -58,13 +58,13 @@ pub struct Hit {
 /// **One answer to one needle**: what was found, and what could not be read.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Found {
-    /// The needle the engine searched for, as it read it. It is echoed rather
+    /// The needle the server searched for, as it read it. It is echoed rather
     /// than assumed, so a pane says what these rows are an answer TO instead
     /// of what the box currently holds.
     pub needle: String,
-    /// The hits, in the engine's own order.
+    /// The hits, in the server's own order.
     pub rows: Vec<Hit>,
-    /// **What the engine could not read**, one sentence each. Absent from the
+    /// **What the server could not read**, one sentence each. Absent from the
     /// hits is not the same claim as unreadable, and a seat that folded the
     /// two would report a clean search over a store it never opened.
     pub unreadable: Vec<String>,
@@ -101,7 +101,7 @@ pub(crate) fn found(obj: &Map<String, Value>) -> Result<Found, String> {
 }
 
 impl Hit {
-    /// **What this hit is in**, as the engine addresses it: the subject word
+    /// **What this hit is in**, as the server addresses it: the subject word
     /// and then whatever address fields the row carried, in order.
     ///
     /// It is prose rather than an address a control can spend, and the pane

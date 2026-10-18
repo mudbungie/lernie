@@ -1,10 +1,10 @@
 //! **The window's own panes between frames** (bl-40ec, bl-4c48, bl-d2af;
-//! DESIGN §4.21, §4.27, §4.31): the engine's verb table, what a needle found,
+//! DESIGN §4.21, §4.27, §4.31): the server's verb table, what a needle found,
 //! the trail, and the balls.
 //!
 //! # Neither has a subject anything on the glass can move
 //!
-//! `crate::ui::tuning` is about the aimed wall and `crate::ui::records` about
+//! `crate::ui::tuning` is about the aimed workspace and `crate::ui::records` about
 //! the selected conversation, so both are retired when their subject moves.
 //! These two are the decision queue's shape (`super::queue`): their ops name
 //! no workspace, so the subject is every channel this box holds and no aim or
@@ -16,7 +16,7 @@
 //!
 //! The queue stands on its pane because *what is asking* changes under the
 //! operator while they look at it. Neither of these does. A verb table is
-//! fixed for the life of an engine build, and a search is an answer to a
+//! fixed for the life of a server build, and a search is an answer to a
 //! needle somebody typed — re-asking either on every beat would spend a round
 //! trip per channel, forever, on an answer that cannot have changed, and in
 //! the search's case would re-scan every store on the box while they are still
@@ -35,7 +35,7 @@
 //! `crate::ui::composer` clears the draft when a deposit is sent, because it
 //! was sent. A search is the unmaking's case instead (DESIGN §4.20): refining
 //! a needle is the common act, so clearing the box would charge a retype for
-//! every second search. What the pane says these rows answer is the engine's
+//! every second search. What the pane says these rows answer is the server's
 //! own echoed `needle`, not what the box currently holds, so the two cannot
 //! disagree while an operator is mid-edit.
 
@@ -55,7 +55,7 @@ use crate::ui::Channel;
 ///
 /// **The ball pane joined them on the trail's terms** (bl-d2af). Two of its
 /// four reads name no workspace, which is §4.21's whole definition of this
-/// family; the other two name the aimed wall and are that pane's own section
+/// family; the other two name the aimed workspace and are that pane's own section
 /// rather than a second pane (`super::board`).
 ///
 /// **The trail joined them rather than bringing a flag of its own** (bl-4c48).
@@ -66,7 +66,7 @@ use crate::ui::Channel;
 /// `crate::state::Open::Trail`, which is where that difference lives.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Lookup {
-    /// The engines' own verb tables (`crate::ui::commands`).
+    /// The servers' own verb tables (`crate::ui::commands`).
     Commands,
     /// Text found across everything they can see (`crate::ui::find`).
     Finding,

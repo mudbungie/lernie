@@ -26,7 +26,7 @@
 //!
 //! **Nothing live paints under it**: the composer is a bottom panel and so
 //! outside what a central panel covers, which put a live `start` control —
-//! firing a conversation on the very wall being enrolled into — beneath the
+//! firing a conversation on the very workspace being enrolled into — beneath the
 //! symbol. `crate::ui::shell` stands it down while an enrollment is open. The
 //! roster and the conversation list stay, and that is deliberate: they are
 //! where the operator looks, not what they act with, and the doc's reason above
@@ -56,9 +56,9 @@ pub const CLOSE: &str = "done — forget it";
 pub const SEND: &str = "mint";
 /// What the three controls do.
 pub const CLOSE_HELP: &str = "closes the enrollment and forgets the key it showed";
-pub const SEND_HELP: &str = "mints the new box's key on the engine and shows it once, here";
+pub const SEND_HELP: &str = "mints the new box's key on the server and shows it once, here";
 pub const GRADE_HELP: &str = "what the new box may do: pick one";
-pub const NAME_HELP: &str = "the name the engine will know the new box by";
+pub const NAME_HELP: &str = "the name the server will know the new box by";
 /// The pane's own heading.
 pub const HEADING: &str = "enroll a box";
 /// What the name box says before anything is typed.
@@ -66,7 +66,7 @@ pub const NAME_HINT: &str = "the new box's name";
 /// The line under the symbol. It says the one thing an operator cannot see by
 /// looking.
 pub const KEPT: &str = "not written down anywhere — scan it now, or enroll again";
-/// What stands where the symbol will be, while the engine is minting.
+/// What stands where the symbol will be, while the server is minting.
 pub const MINTING: &str = "minting…";
 /// **The id the name box wears.** A box that takes text is named so the
 /// keyboard's gate can compare against it (`crate::ui::keys`); this one is not

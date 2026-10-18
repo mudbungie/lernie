@@ -1,4 +1,4 @@
-//! **The unmaking pane**: the wall this would unmake, the name that arms it,
+//! **The unmaking pane**: the workspace this would unmake, the name that arms it,
 //! and the two ways out (DESIGN §4.20; yog's `docs/PARITY.md` §7).
 //!
 //! # This is the seat's destructive-act idiom, and the pane IS half of it
@@ -34,9 +34,9 @@
 //! `typed` is off the wire's own grammar and invents no policy of its own.
 //!
 //! And the arming is **not spent on firing**, for the reason the composer's is
-//! not: a refusal is the common case for this act — the engine declines while
+//! not: a refusal is the common case for this act — the server declines while
 //! anything in the workspace is live — and clearing the box would charge a
-//! retype for the engine's *no*.
+//! retype for the server's *no*.
 
 use crate::ui::{Model, theme};
 
@@ -46,7 +46,7 @@ pub const WORD: &str = "unmake";
 pub const CONFIRM: &str = "unmake it";
 /// What the confirm does.
 pub const CONFIRM_HELP: &str =
-    "deletes this workspace and everything in it on the engine; nothing brings it back";
+    "deletes this workspace and everything in it on the server; nothing brings it back";
 /// The pane's own heading.
 pub const HEADING: &str = "unmake this workspace";
 /// What the arming box asks for.
@@ -58,12 +58,12 @@ pub const NOT_ARMED: &str = "not armed — type the name above, exactly";
 /// What it says once it does.
 pub const ARMED: &str = "armed";
 /// What it says once the act has been asked for.
-pub const ASKED: &str = "asked — waiting for the engine";
-/// What the engine will refuse it for, said before it is asked rather than
+pub const ASKED: &str = "asked — waiting for the server";
+/// What the server will refuse it for, said before it is asked rather than
 /// after: both conditions are facts an operator can check and neither is
 /// visible on this pane.
 pub const REFUSED_IF: &str =
-    "refused unless this engine owns the workspace and nothing in it is live";
+    "refused unless this server owns the workspace and nothing in it is live";
 
 /// **What the arming box is worth**, in points. Fixed rather than infinite for
 /// the reason the composer's is: this pane stands in the central panel, which

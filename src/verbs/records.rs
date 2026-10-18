@@ -69,13 +69,13 @@ pub const AGENT: Verb = Verb {
     params: &["workspace", "agent"],
     flags: &[],
     summary: "the conversation's own row, whole",
-    detail: "Everything the engine holds about one conversation rather than \
+    detail: "Everything the server holds about one conversation rather than \
              the glance a listing gives: its descent, the name it answers to \
              and whether that name is addressable, its own liveness and \
              whether the last turn was refused at the provider, what it has \
              spent and how full its context is, what is in flight on it right \
              now, the marks it wears and the tool call parked at its \
-             capability boundary. Every field is a fold the engine already \
+             capability boundary. Every field is a fold the server already \
              owned; what was missing was the spelling.",
 };
 

@@ -106,7 +106,7 @@ fn worn(output: &egui::FullOutput, header: &str) -> egui::Color32 {
 
 /// **The four weights, on the glass, in one transcript.** The operator's own
 /// words wear the brand because the act is theirs, the model's wear full ink,
-/// a peer's are weak and a sender the engine buried is fainter still — and
+/// a peer's are weak and a sender the server buried is fainter still — and
 /// none of the four is a hue, which is what leaves colour meaning state.
 #[test]
 fn each_speaker_s_block_wears_its_own_weight() {
@@ -203,7 +203,7 @@ fn entries_are_parted_by_air_and_never_by_a_line() {
 /// **A wound ends the transcript in the error accent and names its mend**
 /// (bl-d34f). It used to fall to the unknown-entry fallback and read
 /// *«wound» (wounded, which this seat cannot read)* — a provider refusal
-/// painted as a seat bug, with the engine's own banner as its body.
+/// painted as a seat bug, with the server's own banner as its body.
 #[test]
 fn a_wound_wears_the_error_accent_and_names_the_verb_that_mends_it() {
     let output = glass(vec![entry(EntryKind::Wounded {

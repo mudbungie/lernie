@@ -14,8 +14,8 @@ use crate::ui::{Aim, Channel, Chunk, Model};
 use crate::verbs::Where;
 use serde_json::{Value, json};
 
-/// The seated model aimed at an ENTRY's wall, with nothing provisioned at the
-/// flat root — so a gesture that fell through to this box's own engine would
+/// The seated model aimed at an ENTRY's workspace, with nothing provisioned at the
+/// flat root — so a gesture that fell through to this box's own server would
 /// reach nothing, which is what makes the channel-addressed read visible.
 fn aimed_at_an_entry() -> Model {
     let held = Channel {
@@ -34,8 +34,8 @@ fn aimed_at_an_entry() -> Model {
 }
 
 /// Every op one pass asked, in order.
-fn asked(engine: &crate::test_support::engine::Engine) -> Vec<String> {
-    engine
+fn asked(server: &crate::test_support::server::Server) -> Vec<String> {
+    server
         .heard()
         .iter()
         .filter_map(|said| said.get("op").and_then(Value::as_str))
@@ -49,7 +49,7 @@ fn asked(engine: &crate::test_support::engine::Engine) -> Vec<String> {
 #[test]
 fn the_listing_stands_on_the_pane_and_the_file_read_on_the_destination() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &entry("b"),
         vec![
@@ -79,7 +79,7 @@ fn the_listing_stands_on_the_pane_and_the_file_read_on_the_destination() {
     link.settle(&mut model);
     tick(&link, scratch.path());
     assert_eq!(
-        asked(&engine),
+        asked(&server),
         vec![
             "workspaces",
             "conversations",
@@ -99,7 +99,7 @@ fn the_listing_stands_on_the_pane_and_the_file_read_on_the_destination() {
     });
     link.settle(&mut model);
     tick(&link, scratch.path());
-    assert_eq!(asked(&engine).last().map(String::as_str), Some("config"));
+    assert_eq!(asked(&server).last().map(String::as_str), Some("config"));
     link.settle(&mut model);
     assert_eq!(
         model.config.map(|held| held.text),
@@ -117,7 +117,7 @@ fn the_listing_stands_on_the_pane_and_the_file_read_on_the_destination() {
 #[test]
 fn a_destination_naming_no_workspace_is_asked_down_the_aimed_channel() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &entry("b"),
         vec![
@@ -136,7 +136,7 @@ fn a_destination_naming_no_workspace_is_asked_down_the_aimed_channel() {
     let link = asking(&model);
     tick(&link, scratch.path());
     assert_eq!(
-        asked(&engine),
+        asked(&server),
         vec![
             "workspaces",
             "conversations",
@@ -146,7 +146,7 @@ fn a_destination_naming_no_workspace_is_asked_down_the_aimed_channel() {
             "proposals",
             "config"
         ],
-        "the engine the window is aimed at answered it"
+        "the server the window is aimed at answered it"
     );
     link.settle(&mut model);
     assert_eq!(
@@ -166,7 +166,7 @@ fn a_named_proposal_is_asked_at_its_own_depth() {
     let scratch = Scratch::new();
     let row = json!({"id": "r1", "lineages": ["default"], "parent": "9f2c1ab4",
         "fresh": true, "diffstat": "1 file changed", "subject": "s"});
-    let engine = wired(
+    let server = wired(
         &scratch,
         &entry("b"),
         vec![
@@ -187,7 +187,7 @@ fn a_named_proposal_is_asked_at_its_own_depth() {
     model.name_proposal("r1");
     let link = asking(&model);
     tick(&link, scratch.path());
-    let deep = engine
+    let deep = server
         .heard()
         .into_iter()
         .find(|said| said["op"] == "proposals");

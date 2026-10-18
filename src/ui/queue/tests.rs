@@ -37,7 +37,7 @@ fn the_answered_pane_paints_every_line_a_row_can_carry() {
         render(ui, &mut model);
     });
     for word in [
-        "(this box's own engine)",
+        "(this box's own server)",
         "? port the paint probe  on home  5s",
         "2 under it",
         "flagged 2026-09-01T22:10Z — it is rewriting an unrelated crate",
@@ -80,7 +80,7 @@ fn every_empty_state_is_its_own_sentence() {
         assert!(painted.contains(expected), "{expected:?}:\n{painted}");
         assert!(!painted.contains(absent), "{absent:?}:\n{painted}");
         assert!(
-            !painted.contains("(this box's own engine)"),
+            !painted.contains("(this box's own server)"),
             "a channel with nothing waiting is silent:\n{painted}"
         );
     }
@@ -213,7 +213,7 @@ fn every_row_wears_the_attention_rule_and_none_wears_the_brand() {
 #[test]
 fn a_quiet_section_beside_a_busy_one_paints_no_header() {
     let quiet = crate::ui::Channel {
-        name: "a quiet engine".to_owned(),
+        name: "a quiet server".to_owned(),
         ..crate::test_support::window::own().channel
     };
     let mut model = queued();
@@ -227,14 +227,14 @@ fn a_quiet_section_beside_a_busy_one_paints_no_header() {
     let painted = pane(|ui| {
         render(ui, &mut model);
     });
-    assert!(!painted.contains("a quiet engine"), "{painted}");
-    assert!(painted.contains("(this box's own engine)"), "{painted}");
+    assert!(!painted.contains("a quiet server"), "{painted}");
+    assert!(painted.contains("(this box's own server)"), "{painted}");
 }
 
-/// **The pane and the ask box paint the engine's sentence, not the signal
+/// **The pane and the ask box paint the server's sentence, not the signal
 /// words** (bl-5507), and fall back to the words only where it wrote none.
 #[test]
-fn a_row_says_why_in_the_engine_s_words() {
+fn a_row_says_why_in_the_server_s_words() {
     let says = "was cut off at its output cap — nothing was committed";
     let mut model = queued();
     model.waiting[0].rows[0].says = Some(says.to_owned());

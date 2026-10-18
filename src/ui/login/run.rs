@@ -1,8 +1,8 @@
 //! **The followed run's half of the login pane** — what one sign-in has said,
-//! how it ended, and the command to run by hand where the engine composed one.
+//! how it ended, and the command to run by hand where the server composed one.
 //!
 //! Split from [`super`] at the design-time budget on a seam that is a real one:
-//! that module is *what this wall can sign in to*, which is a table the
+//! that module is *what this workspace can sign in to*, which is a table the
 //! standing read replaces, and this is *what one run of one sign-in printed*,
 //! which arrives on a held lane at a human's pace
 //! (`crate::offframe::signin`). The first changes when a provider row grows a
@@ -13,11 +13,11 @@ use crate::ui::{Model, theme};
 /// What it says under a row nobody has signed in to.
 pub const NO_RUN: &str = "nobody has signed in to this row here";
 
-/// What the pane says above the engine's run-by-hand command.
+/// What the pane says above the server's run-by-hand command.
 pub const BY_HAND: &str = "run it by hand, on the box this workspace lives on:";
 
 /// The followed run, under the row it belongs to: its lines, the exit it
-/// settled on, and the command to run by hand where the engine composed one.
+/// settled on, and the command to run by hand where the server composed one.
 pub fn render(ui: &mut egui::Ui, model: &Model, name: &str) {
     if model.following().as_deref() != Some(name) {
         return;

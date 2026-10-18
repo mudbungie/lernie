@@ -1,5 +1,5 @@
 //! What the config pane says: the destinations it offers, the two views of one
-//! read, and the judgement that is the engine's.
+//! read, and the judgement that is the server's.
 
 use super::{
     HEADING, NO_BYTES, NO_LINEAGES, NO_SETTINGS, NOT_ANSWERED, NOT_READ, NOTHING_PICKED, render,
@@ -20,8 +20,8 @@ fn a_shut_pane_paints_nothing_and_reports_it() {
     assert!(!painted.contains(HEADING), "{painted}");
 }
 
-/// **Three empty states and each is its own sentence**: a wall nobody has been
-/// answered about, a wall that holds no lineage, and a pane pointed at no file
+/// **Three empty states and each is its own sentence**: a workspace nobody has been
+/// answered about, a workspace that holds no lineage, and a pane pointed at no file
 /// yet.
 #[test]
 fn the_three_empty_states_say_three_different_things() {
@@ -43,8 +43,8 @@ fn the_three_empty_states_say_three_different_things() {
     }
 }
 
-/// **The destinations are what can be read**: the wall's own brazen file, the
-/// engine's two globals, and every path on every lineage.
+/// **The destinations are what can be read**: the workspace's own brazen file, the
+/// server's two globals, and every path on every lineage.
 #[test]
 fn every_destination_the_pane_offers_is_on_the_glass() {
     let mut model = configured();
@@ -83,11 +83,11 @@ fn the_settings_and_the_bytes_are_painted_as_one_answer() {
     }
 }
 
-/// **The judgement is the engine's, in its own words** — what is painted as
+/// **The judgement is the server's, in its own words** — what is painted as
 /// wrong here is what the far end says is wrong, and a value it did not fault
 /// carries nothing.
 #[test]
-fn a_faulted_setting_carries_the_engine_s_own_sentence() {
+fn a_faulted_setting_carries_the_server_s_own_sentence() {
     let mut model = configured();
     let painted = pane(|ui| {
         render(ui, &mut model);

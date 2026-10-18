@@ -19,11 +19,11 @@
 //! # A rate is the operator's own decimal, sent as written
 //!
 //! Each is parsed as a JSON [`Number`] and never as an `f64`, so `15` goes
-//! out as `15` and not `15.0` — the engine reads rates back exactly as
+//! out as `15` and not `15.0` — the server reads rates back exactly as
 //! written, and a seat that re-spelled them would be the one place they
 //! changed. A word that is not a number is refused HERE, because it is the
 //! typist's mistake and costs no connection; a NEGATIVE number is a number,
-//! and the engine's in-band refusal is what names it.
+//! and the server's in-band refusal is what names it.
 
 use serde_json::{Map, Number, Value, json};
 
@@ -36,7 +36,7 @@ pub const PRICES: Verb = Verb {
     params: &[],
     flags: &[],
     summary: "what each model costs, the spend ceiling, and what has been spent",
-    detail: "One row per (provider, model) the engine prices, with its four \
+    detail: "One row per (provider, model) the server prices, with its four \
              rates in USD per million tokens as the operator wrote them — a \
              `*` model means every model that provider serves and the table \
              does not name, and a row of zeros is a subscription, priced at \

@@ -1,9 +1,9 @@
 //! The status rule: its state slot, its runs, its name, and what fits.
 
 use super::diagnostics::{PLAN, count, diagnostics};
-use super::{ENGINES, LEAD, READY, SEP, elide, fitting, name, runs, state, width};
+use super::{LEAD, READY, SEP, SERVERS, elide, fitting, name, runs, state, width};
 use crate::reply::convs::AgentState;
-use crate::test_support::window::{dropped, painted, seated, selecting, wall};
+use crate::test_support::window::{dropped, painted, seated, selecting, workspace};
 use crate::ui::{Model, Notice, theme};
 
 /// The texts of a model's runs between the leads.
@@ -34,16 +34,18 @@ fn the_state_slot_follows_the_selection_and_the_notice() {
 }
 
 /// **The rule's runs, left to right**: the four selectors, then the state —
-/// and nothing seat-wide, however many conversations are asking or engines
+/// and nothing seat-wide, however many conversations are asking or servers
 /// are reached. The workspace is the bar's foot (DESIGN §4.44), and with
 /// nothing aimed no selector stands.
 #[test]
 fn the_runs_are_the_selectors_then_the_conversation() {
     let mut model = selecting();
-    model.roster[0].walls.push(crate::reply::roster::WsRow {
-        attention: 2,
-        ..wall("annex")
-    });
+    model.roster[0]
+        .workspaces
+        .push(crate::reply::roster::WsRow {
+            attention: 2,
+            ..workspace("annex")
+        });
     assert_eq!(
         texts(&model),
         vec![
@@ -58,19 +60,19 @@ fn the_runs_are_the_selectors_then_the_conversation() {
     let none = texts(&Model::default());
     assert_eq!(none, vec![READY]);
     let glass = painted(&mut model);
-    for gone in ["2 waiting", "1 engine"] {
+    for gone in ["2 waiting", "1 server"] {
         assert!(!glass.contains(gone), "{gone:?} is the seat's:\n{glass}");
     }
 }
 
-/// **The right end**: the conversation, else the wall, else the window.
+/// **The right end**: the conversation, else the workspace, else the window.
 #[test]
-fn the_name_is_the_conversation_the_wall_or_the_window() {
+fn the_name_is_the_conversation_the_workspace_or_the_window() {
     assert_eq!(name(&seated()).text, "port the paint probe");
     let mut starting = seated();
     starting.conversation = None;
     assert_eq!(name(&starting).text, "home");
-    assert_eq!(name(&Model::default()).text, ENGINES);
+    assert_eq!(name(&Model::default()).text, SERVERS);
 }
 
 /// **The diagnostics are the selected conversation's row**: tokens in and
@@ -242,10 +244,10 @@ fn the_drop_order_at_the_three_widths() {
 /// A notice longer than the rule.
 mod notice;
 
-/// **An aimed engine that will not dial says so in the state slot**, in the
+/// **An aimed server that will not dial says so in the state slot**, in the
 /// error accent, its own sentence — and a notice still stands over it.
 #[test]
-fn an_aimed_engine_that_will_not_dial_says_so_in_the_slot() {
+fn an_aimed_server_that_will_not_dial_says_so_in_the_slot() {
     let mut model = seated();
     model.roster[0].held = crate::ui::Held::Unheld("nothing provisioned".to_owned());
     let said = state(&model);

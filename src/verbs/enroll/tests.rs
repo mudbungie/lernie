@@ -6,7 +6,7 @@ use serde_json::json;
 use super::{ADDRESS, ENROLL, enroll};
 
 /// **Unstated is UNSAID.** A route nobody gave writes no field — not `null`,
-/// which the engine would then have to read as a second spelling of absence
+/// which the server would then have to read as a second spelling of absence
 /// (yog's codec says so from the other side: *"a null would be a second
 /// spelling of the same absence"*). The bare gesture is byte-for-byte the one
 /// an operator would have written by hand before the word existed.
@@ -26,7 +26,7 @@ fn an_enrollment_that_states_no_route_carries_no_address_field() {
 }
 
 /// **A stated route rides as `address`** — REMOTE §8.4's own field name, which
-/// is what the engine reads (`opt_str_of(o, "address")`), not the `--at` the
+/// is what the server reads (`opt_str_of(o, "address")`), not the `--at` the
 /// operator typed.
 #[test]
 fn a_stated_route_rides_the_gesture_under_the_wire_s_own_name() {

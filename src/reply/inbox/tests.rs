@@ -21,7 +21,7 @@ fn a_result_message_carries_its_sender_its_stamp_and_how_its_agent_ended() {
     assert_eq!(read.deposit.from.as_deref(), Some("user"));
     assert_eq!(read.deposit.deposited_at.as_deref(), Some("t0"));
     assert_eq!(read.deposit.terminal_ref.as_deref(), Some("refs/x"));
-    // Rung 3: an epitaph this build has no word for is the engine's own
+    // Rung 3: an epitaph this build has no word for is the server's own
     // forward-compatible passthrough, and it stays that word here.
     assert_eq!(read.deposit.epitaph.as_deref(), Some("sideways"));
     assert_eq!(read.deposit.body, "hi");

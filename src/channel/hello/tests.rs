@@ -30,21 +30,21 @@ fn this_end_states_its_major_and_its_edition_in_one_frame() {
     );
 }
 
-/// An engine speaking this major is admitted, and what it answers is what that
-/// engine can SPELL.
+/// A server speaking this major is admitted, and what it answers is what that
+/// server can SPELL.
 #[test]
-fn an_engine_of_this_major_is_confirmed_and_answers_its_edition() {
+fn an_server_of_this_major_is_confirmed_and_answers_its_edition() {
     let wire = stated(&json!({ "protocol": PROTOCOL, "edition": edition::EDITION + 3 }));
     assert_eq!(confirm(&mut wire.as_slice()), Ok(edition::EDITION + 3));
 }
 
-/// **An engine that states no edition is at the floor, and so is one that
+/// **A server that states no edition is at the floor, and so is one that
 /// states nonsense there.** Absent, mistyped and out of range are one answer
-/// because they are one fact: an engine of this major requires every path at
+/// because they are one fact: a server of this major requires every path at
 /// or below the floor whatever it says about editions. Nothing here refuses —
 /// that is the whole difference between the preface's two keys.
 #[test]
-fn an_engine_that_states_no_edition_is_read_at_the_floor() {
+fn an_server_that_states_no_edition_is_read_at_the_floor() {
     for said in [
         json!({ "protocol": PROTOCOL }),
         json!({ "protocol": PROTOCOL, "edition": "nineteen" }),
@@ -68,7 +68,7 @@ fn a_mismatch_names_both_versions_and_the_remedy() {
         refusal.contains(&format!("protocol {PROTOCOL}")),
         "{refusal}"
     );
-    assert!(refusal.contains("engine speaks 99"), "{refusal}");
+    assert!(refusal.contains("server speaks 99"), "{refusal}");
     assert!(refusal.contains("update whichever is older"), "{refusal}");
     assert!(
         !refusal.contains("negotiat") || refusal.contains("no negotiation"),
@@ -99,7 +99,7 @@ fn every_way_of_stating_nothing_is_the_one_sentence() {
     for wire in silences {
         let reach = confirm(&mut wire.as_slice()).expect_err("refused");
         assert!(
-            reach.said().contains("the engine speaks no version"),
+            reach.said().contains("the server speaks no version"),
             "{}",
             reach.said()
         );
@@ -117,7 +117,7 @@ fn a_preface_this_end_could_not_read_leaves_the_request_in_doubt() {
     let reach = confirm(&mut [].as_slice()).expect_err("refused");
     assert_eq!(
         reach,
-        Reach::Unanswered("the engine stated no version: failed to fill whole buffer".to_owned())
+        Reach::Unanswered("the server stated no version: failed to fill whole buffer".to_owned())
     );
     assert!(reach.crossed());
 }

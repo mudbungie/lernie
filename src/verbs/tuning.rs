@@ -3,7 +3,7 @@
 //! that set them.
 //!
 //! They are one module because they are one subject read from both ends: the
-//! engine writes all three into the same `providers.yaml` assignment on the
+//! server writes all three into the same `providers.yaml` assignment on the
 //! same config lineage, and `roles` reads that assignment back. yog's own help
 //! row for `roles` states the pairing — *"This is what `/model`, `/effort` and
 //! `/priority` have set — read back from the same place they write it, so a
@@ -72,8 +72,8 @@ pub const MODEL: Verb = Verb {
              config lineage, through `litany config`. It reaches the \
              conversations already running: each follows its lineage's head at \
              every step boundary, so this governs the next step of every \
-             conversation on the wall and not only the next one started. A \
-             provider row the engine does not have, and a row whose dialect \
+             conversation on the workspace and not only the next one started. A \
+             provider row the server does not have, and a row whose dialect \
              cannot carry a turn, are each refused before anything is written.",
 };
 
@@ -83,7 +83,7 @@ pub const MODEL: Verb = Verb {
 pub const EFFORT: &str = "effort";
 pub const PRIORITY: &str = "priority";
 
-/// The field each door carries beyond the role and the wall.
+/// The field each door carries beyond the role and the workspace.
 const LEVEL: &str = "level";
 const ON: &str = "on";
 /// The role the tuning is about — a field name both doors share with
@@ -91,7 +91,7 @@ const ON: &str = "on";
 /// there.
 const ROLE: &str = "role";
 
-/// **What a workspace's roles are**, asked of the wall `address` names.
+/// **What a workspace's roles are**, asked of the workspace `address` names.
 pub fn roles(workspace: String) -> Value {
     ROLES.built(vec![workspace], &[])
 }

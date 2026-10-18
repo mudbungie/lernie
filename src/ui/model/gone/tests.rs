@@ -1,5 +1,5 @@
-//! A selection the engine no longer knows (bl-6dfd), driven through the
-//! frame's own side of the link with a scripted engine reply.
+//! A selection the server no longer knows (bl-6dfd), driven through the
+//! frame's own side of the link with a scripted server reply.
 
 use std::time::Duration;
 
@@ -9,7 +9,7 @@ use crate::test_support::window::{own, seated};
 use crate::ui::{Model, Notice};
 use serde_json::json;
 
-/// The engine's refusal of a read about a conversation it does not know.
+/// The server's refusal of a read about a conversation it does not know.
 fn unknown() -> crate::reply::Read {
     read(&json!({"ok": false, "error": "unknown conversation \"gone\""}))
 }
@@ -22,7 +22,7 @@ fn beat(model: &mut Model, op: &str, said: crate::reply::Read) {
     link.settle(model);
 }
 
-/// **A refused `agent` read drops the selection back to the wall** and
+/// **A refused `agent` read drops the selection back to the workspace** and
 /// posts the refusal once: the transcript goes, the aim stands, and with
 /// nothing selected nothing asks again — so Esc puts the notice down for
 /// good.
@@ -33,7 +33,7 @@ fn a_refused_row_read_retires_the_selection() {
     beat(&mut model, crate::verbs::AGENT.word, unknown());
     assert_eq!(model.conversation, None, "the selection is retired");
     assert!(model.transcript.entries.is_empty(), "its transcript went");
-    assert_eq!(model.aim, aim, "back to the wall it was on");
+    assert_eq!(model.aim, aim, "back to the workspace it was on");
     assert!(
         matches!(&model.notice, Some(Notice::Refused(said)) if said.contains("unknown conversation")),
         "{:?}",

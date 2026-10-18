@@ -50,23 +50,23 @@ fn act_named(op: &str) -> String {
 /// What the seat last heard that it could not turn into content.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Notice {
-    /// The engine refused, in its own words.
+    /// The server refused, in its own words.
     Refused(String),
     /// This seat could not read what arrived — a malformed frame, or a kind
     /// this build does not paint. A statement about **this seat**, which is why
     /// it reads differently from a refusal.
     Unreadable(String),
     /// This seat could not **reach** the far end: a channel that will not open,
-    /// an engine that is not there, a preface that did not agree.
+    /// a server that is not there, a preface that did not agree.
     ///
     /// Three arms and not two, because the remedies are three different acts. A
     /// refusal is answered by typing something else; an unreadable frame by
     /// upgrading the seat; an unreachable channel by looking at this box's own
-    /// files or at whether the engine is up. A seat that collapsed them would
+    /// files or at whether the server is up. A seat that collapsed them would
     /// send an operator to check a certificate over a workspace they mistyped.
     Unreachable(String),
     /// **An act that crossed and was never answered** — yog's `docs/REMOTE.md`
-    /// §3's IN DOUBT. The engine had the gesture and this end cannot say what it
+    /// §3's IN DOUBT. The server had the gesture and this end cannot say what it
     /// did with it, so the effect may have landed.
     ///
     /// The fifth arm, and the first whose remedy is to do NOTHING. The four
@@ -87,13 +87,13 @@ pub enum Notice {
     /// owns and overwrites on every beat, so a click that went nowhere would
     /// have left a red sentence for less than a second and then nothing at all.
     Unsent { op: String, why: String },
-    /// **An act's receipt, in the engine's own terms** — the sixth arm, and
+    /// **An act's receipt, in the server's own terms** — the sixth arm, and
     /// the first that is not a failure at all.
     ///
     /// It exists because two acts answer with a fact rather than with content:
     /// `answer` says which call it landed on and whether the conversation is
     /// running again, and `revoke`/`restore` say whether a floor stands over
-    /// the conversation now — re-derived by the engine, so it is the one
+    /// the conversation now — re-derived by the server, so it is the one
     /// statement about a floor this seat can make (§4.34).
     Said(String),
 }
@@ -136,14 +136,14 @@ impl Notice {
             format!("seen {named} — it is still asking: something newer keeps it on the queue")
         } else {
             format!(
-                "seen {named} — off the queue; {} still waiting on that engine",
+                "seen {named} — off the queue; {} still waiting on that server",
                 acked.rows.len()
             )
         })
     }
 
     /// **Whether a floor stands over the conversation now**, which is the
-    /// engine's re-derivation and never an echo of the direction that was
+    /// server's re-derivation and never an echo of the direction that was
     /// asked: restoring one whose ancestor is still revoked leaves it floored,
     /// and this is the sentence that says so instead of claiming a restore
     /// that did not happen.
@@ -190,7 +190,7 @@ impl Notice {
     }
 
     /// **What a retirement actually did to the source ref** (§4.36), which is
-    /// the engine's answer and never this seat's prediction: an undeclared
+    /// the server's answer and never this seat's prediction: an undeclared
     /// retention keeps the ref, and only the reply knows whether this project
     /// declared one and whether the keep had expired.
     pub fn retired(discarded: bool) -> Self {
@@ -206,10 +206,10 @@ impl Notice {
         )
     }
 
-    /// **The seat's own door after an engine's refusal**, where the refused
-    /// op names one (bl-8a4b): a role write the engine will not make is
+    /// **The seat's own door after a server's refusal**, where the refused
+    /// op names one (bl-8a4b): a role write the server will not make is
     /// mended in the workspace's settings, which `/config` opens. Decided by
-    /// the op this seat sent and never by the engine's prose, which it quotes
+    /// the op this seat sent and never by the server's prose, which it quotes
     /// untouched; the door is a run on the rule while the menu offers it
     /// (`crate::ui::status::diagnostics::named`).
     pub fn refused(op: &str, said: String) -> Self {
@@ -227,19 +227,19 @@ impl Notice {
     /// that says what to do is the half a cut sentence loses.
     pub fn line(&self) -> String {
         match self {
-            Self::Refused(said) => format!("the engine refused: {said}"),
+            Self::Refused(said) => format!("the server refused: {said}"),
             Self::Unreadable(why) => format!(
-                "lernie could not read the engine's answer ({why}) — updating lernie may fix it"
+                "lernie could not read the server's answer ({why}) — updating lernie may fix it"
             ),
             Self::Unreachable(why) => format!("lernie could not reach {why}"),
             Self::InDoubt { op, why } => format!(
-                "{} reached the engine but no answer came back ({why}), so it may have \
+                "{} reached the server but no answer came back ({why}), so it may have \
                  run — look before doing it again; this window is already re-reading",
                 act_named(op)
             ),
             Self::Said(said) => said.clone(),
             Self::Unsent { op, why } => format!(
-                "{} never reached the engine ({why}), so nothing happened — it is safe \
+                "{} never reached the server ({why}), so nothing happened — it is safe \
                  to do it again",
                 act_named(op)
             ),

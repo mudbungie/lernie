@@ -19,10 +19,10 @@ fn opening_it_unaimed_asks_the_bare_form() {
     assert!(!model.doctoring());
 }
 
-/// **Aimed, the ask carries that wall's address**, so it is routed down that
-/// wall's channel and adds the wall's own checks.
+/// **Aimed, the ask carries that workspace's address**, so it is routed down that
+/// workspace's channel and adds the workspace's own checks.
 #[test]
-fn opening_it_aimed_asks_about_that_wall() {
+fn opening_it_aimed_asks_about_that_workspace() {
     let mut model = Model {
         aim: Some(Aim {
             channel: own().channel.name,

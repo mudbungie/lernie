@@ -3,7 +3,7 @@
 # whether the tree is well-formed (fmt, clippy, the 300-line cap, the ast-grep
 # rules, cargo-deny, coverage); nothing asked whether it discloses something. A
 # seat is the operator's own face on the harness: it holds this box's leaf and
-# key, one entry per workspace held elsewhere, the address of every engine it
+# key, one entry per workspace held elsewhere, the address of every server it
 # dials, and — once the window lands — the rendered text of every conversation
 # the operator has had. So the material it could leak is exactly the material
 # it handles: key material, host addresses and topology, home paths, and

@@ -1,4 +1,4 @@
-//! **The reads whose subject is an engine rather than a wall** (DESIGN §4.21,
+//! **The reads whose subject is a server rather than a workspace** (DESIGN §4.21,
 //! §4.27, §4.41): its own verb table, what a needle found across everything it
 //! can see, the trail of every act that crossed its boundary, whether it is
 //! wired at all, and its price table.
@@ -6,7 +6,7 @@
 //! Split from [`super::tasks`] at the design-time budget, on the seam the
 //! gestures themselves already have: these three name no workspace, so each is
 //! asked of every channel this box holds and answered per channel
-//! ([`crate::seat::fanned`]), where a ball or a board is one wall's.
+//! ([`crate::seat::fanned`]), where a ball or a board is one workspace's.
 
 use crate::reply::doctor::{Check, failing};
 use crate::reply::help::HelpRow;
@@ -16,7 +16,7 @@ use crate::reply::search::Found;
 
 use super::parts::{brief, line, line_over, listing, quoted, when};
 
-/// **The trail**: every act that crossed one engine's boundary.
+/// **The trail**: every act that crossed one server's boundary.
 pub(super) fn ops(rows: &[OpRow]) -> String {
     let painted = rows
         .iter()
@@ -55,7 +55,7 @@ pub(super) fn found(found: &Found) -> String {
         &listing(
             &format!("found {:?}", found.needle),
             hits,
-            "no match anywhere this engine can see",
+            "no match anywhere this server can see",
         ),
         when(
             !found.unreadable.is_empty(),
@@ -64,13 +64,13 @@ pub(super) fn found(found: &Found) -> String {
     )
 }
 
-/// **One engine's own verb table** — what that engine answers to.
+/// **One server's own verb table** — what that server answers to.
 pub(super) fn help(rows: &[HelpRow]) -> String {
     let painted = rows
         .iter()
         .map(|row| line(vec![Some(row.usage.clone()), Some(row.summary.clone())]))
         .collect();
-    listing("the engine's own words", painted, "this engine names no op")
+    listing("the server's own words", painted, "this server names no op")
 }
 
 /// **The world's price table**, the bound and the spend against it in the
@@ -86,7 +86,7 @@ pub(super) fn prices(table: &Prices) -> String {
 }
 
 /// **Whether this box is wired** — one row per check, and under a row that
-/// does not hold, the engine's remedy verbatim. The head counts the rows that
+/// does not hold, the server's remedy verbatim. The head counts the rows that
 /// fail, because the answer carries no tally and a seat that wants one counts
 /// what it was handed (`crate::reply::doctor`).
 pub(super) fn doctor(rows: &[Check]) -> String {
@@ -98,5 +98,5 @@ pub(super) fn doctor(rows: &[Check]) -> String {
         0 => "doctor: every check holds".to_owned(),
         n => format!("doctor: {n} of {} checks do not hold", rows.len()),
     };
-    listing(&head, painted, "the engine ran no check")
+    listing(&head, painted, "the server ran no check")
 }

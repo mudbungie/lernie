@@ -88,7 +88,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     cards(ui, &spine);
 }
 
-/// The governing commit: the engine's own sentence, the paths its tree
+/// The governing commit: the server's own sentence, the paths its tree
 /// holds, then the workflow mark beside it and the acts on it (bl-ed20).
 fn governing_half(ui: &mut egui::Ui, model: &mut Model, answer: Option<&Governing>) {
     theme::paint::section(ui, GOVERNING_HEAD);
@@ -96,7 +96,7 @@ fn governing_half(ui: &mut egui::Ui, model: &mut Model, answer: Option<&Governin
         ui.label(NOT_ANSWERED_GOVERNING);
         return;
     };
-    // **One wrapped row, not two** (bl-3686): the engine's own sentence and
+    // **One wrapped row, not two** (bl-3686): the server's own sentence and
     // the paths its tree holds are two facts about one commit, and the pane
     // has to fit the narrowest shape this layout promises
     // (`crate::snapshot::clipped`, §4.32). What was dropped to make room for
@@ -170,8 +170,8 @@ fn cards(ui: &mut egui::Ui, spine: &Rail) {
 }
 
 /// **The one line a notch always gets**: its step, the commit it read against
-/// — or the engine's own word for having none — and the spend as of it,
-/// with its money where the engine priced it (REMOTE §9.23).
+/// — or the server's own word for having none — and the spend as of it,
+/// with its money where the server priced it (REMOTE §9.23).
 pub fn headline(row: &Notch) -> String {
     crate::reply::spend::priced(
         format!("{}  {} — {} tokens", row.seq, row.short(), row.budget),

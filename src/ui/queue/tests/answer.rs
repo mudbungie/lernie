@@ -14,7 +14,7 @@ use crate::ui::{Asking, Model};
 
 /// **The three verdicts are offered on a row that is holding a call, and on no
 /// other** — `answer` is scoped to the exact invocation parked at the far end,
-/// so a control on a row with nothing parked would fire a gesture the engine
+/// so a control on a row with nothing parked would fire a gesture the server
 /// refuses by name (bl-bce2).
 #[test]
 fn the_verdicts_are_offered_only_where_something_is_parked() {
@@ -94,7 +94,7 @@ fn the_wider_reaches_are_offered_as_rows_that_say_what_they_settle() {
             );
         }
     }
-    // A row whose engine permits the one call offers no reach either — on
+    // A row whose server permits the one call offers no reach either — on
     // the same list the ask reads, so the two surfaces cannot disagree.
     let mut narrow = queued();
     narrow.waiting[0].rows[0]

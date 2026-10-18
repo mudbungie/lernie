@@ -11,7 +11,7 @@
 use super::{Channel, Held, Model, Notice};
 
 impl Model {
-    /// **A leg that never reached an engine**, said on that channel's own
+    /// **A leg that never reached a server**, said on that channel's own
     /// section (bl-e620).
     ///
     /// It is not a reply and so it does not come through
@@ -46,9 +46,9 @@ impl Model {
         }
     }
 
-    /// **A roster read the engine refused**, said on that channel's own
+    /// **A roster read the server refused**, said on that channel's own
     /// section (bl-693d) for [`unreachable`](Self::unreachable)'s reason one
-    /// step on: the engine answered, so the channel is not down, but what it
+    /// step on: the server answered, so the channel is not down, but what it
     /// refused is the channel's whole roster and it refuses it again every
     /// beat — a relationship, not an exchange. In the bar it stood beside a
     /// running conversation after a founding had made it false, until Esc.
@@ -103,7 +103,7 @@ impl Model {
     /// clobbered.
     ///
     /// **Only where nothing crossed**, which is the whole of the asymmetry. IN
-    /// DOUBT means the engine had the gesture and may have run it, and its
+    /// DOUBT means the server had the gesture and may have run it, and its
     /// sentence says so — putting the words back under a box with `send` beside
     /// it would invite exactly the resend the contract forbids (REMOTE §3).
     pub fn acted(&mut self, op: &str, reach: &crate::channel::Reach, said: Option<String>) {

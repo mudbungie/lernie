@@ -1,5 +1,5 @@
 //! **The one cursor track** (DESIGN §4.39): where each arrow lands, and what
-//! landing there means — an engine's row stood on, a wall aimed, a
+//! landing there means — a server's row stood on, a workspace aimed, a
 //! conversation selected — plus the sideways keys, which name a column in the
 //! narrow shape and nothing at all in the broad one.
 //!
@@ -11,15 +11,15 @@ use super::{stocked, typed};
 use crate::test_support::window::painted;
 use crate::ui::{Aim, Model, Stand};
 
-/// The engine row `name`, as the walk stands on it.
-fn engine(name: &str) -> Stand {
-    Stand::Engine(name.to_owned())
+/// The server row `name`, as the walk stands on it.
+fn server(name: &str) -> Stand {
+    Stand::Server(name.to_owned())
 }
 
-/// `+ new` under the own engine's `home`, and `+ new workspace` under it
-/// (bl-f991): the two begins the walk stands on before the next engine.
+/// `+ new` under the own server's `home`, and `+ new workspace` under it
+/// (bl-f991): the two begins the walk stands on before the next server.
 fn begins() -> [Option<Stand>; 2] {
-    let own = "(this box's own engine)".to_owned();
+    let own = "(this box's own server)".to_owned();
     let home = Aim {
         channel: own.clone(),
         address: "home".to_owned(),
@@ -28,11 +28,11 @@ fn begins() -> [Option<Stand>; 2] {
 }
 
 /// **The roster's walk crosses two kinds of row** (DESIGN §4.39): landing on
-/// a wall aims it, exactly as a click does, and landing on an engine's row
-/// only STANDS there — a walk that opened every engine it moved through would
+/// a workspace aims it, exactly as a click does, and landing on a server's row
+/// only STANDS there — a walk that opened every server it moved through would
 /// be a walk nobody could use to reach the one below.
 #[test]
-fn the_arrows_walk_the_engine_rows_and_the_open_engine_s_walls() {
+fn the_arrows_walk_the_server_rows_and_the_open_server_s_workspaces() {
     let mut model = Model {
         aim: None,
         switching: true,
@@ -41,15 +41,15 @@ fn the_arrows_walk_the_engine_rows_and_the_open_engine_s_walls() {
     typed(&mut model, &[egui::Key::ArrowDown]);
     assert_eq!(
         model.standing,
-        Some(engine("(this box's own engine)")),
-        "a list nobody has entered opens at its first row, which is an engine"
+        Some(server("(this box's own server)")),
+        "a list nobody has entered opens at its first row, which is a server"
     );
     assert_eq!(model.aim, None, "and standing there selects nothing");
     typed(&mut model, &[egui::Key::ArrowDown]);
     assert_eq!(
         model.aim.as_ref().map(|aim| aim.address.clone()),
         Some("home".to_owned()),
-        "the open engine's wall is the next stop, and landing on it aims it"
+        "the open server's workspace is the next stop, and landing on it aims it"
     );
     assert_eq!(model.standing, None, "an aim is where the cursor is");
     for begin in begins() {
@@ -59,25 +59,25 @@ fn the_arrows_walk_the_engine_rows_and_the_open_engine_s_walls() {
     typed(&mut model, &[egui::Key::ArrowDown]);
     assert_eq!(
         model.standing,
-        Some(engine("elsewhere")),
-        "and the closed engine's own row is next, never its walls"
+        Some(server("elsewhere")),
+        "and the closed server's own row is next, never its workspaces"
     );
     typed(&mut model, &[egui::Key::ArrowDown]);
     assert_eq!(
         model.standing,
-        Some(engine("elsewhere")),
+        Some(server("elsewhere")),
         "the end saturates rather than wrapping"
     );
     typed(&mut model, &[egui::Key::ArrowUp, egui::Key::ArrowUp]);
     assert_eq!(model.standing, begins()[0]);
 }
 
-/// **Enter opens the engine the walk is standing on**, through the same door
+/// **Enter opens the server the walk is standing on**, through the same door
 /// the row's own click calls — which is what keeps the binding from being a
 /// second surface. It is a second keypress and not the walk's own act, because
-/// the walk has to be able to pass a closed engine without opening it.
+/// the walk has to be able to pass a closed server without opening it.
 #[test]
-fn enter_on_the_row_the_walk_stands_on_opens_that_engine() {
+fn enter_on_the_row_the_walk_stands_on_opens_that_server() {
     let mut model = Model {
         aim: None,
         switching: true,
@@ -94,55 +94,55 @@ fn enter_on_the_row_the_walk_stands_on_opens_that_engine() {
             egui::Key::Enter,
         ],
     );
-    assert_eq!(model.engines.open.as_deref(), Some("elsewhere"));
+    assert_eq!(model.servers.open.as_deref(), Some("elsewhere"));
     assert_eq!(
         model.aim.as_ref().map(|aim| aim.address.clone()),
         Some("elsewhere".to_owned()),
-        "opening aims the engine's first addressable wall"
+        "opening aims the server's first addressable workspace"
     );
 }
 
 /// **The conversations are stops on the SAME track** (DESIGN §4.39): the walk
-/// goes engine row, wall, that wall's conversations, next engine row — one
+/// goes server row, workspace, that workspace's conversations, next server row — one
 /// list in paint order — and landing on a conversation selects it, which is
 /// the selection every read follows.
 #[test]
-fn the_walk_runs_on_through_the_aimed_wall_s_conversations() {
+fn the_walk_runs_on_through_the_aimed_workspace_s_conversations() {
     let mut model = Model {
         conversation: None,
         switching: true,
         ..stocked()
     };
-    // The cursor is on the aimed wall, so one step down is its first
+    // The cursor is on the aimed workspace, so one step down is its first
     // conversation.
     typed(&mut model, &[egui::Key::ArrowDown]);
     assert_eq!(model.conversation.as_deref(), Some("a"));
     typed(&mut model, &[egui::Key::ArrowDown]);
     assert_eq!(model.conversation.as_deref(), Some("b"));
     // Past the last conversation the track carries on through the begins
-    // into the next engine's own row, because it is one list and not two.
+    // into the next server's own row, because it is one list and not two.
     for begin in begins() {
         typed(&mut model, &[egui::Key::ArrowDown]);
         assert_eq!(model.standing, begin);
     }
     typed(&mut model, &[egui::Key::ArrowDown]);
-    assert_eq!(model.standing, Some(engine("elsewhere")));
+    assert_eq!(model.standing, Some(server("elsewhere")));
     assert_eq!(
         model.conversation.as_deref(),
         Some("b"),
-        "standing on an engine selects nothing"
+        "standing on a server selects nothing"
     );
     typed(&mut model, &[egui::Key::ArrowDown]);
     assert_eq!(
         model.standing,
-        Some(engine("elsewhere")),
+        Some(server("elsewhere")),
         "the end saturates rather than wrapping"
     );
 }
 
 /// **A row the pointer can aim at is a row a key can aim at.** The pending row
 /// a start puts in the list is in the one list both walk, so an arrow leaves it
-/// for the first conversation the engine actually answered — which is also how
+/// for the first conversation the server actually answered — which is also how
 /// an operator escapes a claim whose driver never wrote its branch.
 #[test]
 fn the_arrows_walk_the_started_conversation_s_row_like_any_other() {
@@ -168,7 +168,7 @@ fn the_arrows_walk_the_started_conversation_s_row_like_any_other() {
 }
 
 /// **The walk reaches the two begins, and Enter fires each as its click
-/// does** (bl-f991): on `+ new` the switcher closes on the wall's start, and
+/// does** (bl-f991): on `+ new` the switcher closes on the workspace's start, and
 /// on `+ new workspace` it closes on the founding's box — while the begin the
 /// cursor stands on wears the brand rule and is brought into view.
 #[test]
@@ -179,7 +179,7 @@ fn enter_on_a_begin_the_walk_stands_on_fires_it() {
             switching: true,
             ..stocked()
         };
-        // Past the aimed wall's two conversations, `a` and `b`.
+        // Past the aimed workspace's two conversations, `a` and `b`.
         typed(&mut model, &vec![egui::Key::ArrowDown; n + 2]);
         assert_eq!(model.standing, begins()[n - 1]);
         let shown = typed(&mut model, &[egui::Key::Enter]);
@@ -193,7 +193,7 @@ fn enter_on_a_begin_the_walk_stands_on_fires_it() {
     let (founding, shown) = at(2);
     assert_eq!(
         founding.founding.as_deref(),
-        Some("(this box's own engine)")
+        Some("(this box's own server)")
     );
     assert_eq!(founding.standing, None);
     assert!(shown.contains(crate::ui::composer::found::HINT), "{shown}");

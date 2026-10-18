@@ -17,7 +17,7 @@
 //! a `tmux` buffer, a capture, the job log of an unattended run. So a run that
 //! files says the caption and the receipt, and the receipt says where the key
 //! is. A run whose filing FAILED says everything, because then the screen is
-//! the only place the material can be — the engine has already minted and
+//! the only place the material can be — the server has already minted and
 //! shredded, so a destination must never cost the material.
 //!
 //! It used to print the picture alone, and say so — *not written down
@@ -48,7 +48,7 @@
 //! one line and nothing else — no caption, no symbol, no colour, no receipt.
 //! It printed the whole human rendering under the flag, so
 //! `lernie --json enroll … | head` captured an ANSI block and left the
-//! material behind; and because the engine has already minted and shredded by
+//! material behind; and because the server has already minted and shredded by
 //! then, and a second enrollment under one name is refused, what the script
 //! kept was a picture of a key it could no longer ask for.
 //!
@@ -64,7 +64,7 @@
 //!
 //! No file, no cache, no log line, no temporary anything. The material lives in
 //! this function's locals and dies with them. `enroll::tests` drives the whole
-//! act against the stand-in engine over a throwaway root and walks that root
+//! act against the stand-in server over a throwaway root and walks that root
 //! afterwards, comparing the tree to what was there before — over the **tree**
 //! rather than over the paths this code happens to know about, because a defect
 //! here is precisely a path nobody thought of. A stated destination is walked
@@ -103,7 +103,7 @@ const ELSEWHERE: &str = "the private key is in that directory and was not printe
 /// remedy is REMOTE §3's: read the world first.
 const INDOUBT: &str = "the enrollment crossed with no answer, so it is IN DOUBT — a registration may \
      exist whose material is gone. Do not enroll again until you have looked: \
-     `lernie ask '{\"op\":\"clients\"}'` says which clients that engine holds";
+     `lernie ask '{\"op\":\"clients\"}'` says which clients that server holds";
 
 /// **Enroll a new box**, and say the material every way it can be taken.
 ///
@@ -138,11 +138,11 @@ pub fn enroll(
         Err(reach) => return Verdict::failed(reach.said()),
     };
     let Some(frame) = stream.last() else {
-        return Verdict::failed("the engine answered nothing at all".to_owned());
+        return Verdict::failed("the server answered nothing at all".to_owned());
     };
     match crate::reply::read(frame) {
         Read::Answer(Reply::Enrolled(material)) => said(&material, into, form, warn),
-        // A refusal is the engine answering, so it is this run's product and
+        // A refusal is the server answering, so it is this run's product and
         // goes to stdout with the exit code saying no — the same rule
         // [`crate::seat::ask`] keeps. It carries no material to withhold.
         Read::Refusal(said) => Verdict::answered(said, false),
@@ -151,7 +151,7 @@ pub fn enroll(
         // seat read it — so saying "cannot read" would send an operator to
         // upgrade something that is fine.
         Read::Answer(_) => Verdict::failed(format!(
-            "`enroll` was answered with something else entirely; the engine at \
+            "`enroll` was answered with something else entirely; the server at \
              {workspace:?} did not mint anything"
         )),
     }
@@ -221,7 +221,7 @@ fn drawn(material: &crate::reply::enrolled::Enrolled) -> String {
     // is version 40 at correction level M and REMOTE §8.4 measures the envelope
     // well inside it, so this is a recipe that moved — an RSA key, a longer
     // chain — and saying the size is what makes that legible. But the
-    // enrollment is already spent at the engine, so refusing here would burn a
+    // enrollment is already spent at the server, so refusing here would burn a
     // name over a picture: the line below is the material, and a camera is one
     // of three ways to take it.
     let picture = match Symbol::encode(envelope.as_bytes()) {

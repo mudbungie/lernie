@@ -1,4 +1,4 @@
-//! **The trail**: every action that crossed an engine's boundary, newest last
+//! **The trail**: every action that crossed a server's boundary, newest last
 //! (bl-4c48; yog's `docs/REMOTE.md` §9.17).
 //!
 //! # The ninth covering pane, and the fourth about no focus
@@ -9,7 +9,7 @@
 //! adds to the window is the answer to *what has this box been doing*, which
 //! until now was a question the seat carried the wire for and painted nowhere.
 //!
-//! # It reads the engine's words and classifies nothing
+//! # It reads the server's words and classifies nothing
 //!
 //! REMOTE §9.17 put the classification on the wire precisely so a seat would
 //! not re-derive it: the sentinel table, the `128 + n` signal reading, the
@@ -20,7 +20,7 @@
 //! detail because it is the next thing an operator asks for, not because
 //! anything here reads it.
 //!
-//! # An alarm is a row that is standing, and it is said in the engine's word
+//! # An alarm is a row that is standing, and it is said in the server's word
 //!
 //! `clean` is silence (`crate::reply::ops::CLEAN`), because a badge on every
 //! ordinary run would bury the rows this pane exists for. Every other standing
@@ -48,15 +48,15 @@ pub const OPEN_HELP: &str = "opens the clearing, which asks before it cuts";
 /// The pane's own heading.
 pub const HEADING: &str = "the trail";
 /// What it says before any channel has answered.
-pub const NOT_ANSWERED: &str = "waiting to hear what has been done on these engines";
-/// What it says once they have and nothing has. A fact about the engines, and
+pub const NOT_ANSWERED: &str = "waiting to hear what has been done on these servers";
+/// What it says once they have and nothing has. A fact about the servers, and
 /// the one empty state here that is not a wait.
 pub const NOTHING: &str =
     "nothing has been done here yet — every act, from any window or box, lands here";
 
 /// **Whether every channel that answered answered nothing** — the one reading
 /// of these rows this pane makes, and it is about the trail rather than about
-/// an alarm: what is standing is the engine's classification and stays there
+/// an alarm: what is standing is the server's classification and stays there
 /// (REMOTE §9.17).
 fn crossed_any(model: &Model) -> bool {
     model.trails.iter().all(|section| section.rows.is_empty())
@@ -78,7 +78,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         // It is offered only where there is a trail to acknowledge — the
         // enablement rule with the SUBJECT missing rather than a parameter —
         // and *a trail* is the one reading of these rows this seat makes: the
-        // classification stays the engine's (REMOTE §9.17), so nothing here
+        // classification stays the server's (REMOTE §9.17), so nothing here
         // asks whether an alarm is standing.
         let seen = theme::paint::button(ui, ACK, !crossed_any(model), ACK_HELP);
         crate::ui::act::tag(&seen, &[crate::verbs::ACK.word]);
@@ -113,7 +113,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
             for section in &trails {
                 // **A section that answered nothing is silent, not a sentence**
                 // — the queue's own rule: the union is the subject, and a
-                // header over a blank for every quiet engine would bury the
+                // header over a blank for every quiet server would bury the
                 // rows this pane exists for.
                 if section.rows.is_empty() {
                     continue;
@@ -150,7 +150,7 @@ fn crossed(ui: &mut egui::Ui, row: &OpRow) {
 }
 
 /// **The one line a row always gets**: the command that ran, and how it ended
-/// in the engine's own words.
+/// in the server's own words.
 ///
 /// The label and never the integer — REMOTE §9.17's *"a client that renders
 /// the trail should stop classifying `exit` and read the words"*.
@@ -174,7 +174,7 @@ pub fn standing(row: &OpRow) -> Option<String> {
 /// (REMOTE §9.20): presence is a point-in-time observation by design, so a row
 /// that did not carry the identity when it was written can never be told from
 /// the row beside it. `local` is the reserved in-world identity — the window,
-/// the gestures inbox and the engine's own loops — so a row yog wrote about
+/// the gestures inbox and the server's own loops — so a row yog wrote about
 /// itself has a true answer rather than a blank.
 pub fn provenance(row: &OpRow) -> String {
     format!(

@@ -1,7 +1,7 @@
 //! The mark: the artifacts it pins, the three spellings that have to agree, and
 //! the picture the raster actually paints.
 
-use super::{APP_ID, CASING, ENGINE, PHOSPHOR, SEAT, rgba, shapes, svg};
+use super::{APP_ID, CASING, PHOSPHOR, SEAT, SERVER, rgba, shapes, svg};
 
 /// One tracked asset, read out of the source tree rather than out of a target
 /// directory: these files are the repository's, and the test is about what is
@@ -105,10 +105,10 @@ fn spot(px: &[u8], n: u16, x: i64, y: i64) -> [u8; 4] {
 
 /// **The raster is the shape list and nothing else**, asserted where the four
 /// facts of the picture are: the canvas is transparent, the seat is solid, the
-/// engine is a RING and therefore hollow in the middle, and the wire between
+/// server is a RING and therefore hollow in the middle, and the wire between
 /// them is the dimmer ink.
 #[test]
-fn the_raster_paints_a_hollow_engine_a_solid_seat_and_a_wire_between() {
+fn the_raster_paints_a_hollow_server_a_solid_seat_and_a_wire_between() {
     let n = 64_u16;
     let px = rgba(n);
     assert_eq!(px.len(), usize::from(n) * usize::from(n) * 4);
@@ -120,17 +120,17 @@ fn the_raster_paints_a_hollow_engine_a_solid_seat_and_a_wire_between() {
         "the seat is solid"
     );
     assert_eq!(
-        spot(&px, n, ENGINE.0 + 73, ENGINE.1 + 68)[3],
+        spot(&px, n, SERVER.0 + 73, SERVER.1 + 68)[3],
         0,
-        "the engine is a ring, so inside it is the canvas"
+        "the server is a ring, so inside it is the canvas"
     );
     assert_eq!(
-        spot(&px, n, ENGINE.0, ENGINE.1),
+        spot(&px, n, SERVER.0, SERVER.1),
         [CASING.red, CASING.green, CASING.blue, 255],
         "and the wire runs to its centre rather than stopping at its edge"
     );
     assert_eq!(
-        spot(&px, n, ENGINE.0, ENGINE.1 - 200),
+        spot(&px, n, SERVER.0, SERVER.1 - 200),
         [PHOSPHOR.red, PHOSPHOR.green, PHOSPHOR.blue, 255],
         "and its stroke is on it"
     );
@@ -138,8 +138,8 @@ fn the_raster_paints_a_hollow_engine_a_solid_seat_and_a_wire_between() {
         spot(
             &px,
             n,
-            i64::midpoint(SEAT.0, ENGINE.0),
-            i64::midpoint(SEAT.1, ENGINE.1)
+            i64::midpoint(SEAT.0, SERVER.0),
+            i64::midpoint(SEAT.1, SERVER.1)
         ),
         [CASING.red, CASING.green, CASING.blue, 255],
         "the wire is the dimmer ink"

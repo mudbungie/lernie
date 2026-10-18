@@ -18,7 +18,7 @@ fn own() -> Channel {
     }
 }
 
-/// A model with the login pane open on a wall and one row being followed.
+/// A model with the login pane open on a workspace and one row being followed.
 fn watching() -> Model {
     Model {
         roster: vec![Chunk::of(own())],
@@ -48,7 +48,7 @@ fn linked(model: &Model) -> Link {
 #[test]
 fn every_frame_of_the_held_read_is_absorbed_onto_an_empty_fold() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![vec![
@@ -70,20 +70,20 @@ fn every_frame_of_the_held_read_is_absorbed_onto_an_empty_fold() {
     assert_eq!(run.outcome, Some(0));
     assert!(run.settled());
     assert!(
-        engine
+        server
             .heard()
             .contains(&json!({"op": "login-tail", "workspace": "home", "provider": "housevendor"})),
         "{:?}",
-        engine.heard()
+        server.heard()
     );
 }
 
 /// **A read starts holding nothing**, so re-asking replays rather than
-/// doubling: the engine's own cursor is per read and opens at zero.
+/// doubling: the server's own cursor is per read and opens at zero.
 #[test]
 fn a_second_read_replaces_rather_than_appending() {
     let scratch = Scratch::new();
-    let _engine = wired(
+    let _server = wired(
         &scratch,
         &flat(),
         vec![
@@ -108,10 +108,10 @@ fn a_second_read_replaces_rather_than_appending() {
 }
 
 /// **Both halves of the subject can move**, and either ends the read: aiming at
-/// another wall retires the pane outright, and starting a sign-in on another
+/// another workspace retires the pane outright, and starting a sign-in on another
 /// row replaces the run upstream.
 #[test]
-fn the_read_is_about_a_wall_and_a_provider_row_together() {
+fn the_read_is_about_a_workspace_and_a_provider_row_together() {
     let model = watching();
     let link = linked(&model);
     let aim = model.aim.clone().expect("an aim");
@@ -182,12 +182,12 @@ fn a_lane_that_cannot_be_opened_says_so_as_unreachable() {
 }
 
 /// **Only the run is absorbed.** A held read can answer something that is not
-/// a run — the engine refusing mid-stream — and that has nothing to accumulate
+/// a run — the server refusing mid-stream — and that has nothing to accumulate
 /// onto, so it crosses untouched and reaches the operator as itself.
 #[test]
 fn a_held_read_that_answers_something_other_than_a_run_crosses_untouched() {
     let scratch = Scratch::new();
-    let _engine = wired(
+    let _server = wired(
         &scratch,
         &flat(),
         vec![vec![
@@ -203,7 +203,7 @@ fn a_held_read_that_answers_something_other_than_a_run_crosses_untouched() {
     assert_eq!(
         model.notice,
         Some(crate::ui::Notice::Refused("unknown provider".to_owned())),
-        "the engine's own words, not a fold"
+        "the server's own words, not a fold"
     );
     assert_eq!(
         model.signin.expect("the run").lines.len(),

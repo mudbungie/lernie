@@ -2,13 +2,13 @@
 //! fetch** (bl-1e5a).
 //!
 //! `model` accepted a model id the same seat could prove does not exist,
-//! answered `ok`, wrote it into the wall's `providers.yaml`, and the workspace
+//! answered `ok`, wrote it into the workspace's `providers.yaml`, and the workspace
 //! was then broken until somebody read a step record: the next deposit died,
 //! and the failure reached the operator truncated, on a row, a turn later.
 //!
-//! **The documented rule is the ENGINE's and it is the right rule** — *a model
-//! id is validated by the wire at the first live model call* — because an
-//! engine that held a second opinion about a provider's catalogue would be a
+//! **The documented rule is the SERVER's and it is the right rule** — *a model
+//! id is validated by the wire at the first live model call* — because a
+//! server that held a second opinion about a provider's catalogue would be a
 //! second authority on somebody else's table. It is not an argument for the
 //! SEAT staying silent when it has just been handed a word it can check
 //! against a list it already knows how to fetch: `models` is a row in the same
@@ -33,7 +33,7 @@
 //! cannot read says nothing and the assignment proceeds. The check is a
 //! courtesy this seat can extend when the answer is in hand, and turning its
 //! absence into a refusal would make an unreachable provider row a reason not
-//! to write a file the engine is perfectly willing to write.
+//! to write a file the server is perfectly willing to write.
 
 use std::path::Path;
 
@@ -89,7 +89,7 @@ fn offered(data_root: &Path, workspace: &str, provider: &str) -> Option<Vec<Stri
 fn unlisted(provider: &str, model: &str, offered: &[String]) -> String {
     format!(
         "lernie: {provider:?} does not offer {model:?} — assigning it anyway, because the \
-         list belongs to the provider and the engine validates at the first live call. It \
+         list belongs to the provider and the server validates at the first live call. It \
          offers: {}",
         offered.join(", ")
     )

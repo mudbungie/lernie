@@ -6,13 +6,13 @@ use crate::channel::material::ADDRESS;
 use crate::cli::Stream;
 use crate::test_support::{Scratch, mint};
 
-/// **The listing dials nothing.** It names this box's own engine first, then
+/// **The listing dials nothing.** It names this box's own server first, then
 /// one row per entry in leaf order, each carrying its address or the reason it
 /// has none.
 #[test]
-fn the_listing_names_the_own_engine_then_every_entry_in_order() {
+fn the_listing_names_the_own_server_then_every_entry_in_order() {
     let scratch = Scratch::new();
-    mint::provisioned(&scratch.dir(WIRE), "engine.example:9000");
+    mint::provisioned(&scratch.dir(WIRE), "server.example:9000");
     mint::provisioned(&scratch.path().join(entry("zulu")), "zulu.example:9000");
     let renamed = scratch.path().join(entry("alpha"));
     mint::provisioned(&renamed, "alpha.example:9000");
@@ -23,8 +23,8 @@ fn the_listing_names_the_own_engine_then_every_entry_in_order() {
     assert_eq!(verdict.code, 0);
     assert_eq!(verdict.stream, Stream::Out);
     let lines: Vec<&str> = verdict.text.lines().collect();
-    assert_eq!(lines[0], "(this box's own engine)");
-    assert_eq!(lines[1].trim(), "engine.example:9000");
+    assert_eq!(lines[0], "(this box's own server)");
+    assert_eq!(lines[1].trim(), "server.example:9000");
     assert_eq!(lines[2], r#"alpha (named "personal" on its host)"#);
     assert_eq!(lines[3].trim(), "alpha.example:9000");
     assert_eq!(lines[4], "hollow");
@@ -50,10 +50,10 @@ fn a_box_holding_nothing_lists_nothing_and_succeeds() {
 /// A flat root that half exists says so in the listing too, in the material's
 /// own words.
 #[test]
-fn a_half_provisioned_own_engine_says_so_in_the_listing() {
+fn a_half_provisioned_own_server_says_so_in_the_listing() {
     let scratch = Scratch::new();
     let dir = scratch.dir(WIRE);
-    mint::provisioned(&dir, "engine.example:9000");
+    mint::provisioned(&dir, "server.example:9000");
     std::fs::remove_file(dir.join(ADDRESS)).expect("rm");
     let verdict = listing(scratch.path());
     assert_eq!(verdict.code, 0);
@@ -66,14 +66,14 @@ fn a_half_provisioned_own_engine_says_so_in_the_listing() {
 
 /// **The typed enumeration the window stamps its rows with**, and it dials
 /// nothing: what a box holds is a fact about its own files, so a seat paints
-/// its channels before any engine is up.
+/// its channels before any server is up.
 ///
 /// Each entry carries the name its workspace bears on its host, which is what
 /// decides how a gesture aimed at one of its rows must be addressed
 /// (`crate::ui::Channel::address`). The flat root carries none, because it
 /// rewrites nothing.
 #[test]
-fn the_channels_are_the_own_engine_then_every_entry_in_order() {
+fn the_channels_are_the_own_server_then_every_entry_in_order() {
     let scratch = Scratch::new();
     for (leaf, named) in [("zed", None), ("home", Some("personal"))] {
         let dir = scratch.path().join(entry(leaf));
@@ -103,7 +103,7 @@ fn the_channels_are_the_own_engine_then_every_entry_in_order() {
             },
         ]
     );
-    // **Each arrives carrying why it has no walls yet** (bl-08b6): these three
+    // **Each arrives carrying why it has no workspaces yet** (bl-08b6): these three
     // are directories with no material in them, so the window's own first paint
     // says so rather than standing a section header over a blank.
     for chunk in &held {
@@ -117,11 +117,11 @@ fn the_channels_are_the_own_engine_then_every_entry_in_order() {
     }
 }
 
-/// A box holding nothing still holds its own engine — the relationship it has
+/// A box holding nothing still holds its own server — the relationship it has
 /// without naming it — so the roster is never empty of the one channel every
 /// box has.
 #[test]
-fn a_box_with_no_entry_still_holds_its_own_engine() {
+fn a_box_with_no_entry_still_holds_its_own_server() {
     let scratch = Scratch::new();
     let held = crate::seat::channels(scratch.path());
     assert_eq!(held.len(), 1);

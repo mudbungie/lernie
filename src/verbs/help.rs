@@ -1,7 +1,7 @@
 //! **Help, and its subject is the interface rather than the world.**
 //!
 //! That is the whole reason it is answered here. Every other verb is a question
-//! about a world this process cannot see, so it needs a channel, an engine that
+//! about a world this process cannot see, so it needs a channel, a server that
 //! is up, and material an operator carried by hand. *"What does this verb
 //! take?"* is a question about **this binary**, and a binary that could not
 //! answer it without a server would be a binary an operator cannot learn to use

@@ -22,15 +22,15 @@
 //! two ways to disagree. There is no cursor: **moving in a list selects**, so
 //! the highlight the pointer already paints is where the keyboard is, and the
 //! reads that follow a selection follow a keypress for free (the standing set
-//! is derived — `crate::state::Standing`). The one exception is an engine's own
+//! is derived — `crate::state::Standing`). The one exception is a server's own
 //! row, which the walk may stand on without opening it ([`walk`]).
 //!
 //! # There is ONE list, so there is nothing to ask which list this is
 //!
 //! The walk used to be two tracks behind a `Pane` field on the model, because
 //! the roster and the conversations were two panes. DESIGN §4.39 folded the
-//! conversations under their wall, so there is one list, one track and one
-//! order — engine rows, the open engine's walls, and the aimed wall's
+//! conversations under their workspace, so there is one list, one track and one
+//! order — server rows, the open server's workspaces, and the aimed workspace's
 //! conversations, exactly as the glass paints them
 //! (`crate::ui::roster::track`). The field, the enum and the mark on a heading
 //! that said which of the two was live all go with the second track: an answer
@@ -134,7 +134,7 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
     // and the draft in it.
     //
     // **It asks `Model::covered`**, which is the one question the shell, the
-    // roster's per-wall controls and this gate already share (bl-f0ef) — a
+    // roster's per-workspace controls and this gate already share (bl-f0ef) — a
     // fifth pane listed here and not there is a pane the arrows walk under.
     //
     // **The switcher is the one overlay the arrows walk under** (§4.42): the
@@ -158,19 +158,19 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
     }
 }
 
-/// **Enter or Space opens the engine the walk is standing on** (DESIGN §4.39)
+/// **Enter or Space opens the server the walk is standing on** (DESIGN §4.39)
 /// — the one binding this module has that is not a walk, and it exists because
-/// the cursor on an engine row is deliberately NOT the selection: the walk has
-/// to be able to pass a closed engine without opening it, so opening is a
+/// the cursor on a server row is deliberately NOT the selection: the walk has
+/// to be able to pass a closed server without opening it, so opening is a
 /// second keypress.
 ///
-/// It names a control rather than adding one: [`Model::open_engine`] is the
-/// door `crate::ui::roster::engine`'s own click calls.
+/// It names a control rather than adding one: [`Model::open_server`] is the
+/// door `crate::ui::roster::server`'s own click calls.
 ///
 /// **It fires only while nothing holds the keyboard**, which is the whole of
 /// why it is a binding at all. An arrow key walks the list without focusing
 /// anything, so egui has no widget to fire and this stands in for the click;
-/// the moment a Tab has put the keyboard on a control — the engine's row, the
+/// the moment a Tab has put the keyboard on a control — the server's row, the
 /// `+` beside it, anything — egui fires THAT control itself, and a binding
 /// running beside it would spend a second act the operator did not ask for.
 fn opening(ctx: &egui::Context, model: &mut Model, pressed: bool) {
@@ -196,11 +196,11 @@ fn opening(ctx: &egui::Context, model: &mut Model, pressed: bool) {
 /// the cursor IS the selection, so the selection has to be somewhere an
 /// operator can see it.
 ///
-/// **The track crosses three kinds of row** (DESIGN §4.39): landing on a wall
+/// **The track crosses three kinds of row** (DESIGN §4.39): landing on a workspace
 /// aims it and landing on a conversation selects it, exactly as a click does,
-/// and landing on an engine's row only STANDS there — the row takes the
+/// and landing on a server's row only STANDS there — the row takes the
 /// keyboard, and Enter or Space fires the same act a pointer fires, because a
-/// walk that opened every engine it moved through would be a walk nobody could
+/// walk that opened every server it moved through would be a walk nobody could
 /// use to reach the one below.
 fn walk(model: &mut Model, step: isize) {
     let rows = roster::track(model);
@@ -210,9 +210,9 @@ fn walk(model: &mut Model, step: isize) {
     };
     match row {
         roster::Step::Stand(stand) => model.standing = Some(stand),
-        roster::Step::Wall(aim) => model.aim_at(&aim.channel, &aim.address),
+        roster::Step::Workspace(aim) => model.aim_at(&aim.channel, &aim.address),
         // `Model::rows`, not `convs`: the list the glass paints carries a
-        // started conversation's own row before the engine can answer one, and
+        // started conversation's own row before the server can answer one, and
         // a row the pointer can aim at is a row a key can aim at.
         roster::Step::Conversation(root_id) => model.select(&root_id),
     }

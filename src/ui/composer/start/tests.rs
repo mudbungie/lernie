@@ -13,7 +13,7 @@ use crate::ui::theme::glyph;
 use crate::ui::{Aim, Model};
 use serde_json::json;
 
-/// A model aimed at a wall with nothing selected on it — the case the start
+/// A model aimed at a workspace with nothing selected on it — the case the start
 /// composer takes over.
 fn unselected() -> Model {
     Model {
@@ -27,10 +27,10 @@ fn aimed() -> Aim {
     unselected().aim.expect("the fixture is aimed")
 }
 
-/// **A wall with no conversation is where one is begun.** The pane that used to
+/// **A workspace with no conversation is where one is begun.** The pane that used to
 /// refuse now asks the question a start answers.
 #[test]
-fn a_wall_with_nothing_selected_offers_a_start() {
+fn a_workspace_with_nothing_selected_offers_a_start() {
     let mut model = unselected();
     let painted = pane(|ui| render(ui, &mut model, &aimed()));
     for expected in [goal("home", false).as_str(), glyph::PROMPT] {
@@ -160,7 +160,7 @@ fn a_finished_start_paints_its_name_over_the_box_that_begins_the_next() {
 }
 
 /// **A refused start paints its sentence over the box that carries the goal
-/// back** (bl-b180): the engine's *sign in first* stands where the start's own
+/// back** (bl-b180): the server's *sign in first* stands where the start's own
 /// sentence stood, and under it the box is live again with what was typed.
 #[test]
 fn a_refused_start_paints_its_sentence_over_the_box_that_carries_the_goal_back() {
@@ -190,7 +190,7 @@ fn a_refused_start_paints_its_sentence_over_the_box_that_carries_the_goal_back()
 }
 
 /// **A refused start carries the doors its sentence names** (bl-7a77): the
-/// engine's *… /config brazen* stands with `/config` after it as a link, and
+/// server's *… /config brazen* stands with `/config` after it as a link, and
 /// a click on it opens what the menu's row opens; a sentence naming no row
 /// carries none.
 #[test]
@@ -204,7 +204,8 @@ fn a_refused_start_carries_the_doors_it_names() {
         }),
         ..unselected()
     };
-    let mut model = refused("sign in first — write its key into this wall with /config brazen");
+    let mut model =
+        refused("sign in first — write its key into this workspace with /config brazen");
     let mut body = |ctx: &egui::Context| {
         egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model, &aimed()));
     };
@@ -216,10 +217,10 @@ fn a_refused_start_carries_the_doors_it_names() {
     assert!(!painted.lines().any(|line| line == "/config"), "{painted}");
 }
 
-/// **The hint names the wall the Enter begins on, and says when it begins a
+/// **The hint names the workspace the Enter begins on, and says when it begins a
 /// plan** (bl-9031).
 #[test]
-fn the_hint_names_the_wall_and_the_plan() {
+fn the_hint_names_the_workspace_and_the_plan() {
     let mut model = unselected();
     let painted = pane(|ui| render(ui, &mut model, &aimed()));
     assert!(painted.contains("on home is for"), "{painted}");
@@ -228,11 +229,11 @@ fn the_hint_names_the_wall_and_the_plan() {
     assert!(planned.contains(&goal("home", true)), "{planned}");
 }
 
-/// **A wall whose worker reaches no model says so before a goal is typed**
+/// **A workspace whose worker reaches no model says so before a goal is typed**
 /// (bl-7a77): the worker's provider row is bare, so the hint names the doors
 /// and the pick; a credentialed row, or a table not yet read, asks the goal.
 #[test]
-fn a_wall_whose_worker_holds_no_credential_names_the_doors() {
+fn a_workspace_whose_worker_holds_no_credential_names_the_doors() {
     let worker = crate::reply::roles::RoleRow {
         role: "worker".to_owned(),
         provider: "anthropic".to_owned(),

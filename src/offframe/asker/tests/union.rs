@@ -38,7 +38,7 @@ fn every_channel_is_asked_for_its_own_roster_and_stamped_with_it() {
             (
                 chunk.channel.name.clone(),
                 chunk
-                    .walls
+                    .workspaces
                     .first()
                     .map(|row| row.workspace.clone())
                     .unwrap_or_default(),
@@ -55,7 +55,7 @@ fn every_channel_is_asked_for_its_own_roster_and_stamped_with_it() {
 }
 
 /// **A channel that will not answer costs only itself.** A box holding two with
-/// one engine down still gets the one that is up.
+/// one server down still gets the one that is up.
 #[test]
 fn a_channel_that_will_not_answer_leaves_the_others_standing() {
     let scratch = Scratch::new();
@@ -93,14 +93,14 @@ fn a_channel_that_will_not_answer_leaves_the_others_standing() {
 /// (bl-4c48). `ops` names no workspace, so it rides beside each channel's
 /// roster read rather than under the aim — and a seat with the pane shut asks
 /// none of them, because a standing question nobody has a use for is one the
-/// engine answers on every beat forever.
+/// server answers on every beat forever.
 ///
 /// It is here rather than beside the nesting tests because it nests under
 /// nothing: this is the union's own shape, one noun over from the queue's.
 #[test]
 fn the_trail_read_stands_only_while_its_pane_is_open_and_goes_down_every_channel() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![
@@ -125,7 +125,7 @@ fn the_trail_read_stands_only_while_its_pane_is_open_and_goes_down_every_channel
     model.begin_trail();
     link.settle(&mut model);
     tick(&link, scratch.path());
-    let asked: Vec<serde_json::Value> = engine.heard();
+    let asked: Vec<serde_json::Value> = server.heard();
     let ops: Vec<String> = asked
         .iter()
         .filter_map(|said| said.get("op").and_then(serde_json::Value::as_str))

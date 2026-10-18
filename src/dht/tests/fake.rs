@@ -4,7 +4,7 @@
 //! what a real node checks (token, signature, sequence), and a `Mood` for
 //! each way a node on the commons misbehaves.
 //!
-//! **The store is shared with the test**, so a stand-in engine can read what
+//! **The store is shared with the test**, so a stand-in server can read what
 //! the seat wrote to its inbox and the ladder's suite can count what a rung
 //! asked: [`FakeNode::items`] is the store, [`FakeNode::queries`] the tally.
 
@@ -36,7 +36,7 @@ pub(crate) enum Mood {
     /// §13.7 ruling 3): answers `find_node`, silent to BEP 44's `get` and
     /// `put`.
     Router,
-    /// The one router that answers from yog's deployed engine box, as
+    /// The one router that answers from yog's deployed server box, as
     /// measured (yog bl-d00f): a `Router` whose every `find_node` answer is
     /// ONE of its peers repeated eight times, the next peer on the next query.
     Rotor,
@@ -86,7 +86,7 @@ impl FakeNode {
             .clone()
     }
 
-    /// The store itself, shared — what a stand-in engine polls for a call.
+    /// The store itself, shared — what a stand-in server polls for a call.
     pub(crate) fn store(&self) -> Arc<Mutex<Vec<Mutable>>> {
         Arc::clone(&self.items)
     }

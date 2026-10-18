@@ -1,17 +1,17 @@
 //! **The grows-only replay** — the same vendored answers read as an OLDER
-//! engine would have written them, and as a NEWER one would (yog's
+//! server would have written them, and as a NEWER one would (yog's
 //! `docs/REMOTE.md` §3.2; DESIGN §4.9).
 //!
 //! `corpus.rs` beside this one asks whether every frame lands in the class its
-//! directory claims. That question is asked of the frames the newest engine
-//! writes, which are the only frames anyone can vendor — and the two engines a
+//! directory claims. That question is asked of the frames the newest server
+//! writes, which are the only frames anyone can vendor — and the two servers a
 //! seat actually meets are the other two: one that predates a field, and one
 //! that has learned a word. Neither exists on the box running the suite, so
 //! both are made here out of the frame that does exist and the stamps beside
 //! it (`crate::test_support::corpus::editions`).
 //!
 //! **What it is judging is a rule and not a shape.** Under the edition
-//! discipline `PROTOCOL` moves only on a break, so a client meets an engine
+//! discipline `PROTOCOL` moves only on a break, so a client meets a server
 //! several additions away from it as the ordinary case rather than as a skew to
 //! be refused. The two assertions are that neither direction costs a refusal:
 //! an absent post-floor key reads as the fact before the field existed, and an
@@ -27,7 +27,7 @@ use crate::test_support::corpus::{Signature, files, fixture, record};
 
 /// A word no build has heard of, and none ever will: it is not a token in any
 /// vocabulary REMOTE spells, and its shape says so at a glance in a failure.
-const UNHEARD: &str = "a-word-no-engine-has-ever-written";
+const UNHEARD: &str = "a-word-no-server-has-ever-written";
 
 /// **Every vendored answer, with the signature upstream stamps it by.** The
 /// seat's own frames in `answers/` are not among them — they are this
@@ -48,22 +48,22 @@ fn painted() -> Vec<(String, Signature, Vec<Value>)> {
 }
 
 /// **Every answer this build paints still reads at every edition this major has
-/// had.** For each one, the frame is projected back to what an engine of that
+/// had.** For each one, the frame is projected back to what a server of that
 /// edition would have written — every key stamped later deleted — and must
 /// still be an answer.
 ///
 /// It is the whole of what "a post-floor key absent reads as its default"
 /// means, asserted where the defaults are rather than at each reader: a decoder
-/// that required a field the engine at the far end has never written would
+/// that required a field the server at the far end has never written would
 /// refuse a listing an operator can see is fine.
 #[test]
 fn every_answer_reads_at_every_edition_of_this_major() {
     let mut replayed = 0_usize;
     for (shape, signature, frames) in painted() {
         // **A shape is projected back only as far as it exists** (bl-9111):
-        // `reply/prices` was born whole at edition 19, so an engine of 18
+        // `reply/prices` was born whole at edition 19, so a server of 18
         // never writes one at all — stripping it to nothing and asking it to
-        // read would be judging a frame no engine sends. The shape's earliest
+        // read would be judging a frame no server sends. The shape's earliest
         // stamp is its birth, because its root path is stamped then.
         let born = signature
             .values()

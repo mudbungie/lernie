@@ -1,4 +1,4 @@
-//! The composite: two acts down two connections, what the engine is handed on
+//! The composite: two acts down two connections, what the server is handed on
 //! each, and the four ways it can end.
 
 use super::{INDOUBT, UNFIRED, start};
@@ -6,11 +6,11 @@ use crate::channel::entries::WORKSPACE;
 use crate::cli::Stream;
 use crate::render::Form;
 use crate::test_support::Scratch;
-use crate::test_support::engine::Answer;
+use crate::test_support::server::Answer;
 use crate::test_support::wire::{entry, flat, wired};
 use serde_json::{Value, json};
 
-/// The staging receipt an engine answers, with two fields this build does not
+/// The staging receipt a server answers, with two fields this build does not
 /// read so the carry can be asserted on the wire itself.
 fn staged(workspace: &str) -> Value {
     json!({"ok": true, "kind": "prepared",
@@ -23,14 +23,14 @@ fn started(name: &str) -> Value {
     json!({"ok": true, "kind": "started", "conversation": name})
 }
 
-/// **The whole flow, end to end against an engine that speaks the protocol.**
+/// **The whole flow, end to end against a server that speaks the protocol.**
 /// Two connections, two envelopes, and the second carries the first's answer
 /// straight back — the staged body whole, including the two fields nothing here
 /// paints.
 #[test]
 fn a_start_stages_then_fires_and_the_second_act_carries_the_first_s_answer() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![vec![staged("home")], vec![started("brisk-otter")]],
@@ -50,7 +50,7 @@ fn a_start_stages_then_fires_and_the_second_act_carries_the_first_s_answer() {
         format!("{}\n{}", staged("home"), started("brisk-otter")),
         "both streams are the product"
     );
-    let heard = engine.heard();
+    let heard = server.heard();
     assert!(
         heard.contains(&json!({"op": "prepare", "workspace": "home",
                                "payload": {"rung": "bare"}})),
@@ -66,14 +66,14 @@ fn a_start_stages_then_fires_and_the_second_act_carries_the_first_s_answer() {
     );
 }
 
-/// **The fire reaches the engine that staged it, under a local rename.** The
+/// **The fire reaches the server that staged it, under a local rename.** The
 /// staged body comes back in the host's spelling; the fire is composed in this
 /// box's, and §8.2's one mapping rewrites it again on the way out — so the host
 /// is handed its own name both times.
 #[test]
 fn a_renamed_entry_stages_and_fires_down_the_same_channel() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &entry("home"),
         vec![vec![staged("personal")], vec![started("brisk-otter")]],
@@ -87,7 +87,7 @@ fn a_renamed_entry_stages_and_fires_down_the_same_channel() {
         start(scratch.path(), "home", "do it", None, None, Form::Json).code,
         0
     );
-    let heard = engine.heard();
+    let heard = server.heard();
     assert!(
         heard.contains(&json!({"op": "prepare", "workspace": "personal",
                                "payload": {"rung": "bare"}})),
@@ -101,9 +101,9 @@ fn a_renamed_entry_stages_and_fires_down_the_same_channel() {
 }
 
 /// **A stage that answers no staged body fires nothing and exits non-zero**,
-/// whatever it answered: a refusal, a kind this build cannot paint, or an
-/// engine that terminated the stream saying nothing. Its frames are still the
-/// engine answering, so they are still the product — and only the code says the
+/// whatever it answered: a refusal, a kind this build cannot paint, or a
+/// server that terminated the stream saying nothing. Its frames are still the
+/// server answering, so they are still the product — and only the code says the
 /// start did not happen.
 #[test]
 fn a_stage_that_answers_no_body_prints_what_it_said_and_starts_nothing() {
@@ -119,28 +119,28 @@ fn a_stage_that_answers_no_body_prints_what_it_said_and_starts_nothing() {
         (Vec::new(), String::new()),
     ] {
         let scratch = Scratch::new();
-        let engine = wired(&scratch, &flat(), vec![answer]);
+        let server = wired(&scratch, &flat(), vec![answer]);
         let verdict = start(scratch.path(), "home", "do it", None, None, Form::Json);
         assert_eq!(verdict.code, 1, "{}", verdict.text);
         assert_eq!(verdict.stream, Stream::Out);
         assert_eq!(verdict.text, expected);
         assert!(
-            !engine
+            !server
                 .heard()
                 .iter()
                 .any(|said| said["op"] == json!("prompt")),
             "nothing is fired: {:?}",
-            engine.heard()
+            server.heard()
         );
     }
 }
 
-/// **A fire the engine refuses is an answer**, so both streams print and the
+/// **A fire the server refuses is an answer**, so both streams print and the
 /// exit code is the fire's own verdict.
 #[test]
 fn the_exit_code_is_the_fire_s_verdict() {
     let scratch = Scratch::new();
-    let refused = json!({"ok": false, "error": "no models on this wall"});
+    let refused = json!({"ok": false, "error": "no models on this workspace"});
     wired(
         &scratch,
         &flat(),
@@ -170,7 +170,7 @@ fn a_fire_that_never_leaves_the_box_says_the_start_was_staged() {
 /// **A fire that CROSSED and was not answered says the opposite thing**
 /// (REMOTE §3, bl-3969), because the remedy is opposite. The stage's steps are
 /// convergent, so *type it again* is right for a fire that never left; a fire
-/// the engine may already have run makes a second `lernie start` a second
+/// the server may already have run makes a second `lernie start` a second
 /// conversation, so the sentence refuses the repeat by name and hands over the
 /// read instead.
 #[test]
@@ -213,7 +213,7 @@ fn a_box_with_no_channel_says_so_before_it_stages_anything() {
 }
 
 /// **A start aimed at a directory** (bl-4371): the stage names the path rung,
-/// and the fire carries the preamble the engine composed with the operator's
+/// and the fire carries the preamble the server composed with the operator's
 /// own goal after it.
 ///
 /// This is the whole of the ball. The bare rung was the only one this seat
@@ -226,7 +226,7 @@ fn a_start_with_a_work_target_stages_the_path_rung_and_fires_the_preamble_with_i
                            "prepared": {"workspace": "home",
                                         "goal": "Working directory: /w",
                                         "binding": "/w"}});
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![vec![prefilled], vec![started("brisk-otter")]],
@@ -240,7 +240,7 @@ fn a_start_with_a_work_target_stages_the_path_rung_and_fires_the_preamble_with_i
         Form::Json,
     );
     assert_eq!(verdict.code, 0);
-    let heard = engine.heard();
+    let heard = server.heard();
     assert!(
         heard.contains(&json!({"op": "prepare", "workspace": "home",
                                "payload": {"rung": "path", "dir": "/w"}})),

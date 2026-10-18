@@ -5,10 +5,10 @@
 //! across those slices, local first and then the entries in leaf order, every
 //! row carrying the channel it came from"*. The CLI's shorthand for the same
 //! question did not, and the two surfaces disagreed on one box (bl-0d54) —
-//! `lernie workspaces` answered this box's own engine and said nothing about
-//! the rest, so a laptop that holds no engine of its own and is a client of a
+//! `lernie workspaces` answered this box's own server and said nothing about
+//! the rest, so a laptop that holds no server of its own and is a client of a
 //! server elsewhere was told nothing was provisioned, while its own window
-//! painted the server's walls.
+//! painted the server's workspaces.
 //!
 //! **Which gestures fan is read off [`crate::verbs`]'s one table**, never
 //! listed here: a verb with no `workspace` parameter has no way to name a
@@ -64,7 +64,7 @@ pub fn fanned(data_root: &Path, envelope: &Value, form: Form) -> Verdict {
 }
 
 /// **Every channel this box holds, opened, under the name the roster spells
-/// it by** — this box's own engine first where it is held, then the entries
+/// it by** — this box's own server first where it is held, then the entries
 /// in leaf order.
 ///
 /// One enumeration with two readers: [`fanned`] asks every one of them, and
@@ -80,14 +80,14 @@ pub(super) fn held(data_root: &Path) -> Vec<(String, Result<crate::channel::Chan
     own(data_root, &seated).into_iter().chain(seated).collect()
 }
 
-/// **This box's own engine, where it is a channel this box HOLDS** — and
+/// **This box's own server, where it is a channel this box HOLDS** — and
 /// where it is all this box could hold (bl-b858).
 ///
-/// An unprovisioned flat root is an ABSENCE, not a fault. On a seat for an
-/// engine somewhere else — a box that holds named entries and no engine of its
+/// An unprovisioned flat root is an ABSENCE, not a fault. On a seat for a
+/// server somewhere else — a box that holds named entries and no server of its
 /// own, provisioned exactly as `enroll --into` instructs — enumerating it put a
 /// paragraph of refusal above every working channel on every roster read,
-/// beginning *"if an engine runs on this box"* on a box where none does and
+/// beginning *"if a server runs on this box"* on a box where none does and
 /// none is meant to. The read had worked; the answer was under the complaint.
 ///
 /// **One condition rather than a special case**, and it is the same sentence
@@ -113,7 +113,7 @@ fn own(
 /// One channel's section: its name, then what it said, indented under it.
 ///
 /// The channel stamp is **this box's**, exactly as the window's is — no origin
-/// crosses the wire and no reply grew a field the engine cannot fill.
+/// crosses the wire and no reply grew a field the server cannot fill.
 fn section(name: &str, answer: &Result<Vec<Value>, String>, form: Form) -> String {
     let body = match answer {
         Ok(stream) => said(stream, form),

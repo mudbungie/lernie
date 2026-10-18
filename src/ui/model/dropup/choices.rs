@@ -1,5 +1,5 @@
 //! **What an open dropup lists**: the rows this seat already holds, read at
-//! once — the roster's walls, the providers read, one provider's models, the
+//! once — the roster's workspaces, the providers read, one provider's models, the
 //! levels — so the list stands before the refresh it posted has answered.
 
 use super::{Choice, Model, Pick, Selector};
@@ -17,7 +17,7 @@ impl Model {
         };
         let worker = self.worker();
         match open.selector {
-            Selector::Workspace => self.walls(),
+            Selector::Workspace => self.workspaces(),
             Selector::Provider => self
                 .providers
                 .iter()
@@ -65,11 +65,11 @@ impl Model {
         }
     }
 
-    /// **Every wall this seat can address**, in the roster's order — named
-    /// with its engine where the seat reaches more than one — and last,
-    /// `+ new workspace` under this box's own engine where it is held
+    /// **Every workspace this seat can address**, in the roster's order — named
+    /// with its server where the seat reaches more than one — and last,
+    /// `+ new workspace` under this box's own server where it is held
     /// (DESIGN §4.44: the switcher's row, beside the choice it belongs to).
-    fn walls(&self) -> Vec<Choice> {
+    fn workspaces(&self) -> Vec<Choice> {
         let many = self.roster.len() > 1;
         let found = self
             .roster
@@ -79,14 +79,14 @@ impl Model {
                     && !matches!(chunk.held, crate::ui::Held::Unheld(_))
             })
             .map(|chunk| Choice {
-                text: crate::ui::roster::engine::FOUND.to_owned(),
+                text: crate::ui::roster::server::FOUND.to_owned(),
                 current: false,
                 pick: Pick::Found(chunk.channel.name.clone()),
             });
         self.roster
             .iter()
             .flat_map(|chunk| {
-                chunk.walls.iter().filter_map(move |row| {
+                chunk.workspaces.iter().filter_map(move |row| {
                     let address = chunk.channel.address(row)?;
                     let aim = super::Aim {
                         channel: chunk.channel.name.clone(),
@@ -99,7 +99,7 @@ impl Model {
                             row.workspace.clone()
                         },
                         current: self.aim.as_ref() == Some(&aim),
-                        pick: Pick::Wall(aim),
+                        pick: Pick::Workspace(aim),
                     })
                 })
             })

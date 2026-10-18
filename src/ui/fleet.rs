@@ -1,7 +1,7 @@
-//! **The fleet**: running a wall's ready balls, watching what its agents do,
+//! **The fleet**: running a workspace's ready balls, watching what its agents do,
 //! and reading what they changed (bl-a43a; yog's `docs/REMOTE.md` §9.7).
 //!
-//! # The thirteenth covering pane, and the fifth about the aimed wall
+//! # The thirteenth covering pane, and the fifth about the aimed workspace
 //!
 //! Seven ops, and every one of them carries a workspace — so this is the
 //! tuning pane's shape and not the queue's: it opens on the aimed row, its two
@@ -84,13 +84,13 @@ pub const MORE: &str = "+";
 pub const ATTEMPTS: &str = "delivery attempts";
 /// The heading over what changed.
 pub const CHANGES: &str = "what the agents changed";
-/// What it says about a wall nobody has been answered about yet.
+/// What it says about a workspace nobody has been answered about yet.
 pub const NOT_ANSWERED: &str = "waiting to hear what this workspace's agents have done";
-/// What it says about a wall that answered and has none — the controls that
+/// What it says about a workspace that answered and has none — the controls that
 /// run a fleet stand ABOVE the two sections (bl-0740).
 pub const NOTHING: &str =
     "this workspace's agents have delivered nothing yet — run a fleet above to begin";
-/// What the second section says about a wall whose agents changed nothing:
+/// What the second section says about a workspace whose agents changed nothing:
 /// its own sentence, because the two sections answer two questions.
 pub const UNCHANGED: &str = "this workspace's agents have changed nothing yet";
 
@@ -125,7 +125,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
 /// The five acts, in the order a destructive one belongs in: what starts a
 /// thing, then what stops it. Answers the gesture a click composed, if one
 /// did, because the pane's own words are borrowed for the length of the paint.
-fn acts(ui: &mut egui::Ui, model: &mut Model, wall: &str) -> Option<serde_json::Value> {
+fn acts(ui: &mut egui::Ui, model: &mut Model, workspace: &str) -> Option<serde_json::Value> {
     let mut fired: Option<serde_json::Value> = None;
     let fleet = model.fleet.as_mut()?;
     ui.horizontal_wrapped(|ui| {
@@ -144,7 +144,7 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, wall: &str) -> Option<serde_json::
         crate::ui::act::tag(&run, &[crate::verbs::FLEET]);
         if run.clicked() {
             fired = Some(crate::verbs::fleet(
-                wall.to_owned(),
+                workspace.to_owned(),
                 fleet.project.trim().to_owned(),
                 fleet.cap,
             ));
@@ -152,7 +152,7 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, wall: &str) -> Option<serde_json::
         let stop = theme::paint::button(ui, DISBAND, true, DISBAND_HELP);
         crate::ui::act::tag(&stop, &[crate::verbs::DISBAND.word]);
         if stop.clicked() {
-            fired = Some(crate::verbs::disband(wall.to_owned()));
+            fired = Some(crate::verbs::disband(workspace.to_owned()));
         }
     });
     ui.horizontal_wrapped(|ui| {
@@ -161,19 +161,19 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, wall: &str) -> Option<serde_json::
         crate::ui::act::tag(&watch, &[crate::verbs::ARM.word]);
         if watch.clicked() {
             fired = Some(crate::verbs::arm(
-                wall.to_owned(),
+                workspace.to_owned(),
                 fleet.model.trim().to_owned(),
             ));
         }
         let drop = theme::paint::button(ui, DISARM, true, DISARM_HELP);
         crate::ui::act::tag(&drop, &[crate::verbs::DISARM.word]);
         if drop.clicked() {
-            fired = Some(crate::verbs::disarm(wall.to_owned()));
+            fired = Some(crate::verbs::disarm(workspace.to_owned()));
         }
         let flush = theme::paint::button(ui, SCAN, true, SCAN_HELP);
         crate::ui::act::tag(&flush, &[crate::verbs::SCAN.word]);
         if flush.clicked() {
-            fired = Some(crate::verbs::scan(wall.to_owned()));
+            fired = Some(crate::verbs::scan(workspace.to_owned()));
         }
     });
     fired

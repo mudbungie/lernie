@@ -1,17 +1,17 @@
 //! lernie — the **seat**: the operator's face on a yog server.
 //!
-//! A seat holds an operator-issued certificate for this box and dials in to an
-//! engine over mTLS. It asks the boundary's queries, dispatches its actions,
+//! A seat holds an operator-issued certificate for this box and dials in to a
+//! server over mTLS. It asks the boundary's queries, dispatches its actions,
 //! and paints what comes back. It holds no world, runs no agent, and executes
 //! nothing — everything durable is the server's (yog's `docs/REMOTE.md` §6),
 //! and every execution is a foot's (§5.4).
 //!
 //! **THE NAME HAS TWO ERAS AND THE VERSION IS THE FENCE.** `lernie` through
-//! **0.0.x** was the agent-loop engine; that program continues under the name
+//! **0.0.x** was the agent loop; that program continues under the name
 //! **`litany`**. `lernie` at **0.1.0 and above** is this crate. REMOTE §12
 //! adopted the split and states the rule: read every `lernie` against it — a
 //! bare one names the seat, and one bound to a `0.0.x` version names the
-//! engine at that release.
+//! litany at that release.
 //!
 //! `docs/DESIGN.md` states the role, the module map and what is deferred.
 //! yog's `docs/REMOTE.md` is the **protocol authority** this crate implements
@@ -21,13 +21,13 @@
 //! **What is built** (DESIGN §5): the command line ([`cli`]); the [`channel`] —
 //! the mTLS dial, the version preface, the framing, and the entries an operator
 //! filed; the [`envelope`] a gesture crosses in, read only as far as routing it
-//! requires; the [`seat`] that resolves which engine a gesture reaches and
+//! requires; the [`seat`] that resolves which server a gesture reaches and
 //! spends the one name mapping on the way, over a data root [`paths`] names;
 //! the [`reply`] vocabulary — the typed half a window paints from, read
 //! back out of the answers those channels carry; and the [`verbs`] an operator
 //! types instead of writing one out by hand.
 //!
-//! And the [`ui`]: the window itself — the roster with each wall's
+//! And the [`ui`]: the window itself — the roster with each workspace's
 //! conversations under it, the chat pane and the composer, painted from a
 //! snapshot and firing gestures
 //! through the same verb table the command line spends. **The frame never

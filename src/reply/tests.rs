@@ -7,7 +7,7 @@ use serde_json::json;
 /// The corpus replay — every frame in `corpus/`, through the real reader.
 mod corpus;
 
-/// The same frames as an older engine and a newer one would have written them:
+/// The same frames as an older server and a newer one would have written them:
 /// the grows-only contract, replayed.
 mod editions;
 
@@ -77,7 +77,7 @@ fn a_captured_run_takes_its_verdict_from_the_exit_code() {
     );
 }
 
-/// An exit status no `i32` holds is an engine saying something this seat has
+/// An exit status no `i32` holds is a server saying something this seat has
 /// no way to paint — the one narrowing on this surface that is a real check.
 #[test]
 fn an_exit_status_outside_its_own_type_is_unreadable() {

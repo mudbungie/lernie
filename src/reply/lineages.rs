@@ -9,7 +9,7 @@
 //! # The oid is carried in both spellings, and neither is derived
 //!
 //! `oid` and `short_oid` arrive together and this seat abbreviates nothing: how
-//! many characters are unambiguous is a property of the repository the engine
+//! many characters are unambiguous is a property of the repository the server
 //! holds, so a seat that truncated the full oid itself would be guessing at a
 //! collision domain it cannot see.
 
@@ -27,7 +27,7 @@ pub struct Lineage {
     pub name: String,
     /// Its tip commit, whole.
     pub oid: String,
-    /// The same commit as the engine abbreviates it.
+    /// The same commit as the server abbreviates it.
     pub short_oid: String,
     /// When that commit was made, in seconds since the epoch. Signed, because
     /// clock skew between two machines is a fact and not an error.
@@ -57,7 +57,7 @@ fn path(value: &Value) -> Result<String, String> {
 }
 
 impl Lineage {
-    /// **What the row says in one clause** — the branch, its tip as the engine
+    /// **What the row says in one clause** — the branch, its tip as the server
     /// abbreviates it, and how much it holds.
     pub fn line(&self) -> String {
         format!(

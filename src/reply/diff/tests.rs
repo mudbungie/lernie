@@ -55,7 +55,7 @@ fn an_absent_row_names_the_refs_that_are_not_there() {
     assert!(read.truncated.is_none());
 }
 
-/// **A project the engine could not read says so and says nothing else**, and
+/// **A project the server could not read says so and says nothing else**, and
 /// the word rides verbatim — so a fourth state upstream grows paints as itself
 /// rather than refusing the listing ([`super::super`]'s rung 3).
 #[test]

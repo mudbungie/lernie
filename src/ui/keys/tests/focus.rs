@@ -12,7 +12,7 @@
 //! to say.
 
 use crate::paint_probe::frame::{Window, press};
-use crate::test_support::window::{seated, wall};
+use crate::test_support::window::{seated, workspace};
 use crate::ui::{Chunk, Model};
 
 /// Every brand-ringed rectangle on the glass after `keys`, and the model.
@@ -111,13 +111,13 @@ fn the_caret_comes_back_to_the_box() {
 /// one conversation's row — so a walk from nothing held crosses them first.
 const BAR: usize = 4;
 
-/// A window on one engine holding two walls, which is the shape both beats
+/// A window on one server holding two workspaces, which is the shape both beats
 /// below Tab their way down.
-fn two_walls() -> Model {
+fn two_workspaces() -> Model {
     Model {
         switching: true,
         roster: vec![Chunk {
-            walls: vec![wall("first"), wall("second")],
+            workspaces: vec![workspace("first"), workspace("second")],
             ..crate::test_support::window::own()
         }],
         ..seated()
@@ -127,12 +127,12 @@ fn two_walls() -> Model {
 /// **The Tab order runs the way the row reads**, and Space on a ringed row
 /// fires exactly what a click fires.
 ///
-/// The engine's own row stands first and the first wall second; the `+`
-/// that stood beside the engine is `+ new` under each wall now (§4.42 item
+/// The server's own row stands first and the first workspace second; the `+`
+/// that stood beside the server is `+ new` under each workspace now (§4.42 item
 /// 7), and the strips that stood ahead of them are rows of the menu.
 #[test]
-fn a_tab_reaches_a_wall_s_row_and_space_on_it_aims() {
-    let mut model = two_walls();
+fn a_tab_reaches_a_workspace_s_row_and_space_on_it_aims() {
+    let mut model = two_workspaces();
     let (rings, _) = ringed(&mut model, &[egui::Key::Tab; BAR + 2]);
     assert_eq!(rings.len(), 1, "{rings:?}");
     let window = Window::new();
@@ -151,18 +151,18 @@ fn a_tab_reaches_a_wall_s_row_and_space_on_it_aims() {
 }
 
 /// **`+ new` is a control like any other, so a key reaches it** (F1): the
-/// third Tab is the one under the first wall, and Space on it begins a
-/// conversation there — the wall aimed, the selection dropped and the caret
+/// third Tab is the one under the first workspace, and Space on it begins a
+/// conversation there — the workspace aimed, the selection dropped and the caret
 /// in the box.
 ///
-/// **And the binding that opens a standing engine does NOT also fire**
+/// **And the binding that opens a standing server does NOT also fire**
 /// (`super::super::opening`): something holds the keyboard, so egui fires that
 /// control and nothing here stands in for a click egui can already make.
 #[test]
 fn a_tab_reaches_new_and_space_on_it_begins_a_conversation() {
-    let mut model = two_walls();
-    model.standing = Some(crate::ui::Stand::Engine(
-        "a name no engine here has".to_owned(),
+    let mut model = two_workspaces();
+    model.standing = Some(crate::ui::Stand::Server(
+        "a name no server here has".to_owned(),
     ));
     let window = Window::new();
     let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
@@ -176,7 +176,7 @@ fn a_tab_reaches_new_and_space_on_it_begins_a_conversation() {
     assert_eq!(
         model.aim.as_ref().map(|aim| aim.address.as_str()),
         Some("first"),
-        "on the wall it stood under"
+        "on the workspace it stood under"
     );
     assert_eq!(
         window.focused(),

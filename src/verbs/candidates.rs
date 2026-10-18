@@ -9,9 +9,9 @@
 //! TYPES, and neither of these names a workspace anywhere in its envelope
 //! (`crate::envelope`), so `lernie deliver …` would be **fanned** down every
 //! channel this box holds (`crate::seat::fan`): one accepted candidate on
-//! every engine the operator is a client of. That is the hazard DESIGN §4.30
+//! every server the operator is a client of. That is the hazard DESIGN §4.30
 //! settled for the config write, and the settlement there was that a gesture
-//! about ONE engine says which — a thing a control can do, because it fired
+//! about ONE server says which — a thing a control can do, because it fired
 //! from a pane open on an aim, and argv cannot, because it has no row for it.
 //! So the window composes these and `lernie ask` stays the door argv has.
 //!
@@ -22,7 +22,7 @@
 //! # The ball is always named, because this seat has no focus at the far end
 //!
 //! Every one of the three takes an optional `ball` upstream, and omitting it
-//! means *the engine's own focused ball*. A seat has no such focus — its
+//! means *the server's own focused ball*. A seat has no such focus — its
 //! gestures are composed off a row that already names one — so all three
 //! spell it. The frames that omit it are recorded as unemitted in
 //! `src/verbs/tests/corpus/emits.rs`, by count and reason.

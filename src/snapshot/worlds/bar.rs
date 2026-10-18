@@ -6,7 +6,7 @@ use super::World;
 use crate::test_support::window::seated;
 
 /// **The bar pinned open** over a seated window: its rows in full, the pin
-/// saying `unpin`, `+ new` at its head and the wall at its foot.
+/// saying `unpin`, `+ new` at its head and the workspace at its foot.
 pub(super) fn opened() -> World {
     let mut model = seated();
     model.bar.pinned = true;

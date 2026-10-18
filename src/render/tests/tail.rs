@@ -49,7 +49,7 @@ fn a_follow_frame_is_the_text_that_landed_or_a_heartbeat() {
 /// **The tool window is the half an operator watching their machines is
 /// watching** (REMOTE §5.5, PROTOCOL 15). Every entry is a whole line — how it
 /// ended, what ran and where (§5.1's `<client>_<tool>` carries the box), and
-/// the input the engine already bounded — because a terminal cannot go back
+/// the input the server already bounded — because a terminal cannot go back
 /// and amend a line it printed a minute ago.
 #[test]
 fn a_follow_frame_says_what_is_running_where_and_how_it_ended() {
@@ -131,7 +131,7 @@ fn a_held_read_says_a_refusal_and_prints_the_frame_where_asked() {
     let refusal = json!({"ok": false, "error": "unknown conversation"});
     assert!(
         tail(&refusal, &mut fold, Form::Rendered).contains("unknown conversation"),
-        "a refusal mid-stream is the engine answering"
+        "a refusal mid-stream is the server answering"
     );
     let unreadable = json!({"ok": true, "kind": "follow"});
     assert!(

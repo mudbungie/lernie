@@ -11,7 +11,7 @@
 //!
 //! **Nothing here crosses the boundary.** yog's `docs/REMOTE.md` §7 rules
 //! that per-seat UI state is the seat's own, which is what every row is: the
-//! wall's facts are the tuning pane's (§4.17) and the config pane's (§4.30).
+//! workspace's facts are the tuning pane's (§4.17) and the config pane's (§4.30).
 //!
 //! **Written only where set.** [`to_json`] writes a knob only when it stands
 //! off its default, so a seat that touched nothing writes nothing and a

@@ -105,7 +105,7 @@ fn conversation(model: &mut Model, word: &str, rest: &str) -> Option<bool> {
 /// **`/delete` is armed by the conversation's own name and by nothing else.**
 /// The wire's typed name arms only the subtree: a leaf is deleted by any
 /// word, an empty one included. So the seat holds the arming §4.20 asks for
-/// itself — the name the engine compares (its display name, retyped,
+/// itself — the name the server compares (its display name, retyped,
 /// surrounding space forgiven) or no envelope at all — and states the subject
 /// in the refusal, as an unmaking states its subject before it offers the act.
 pub fn wanting(model: &Model, word: &str, rest: &str) -> Option<String> {

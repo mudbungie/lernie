@@ -1,5 +1,5 @@
 //! The live tail: the three absences that are readings, and the one place
-//! this reader is deliberately looser than the engine's own.
+//! this reader is deliberately looser than the server's own.
 
 use super::{Delta, Stream, follow};
 use serde_json::{Value, json};
@@ -45,7 +45,7 @@ fn an_empty_fold_is_waiting_and_not_an_empty_answer() {
     assert_eq!(thinking_only.last_delta, Some(Delta::Thinking));
 }
 
-/// **The deliberate divergence.** The engine's own reader refuses an
+/// **The deliberate divergence.** The server's own reader refuses an
 /// unrecognised delta token; this one keeps the word. The two readers are not
 /// doing the same job — refusing here throws away a whole accumulated turn to
 /// avoid painting one word, while the operator is watching the tail move.

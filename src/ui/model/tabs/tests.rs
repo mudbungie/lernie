@@ -1,6 +1,6 @@
 //! The tabs: opened by selecting and by nothing else, one per conversation
-//! per wall, closed onto a neighbour or the wall, and dropped with the
-//! listing or the selection the engine put down.
+//! per workspace, closed onto a neighbour or the workspace, and dropped with the
+//! listing or the selection the server put down.
 
 use crate::reply::read;
 use crate::test_support::window::{own, seated};
@@ -12,7 +12,7 @@ const A: &str = "20260830T051200Z-a1b2";
 const B: &str = "20260830T052000Z-b2c3";
 const C: &str = "20260830T053000Z-c3d4";
 
-/// A listing of root ids under the aimed wall.
+/// A listing of root ids under the aimed workspace.
 fn listing(roots: &[&str]) -> crate::reply::Read {
     let rows: Vec<_> = roots
         .iter()
@@ -25,7 +25,7 @@ fn listing(roots: &[&str]) -> crate::reply::Read {
     read(&json!({"ok": true, "kind": "conversations", "rows": rows}))
 }
 
-/// The seated wall with `roots` selected in turn, the last one standing.
+/// The seated workspace with `roots` selected in turn, the last one standing.
 fn opened(roots: &[&str]) -> Model {
     let mut model = seated();
     for root in roots {
@@ -41,19 +41,19 @@ fn a_select_opens_one_tab_and_never_a_second() {
     assert_eq!(model.strip(), [A, B]);
     model.aim = None;
     model.select(C);
-    assert_eq!(model.tabs.len(), 2, "no wall, no tab");
+    assert_eq!(model.tabs.len(), 2, "no workspace, no tab");
 }
 
-/// **The strip is the aimed wall's**: another wall's tabs wait under it.
+/// **The strip is the aimed workspace's**: another workspace's tabs wait under it.
 #[test]
-fn the_strip_paints_the_aimed_walls_tabs_only() {
+fn the_strip_paints_the_aimed_workspaces_tabs_only() {
     let mut model = opened(&[A]);
     model.aim_at(&own().channel.name, "elsewhere");
     assert!(model.strip().is_empty());
     model.select(B);
     assert_eq!(model.strip(), [B]);
     model.aim_at(&own().channel.name, "home");
-    assert_eq!(model.strip(), [A], "and comes back with its wall");
+    assert_eq!(model.strip(), [A], "and comes back with its workspace");
 }
 
 /// **Closing the selected tab selects the one to its left**, or to its right
@@ -73,7 +73,7 @@ fn closing_the_selected_tab_selects_its_neighbour() {
     assert_eq!(model.strip(), [B]);
 }
 
-/// **Closing the last puts the selection down to the wall**, and closing one
+/// **Closing the last puts the selection down to the workspace**, and closing one
 /// that is not selected leaves the selection where it was.
 #[test]
 fn closing_the_last_tab_puts_the_selection_down() {
@@ -86,11 +86,11 @@ fn closing_the_last_tab_puts_the_selection_down() {
     model.close_tab(A);
     assert_eq!(model.conversation, None);
     assert!(model.transcript.entries.is_empty());
-    assert_eq!(model.aim, aim, "back to the wall it was on");
+    assert_eq!(model.aim, aim, "back to the workspace it was on");
     assert!(model.strip().is_empty());
 }
 
-/// **A tab the listing no longer knows leaves with it** — under the wall the
+/// **A tab the listing no longer knows leaves with it** — under the workspace the
 /// listing answered, and no other.
 #[test]
 fn a_listing_without_the_root_drops_its_tab() {
@@ -104,10 +104,10 @@ fn a_listing_without_the_root_drops_its_tab() {
     });
     model.absorb(&own().channel, listing(&[B]));
     assert_eq!(model.strip(), [B]);
-    assert_eq!(model.tabs.len(), 2, "the other wall's tab stands");
+    assert_eq!(model.tabs.len(), 2, "the other workspace's tab stands");
     model.answered = None;
     model.prune_tabs();
-    assert_eq!(model.tabs.len(), 2, "an unanswered wall drops nothing");
+    assert_eq!(model.tabs.len(), 2, "an unanswered workspace drops nothing");
 }
 
 /// **A start's tab is opened under its claimed name, survives the listing
@@ -151,7 +151,7 @@ fn a_rename_onto_an_open_tab_is_one_tab() {
     assert_eq!(model.strip(), [A]);
 }
 
-/// **A selection the engine put down is a tab put down** (bl-6dfd).
+/// **A selection the server put down is a tab put down** (bl-6dfd).
 #[test]
 fn a_refused_selection_takes_its_tab() {
     let mut model = opened(&[A, B]);

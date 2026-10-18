@@ -5,12 +5,12 @@
 //! Five beats, and each is one clause of that sentence. Every one of them needs
 //! a far end that takes the request and says nothing — the window yog's own
 //! bl-d1f1 recorded having no test seam for — which is
-//! [`crate::test_support::engine::Answer::Hangup`].
+//! [`crate::test_support::server::Answer::Hangup`].
 
 use super::{holding, own, posting};
 use crate::offframe::poster::tick;
 use crate::test_support::Scratch;
-use crate::test_support::engine::Answer;
+use crate::test_support::server::Answer;
 use crate::test_support::wire::{flat, wired};
 use crate::ui::Aim;
 use serde_json::json;
@@ -30,7 +30,7 @@ fn an_act_that_never_left_this_box_says_so_and_says_it_is_safe_to_repeat() {
     link.settle(&mut model);
     let said = model.notice.expect("a notice").line();
     assert!(
-        said.contains("the nudge never reached the engine"),
+        said.contains("the nudge never reached the server"),
         "{said}"
     );
     assert!(said.contains("nothing happened"), "{said}");
@@ -39,7 +39,7 @@ fn an_act_that_never_left_this_box_says_so_and_says_it_is_safe_to_repeat() {
 }
 
 /// **An act that crossed and was not answered is IN DOUBT** — REMOTE §3's whole
-/// contract, on the one path that can produce it: the engine takes the request
+/// contract, on the one path that can produce it: the server takes the request
 /// and hangs up without a frame or a terminator.
 ///
 /// Three things are asserted and each is the contract rather than the wording.
@@ -62,7 +62,7 @@ fn an_act_that_crossed_with_no_answer_is_painted_in_doubt() {
     tick(&link, scratch.path());
     link.settle(&mut model);
     let said = model.notice.expect("a notice").line();
-    assert!(said.contains("your message reached the engine"), "{said}");
+    assert!(said.contains("your message reached the server"), "{said}");
     assert!(said.contains("it may have run"), "{said}");
     assert!(said.contains("look before doing it again"), "{said}");
     assert!(
@@ -76,13 +76,13 @@ fn an_act_that_crossed_with_no_answer_is_painted_in_doubt() {
 /// mechanically (bl-d1f1) and the wire has no slot to refuse from, so *sent
 /// exactly once per operator gesture* is a property of this queue or of nothing.
 ///
-/// The engine is scripted to hang up once and to answer the second dial. If any
+/// The server is scripted to hang up once and to answer the second dial. If any
 /// arm re-queued the act, that second answer would be spent on it — so the
 /// assertion is that the far end heard the gesture exactly once, across both.
 #[test]
 fn an_act_in_doubt_is_never_sent_again() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![
@@ -100,14 +100,14 @@ fn an_act_in_doubt_is_never_sent_again() {
     link.settle(&mut model);
     let gesture = json!({"op": "nudge", "workspace": "home", "agent": "a1b2"});
     assert_eq!(
-        engine
+        server
             .heard()
             .iter()
             .filter(|said| **said == gesture)
             .count(),
         1,
         "an act in doubt was sent a second time: {:?}",
-        engine.heard()
+        server.heard()
     );
 }
 

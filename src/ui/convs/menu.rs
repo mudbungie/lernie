@@ -21,7 +21,7 @@
 //! So every item here is one of two things and the separator is where the
 //! difference is:
 //!
-//! - **it fires**, because the gesture is the wall and the conversation and
+//! - **it fires**, because the gesture is the workspace and the conversation and
 //!   nothing else ([`straight`]) — [`crate::verbs::STOP`],
 //!   [`crate::verbs::RETARGET`], and [`crate::verbs::SEEN`] on a row that is
 //!   asking;
@@ -84,7 +84,7 @@ pub fn leads_to(word: &str) -> String {
     format!("{word}…")
 }
 
-/// The door every fired item goes through: a wall and a conversation, and
+/// The door every fired item goes through: a workspace and a conversation, and
 /// nothing else. **That signature is the admission test** — an act that needs a
 /// third parameter has a box, and a box is not something a menu can hold.
 type Door = fn(String, String) -> serde_json::Value;
@@ -122,8 +122,8 @@ fn straight(row: &ConvRow) -> Vec<(&'static str, &'static str, Door)> {
 
 /// Hang the menu off a painted row and take what it was given.
 ///
-/// `aim` is the wall the list is showing, which is what every gesture composed
-/// here is addressed with — the row's own list is the aimed wall's, so there is
+/// `aim` is the workspace the list is showing, which is what every gesture composed
+/// here is addressed with — the row's own list is the aimed workspace's, so there is
 /// no second resolution to get wrong.
 pub fn show(response: &egui::Response, model: &mut Model, aim: &Aim, row: &ConvRow) {
     response.context_menu(|ui| {

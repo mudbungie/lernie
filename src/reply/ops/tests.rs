@@ -39,7 +39,7 @@ fn a_row_carries_what_ran_how_it_ended_and_where_its_alarm_stands() {
 }
 
 /// **The handoff is not a failure**, and the sentinel exit that says so is
-/// carried rather than classified: the label is the engine's and the integer
+/// carried rather than classified: the label is the server's and the integer
 /// is beside it (REMOTE §9.17's *"total, never absent"*).
 #[test]
 fn a_detached_row_is_not_failed_and_keeps_its_sentinel() {
@@ -98,7 +98,7 @@ fn a_row_missing_a_field_refuses_and_names_it() {
 }
 
 /// The exit is narrowed, exactly as a captured run's is: a status no `i32`
-/// holds is an engine saying something this seat has no way to paint.
+/// holds is a server saying something this seat has no way to paint.
 #[test]
 fn an_exit_no_i32_holds_refuses() {
     let why = row(&json!({

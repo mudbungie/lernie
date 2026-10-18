@@ -10,14 +10,14 @@
 //! what `/delete <name>` sends and what the trashcan sends cannot drift.
 //!
 //! **The confirmation holds the root id and not the name.** A name is what
-//! the listing says this frame; the id is what the engine deletes, and a
+//! the listing says this frame; the id is what the server deletes, and a
 //! listing that re-answers while the question stands renames nothing
 //! underneath it.
 
 use super::Model;
 
 impl Model {
-    /// **The name the engine compares** for `root_id`: the listing's display
+    /// **The name the server compares** for `root_id`: the listing's display
     /// for it, or the id itself where the listing no longer has the row.
     pub fn name_of(&self, root_id: &str) -> String {
         self.rows()
@@ -43,9 +43,9 @@ impl Model {
         self.deleting = None;
     }
 
-    /// **Delete `root_id`**: compose `delete-agent` on the aimed wall, armed
+    /// **Delete `root_id`**: compose `delete-agent` on the aimed workspace, armed
     /// by the name, and put the confirmation down whichever door fired it.
-    /// Nothing is composed with no wall aimed — a row is a wall's, so with
+    /// Nothing is composed with no workspace aimed — a row is a workspace's, so with
     /// none aimed there is none to delete.
     pub fn post_delete(&mut self, root_id: &str) {
         self.deleting = None;

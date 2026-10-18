@@ -11,7 +11,7 @@
 //! # This is a DIAGNOSIS and not an enforcement, and the difference decides
 //! every line below
 //!
-//! Enforcement is the **engine's**, at the chokepoint where the client identity
+//! Enforcement is the **server's**, at the chokepoint where the client identity
 //! is already spent for scoping, fail-closed and in band. A seat holding a
 //! foot-grade leaf is therefore already refused, correctly, with or without
 //! this file. Nothing here is a security property and nothing here may behave
@@ -30,7 +30,7 @@
 //! cannot walk, an attribute in a string type it will not decode. That is the
 //! whole shape of it, and it is what keeps a diagnostic aid from becoming an
 //! outage: a walk that refused what it could not read would be a second, weaker
-//! certificate parser standing in front of rustls, refusing leaves the engine
+//! certificate parser standing in front of rustls, refusing leaves the server
 //! would have accepted. **Default-operator is REMOTE §4.2's own rule** — a
 //! certificate minted before the grade existed keeps working — and reading it
 //! any other way here would be this end inventing a policy the authority does
@@ -100,7 +100,7 @@ pub fn refusal(der: &[u8], at: &Path) -> Option<String> {
     Some(format!(
         "{}: the leaf{named} is foot grade — a foot may advertise, wait and \
          complete, and nothing else (REMOTE §4.2), so a seat holding it can \
-         ask the engine nothing. A seat is operator grade by definition. Mint \
+         ask the server nothing. A seat is operator grade by definition. Mint \
          an operator-grade pair on the box that holds the CA and carry it here; \
          {}",
         at.display(),
@@ -113,9 +113,9 @@ fn says_foot(der: &[u8]) -> bool {
     subject(der).is_some_and(|name| attributes(name, ORG_UNIT).iter().any(|unit| unit == FOOT))
 }
 
-/// The subject common name — the client identity the engine reads back off the
+/// The subject common name — the client identity the server reads back off the
 /// presented certificate (REMOTE §2), so a seat that says its own name learned
-/// it from the same bytes the engine will.
+/// it from the same bytes the server will.
 ///
 /// The **last** common name wins. A distinguished name is written most-general
 /// first in DER and most-specific last (RFC 4514 renders it reversed), so the

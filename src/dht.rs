@@ -6,7 +6,7 @@
 //! the rendezvous itself, and the one property of the seat this module must
 //! keep: a seat dials and is never dialled.
 //!
-//! The engine's client (yog's `src/dht`) is the reference; this is the seat's
+//! The server's client (yog's `src/dht`) is the reference; this is the seat's
 //! own copy of it, on the ruling that a DHT client is substrate rather than
 //! protocol and small enough that a published crate would cost more in
 //! release machinery than the copy costs. What the seat does not need — the

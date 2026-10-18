@@ -71,7 +71,7 @@ pub fn worked(row: &BoardRow) -> Option<String> {
     })
 }
 
-/// **What a figure says**: the engine's own money string where it priced the
+/// **What a figure says**: the server's own money string where it priced the
 /// tokens, the total, and the clause saying what the sum is over.
 ///
 /// Nothing here computes a price. `usd` was derived on the box that holds the
@@ -94,11 +94,11 @@ pub fn cost(figure: &Figure) -> String {
     said.join("  ")
 }
 
-/// **An armed loop, in the engine's own line** — plus the ceiling that would
+/// **An armed loop, in the server's own line** — plus the ceiling that would
 /// stop it, which is the one fact the line does not carry.
 ///
 /// The sentence is upstream's: `label` folds the cap, the count, the tick and
-/// the lease into words the engine wrote, and a seat re-deriving it from the
+/// the lease into words the server wrote, and a seat re-deriving it from the
 /// numbers beside it would be a second opinion about a loop it does not run.
 pub fn running(loop_: &Fleet) -> String {
     let mut said = vec![format!(

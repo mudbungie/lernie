@@ -1,9 +1,9 @@
 //! **The ball pane's fixtures** (bl-d2af) — the twelfth covering pane, and the
-//! one whose subject is BOTH every channel and the aimed wall.
+//! one whose subject is BOTH every channel and the aimed workspace.
 //!
 //! Split from [`super::union`] at the design-time budget on the seam the pane
 //! itself draws: those four panes are about nothing on the glass, and this one
-//! is about that plus the wall the window is aimed at. It is here rather than
+//! is about that plus the workspace the window is aimed at. It is here rather than
 //! in [`super`] because two of its four reads fan, which is what that file's
 //! own doc says its members have in common.
 
@@ -65,7 +65,7 @@ pub(crate) fn filing() -> Model {
     model
 }
 
-/// **The pane with the block open on the ball this wall holds**, its journal
+/// **The pane with the block open on the ball this workspace holds**, its journal
 /// box and its arming box filled, so all three of its acts are live.
 pub(crate) fn amending() -> Model {
     let mut model = boarded();
@@ -77,7 +77,7 @@ pub(crate) fn amending() -> Model {
     model
 }
 
-/// One ball a wall holds, as quiet as such a row can be.
+/// One ball a workspace holds, as quiet as such a row can be.
 pub(crate) fn bound(id: &str) -> crate::reply::balls::BoundBall {
     crate::reply::balls::BoundBall {
         id: id.to_owned(),
@@ -93,7 +93,7 @@ pub(crate) fn bound(id: &str) -> crate::reply::balls::BoundBall {
 /// claimed row carrying every line the pane can hang off one — the holder, the
 /// epic, the drones, its own spend and its rollup — a gated row, a bare ready
 /// row, an armed loop, a binding table with a held and an unheld row, and the
-/// aimed wall's own two answers. Every sentence the pane can say, on one
+/// aimed workspace's own two answers. Every sentence the pane can say, on one
 /// screen.
 pub(crate) fn boarded() -> Model {
     let claimed = crate::reply::board::BoardRow {

@@ -4,12 +4,12 @@
 //! Split from [`super`] at the design-time budget on the seam that module's
 //! own doc draws: this is the **projection**, a pure function of the
 //! transcript and the fold, and [`super`] is the pane that paints it. The two
-//! change for different reasons — an entry kind the engine grows changes this,
+//! change for different reasons — an entry kind the server grows changes this,
 //! a control the pane grows changes that — and the split is what keeps a
 //! reply-vocabulary change from touching any paint at all.
 //!
 //! **Nothing is dropped, including what nothing could parse.** An entry the
-//! engine could not read is surfaced as its raw bytes, and an entry of a kind
+//! server could not read is surfaced as its raw bytes, and an entry of a kind
 //! this build does not know is surfaced as its own word beside them — the
 //! reply vocabulary's rung 3, on the glass. A transcript that quietly skipped
 //! an entry would be a conversation the operator reads as shorter than it was,
@@ -84,7 +84,7 @@ pub struct Row {
     /// carried for the pairing and never painted: an id is the wire's
     /// bookkeeping, not anything the operator reads.
     pub call: Option<String>,
-    /// **Whether the engine has yet to acknowledge it** ([`sent`]): the one
+    /// **Whether the server has yet to acknowledge it** ([`sent`]): the one
     /// row whose words wear the pending ink rather than the body's.
     pub pending: bool,
     /// **The fill this row stands on** (§4.45 item 7), decided here and not
@@ -151,7 +151,7 @@ impl Row {
 
 /// **Who a wound's row is said by**: nobody — it is the conversation's
 /// state, so it wears the error rule and a word for what happened rather
-/// than the engine's virtual entry name.
+/// than the server's virtual entry name.
 pub const WOUND: &str = "it stopped";
 
 /// **The whole pane as data.**
@@ -163,7 +163,7 @@ pub const WOUND: &str = "it stopped";
 /// *the newest fold wins* is the only reconciliation either needs.
 ///
 /// **So a transcript with no `Streaming` entry has no turn in flight, and the
-/// fold is not painted at all.** The engine's streaming entry rides the open
+/// fold is not painted at all.** The server's streaming entry rides the open
 /// response (REMOTE §5.5), so its absence is the committed read saying the
 /// response closed — the turn is a `model` entry now, and a fold appended
 /// after it painted the answer twice, `«live»` under the committed one, for as
@@ -243,7 +243,7 @@ fn entry_rows(entry: &Entry) -> Vec<Row> {
             summary.clone(),
             Speaker::Peer,
         )],
-        // The two unreadables, held apart: the engine could not read this one,
+        // The two unreadables, held apart: the server could not read this one,
         // and this build does not know that one. Only the second is fixed by an
         // upgrade, so they must not read alike.
         EntryKind::Wounded {

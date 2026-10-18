@@ -9,7 +9,7 @@ use crate::cli::verdict::REFUSED;
 use crate::verbs::doors::{CEILING, PRICE};
 
 /// **The read fans and the two acts are aimed** (bl-1bb9): `prices` is every
-/// engine's table, and a row or a bound is one engine's — so the acts carry
+/// server's table, and a row or a bound is one server's — so the acts carry
 /// the channel `--on` names, or none for the seat to choose.
 #[test]
 fn the_read_fans_and_the_acts_are_aimed() {

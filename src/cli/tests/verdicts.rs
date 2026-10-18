@@ -11,7 +11,7 @@ fn version_names_the_crate_and_its_version() {
 }
 
 /// **The version is the fence**, so the number this build prints must be on the
-/// seat's side of it: 0.0.x under this name was the engine, which continues as
+/// seat's side of it: 0.0.x under this name was the agent loop, which continues as
 /// litany.
 #[test]
 fn the_version_is_on_the_seat_s_side_of_the_fence() {
@@ -26,7 +26,7 @@ fn the_version_is_on_the_seat_s_side_of_the_fence() {
     let major: u32 = major.parse().expect("a number");
     assert!(
         major > 0 || minor > 0,
-        "{stated} is a 0.0.x version, which under this name is the engine"
+        "{stated} is a 0.0.x version, which under this name is litany"
     );
 }
 
@@ -44,7 +44,7 @@ fn usage_leads_with_the_version_line_then_says_what_lernie_is() {
 /// The usage states the fence, because the name has two eras in the published
 /// record and a caller who typed `lernie` may be holding the other one.
 #[test]
-fn usage_states_the_fence_and_names_the_engine_s_new_name() {
+fn usage_states_the_fence_and_names_litany() {
     let text = usage();
     assert!(text.contains("TWO ERAS"), "{text}");
     assert!(text.contains("litany"), "{text}");
@@ -107,7 +107,7 @@ fn ok_carries_the_success_code_and_goes_to_stdout() {
     assert_eq!(v.stream, Stream::Out);
 }
 
-/// **An answer is a product whichever way it went.** The engine's `ok: false`
+/// **An answer is a product whichever way it went.** The server's `ok: false`
 /// is still stdout; only the code says no.
 #[test]
 fn an_answer_goes_to_stdout_either_way_and_only_the_code_says_no() {

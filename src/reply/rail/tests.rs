@@ -26,7 +26,7 @@ fn an_operable_notch_carries_its_commit_its_seat_and_its_rollup() {
 }
 
 /// **A notch with neither is not empty, it is unreachable.** No commit means
-/// no ref to fork off, and the label is the engine's own word for it.
+/// no ref to fork off, and the label is the server's own word for it.
 #[test]
 fn a_notch_with_no_commit_is_not_operable_and_says_so() {
     let read = notch(&json!({"seq": "002", "budget": 120})).expect("a bare notch reads");
@@ -46,7 +46,7 @@ fn a_commit_shorter_than_the_clip_is_its_own_label() {
 /// A card carries the child, its fork-point sentence verbatim, its state on
 /// the conversation list's own vocabulary, and the tail it may not have.
 #[test]
-fn a_card_carries_the_child_and_the_words_the_engine_wrote_about_it() {
+fn a_card_carries_the_child_and_the_words_the_server_wrote_about_it() {
     let read = card(&json!({
         "agent": "c-1-a", "name": "Cobalt", "fork": "from here",
         "state": "live", "tokens": 9, "notch": 0, "tail": "working"

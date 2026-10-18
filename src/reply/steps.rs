@@ -8,10 +8,10 @@
 //!
 //! # The class tokens are carried verbatim, and `"none"` is one of them
 //!
-//! `framing`, `wound` and `orphan` are each a closed set on the engine's side
+//! `framing`, `wound` and `orphan` are each a closed set on the server's side
 //! and an open one here, which is [`super`]'s rung 3: a word this seat does not
 //! know paints as itself rather than as a neighbour it is not. The one word the
-//! pane interprets is [`NONE`] — the engine's own spelling for *nothing is
+//! pane interprets is [`NONE`] — the server's own spelling for *nothing is
 //! wounded, nothing is orphaned* — because painting a badge that says `none`
 //! would state an absence twice.
 //!
@@ -30,7 +30,7 @@ use super::fields;
 /// The kind token this reading answers to.
 pub(crate) const KIND: &str = "steps";
 
-/// The engine's word for a wound or an orphan that is not there. The one
+/// The server's word for a wound or an orphan that is not there. The one
 /// token the pane reads rather than paints — an absence stated once.
 pub const NONE: &str = "none";
 
@@ -49,7 +49,7 @@ pub const REFUSED: &str = "refused";
 /// view's own fact rather than any row's.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Steps {
-    /// One row per step, in the engine's own sequence order.
+    /// One row per step, in the server's own sequence order.
     pub rows: Vec<StepRow>,
     /// Which tail is orphaned — [`NONE`], or a class token carried verbatim.
     pub orphan: String,
@@ -69,7 +69,7 @@ pub struct StepRow {
     /// What the step cost, in the four counters and their total.
     pub tokens: Spend,
     /// **That step's own bill**, priced by its own `(provider, model)`
-    /// (REMOTE §9.23) — `None` where the engine has no price table.
+    /// (REMOTE §9.23) — `None` where the server has no price table.
     pub cost: Option<super::spend::Cost>,
     /// The read-state commit, where the step's record carried one.
     pub commit: Option<String>,
@@ -85,7 +85,7 @@ pub struct StepRow {
 }
 
 /// The four counters and their total, exactly as the wire carries them. The
-/// total rides rather than being summed here because it is the engine's
+/// total rides rather than being summed here because it is the server's
 /// derivation — cache counters do not add the way a reader would guess.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Spend {

@@ -9,7 +9,7 @@
 # A SEAT SHOULD NEVER ACQUIRE A TENANT HERE. It dials a socket, frames JSON and
 # paints; rustls, the standard library and (when the window lands) eframe are
 # the only things beneath it, and none of them asks a consumer for a raw call.
-# Upstream's four raw effects are all engine-side — a signal disposition, a
+# Upstream's four raw effects are all server-side — a signal disposition, a
 # process-env fold, a child's termination — and every one of them is a thing
 # the seat had severed from it. So the honest expectation is that this file
 # stays absent forever, and an ask to create it is an ask to explain what the

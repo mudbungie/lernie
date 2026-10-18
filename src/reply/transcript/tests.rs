@@ -64,11 +64,11 @@ fn every_entry_kind_reads_back_as_itself() {
 }
 
 /// **The epitaph rides as its label, not as an enum this seat mirrors.** The
-/// engine's own reader for it is total, so a closed set here would be stricter
+/// server's own reader for it is total, so a closed set here would be stricter
 /// than the authority this crate implements against.
 #[test]
 fn an_epitaph_is_carried_verbatim_including_one_this_build_never_saw() {
-    for word in ["delivered", "abandoned", "a-word-from-a-newer-engine"] {
+    for word in ["delivered", "abandoned", "a-word-from-a-newer-server"] {
         let answered = read(&json!({"rows": [
             {"name": "002-child.md", "raw": "landed", "kind": "delivered",
              "sender": "child", "epitaph": word, "body": "landed"},
@@ -81,7 +81,7 @@ fn an_epitaph_is_carried_verbatim_including_one_this_build_never_saw() {
     }
 }
 
-/// **Rung 3 on the entry kind, and it is held apart from `raw`.** "The engine
+/// **Rung 3 on the entry kind, and it is held apart from `raw`.** "The server
 /// could not read this" and "this seat is behind" are different sentences, and
 /// only one of them is fixed by an upgrade — so an entry of an unknown kind
 /// keeps its word rather than becoming [`EntryKind::Raw`].
@@ -156,7 +156,7 @@ fn a_delivered_row_carries_the_display_name_beside_the_durable_handle() {
 }
 
 /// **The wound decodes whole** (bl-d34f): its class, the adapter's words and
-/// the row a refusal routed to, the last two absent where the engine wrote
+/// the row a refusal routed to, the last two absent where the server wrote
 /// none — read off the vendored corpus, which carries every arm.
 #[test]
 fn a_wound_decodes_its_class_its_reason_and_its_row() {

@@ -127,11 +127,11 @@ fn a_click_on_each_door_opens_what_it_names() {
     assert!(model.switching, "the name opens the switcher");
 }
 
-/// **Ctrl+O and `/model` open the model's dropup** where a wall is aimed, and
+/// **Ctrl+O and `/model` open the model's dropup** where a workspace is aimed, and
 /// nothing where none is, as the word is not offered there — and over a
 /// pane it replaces the pane, as Ctrl+X does.
 #[test]
-fn ctrl_o_opens_the_model_s_dropup_where_a_wall_is_aimed() {
+fn ctrl_o_opens_the_model_s_dropup_where_a_workspace_is_aimed() {
     let ctrl_o = |model: &mut Model| {
         let window = Window::new();
         window.focus(egui::Id::new(crate::ui::keys::BOX_ID));
@@ -201,7 +201,7 @@ fn a_refusal_carries_the_doors_it_names() {
 }
 
 /// **A refused role write carries the seat's own door** (bl-8a4b): the
-/// engine's words untouched, `/config` after them and on the rule — decided
+/// server's words untouched, `/config` after them and on the rule — decided
 /// by the op that was refused, so another op's refusal carries none. And an
 /// act that never left names the start as what it was, never as its op.
 #[test]
@@ -217,7 +217,7 @@ fn a_refused_role_write_names_config_and_another_refusal_does_not() {
     );
     let line = model.notice.clone().expect("refused").line();
     let door = crate::ui::model::CONFIG_DOOR;
-    assert_eq!(line, format!("the engine refused: {said} — {door}"));
+    assert_eq!(line, format!("the server refused: {said} — {door}"));
     let doors = crate::ui::status::diagnostics::doors(&model);
     let words: Vec<&str> = doors.iter().map(|run| run.text.as_str()).collect();
     assert_eq!(words, ["/config"]);
@@ -227,7 +227,7 @@ fn a_refused_role_write_names_config_and_another_refusal_does_not() {
         Read::Refusal(said.to_owned()),
     );
     let line = model.notice.clone().expect("refused").line();
-    assert_eq!(line, format!("the engine refused: {said}"));
+    assert_eq!(line, format!("the server refused: {said}"));
     let unsent = crate::channel::Reach::Unsent("no route".to_owned());
     let line = crate::ui::Notice::act(crate::verbs::PREPARE, &unsent).line();
     assert!(

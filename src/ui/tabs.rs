@@ -4,7 +4,7 @@
 //! Each tab is the conversation's name — the asking `?` in the attention
 //! accent before it while it asks (`crate::ui::convs::mark`), the selected one
 //! in body ink over a brand hairline and the rest in weak ink — and a close
-//! `×` in faint ink after it. The strip stands only while a tab stands: a wall
+//! `×` in faint ink after it. The strip stands only while a tab stands: a workspace
 //! with nothing open is the transcript's own empty column.
 //!
 //! **Nothing here decides what is open.** The tabs are [`Model::tabs`], filled
@@ -28,7 +28,7 @@ fn row_of(model: &Model, root_id: &str) -> Option<ConvRow> {
         .find(|row| row.root_id == root_id)
 }
 
-/// **Paint the strip**, if any tab of the aimed wall stands.
+/// **Paint the strip**, if any tab of the aimed workspace stands.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     let strip = model.strip();
     if strip.is_empty() {

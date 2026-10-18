@@ -191,8 +191,8 @@ fn an_open_row_says_its_state_name_age_and_first_line_and_a_click_selects() {
     assert_eq!(model.conversation.as_deref(), Some("20260830T051300Z-c3d4"));
 }
 
-/// **What it says with nothing to list**, open: the wall answered empty, the
-/// wall not answered yet, and nothing aimed — and collapsed, nothing.
+/// **What it says with nothing to list**, open: the workspace answered empty, the
+/// workspace not answered yet, and nothing aimed — and collapsed, nothing.
 #[test]
 fn an_empty_list_says_why_open_and_nothing_shut() {
     let ctx = egui::Context::default();
@@ -215,14 +215,18 @@ fn an_empty_list_says_why_open_and_nothing_shut() {
     nowhere.bar.pinned = true;
     let unaimed = said(&tick(&ctx, &mut nowhere, 0.0, None));
     assert!(unaimed.iter().any(|t| t == NOTHING_AIMED), "{unaimed:?}");
-    assert!(!unaimed.iter().any(|t| t == crate::ui::roster::wall::NEW));
+    assert!(
+        !unaimed
+            .iter()
+            .any(|t| t == crate::ui::roster::workspace::NEW)
+    );
 }
 
-/// **`+ new` at the head begins a conversation on the aimed wall** — the
+/// **`+ new` at the head begins a conversation on the aimed workspace** — the
 /// switcher's own door — and stands down under a covering pane but the
 /// switcher's; nothing of the bar paints under the enrollment.
 #[test]
-fn new_begins_on_the_aimed_wall_and_stands_down_under_a_cover() {
+fn new_begins_on_the_aimed_workspace_and_stands_down_under_a_cover() {
     let window = Window::new();
     let mut model = seated();
     model.switching = true;
@@ -232,7 +236,7 @@ fn new_begins_on_the_aimed_wall_and_stands_down_under_a_cover() {
     // **The pointer opens the bar before it can click**, so the click lands
     // on the open head's words.
     model.bar.pinned = true;
-    click_bar(&window, &mut model, crate::ui::roster::wall::NEW);
+    click_bar(&window, &mut model, crate::ui::roster::workspace::NEW);
     assert_eq!(model.conversation, None, "the selection is put down");
     assert!(!model.switching, "the switcher closed on the way");
     window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
@@ -267,7 +271,7 @@ fn the_rows_and_new_wear_their_tags_and_the_pin_none() {
     let prefix = crate::ui::act::PREFIX;
     let row = tag(ROW).expect("the row is tagged");
     assert!(row.starts_with(&format!("{prefix}{}", crate::verbs::TRANSCRIPT.word)));
-    let new = tag(crate::ui::roster::wall::NEW).expect("+ new is tagged");
+    let new = tag(crate::ui::roster::workspace::NEW).expect("+ new is tagged");
     assert!(new.contains(crate::verbs::PREPARE), "{new}");
     let unpin = theme::worded(theme::glyph::PIN, super::UNPIN);
     assert_eq!(tag(&unpin), None, "the pin posts nothing");

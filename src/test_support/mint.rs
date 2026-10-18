@@ -18,7 +18,7 @@
 //! **What each leaf says**, and every fact here is REMOTE's rather than this
 //! file's:
 //!
-//! - the **engine** leaf carries `serverAuth` and a SAN naming loopback, which
+//! - the **server** leaf carries `serverAuth` and a SAN naming loopback, which
 //!   is what a client verifies against what it dialled (REMOTE §8: the server
 //!   leaf always carries `IP:127.0.0.1`, because a window is a client of
 //!   loopback unconditionally);
@@ -39,8 +39,8 @@ const CURVE: &str = "ec_paramgen_curve:P-256";
 const DAYS: &str = "1";
 /// The common name the suite's seat presents.
 pub(crate) const SEAT_NAME: &str = "lernie-test-seat";
-/// The engine leaf's basename and common name.
-pub(crate) const ENGINE: &str = "engine";
+/// The server leaf's basename and common name.
+pub(crate) const SERVER: &str = "server";
 
 /// Mint a CA and both leaves into `dir`, in the layout
 /// [`material`](crate::channel::material) reads: the seat's pair is written as
@@ -51,8 +51,8 @@ pub(crate) fn material(dir: &Path) {
     ca(dir);
     leaf(
         dir,
-        ENGINE,
-        &format!("/CN={ENGINE}"),
+        SERVER,
+        &format!("/CN={SERVER}"),
         "IP:127.0.0.1",
         "serverAuth",
     );
@@ -67,7 +67,7 @@ pub(crate) fn material(dir: &Path) {
 
 /// [`material`], plus the address file — the whole of what one provisioned
 /// channel holds, answered as the material a channel opens from. The tests that
-/// stand an [`Engine`](super::engine::Engine) up do not use it: an engine binds
+/// stand an [`Server`](super::server::Server) up do not use it: a server binds
 /// a kernel-chosen port and writes the address itself, because only the
 /// listener knows what `:0` became.
 pub(crate) fn provisioned(dir: &Path, address: &str) -> crate::channel::material::Material {

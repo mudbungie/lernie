@@ -38,14 +38,14 @@ fn a_directory_that_will_not_read_is_zero_entries_and_not_a_refusal() {
 fn a_provisioned_entry_answers_its_leaf_as_its_own_host_name() {
     let scratch = Scratch::new();
     let entries = scratch.dir("workspaces");
-    provision(&entries.join("home"), "engine.example:9000");
+    provision(&entries.join("home"), "server.example:9000");
     let held = read_dir(&entries);
     assert_eq!(held.len(), 1);
     assert_eq!(held[0].leaf, "home");
     assert_eq!(held[0].workspace, "home");
     assert_eq!(
         held[0].channel.as_ref().expect("provisioned").address,
-        "engine.example:9000"
+        "server.example:9000"
     );
 }
 
@@ -61,7 +61,7 @@ fn the_workspace_file_names_it_on_its_host_and_says_nothing_when_blank() {
         ("blank", "  \n", "blank"),
     ] {
         let path = entries.join(leaf);
-        provision(&path, "engine.example:9000");
+        provision(&path, "server.example:9000");
         std::fs::write(path.join(WORKSPACE), stated).expect("write");
         let held = read_dir(&entries);
         let found = held.iter().find(|e| e.leaf == leaf).expect("listed");
@@ -76,7 +76,7 @@ fn entries_are_sorted_and_a_stray_file_is_not_one() {
     let scratch = Scratch::new();
     let entries = scratch.dir("workspaces");
     for leaf in ["zulu", "alpha"] {
-        provision(&entries.join(leaf), "engine.example:9000");
+        provision(&entries.join(leaf), "server.example:9000");
     }
     std::fs::write(entries.join("README"), b"not an entry").expect("write");
     let leaves: Vec<String> = read_dir(&entries).into_iter().map(|e| e.leaf).collect();
@@ -90,10 +90,10 @@ fn entries_are_sorted_and_a_stray_file_is_not_one() {
 fn a_refusing_entry_stands_beside_the_ones_that_are_fine() {
     let scratch = Scratch::new();
     let entries = scratch.dir("workspaces");
-    provision(&entries.join("good"), "engine.example:9000");
+    provision(&entries.join("good"), "server.example:9000");
     std::fs::create_dir_all(entries.join("hollow")).expect("mkdir");
     let half = entries.join("half");
-    provision(&half, "engine.example:9000");
+    provision(&half, "server.example:9000");
     std::fs::remove_file(half.join(KEY)).expect("rm");
 
     let held = read_dir(&entries);
@@ -146,11 +146,11 @@ fn a_provisioned_entry_opens_onto_its_own_address() {
     let scratch = Scratch::new();
     let entries = scratch.dir("workspaces");
     let path = entries.join("home");
-    let held = mint::provisioned(&path, "engine.example:9000");
-    assert_eq!(held.address, "engine.example:9000");
+    let held = mint::provisioned(&path, "server.example:9000");
+    assert_eq!(held.address, "server.example:9000");
     let entry = read_dir(&entries).into_iter().next().expect("listed");
     assert_eq!(
         entry.open().expect("opened").address(),
-        "engine.example:9000"
+        "server.example:9000"
     );
 }

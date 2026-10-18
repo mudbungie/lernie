@@ -89,10 +89,10 @@ fn an_envelope_naming_no_workspace_crosses_unchanged() {
 }
 
 /// **The config family's slot**, one level down inside its destination: the
-/// wall whose file the act edits *is* the gesture's address, so a config act
+/// workspace whose file the act edits *is* the gesture's address, so a config act
 /// aimed at an entry under a §8.2 rename is rewritten into the host's spelling
 /// and routed to that entry — rather than resolving to no entry, falling
-/// through to this box's own engine, and writing the wrong wall's file
+/// through to this box's own server, and writing the wrong workspace's file
 /// (bl-4a36; yog's twin bl-523f is the same row in the typed table).
 #[test]
 fn a_config_destination_carries_the_slot_one_level_down() {

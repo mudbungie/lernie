@@ -14,26 +14,26 @@ fn said(word: &str) -> &'static str {
     crate::verbs::find(word).map_or(NO_SUMMARY, |verb| verb.summary)
 }
 
-/// The aimed wall's own row, where the roster holds one.
+/// The aimed workspace's own row, where the roster holds one.
 fn aimed(model: &Model) -> Option<&crate::reply::roster::WsRow> {
     let aim = model.aim.as_ref()?;
     model
         .roster
         .iter()
         .find(|chunk| chunk.channel.name == aim.channel)?
-        .walls
+        .workspaces
         .iter()
-        .find(|wall| wall.workspace == aim.address)
+        .find(|workspace| workspace.workspace == aim.address)
 }
 
-/// Whether the engine offers `act` on the selected conversation — and every
+/// Whether the server offers `act` on the selected conversation — and every
 /// act where it has not answered about it yet.
 fn offered(model: &Model, act: Offer) -> bool {
     model.agent().is_none_or(|row| row.offers.contains(&act))
 }
 
 /// **Every row this seat offers right now**, in the order they are read: the
-/// selected conversation's, the aimed wall's, then the window's own.
+/// selected conversation's, the aimed workspace's, then the window's own.
 pub fn rows(model: &Model) -> Vec<Row> {
     let mut out = Vec::new();
     let addressable = model.conversation.is_some() && model.pending().is_none();
@@ -42,15 +42,15 @@ pub fn rows(model: &Model) -> Vec<Row> {
     } else if model.aim.is_some() {
         out.push(Row::new(PLAN, "the next start is a plan", &[]));
     }
-    if let Some(wall) = aimed(model) {
-        wall_rows(wall.pinned.is_some(), &mut out);
+    if let Some(workspace) = aimed(model) {
+        workspace_rows(workspace.pinned.is_some(), &mut out);
     }
     window_rows(&mut out);
     out
 }
 
 /// The verbs on the selected conversation: its ledger, the acts on its turn
-/// the engine offers, and the acts on it as an object.
+/// the server offers, and the acts on it as an object.
 fn conversation_rows(model: &Model, out: &mut Vec<Row>) {
     use crate::verbs;
     out.push(Row::new(
@@ -111,9 +111,9 @@ fn conversation_rows(model: &Model, out: &mut Vec<Row>) {
     ));
 }
 
-/// The verbs on the aimed wall: its rank first, then its panes, the unmaking
+/// The verbs on the aimed workspace: its rank first, then its panes, the unmaking
 /// last (DESIGN §4.20).
-fn wall_rows(pinned: bool, out: &mut Vec<Row>) {
+fn workspace_rows(pinned: bool, out: &mut Vec<Row>) {
     use crate::verbs;
     if pinned {
         out.push(Row::new(
@@ -170,7 +170,7 @@ fn wall_rows(pinned: bool, out: &mut Vec<Row>) {
     ));
 }
 
-/// The window's own verbs: the ones whose subject is every engine this seat
+/// The window's own verbs: the ones whose subject is every server this seat
 /// reaches.
 fn window_rows(out: &mut Vec<Row>) {
     use crate::verbs;
@@ -206,7 +206,7 @@ fn window_rows(out: &mut Vec<Row>) {
     ));
     out.push(Row::new(
         crate::ui::board::WORD,
-        "the balls every engine holds, and this workspace's",
+        "the balls every server holds, and this workspace's",
         &[
             verbs::BALLS.word,
             verbs::BOARD.word,
@@ -226,7 +226,7 @@ fn window_rows(out: &mut Vec<Row>) {
     ));
     out.push(Row::new(
         crate::ui::switcher::WORD,
-        "every engine, its workspaces and their conversations — Ctrl+X",
+        "every server, its workspaces and their conversations — Ctrl+X",
         &[],
     ));
 }

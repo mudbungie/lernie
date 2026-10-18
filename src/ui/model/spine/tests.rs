@@ -5,7 +5,7 @@ use serde_json::json;
 use crate::test_support::window::{recorded, seated};
 use crate::ui::{Forking, Model};
 
-/// **The whole gesture, once**: the wall, the parent, the notch's own commit,
+/// **The whole gesture, once**: the workspace, the parent, the notch's own commit,
 /// the trimmed role and the trimmed goal, with the skill list the wire's own
 /// way of saying an attempt pins none.
 #[test]
@@ -57,7 +57,7 @@ fn a_half_typed_draft_composes_nothing() {
     }
 }
 
-/// **A fork with no wall and a fork with no conversation compose nothing** —
+/// **A fork with no workspace and a fork with no conversation compose nothing** —
 /// the two states the pane cannot paint a control in, made unreachable rather
 /// than merely unlikely.
 #[test]

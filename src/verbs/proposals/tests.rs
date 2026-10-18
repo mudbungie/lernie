@@ -5,7 +5,7 @@ use serde_json::json;
 
 use super::{PROPOSAL, PROPOSALS, VERDICTS, proposal, proposals};
 
-/// **The bare listing states no id at all** — not `null`, which the engine
+/// **The bare listing states no id at all** — not `null`, which the server
 /// would have to read as a second spelling of the absence it already reads
 /// from a missing key. Absence is the fact: nothing was named, so nothing is
 /// answered whole.

@@ -2,7 +2,7 @@
 
 **Status: a working seat, whole.**
 `lernie <verb>` and `lernie ask` open the channel a gesture's workspace names —
-the box's own engine, or one of the client-side workspaces it holds elsewhere —
+the box's own server, or one of the client-side workspaces it holds elsewhere —
 over a real mTLS handshake with a real version preface, carry the operator's
 envelope across, and print the reply stream. `lernie entries` says what this box
 holds without dialling any of it, and `lernie help` says what a verb takes
@@ -10,7 +10,7 @@ without dialling anything at all. `src/verbs/` is the gestures typed (§4.10)
 and `src/reply/` reads their answers back as the nine kinds a window paints
 (§4.9). **`lernie start` begins a conversation** — the start family's two acts,
 staged and fired in one process (§4.10). The suite proves all of that against a
-stand-in engine that speaks the protocol, at 100% coverage.
+stand-in server that speaks the protocol, at 100% coverage.
 
 **Bare `lernie` opens the window** (§4.11): the roster grouped by channel, the
 conversation list, the chat pane and the composer — which speaks to the
@@ -37,7 +37,7 @@ diverges, and never code around a stale section.
 **`lernie` on crates.io carries two eras and the version is the only rule that
 separates them.**
 
-- **`lernie` ≤ 0.0.x** was the **agent-loop engine**. That program did not
+- **`lernie` ≤ 0.0.x** was the **agent loop**. That program did not
   retire; it was renamed, and it continues as **`litany`**.
 - **`lernie` ≥ 0.1.0** is **this crate**: the seat — the window and its wire
   client, severed from yog (yog's `docs/REMOTE.md` §12, adopted 2026-08-28).
@@ -45,25 +45,25 @@ separates them.**
 Both READMEs state it, in both directions, because a published record cannot be
 corrected in place. Read every `lernie` you meet against that rule: a bare one
 names the seat or the split's ruling, and one bound to a `0.0.x` version names
-the engine at that release.
+litany at that release.
 
 Three consequences are structural rather than editorial, and all three are
 enforced somewhere in this tree:
 
 1. **0.1.0 is the floor and the manifest says so.** A `0.0.z` release from this
-   tree would collide with the engine's own line and destroy the
+   tree would collide with litany's own line and destroy the
    disambiguation. `Cargo.toml` carries the reasoning beside the version, and
    `src/cli/tests.rs` asserts the compiled version is on the seat's side of the
    fence — so a hand that edited the number down fails the suite rather than
    the registry.
-2. **`LERNIE_HOME` is refused.** That variable named the engine's harness root
+2. **`LERNIE_HOME` is refused.** That variable named litany's harness root
    and is `LITANY_HOME` now. Reviving the spelling for a different program would
    make one name mean two things on a box that has both. `src/paths.rs` states
    it; there is no knob.
 3. **`$XDG_DATA_HOME/lernie` is taken anyway, and that is deliberate.** A box
-   that ran the pre-fence engine may hold that directory from the other era.
+   that ran litany under this name may hold that directory from the other era.
    This crate reads exactly two paths under its root — `wire/` and
-   `wire/workspaces/` — and the engine's home held neither shape, so the two
+   `wire/workspaces/` — and litany's home held neither shape, so the two
    coexist with no file in common. Picking a different directory to dodge a
    directory name would have been the seat conceding the name it was given.
 
@@ -98,13 +98,15 @@ per source file and a 100% coverage floor.
 **The operator's face on a yog server, and nothing else in the harness.**
 
 A seat holds an operator-issued certificate for the box it runs on and dials in
-to an engine over mTLS. It asks the boundary's queries, dispatches its actions,
+to a server over mTLS. It asks the boundary's queries, dispatches its actions,
 and paints what comes back. REMOTE §2 names it: *"a client connection acting as
-an operator face: it asks queries, paints replies, dispatches gestures. A seat
-is operator-grade by definition — a face that could not ask is not a face."*
+an operator face: it asks queries, paints replies, dispatches gestures. … A
+seat is operator-grade by definition: a face that could not ask is not a face.
+lernie is the seat component; the phone app is another."*
 
-It is one of four components that meet only at the wire — the server (yog), the
-seat (this), the engine (litany, beneath the server), and the foot (thrall).
+It is one of four components — the server (yog), the seat (this), the foot
+(thrall), and litany, the agent loop yog runs as a subprocess per verb. The
+first three meet only at the wire; litany is not on it, and is named only.
 The seat was severed so that the machine holding the conversations is not the
 machine an operator sits at, and so that a phone, a laptop and a desk can all
 be seats on one world without any of them holding it.
@@ -121,13 +123,13 @@ Each of these is a thing another component is, and the seat holding it would
 undo a severance rather than add a feature.
 
 - **It never holds a world.** Every durable fact of a workspace is the
-  server's, on the server's disk, under the file religion (REMOTE §6). A seat
+  server's, on its box's disk, under the file religion (REMOTE §6). A seat
   caching one would be a second authority for it.
 - **It never executes.** Tool execution is a foot's, over the same front door
   (REMOTE §12's first invariant, §5.4). A seat that ran a command would be a
   tool host with an operator-grade certificate, which is a thing that exists
   and is not this.
-- **It never listens.** A seat dials and is never dialled; the engine never
+- **It never listens.** A seat dials and is never dialled; the server never
   speaks first. There is no inbound direction to secure because there is no
   inbound direction.
 - **It never mints.** Certificates arrive out of channel, by the operator's
@@ -147,7 +149,7 @@ undo a severance rather than add a feature.
 
   What the second half described was the *surface as it then stood*, and the
   `enroll` act is now on it (§4.13). The seat does not mint it: the mint is the
-  engine's, on the engine's box, over a trust root that already exists. The act
+  server's, on the server's box, over a trust root that already exists. The act
   crosses a channel **already** authenticated at operator grade on material
   that already moved out of channel; the box being enrolled is not a party to
   it and has no channel yet; and what reaches that box reaches it through a
@@ -155,7 +157,7 @@ undo a severance rather than add a feature.
   on a stick and is mediated by the same operator. The seat asks, and paints.
 - **It adds no wire vocabulary.** REMOTE §3's ban is on a capability that
   exists on the wire and nowhere else. A gesture typed at a seat is the same
-  envelope the engine's own inbox carries, answered by the same dispatch.
+  envelope the server's own inbox carries, answered by the same dispatch.
 
 ---
 
@@ -173,10 +175,10 @@ that is three things and not thirty.
 (bl-4a36, and yog's twin bl-523f in the typed table): top level; one level down
 inside `prepared` on the two envelopes carrying a prepared start; and one level
 down inside `target` on the config family, whose destination *is* its address —
-the wall whose file the act edits. The third row is the one that had to be
+the workspace whose file the act edits. The third row is the one that had to be
 argued for: without it a config act aimed at an entry under a local rename
-resolves to no entry, falls through to this box's own engine, and writes the
-wrong wall's file with nothing painted. The two tables are fixed together or
+resolves to no entry, falls through to this box's own server, and writes the
+wrong workspace's file with nothing painted. The two tables are fixed together or
 not at all, because a §8.2 mapping the two ends disagree about is worse than
 either answer; `src/verbs/tests/corpus.rs` reads the holders off upstream's own
 `shapes.json` as the second opinion.
@@ -191,7 +193,7 @@ one frame in it. `Channel::ask` is written in terms of `Channel::follow` rather
 than beside it, so there is one reader and it cannot drift.
 
 **A read whose frames REPLACE is whole on its first frame** (REMOTE §14.1,
-bl-09e1). Since PROTOCOL 10 an engine that can hold answers `attention` as a
+bl-09e1). Since PROTOCOL 10 a server that can hold answers `attention` as a
 sequence — the answer at connect, a frame per change, until a bounded hold
 (30 s) ends — and *"frames replace; they never append"*. So `Channel::ask` stops
 after the first frame of any op `verbs::queue::REPLACING` names and drops the
@@ -220,19 +222,19 @@ other: the file says what the number is, the ledger says why it is that.
 **This is why a separate crate needs it.** Until the split, one crate shipped
 both ends of every connection and the wire could not skew. A seat is installed
 on the operator's own device and upgraded on that device's schedule while the
-engine is upgraded on the server's, so the day the two disagree is a day that
+server is upgraded on its own box's, so the day the two disagree is a day that
 will arrive.
 
 ### 4.4 mTLS, and the certificate is the whole authentication story (§1.3, §4)
 
-The engine requires a client certificate chaining to the operator CA; this end
-requires the same of the engine and presents its own. No password, no token, no
+The server requires a client certificate chaining to the operator CA; this end
+requires the same of the server and presents its own. No password, no token, no
 account — so there is nothing in the channel to phish, rotate or leak, and a
 connection that cannot authenticate gets a TLS refusal rather than a reply.
 `src/channel/tls.rs`. The provider is named (`ring`) rather than defaulted,
 because the default read is a panic path and prod has none.
 
-**The engine's name comes off the address and from nowhere else** (§8): an IP
+**The server's name comes off the address and from nowhere else** (§8): an IP
 literal is an IP identity, anything else a DNS name. There is no server-name
 knob and so nothing that can disagree with what was dialled.
 
@@ -240,7 +242,7 @@ knob and so nothing that can disagree with what was dialled.
 is a DIAGNOSIS rather than an enforcement** (`src/channel/leaf.rs`, REMOTE
 §4.2). A certificate carries one of two grades, spelled as the subject's
 organizational unit; a seat is operator grade by definition, and enforcement of
-that is the engine's, at the chokepoint where the client identity is already
+that is the server's, at the chokepoint where the client identity is already
 spent for scoping, fail-closed and in band. So a seat holding a foot-grade leaf
 is already refused correctly, and nothing here is a security property.
 
@@ -254,7 +256,7 @@ decides the design.
   positively read `OU=foot`; `None` for everything else, bytes that are not a
   certificate included. A walk that refused what it could not read would be a
   second, weaker certificate parser standing in front of rustls, refusing
-  leaves the engine would have accepted — an outage bought with a diagnostic.
+  leaves the server would have accepted — an outage bought with a diagnostic.
   Default-operator is REMOTE §4.2's own rule, and reading it any other way here
   would be this end inventing a policy the authority does not have.
 - **It is a DER walk, not a byte search**, because the structure is the point:
@@ -285,13 +287,13 @@ level down (§4.40).
 to carry one sentence, and it was the visiting box's: *mint an extra client
 leaf on the host that issued it and carry it here*. That is the first thing
 this binary ever says to a new operator, and on a single-box install it is
-advice that does not work — the leaf already exists, because the engine's own
+advice that does not work — the leaf already exists, because the server's own
 boot minted `ca.pem`, `client.pem`, `client.key` and `address` into its own
 wire directory, so the act is a **copy** — while a `WIRE_LEAF` leaf is
 registered in no workspace besides. So the flat root and an entry now answer
 different sentences, and the fact that decides which is the reader's rather
 than the directory's: `channel::entries` is reading a directory somebody made
-for another box's engine, `seat::route` is reading this box's own channel, and
+for another box's server, `seat::route` is reading this box's own channel, and
 `material::read_dir` is told.
 
 **And both name the four files.** *Carried here by hand* said what to do and
@@ -317,7 +319,7 @@ facts that reach one workspace held elsewhere. `src/channel/entries.rs`.
 - **Separation is the absence of a mechanism.** Entries share nothing — not
   anchors, not leaves, not addresses — so there is no inheritance and no path
   by which one entry is read through another.
-- **A refusal is one entry's, never the set's.** A box serving three engines
+- **A refusal is one entry's, never the set's.** A box serving three servers
   does not lose the two that are fine.
 
 ### 4.7 Resolution, and the one place the mapping is spent (§8.2)
@@ -331,7 +333,7 @@ without naming it.
 so a gesture cannot cross renamed down one path and unrenamed down another. Two
 properties ride with it and the suite pins both: an entry that exists is the
 answer to its name **even when it cannot be dialled** (falling through would
-send a gesture to the wrong engine on the strength of a missing file), and
+send a gesture to the wrong server on the strength of a missing file), and
 where the two names agree the operator's envelope crosses byte for byte.
 
 **And it answers what this box calls the channel it chose** (`seat::Routed`,
@@ -344,7 +346,7 @@ belongs under is the one it would have crossed on. Nothing re-derives it, which
 keeps §8.2's mapping spent exactly once.
 
 **The fallthrough is not silent, and a name with no reader does not take it**
-(bl-d574). The flat engine's own workspaces are named and held nowhere else, so
+(bl-d574). The flat server's own workspaces are named and held nowhere else, so
 a seat cannot know that namespace without asking and §8.2's fallthrough stands
 — but two things around it are this seat's own. A gesture whose **op takes no
 workspace** is naming a *channel* and nothing else (`lernie ask
@@ -360,7 +362,7 @@ the channels this box holds and offer the rename (`mv`) ahead of the mint.
 
 ### 4.8 Port zero is a request, not an address (§8)
 
-A self-provisioning engine writes `127.0.0.1:0` and only the listener knows what
+A self-provisioning server writes `127.0.0.1:0` and only the listener knows what
 it became — it tells its own in-process window in RAM. A separately installed
 seat cannot be told that, so a flat root naming `:0` refuses with the sentence
 rather than the raw connect error port zero would otherwise earn.
@@ -373,7 +375,7 @@ crate would make the versioned authority a dependency for one of the four
 components and an authority for the other three. So the reply spellings are
 read off REMOTE and implemented here, exactly as the android client does.
 
-**Thirty-four kinds, because thirty-four are painted.** The engine's reply
+**Thirty-four kinds, because thirty-four are painted.** The server's reply
 surface is
 forty-odd variants and most of them belong to panes that do not exist here.
 What is carried is the roster (`workspaces`), the conversation list
@@ -382,11 +384,11 @@ conversation itself (`transcript`), the live tail
 (`follow`), the conversation's records pair — the steps its loop took
 (`steps`) and what its worktree holds (`files`), both §4.18's — the decision
 queue (`attention`) and the receipt that raises a row onto it (`flagged`),
-both §4.19's, the window's own three — one engine's verb table (`help`), what
+both §4.19's, the window's own three — one server's verb table (`help`), what
 a needle found (`search`) and the trail (`ops`, §4.27) — the ball pane's four:
-the whole box's binding table (`balls`), the fleet board (`board`), one wall's
+the whole box's binding table (`balls`), the fleet board (`board`), one workspace's
 own balls (`workspace-balls`) and the branch it tracks them on (`marks`), all
-§4.30's — the login pane's three: what a wall
+§4.30's — the login pane's three: what a workspace
 can sign in to (`providers`), what one of its rows offers (`models`) and one
 sign-in run (`login`), all §4.24's — the machines registered in one
 workspace (`clients`, §4.28), the config pane's two — the lineages a workspace
@@ -432,7 +434,7 @@ queue is empty by construction — while a box whose seat and foot share one
 identity would have that machine's work handed to the window and never
 completed, and the foot's own read refused in band as a second reader (§5.1).
 `advertise`, `complete`, `invoke` and `capture` are the same class, and the
-engine's own help table says so: all five are `surface: machine`, so no seat
+server's own help table says so: all five are `surface: machine`, so no seat
 owes any of them a control. Their ledger lines are not balls waiting to be
 built, and `src/verbs/clients.rs` states it where an implementer will look.
 
@@ -441,7 +443,7 @@ built, and `src/verbs/clients.rs` states it where an implementer will look.
 for any change to an existing shape, a gained field included, and every client
 re-pinned for each one — five bumps in a week, all but two of them additive.
 It now moves only on a **break**: a field removed or re-typed, a meaning
-changed under a spelling in use, a field the engine newly requires. The preface
+changed under a spelling in use, a field the server newly requires. The preface
 is unchanged — strict equality, fail-closed, no negotiation — and what changed
 is how rarely it can refuse.
 
@@ -449,7 +451,7 @@ is how rarely it can refuse.
 integer line continues as the edition line: `corpus/shapes.json` now stamps
 every field PATH with the edition it appeared at, and carries the **floor** —
 the edition the current major was cut at. Every path at or below the floor is
-required on every engine of this major; every later path is optional to READ.
+required on every server of this major; every later path is optional to READ.
 Two numbers, two questions, and only one of them can refuse a connection.
 
 **This seat's copy of the three facts is `src/channel/edition.rs`** — the floor,
@@ -476,10 +478,10 @@ into it.
 
 **The preface states the edition beside the major** (`src/channel/hello.rs`),
 and it refuses nothing. An end that states no edition is at the floor, because
-that is the least an engine of this major can be; absent, mistyped and out of
-range are one answer for that one reason. The engine's is kept on the channel,
+that is the least a server of this major can be; absent, mistyped and out of
+range are one answer for that one reason. The server's is kept on the channel,
 where `Channel::spells(shape, key)` answers whether it can spell one field —
-and a `false` there says *this engine cannot say*, which is a different
+and a `false` there says *this server cannot say*, which is a different
 sentence from the field's default and the only reason to ask. A control whose
 fact is stamped above the far end's edition greys rather than painting the
 reassuring answer. **Nothing greys today** because nothing is above the floor
@@ -490,7 +492,7 @@ field.
 above safe. Four clauses, each answered where it lives:
 
 - **An unknown key is ignored, structurally.** Every reader indexes by key, so
-  a field the engine added rides through untouched. Rung 4, and it costs
+  a field the server added rides through untouched. Rung 4, and it costs
   nothing.
 - **A post-floor key absent reads as its DEFAULT, and the default is the fact
   before the field existed.** Written at the field readers
@@ -507,13 +509,13 @@ above safe. Four clauses, each answered where it lives:
   the opposite rule holds.
 
 **And it is replayed, not merely asserted** (`src/reply/tests/editions.rs`).
-The vendored frames are what the NEWEST engine writes, which is the one engine
+The vendored frames are what the NEWEST server writes, which is the one server
 a seat never has trouble with; the two it actually meets are made here out of
 that frame and the stamps beside it. **Projection** deletes every key stamped
 later than `e` and replays at every `e` from the floor to this build's edition
-— an older engine's frame. **Word mutation** sets every string-typed path
+— an older server's frame. **Word mutation** sets every string-typed path
 upstream spells, `kind` excepted, to a token no build has heard of — a newer
-engine's vocabulary. Neither may cost a refusal. Both are vacuous the day a
+server's vocabulary. Neither may cost a refusal. Both are vacuous the day a
 major is cut, so the walkers are unit-tested against shapes the corpus does not
 have (`src/test_support/corpus/editions.rs`): an arm that waits for the first
 addition to be exercised is an arm nobody has evidence about.
@@ -595,10 +597,10 @@ reading as its default, is the same policy meeting a field that arrived late. No
 neighbour: a token painted as a word it is not is a lie, where a token painted
 as itself is merely unstyled.
 
-**One deliberate divergence from the engine's own reader**, recorded at the
+**One deliberate divergence from the server's own reader**, recorded at the
 site (`src/reply/stream.rs`): a `follow` frame's delta token takes rung 3 where
-the engine's decoder refuses. The two readers are not doing one job — the
-engine's reads bytes the engine wrote, so a mismatch there means its own codec
+the server's decoder refuses. The two readers are not doing one job — the
+server's reads bytes the server wrote, so a mismatch there means its own codec
 drifted, while this one is the last reader of somebody else's answer and
 refusing would throw away an accumulated turn while the operator watches the
 tail move.
@@ -611,7 +613,7 @@ read begins and ends: `crate::offframe::follow::tick` holds one
 into it and hands `Model::live` the accumulation. So a read boundary needs no
 field, no flag and no representation anywhere; it is a local variable's scope,
 and two reads of one conversation cannot run into each other because the second
-starts holding nothing. `Stream::absorb` is the engine's own operation copied
+starts holding nothing. `Stream::absorb` is the server's own operation copied
 rather than re-derived, and its contract is the equality
 `fold(a).absorb(fold(b)) == fold(a ++ b)`, asserted in
 `src/reply/stream/tests.rs` rather than stated in prose.
@@ -626,7 +628,7 @@ protocol integer carries it and why this paragraph exists at all.
 
 **The fold paints only in the place of the committed read's `Streaming`
 entry** (bl-f6b5; `src/ui/chat/rows.rs` `rows`). The two routes describe one
-open response, and the engine's streaming entry rides exactly that (REMOTE
+open response, and the server's streaming entry rides exactly that (REMOTE
 §5.5), so a read with no `Streaming` entry is the read saying the response
 closed: the fold in `Model::live` then has nothing to be newer than and is not
 painted. Nothing clears the field when the lane ends, deliberately — the lane's
@@ -680,7 +682,7 @@ because a classification is a decision this end makes and never one copied in.
 So the refresh does not classify: a shape already filed goes back where it was,
 and a shape yog has grown lands in `unpainted/` as a new file the diff shows. A
 silent pass is the outcome the arrangement excludes. There is still no
-manifest and no expected-value sidecar; a frame captured off a live engine
+manifest and no expected-value sidecar; a frame captured off a live server
 still drops in as a bare file, which is how the malformed and rung-3 readings
 upstream's codec cannot emit are held.
 
@@ -727,8 +729,8 @@ reaches for when something is wrong. Measured: on a conversation with children
 the bare stop does not stop it. The root's driver dies, a child's driver
 deposits into it, and it is running again five seconds later, having spent
 796,522 further tokens; only the cascade holds, and it was reachable solely by
-hand-writing the envelope. The seat printed the engine's own offer — *the
-engine offers nudge, stop with its children* — in the records pane, and then
+hand-writing the envelope. The seat printed the server's own offer — *the
+server offers nudge, stop with its children* — in the records pane, and then
 spelled no word that reaches it.
 
 **A flag is a boolean field spelled as its own name, typed after the
@@ -815,7 +817,7 @@ opening rule rather than a gap in it.
 
 **What `start` adds is the two things a second process cannot hold.** The
 local between the two acts — the staged body, held while the fire is composed —
-and the goal JOIN: the engine composes a prefill for every rung that has one
+and the goal JOIN: the server composes a prefill for every rung that has one
 (the path rung's §3.3 target preamble), and the composite sends the prefill and
 the operator's words as one goal, which is what a seat with a composer does by
 editing. A hand-written fire carries whatever goal it is given and no prefill,
@@ -835,24 +837,24 @@ what `lernie help enroll` prints.
 
 **And `model` reads before it writes** (`src/seat/model.rs`, bl-1e5a). The
 word accepted an id the same seat could prove does not exist, answered `ok`,
-wrote it into the wall's `providers.yaml`, and the workspace was broken until
+wrote it into the workspace's `providers.yaml`, and the workspace was broken until
 somebody read a step record — the next deposit died and the failure reached the
 operator truncated, on a row, a turn later. The documented rule is the
-engine's and it is right: *a model id is validated by the wire at the first
-live model call*, because an engine holding a second opinion about a
+server's and it is right: *a model id is validated by the wire at the first
+live model call*, because a server holding a second opinion about a
 provider's catalogue would be a second authority on somebody else's table. It
 is not an argument for the seat staying silent when it has just been handed a
 word it can check against a list it already knows how to fetch — `models` is a
 row in the same table, one round trip, off the same channel.
 
-**It warns and never refuses**, for the reason the engine does not validate
+**It warns and never refuses**, for the reason the server does not validate
 early: a provider's list moves under this seat, a cache is stale, a row that
 cannot be asked answers nothing. So the assignment goes through and what is
 bought is that the operator learns it now, in full. **Every way the read can
 fail to answer a listing says nothing at all** — a refusal, a kind this build
 cannot read, an empty row, an unreachable channel — because turning a
 provider's silence into a refusal would make an unreachable row a reason not to
-write a file the engine is willing to write.
+write a file the server is willing to write.
 
 **The whole offered list is named, not a guess at the nearest.** It is the same
 round trip, it is exactly what `lernie models` would have printed, and a
@@ -866,7 +868,7 @@ to cost a round trip and come back `unknown grade "OPERATOR"`: true, and naming
 neither word that would have worked. It is read in `cli::run` for exactly the
 reason a hand-written envelope is: decided entirely by what was typed, the
 caller's typo, earns the usage, costs no connection. **It is not a second
-authority on grades** — the engine still decides what a grade means and whether
+authority on grades** — the server still decides what a grade means and whether
 this box may ask for one at all, which §8.4 makes unknowable here — and the two
 words are read off `ui::Grade`'s own list rather than a second copy of it.
 
@@ -877,7 +879,7 @@ was that the help surface did not know it. The usage listed eleven words,
 `lernie help <word>` answered a page for seven, and the other four were refused
 with *"no verb named `ask`"* — false in the only sense the operator means it,
 byte for byte what `lernie help bogus` earns, on the one surface whose whole job
-is to answer with no engine up. The same lookup gap had a second face on argv:
+is to answer with no server up. The same lookup gap had a second face on argv:
 `lernie entries x y` and `lernie help a b` fell through to *"unrecognised
 argument"*, the sentence a typo gets, about words the usage lists one screen up.
 A door is a word, a usage line and prose with **no envelope builder behind it**,
@@ -904,18 +906,18 @@ what the seat does with the answer is not printing it.
 frames collected, printed at the end, and the exit code read off the last
 frame. On a **quiescent** conversation that blocked 31 seconds, printed one
 newline and exited 1 — byte for byte what a failed dial, a refused certificate
-and a dead engine look like, and those are what a first-time user suspects,
+and a dead server look like, and those are what a first-time user suspects,
 when nothing at all was wrong. On a **live** one it returned mid-turn every
-time, because the engine ends a held read at the STEP boundary (REMOTE §5.1)
+time, because the server ends a held read at the STEP boundary (REMOTE §5.1)
 and a turn is many steps: three consecutive reads of one working conversation
 ended after 3, 8 and 6 seconds. Watching an agent was `while true; do lernie
 follow …; done`, invented by the operator and losing whatever landed between
 two reads.
 
 **The rule: hold the line until the conversation RESTS, or until the user
-quits.** The engine's step boundary is not the end of anything an operator
+quits.** The server's step boundary is not the end of anything an operator
 asked about, so a read that ends there is re-asked; what ends the word is the
-conversation coming to rest, which is a fact the engine already answers
+conversation coming to rest, which is a fact the server already answers
 (`agent`'s `state`). **The state read comes first**, which is what fixes the
 quiescent case at no cost: a conversation already at rest opens no held
 connection at all, so the half-minute of silence is not shortened — it never
@@ -936,7 +938,7 @@ was right about the instant and the sentence it produced was false: something
 more was going to arrive, and nothing further was going to be asked of the
 operator. The recovery — sleep, then ask again — is written nowhere.
 
-The engine has no field for *about to start*, and inventing a guess here would
+The server has no field for *about to start*, and inventing a guess here would
 be a second opinion about a reading it already takes. What it does have is the
 deposit itself, so **the state read alone was never enough**: a rest whose
 `inbox` still holds mail is a turn that has not begun, and the watch holds
@@ -949,7 +951,7 @@ rest has an empty inbox and answers as fast as it ever did, and a working one
 is never asked. An inbox this seat could **not read is no mail**, on every way
 the probe can fail, because the state read has already said rest and holding
 somebody's connection open forever on an unanswered question is worse than the
-sentence being fixed. And the waiting line **names the state the engine gave**
+sentence being fixed. And the waiting line **names the state the server gave**
 rather than hiding it, since that reading is true and is the one the operator
 will see again in `conversations` a second later; what it adds is the fact that
 makes the at-rest sentence false.
@@ -996,7 +998,7 @@ stream stays the entry point's — which is the same division that earns
 `main.rs` its place as the coverage floor's one exclusion.
 
 **And the rendering of a follow frame is what LANDED** (§4.37,
-`render/walls.rs`). A frame is an append (REMOTE §5.5) and a terminal is
+`render/workspaces.rs`). A frame is an append (REMOTE §5.5) and a terminal is
 already a fold, so the appended text is printed in order, one frame a line, and
 folding here to re-print the accumulation each frame would be the same answer
 at quadratic cost. A frame that carried no content at all — the
@@ -1009,7 +1011,7 @@ this word was fixed for.
 PROTOCOL 15; bl-183b), which is the half an operator watching an agent
 administer their machines is actually watching. Each entry is a whole line —
 how it ended, what ran and on which box (§5.1's `<client>_<tool>` composition
-carries the machine), and the input the engine already bounded — because a
+carries the machine), and the input the server already bounded — because a
 terminal cannot go back and amend the line it printed a minute ago. **The rows
 ride the gutter** (§4.37's column, bl-293d): what a tool is doing is the seat
 narrating the run rather than the model's answer, and on this lane the two
@@ -1024,7 +1026,7 @@ lifetime is one held read.
 third gesture** (`src/seat/start.rs`). Nothing new crosses the wire: a
 `prepare` goes out, its answer is held in a local, and a `prompt` carrying that
 answer goes out after it — which is exactly what the window holds in its model
-(§4.11). Both reply streams print, in order, because both are the engine
+(§4.11). Both reply streams print, in order, because both are the server
 answering; the exit code is the *fire's*, so a stage that answered no staged
 body exits non-zero with its own frames on stdout. The one outcome two acts
 have and one does not — a stage that landed and a fire that never left this box
@@ -1044,9 +1046,9 @@ payload, so the seat carries **one `Option<String>`** — the target — and the
 rung word follows from it. A second word saying which rung would be a fact the
 operator has to keep in agreement with the first.
 
-**A path this seat does not check.** The directory is on the ENGINE's box and a
+**A path this seat does not check.** The directory is on the SERVER's box and a
 seat may hold no such path at all, so a path that is not there is refused over
-the wire in the engine's own words. That is the same division §4.10 draws for
+the wire in the server's own words. That is the same division §4.10 draws for
 `enroll`'s grade in the other direction: the grade is a closed set this binary
 holds, and a filesystem on another machine is not.
 
@@ -1068,7 +1070,7 @@ composer, so `crate::verbs::start::goal` is where the editing would have been:
 the prefill, a blank line, then what was typed. The bare rung prefills nothing,
 so the ordinary case takes no arm.
 
-**Positional and context-free, unlike the engine's own line.** yog's line reader
+**Positional and context-free, unlike the server's own line.** yog's line reader
 is terse because a seat with a focus supplies the address; REMOTE §8.5 says a
 seat with no selection *"spells its targets out"*, and a one-shot process is
 that seat. Copying the line's grammar would mint a selection type that is always
@@ -1090,7 +1092,7 @@ the tail says is now `lernie help` and `lernie help <word>`. The list is what
 `help` is for.
 
 **Help's subject is this binary rather than a world**, which is why it is
-answered in the seat with no dial, no engine and no material — a binary an
+answered in the seat with no dial, no server and no material — a binary an
 operator cannot learn to use until the hard part already works is a poor binary.
 There is exactly one help: `lernie help`, `--help` and `-h` are one text, whose
 verb section is derived from the table rather than restated, and `lernie help
@@ -1109,10 +1111,10 @@ property the whole surface exists for.
 
 
 `src/ui/`. **Three panes and a notice bar since §4.39 folded the middle column
-away** (bl-46e5, built in bl-b9a3): the roster — an accordion of engines, each
-open engine's walls under it and the AIMED wall's conversations under their own
-wall's row — the selected conversation, and the composer. It was four, the
-second being a pane of the aimed wall's conversations; what it painted is now a
+away** (bl-46e5, built in bl-b9a3): the roster — an accordion of servers, each
+open server's workspaces under it and the AIMED workspace's conversations under their own
+workspace's row — the selected conversation, and the composer. It was four, the
+second being a pane of the aimed workspace's conversations; what it painted is now a
 level of the first, and `src/ui/convs.rs` is what a row is rather than a pane
 — with seven more that COVER the conversation when they are open
 (§4.15's enrollment, §4.17's tuning, §4.18's records, §4.19's decision queue,
@@ -1144,7 +1146,7 @@ its floor, the window shows one `Column` and a bar naming both, which is a
 surface you navigate to, act in, and come back from exactly as §4.15's
 enrollment and §4.17's tuning pane are.
 
-**There are TWO columns and two variants since bl-b9a3** — `Engines` and
+**There are TWO columns and two variants since bl-b9a3** — `Servers` and
 `Conversation`. The fold did not add a case to the policy; it took a term out
 of it. `widths` yields one list pane rather than two, its worth being `CONVS`'
 because its widest row is still a conversation's headline with a preview under
@@ -1166,7 +1168,7 @@ Four things follow and each is a decision rather than a mechanism:
 - **A column's name has ONE home**, and where that home is depends on the
   shape: the bar carries it when one column shows, the layout paints it above
   the pane when both do. So the heading moved out of `roster` and `chat` into
-  `src/ui/shell.rs` — two nodes reading `engines` would be two things an
+  `src/ui/shell.rs` — two nodes reading `servers` would be two things an
   operator and the accessibility tree both have to tell apart — and bl-e5d2's
   *heading outside the scrolled region* became structural rather than a
   convention each pane keeps. **The heading no longer wears a mark saying whose
@@ -1326,7 +1328,7 @@ exactly where the records pane puts its own header (§4.32), and it stands
 outside the scrolled region for the roster's reason: it is the one thing here
 that is always true of what is being read.
 
-**Every line is the engine's, composed once.** `crate::ui::records::header`
+**Every line is the server's, composed once.** `crate::ui::records::header`
 already assembles the identity, the resting clause, the spend and the context
 reading that names the model, so this reads them from there rather than
 re-deriving them: two surfaces reading one answer is one home, and two surfaces
@@ -1335,19 +1337,19 @@ because it is why there is no more of it — *a conversation that died on a bad
 model id looked identical to one that finished*.
 
 **Which model answered has two sources and they answer different questions.**
-The engine's context reading names the model it is holding a window open for —
+The server's context reading names the model it is holding a window open for —
 the one the NEXT turn will use, the better answer, and the one the costing line
 already carries. But a reading exists only while there is one to take, and a
 **quiescent** conversation has none: that is the state the question is actually
 asked in, and it is why *nothing in the window says which model answered* was
 true of every conversation that had finished. So the transcript's own last
-model turn answers when the engine's reading does not — a fact this seat
+model turn answers when the server's reading does not — a fact this seat
 already holds, about a turn that happened, never a prediction about the next
-one — and it stands down the moment the engine has a reading, rather than being
+one — and it stands down the moment the server has a reading, rather than being
 joined beside it.
 
 **So the `agent` read moved out of the records pane's standing set and into the
-conversation's own** (`asker::wall`). It is one read MOVED and never a second
+conversation's own** (`asker::workspace`). It is one read MOVED and never a second
 copy: the pane still paints off `Model::records.agent`, and a header that is
 only true while a pane two clicks away is open is a header that is usually not
 there.
@@ -1393,7 +1395,7 @@ learn to stop reading.
 address, its badge, its preview and how far it hangs under its root; nothing on
 it says *this one is a compactor*, and a fork's candidate is a depth-1 row the
 operator DID start — so a seat that guessed from a preview would be reading
-prose to make a structural decision. What the engine does give is the descent,
+prose to make a structural decision. What the server does give is the descent,
 and the descent is the whole answer: the list is the conversations, a root is
 always on the glass, and its subtree is one gesture away with the count on the
 control. That satisfies the ball's own first remedy — *compactors fold under
@@ -1410,7 +1412,7 @@ default costs no state at all, and it is a navigation the operator performed,
 which is `Model::column`'s own standing.
 
 **And the same fold reaches the typed word, which is the surface a headless
-operator has** (`src/render/walls/convs.rs`, bl-96cd). The fix above landed on
+operator has** (`src/render/workspaces/convs.rs`, bl-96cd). The fix above landed on
 `Model::rows` alone — the window's list — and the typed `lernie conversations`
 kept answering the flat forest: one lane of ordinary work later it printed
 twelve rows of which SEVEN were compactors, three of them under one
@@ -1435,31 +1437,31 @@ indents oddly.
 
 **What the attention rows say is not this seat's half.** Every compactor in
 that session earned an `attention` row reading *came to rest — your turn*,
-which is false of a finished compaction; that is a fact the engine answers, and
+which is false of a finished compaction; that is a fact the server answers, and
 yog's own ball owns it.
 
 **A section header names the address it dials** (`ui::Channel::dials`,
 bl-77df). Two entries naming one address are two trust relationships that
 happen to terminate at one listener (§8.2), which is lawful — and an entry
-naming the address this box's own engine listens on is the same thing by
-accident, which paints every workspace of that engine twice, under two headers,
+naming the address this box's own server listens on is the same thing by
+accident, which paints every workspace of that server twice, under two headers,
 with nothing on either saying they are the same server. `lernie entries` prints
 the address under every row and the window dropped it. The seat is the only
 thing that can see the duplication and it can see it for free, so the address
 goes on the header and a duplicate is self-evident. **Amended by bl-13b9: the
 duplicate is folded, not merely labelled.** Self-evident was not enough — the
-seat card listed the server twice and counted its waiting twice. The window's unit is the engine, so `Model::folded`
+seat card listed the server twice and counted its waiting twice. The window's unit is the server, so `Model::folded`
 (`src/ui/model/fold.rs`) groups the channels by the address they dial before
 anything is counted or painted: one row, the address said once, every other
-name beside it (*also held as …*), each wall once, and a gesture at a wall goes
-down the first of the engine's channels that can address it — this box's own
-engine leading, because it addresses every wall by its own name. The roster
+name beside it (*also held as …*), each workspace once, and a gesture at a workspace goes
+down the first of the server's channels that can address it — this box's own
+server leading, because it addresses every workspace by its own name. The roster
 itself stays one chunk a channel, because a reply is stamped with the channel
 it came down. **The decision queue folds on the same terms** (bl-52d2): the
-`attention` fan asks every channel, so both names answer the engine's whole
-queue; `Model::sections` keys the pane's sections by engine and keeps a row
+`attention` fan asks every channel, so both names answer the server's whole
+queue; `Model::sections` keys the pane's sections by server and keeps a row
 once by `(workspace, agent)` — the host's spelling, which both answers carry
-alike — beside the first channel that can address its wall. The unaddressable row's own
+alike — beside the first channel that can address its workspace. The unaddressable row's own
 sentence was reworded in the same breath: *"this seat holds no name for it"*
 fires on a perfectly correct provisioning and reads as an error about the row
 above it, where the fact is structural — an entry directory names one
@@ -1471,7 +1473,7 @@ reaches them.
 (`Model::unreachable`, bl-e620). REMOTE §8.2 rules it: *"a channel that cannot
 be dialled is that channel's workspaces painted unreachable, never the whole
 shell, which stays reserved for the one wire the window cannot exist without."*
-The bar is for what an **engine said** about a gesture, and for a frame this
+The bar is for what a **server said** about a gesture, and for a frame this
 seat could not read — facts about an exchange. An unreachable channel is a fact
 about a **relationship**, and routing it to the bar cost three things, all
 driven live: the sentence named no subject at all (*"this seat could not reach
@@ -1498,18 +1500,18 @@ box's own flat slot whether or not anything is provisioned in it, which is
 right and is what `lernie entries` prints. So the guard was false on exactly
 the box the sentence was written for, and a first run got a section header over
 a blank while the other three panes said what they were waiting for. The
-reframe is one level down: a section is either a list of walls or a **reason
+reframe is one level down: a section is either a list of workspaces or a **reason
 there is none**, and the reason is three facts and not one — nothing has
 answered down this channel yet (the `convs` pane's own doctrine, one noun
 over), this box cannot dial it and knows why off its own files (the sentence
 `crate::channel` already computes and `entries` already prints — one home, both
-surfaces), or the engine answered and holds no workspace. `seat::channels`
+surfaces), or the server answered and holds no workspace. `seat::channels`
 seeds the second at boot; the first roster answer spends whichever was standing.
 
-**Amended by bl-693d: four facts, not three.** The engine can answer the
+**Amended by bl-693d: four facts, not three.** The server can answer the
 roster read with a **refusal** — *this certificate is registered in no
-workspace on this engine* is what a fresh engine says to a fresh seat — and
-that is none of the three: the engine is up and has answered, so *waiting to
+workspace on this server* is what a fresh server says to a fresh seat — and
+that is none of the three: the server is up and has answered, so *waiting to
 hear* is false and *will not dial* is false. It went to the bar as any refusal
 does, re-posted every beat, and stood there beside a running conversation after
 a founding (§4.42 item 7's `+ new workspace`) had made it untrue, until Esc. So
@@ -1517,10 +1519,10 @@ every frame the off-frame lanes file now carries the op it answers
 (`offframe::file`, `Said::Receipt` — there is no bare frame left), and a
 refusal of `workspaces` is filed as `Held::Refused` on that channel's section
 (`Model::unseated`): painted where `Unheld`'s sentence stands, in the bar's
-own words for a refusal, never counted as an engine that is down, and spent by
+own words for a refusal, never counted as a server that is down, and spent by
 the next roster answer like every other state — so the founding that registers
 the client takes it off the glass on the beat it lands. `+ new workspace`
-stands under a refusing engine, because founding is the remedy it names.
+stands under a refusing server, because founding is the remedy it names.
 
 **The notice wraps** (`src/ui/shell.rs`, bl-3d0f). It was a `ui.horizontal`
 holding the dismiss and one label, and a horizontal layout lays its label on
@@ -1548,7 +1550,7 @@ that closes this pane is the control that forgets; reachable by Tab is not the
 same as operable, and this is the one pane whose purpose is *close it quickly*.
 **Nothing live paints under it**: the composer is a bottom panel and so outside
 what a central panel covers, which left a live `start` control — firing a
-conversation on the very wall being enrolled into — beneath the symbol, so the
+conversation on the very workspace being enrolled into — beneath the symbol, so the
 shell stands the composer down while an enrollment is open. The arrows stand
 down with it (a modal owns them: the lists behind it are not the subject of
 anything, and the name box keeps its own cursor keys). Escape typed into that
@@ -1560,8 +1562,8 @@ is where the operator looks rather than what they act with.
 
 **An empty pane says WHICH emptiness it is** (`src/ui/convs.rs`, bl-f780). The
 list had two sentences — nothing aimed at, and *"no conversations here"* — so a
-wall this window had not been ANSWERED about was painted with the sentence
-reserved for a wall that answered nothing. That is a definite fact about a wall
+workspace this window had not been ANSWERED about was painted with the sentence
+reserved for a workspace that answered nothing. That is a definite fact about a workspace
 nobody looked at, which is exactly what `convs::UNCERTAIN` refuses to state one
 level down about a conversation nobody could take a reading of; the ruling is
 the same one level up. Four states now: no aim, **not answered yet**
@@ -1575,22 +1577,22 @@ inert; inert is right about the dialling and wrong about the paint, and the
 refusal that was silent is now the pane's third sentence.
 
 **A row is addressed by what the channel resolves, never by the name it wears**
-(`ui::Channel::address`, §8.2 read from the seat's side). This box's own engine
+(`ui::Channel::address`, §8.2 read from the seat's side). This box's own server
 rewrites nothing, so a row is addressed by its own name; an entry resolves by
 its **leaf** and by nothing else, so the leaf is the address of the one
 workspace it names. The third case is real and is painted rather than hidden: an
-entry's engine may answer a workspace the entry does not name, which no envelope
+entry's server may answer a workspace the entry does not name, which no envelope
 this seat can write will reach. Dropping it would hide a workspace the operator
-has, and addressing it by the leaf would aim a gesture at a different wall, so
+has, and addressing it by the leaf would aim a gesture at a different workspace, so
 it is shown and said to be unreachable.
 
 **One composer with two subjects, and a start is where the third pane's
-refusal went.** A wall with a conversation on it is spoken to; a wall with
+refusal went.** A workspace with a conversation on it is spoken to; a workspace with
 none is where a conversation is *begun*. That second case used to be half of a
 refusal — *pick a workspace and a conversation* — and the refusal was the
 start's own case wearing a sentence. A second box beside this one would be the
 same box twice, each with its own Enter, on a face that is four panes wide.
-What is left refusing is the one case that is neither: no wall aimed at, so
+What is left refusing is the one case that is neither: no workspace aimed at, so
 there is nowhere for either.
 
 **Two rows of verbs under the one box, split by what each does to the turn**
@@ -1606,7 +1608,7 @@ what the cut adds to the deposit. And **the deletion's arming is a parameter,
 not an enablement**: the wire's `typed` is empty for the bare form and the
 conversation's own name for the cascade, so the box beside `delete` fills the
 gesture's third field and is *not spent* on firing — a delete is refused
-outright while the conversation is live, and charging a retype for the engine's
+outright while the conversation is live, and charging a retype for the server's
 *no* is a toll on the safe path. That is one half of §4.20's rule rather than an
 exception to it: `delete-workspace`'s `typed` is an ARMING with one accepted
 value, so there it is an enablement — the seat reads which of the two a `typed`
@@ -1626,7 +1628,7 @@ nothing. And **a start in flight refuses a second start** by there being no
 control: while one is outstanding the composer paints the sentence instead of
 the box. That is upstream's own finding (yog §3.4): two starts chained through
 one composer spend one goal on two conversations and leave the first unfinished.
-**And a start the engine refuses is retired by that refusal, with the goal back
+**And a start the server refuses is retired by that refusal, with the goal back
 in the box** — §4.26, which is where the one gesture held across a round trip
 learns which receipt is its own.
 
@@ -1642,20 +1644,20 @@ what is selected.
 
 - **Nothing is asked about it.** `Model::asked` is what §4.12's standing set
   publishes as its third question and a claimed name is not it. The alternative
-  is three refusals per pass against an address the engine cannot resolve, and
+  is three refusals per pass against an address the server cannot resolve, and
   the operator's own new conversation painted as unknown for the whole of a
   healthy start. An empty conversation pane is what the world honestly holds.
 - **A row stands where the conversation will be.** `Model::rows` is the list
   every surface paints and walks — the pointer's and the keyboard's one list, so
   the row is not a case each of them carries. It is what nothing observed: no
-  lock, no completed step, flagged uncertain, which is exactly what the engine's
+  lock, no completed step, flagged uncertain, which is exactly what the server's
   own classifier answers for a conversation it cannot probe. **It must not read
   `live`**, which would claim a driver this seat has never seen. It carries the
   operator's goal, because a start that shows nothing between Enter and the
   driver's first write reads as a window that did nothing.
 - **It is spent where it was made.** `Model::resolve` retires the claim on the
   answer that makes the conversation addressable — a listing row carrying that
-  `name`, which the engine hands over exactly when a stored fact backs it — and
+  `name`, which the server hands over exactly when a stored fact backs it — and
   moves the selection **only while the selection is still the name the claim put
   there**. A start can take a minute, and an operator who read something else in
   that minute is not yarded back. No claim survives being spent, and a claim
@@ -1663,7 +1665,7 @@ what is selected.
   faded, and one arrow key leaves it.
 
 **And the composer stands down while it stands.** A deposit or an advance
-composed against a claimed name is a gesture this end already knows the engine
+composed against a claimed name is a gesture this end already knows the server
 will refuse, so the start's own sentence stands where the box was — the same
 shape as the second-start refusal above, and the same reason: not a disarmed
 control, but no control.
@@ -1672,9 +1674,9 @@ control, but no control.
 is filed, and a refusal or an unreadable frame becomes the notice bar, standing
 where that content would have been. That is §4.9's rung 2 honoured on the glass
 rather than only in the type — and the two read differently, because a refusal
-is the engine's sentence and an unreadable frame is a statement about this seat,
+is the server's sentence and an unreadable frame is a statement about this seat,
 of which only the second is fixed by an upgrade. It is a **bar and not a
-modal**: the engine refusing a deposit says nothing about the roster beside it.
+modal**: the server refusing a deposit says nothing about the roster beside it.
 
 **The paint probe and its rule travel together, and the rule is why.**
 `crate::paint_probe` is the one walk over a finished frame, and
@@ -1734,7 +1736,7 @@ subtracts rather than adds.
 **The mark is arithmetic, and where it is SEEN is not where a client sets it**
 (`src/mark.rs`). A window that names no icon wears the generic one every
 unnamed client gets, and the seat's own mark is three shapes — a ring for the
-engine held elsewhere, a filled disc for the seat that is here, and the one
+server held elsewhere, a filled disc for the seat that is here, and the one
 wire between them, which is what `crate::channel` is.
 
 - **One geometry, two emissions.** `svg` writes the checked-in vector source
@@ -1799,7 +1801,7 @@ held across a drain and three moves, and no worker holds it across a socket.
 **Four threads, because they wait for different things.**
 
 - **The asker** (`src/offframe/asker.rs`) goes round the standing set at human
-  cadence: every channel's roster, the aimed wall's conversations, the selected
+  cadence: every channel's roster, the aimed workspace's conversations, the selected
   conversation's transcript, and whichever covering pane's read is up. The
   questions **nest** — the aim is asked only where there is one, the
   conversation only where one is selected — and a channel that will not answer
@@ -1807,7 +1809,7 @@ held across a drain and three moves, and no worker holds it across a socket.
   the set's"* one layer above the file it was written about.
 
   **The pass's order: the selection first, at every leg** (bl-1f22). A pass
-  is legs — one per channel's fan, then the aimed wall's reads — and before
+  is legs — one per channel's fan, then the aimed workspace's reads — and before
   each leg it re-reads the standing set and asks the selected conversation's
   reads (transcript, row, and the records pane's when it is open) if they
   have not been asked about that selection yet this pass, down the one
@@ -1816,7 +1818,7 @@ held across a drain and three moves, and no worker holds it across a socket.
   one leg later rather than after the rest of the fan and a beat. That is the
   whole remedy for a selection painting an empty pane: `Model::select`
   empties the transcript, and over a dialed wire the fan alone is seconds.
-  **The seat does not fill the gap with what it sent** — the engine's read is
+  **The seat does not fill the gap with what it sent** — the server's read is
   the transcript's one authority, so the remedy is to ask sooner, never to
   predict the answer. No leg is skipped for it: the sweep still visits every
   channel, every pass. The beat between passes is not woken, and needs no
@@ -1836,7 +1838,7 @@ held across a drain and three moves, and no worker holds it across a socket.
   answered at a human-in-a-browser's pace.
 
 **Both held lanes stamp every frame with what it is about, and the FRAME
-decides whether it is still wanted.** The engine was asked about one
+decides whether it is still wanted.** The server was asked about one
 conversation, or one provider row, and answers about that one — so only this end
 knows the operator has moved on, and only the frame knows what it is looking at
 right now. The guard is therefore a pure comparison at the settle rather than a
@@ -1861,11 +1863,11 @@ decisions.
 - **A pane's read is keyed on the PANE, not on the aim** (§4.17). A seat with no
   configuration surface open asks nothing about a file nobody is looking at; the
   reads are cheap, and a standing question nobody has a use for is still one the
-  engine answers on every beat, forever. `Standing::open` is **one field rather
+  server answers on every beat, forever. `Standing::open` is **one field rather
   than a flag per pane** (§4.24), because no two covering panes ever stand
   together and four bools would make three-at-once representable.
 - **Not every selection is a question.** A conversation this window has just
-  started is selected under a name the engine resolves nowhere until its driver
+  started is selected under a name the server resolves nowhere until its driver
   writes the branch, so `Model::asked` leaves it out and the standing set never
   asks about it (§4.11's claim).
 
@@ -1890,10 +1892,10 @@ keeps.
 
 **Every pass is a function a test calls directly.** Each worker's body is
 `tick`, and a thread is `pump` around one — so the suite drives a real pass
-against the stand-in engine with no thread at all, and the one end-to-end beat
+against the stand-in server with no thread at all, and the one end-to-end beat
 is about the threading rather than about what the passes do. **A stop is seen
 between passes, not during one**: a held lane is parked on a socket read, so it
-learns of a stop when the engine writes, when the connection closes, or when the
+learns of a stop when the server writes, when the connection closes, or when the
 transport's own read timeout expires. That is not a leak — closing the window
 ends the process — and the alternative is a second signal path into a blocking
 read, which is a mechanism for a case with no consequence.
@@ -1918,7 +1920,7 @@ costs one variable and no invention.
 **It may never become a way for the seat to fail to start.** A file that is
 absent, unreadable, truncated or written by a build that spelled things
 differently has one answer: no place, which is the window a first run opens. A
-stale aim needs no validation either — a wall that has gone is a wall no channel
+stale aim needs no validation either — a workspace that has gone is a workspace no channel
 resolves, and §4.12's standing set already declines to ask about one, so
 checking it here would be a second answer to a settled question.
 
@@ -1983,7 +1985,7 @@ delete the branch and close its pull request in the same breath.
 `src/verbs/enroll.rs`, `src/cli/enroll.rs`, `src/ui/enroll.rs`, `src/qr/`.
 
 **What the act is.** `enroll` names a workspace, a name and a grade, and the
-engine mints that box's leaf on its own CA, seats the registration, answers the
+server mints that box's leaf on its own CA, seats the registration, answers the
 material and shreds the key. The seat sends it over an entry it already holds
 at operator grade and shows the answer as a QR symbol. §3 above records why
 this does not lift REMOTE §1.4, and REMOTE §8.4 is the authority for the wire.
@@ -2004,7 +2006,7 @@ carries the envelope on one line and nothing else — no caption, no symbol, no
 colour, no receipt. It printed the whole human rendering under the flag, so a
 line-oriented capture (`head`, a `read`, a pipe into a formatter) took an
 ANSI-coloured block and left the material behind. That is not an ordinary
-rendering defect here: the engine has already minted and shredded by then and a
+rendering defect here: the server has already minted and shredded by then and a
 second enrollment under one name is refused, so what the script kept was a
 picture of a key it could no longer ask for, and the name was spent. §4.37's
 rule — *every verb renders by default and `--json` is the machine form* —
@@ -2035,42 +2037,42 @@ else is a rendering of it: the **QR symbol** for a camera, the **line itself**
 for the paste box an android seat offers — *one line of JSON beginning
 `{"yog-enroll": 1`*, in that screen's own words — and `--into <dir>` for a box
 with neither, which lays the envelope down as the four files §4.6's entry is —
-six, from an engine holding rendezvous material (below). There is one place the
+six, from a server holding rendezvous material (below). There is one place the
 envelope is built (`Enrolled::envelope`) and the renderings are of that, so no
 two of them can disagree.
 
 **The envelope carries the rendezvous pair when the reply does** (bl-5378, on
 yog bl-9043, edition 20). REMOTE §8.4's reply grew two optional keys beside the
-six facts, `rendezvous_pub` and `pairing_salt` — the engine's public rendezvous
+six facts, `rendezvous_pub` and `pairing_salt` — the server's public rendezvous
 key and the pairing salt, 32 bytes of hex each, present together or not at all
 — and a phone reads its roving material (REMOTE §13.3) from exactly this
 envelope. `Enrolled` re-said a fixed six, so the symbol this seat drew for a
-phone dropped both and the phone could never find a moved engine; and `--into`
+phone dropped both and the phone could never find a moved server; and `--into`
 wrote the four entry files and not the two `crate::channel::rendezvous` reads,
 so a foot filed that way could not rove either. Now `Enrolled` carries the pair
 as one `Option`, the reader refuses one key without the other, the envelope
 writes both when present (still `serde_json`'s sorted order, pinned byte for
-byte against the engine's own corpus fixture), and `--into` lays down
-`rendezvous.pub` (`0644`, as the engine mints it) and `pairing.salt` (`0600`)
-beside the entry. A loopback engine sends neither and everything here is what it
+byte against the server's own corpus fixture), and `--into` lays down
+`rendezvous.pub` (`0644`, as the server mints it) and `pairing.salt` (`0600`)
+beside the entry. A loopback server sends neither and everything here is what it
 was. The caption stays the three facts that are not material — the salt is
-shared with the engine, so it is material.
+shared with the server, so it is material.
 
 **The route the NEW box will dial is stated, not assumed** (bl-971c, on yog
 bl-fec6's `--at`). REMOTE §8.4's request carries an optional `address`, and it
-is a fact about the device being enrolled rather than a setting on the engine:
-the box being provisioned is by definition not the box the engine runs on, so
-the route it reaches that engine by need not be the one the engine wrote for
+is a fact about the device being enrolled rather than a setting on the server:
+the box being provisioned is by definition not the box the server runs on, so
+the route it reaches that server by need not be the one the server wrote for
 itself — an emulator reaches its host through the emulator's alias, a phone
-over the LAN, an overlay peer by name. Unstated is the engine's own
+over the LAN, an overlay peer by name. Unstated is the server's own
 `wire/address`, which is right only for a device sharing this box's view of it.
 
 The seat could not state it, and **the failure was silent at both ends**: the
 four files `--into` wrote were correct in every byte except `address`, so the
 foot came up, dialled an address it cannot reach, printed nothing and waited,
-while the engine held the registration and the roster showed the client absent.
+while the server held the registration and the roster showed the client absent.
 Nothing anywhere said why. The only workaround was `yog gesture` on the
-engine's own box with the reply taken apart by hand — which is available to
+server's own box with the reply taken apart by hand — which is available to
 every operator except the one a seat is for.
 
 So `lernie enroll <workspace> <name> <grade> [--at <host>:<port>] [--into
@@ -2078,14 +2080,14 @@ So `lernie enroll <workspace> <name> <grade> [--at <host>:<port>] [--into
 different things — `--at` the far box, `--into` this terminal — so neither
 implies the other and one refusal teaches both. What the seat settles is only
 that a word was given a value; whether the value names an endpoint a device can
-dial is the engine's judgement, which it makes on its own address and a stated
+dial is the server's judgement, which it makes on its own address and a stated
 one alike and answers with the remedy it names. A second copy of that rule here
 would be a second authority on addresses that could disagree with the first.
 `address` is the field on the wire and `--at` is the word argv spells it with —
 the same word yog's own line reader takes, so an operator who learned it at one
 face has learned it at both. **The window states none**, and that is a control
 it owes rather than a `None` to fill in: it has no field for a route, and an
-operator sitting at a window is on a box that dialled this engine successfully.
+operator sitting at a window is on a box that dialled this server successfully.
 
 **Picking one is picking one** (bl-768a). `--into` says *this box has neither a
 camera nor a paste box; write it down for me*, so once the four files exist the
@@ -2103,7 +2105,7 @@ sitting at — no screen, no camera — so the one component the act exists to
 provision was the one it could not reach; and the **phone** asks for the line
 verbatim, which the seat was drawing a picture of and discarding. Both had the
 same workaround — spell the envelope by hand through `lernie ask` and reassemble
-it against §8.4 — and the material was spent either way, because the engine
+it against §8.4 — and the material was spent either way, because the server
 shreds the key and a second enrollment under one name is refused.
 
 **The custody argument does not reach the text, and that is why this is not a
@@ -2121,7 +2123,7 @@ the paths the code happens to know about, because a defect here is precisely a
 path nobody thought of. A destination the operator NAMED is walked the same way
 and holds exactly the four files (six with the rendezvous pair).
 
-**And a destination never costs the material.** The engine has already minted
+**And a destination never costs the material.** The server has already minted
 and shredded by the time any of this runs, so a filing that FAILED says
 everything on stdout — the screen is then the only place the material can be —
 and only the exit code reports a directory that would not take it. That is the
@@ -2140,7 +2142,7 @@ afterwards, so the key is never readable off the account even for an instant.
 level M, no new dependency. A QR symbol is a fully specified algorithm rather
 than a research problem, and the manifest's dependency set is an approved list
 a ball has to argue its way onto. REMOTE §8.4 measures the envelope at 1567
-bytes from a loopback engine and ~1730 with the rendezvous pair, and states the
+bytes from a loopback server and ~1730 with the rendezvous pair, and states the
 rule as *PEM as minted, at level M or lower*; level M carries 2331, and the pair
 is what took the envelope past level Q's 1663 — a level this encoder never
 emitted, so nothing moved here, and `reply::enrolled`'s suite builds an envelope
@@ -2230,8 +2232,8 @@ it makes.
 **And the ledger's first line since it emptied was `doctor`, and it left the
 way the rule says a line leaves** (PROTOCOL 17, yog bl-28f4; bl-183b filed it,
 bl-9bbb paid it). It is round-1 ruling 7 — *one gesture answers "is this box
-wired": wire material, address, wall rows, role credentials, git identity,
-enrolled feet, protocol pins* — whose engine half landed upstream first. Its
+wired": wire material, address, workspace rows, role credentials, git identity,
+enrolled feet, protocol pins* — whose server half landed upstream first. Its
 reply kind sat in `corpus/unpainted/` for §4.9's reason, so the decode and the
 pane arrived in one commit and that commit deleted the line: `doctor` is tagged
 on the roster strip's control (§4.21), and the fixture moved to
@@ -2267,7 +2269,7 @@ intersection would be reachability asked by the wrong instrument.
 
 ### 4.17 Role tuning: the settings pane, and a standing read keyed on a pane (bl-4a2c)
 
-*The seat's own preferences are §4.46 item 4's pane (`/settings`); this one stays the wall's.*
+*The seat's own preferences are §4.46 item 4's pane (`/settings`); this one stays the workspace's.*
 
 `src/ui/tuning.rs`. **The seat's second covering pane, and the first that is a
 place rather than a moment.** §4.15's enrollment covers the conversation because
@@ -2277,8 +2279,8 @@ to, acts in, and comes back from — which is what §4.11's reach assertion was
 written about and recorded that this seat did not have. It does now, and the
 walk covers both panes.
 
-**Nothing on it is a preference.** Every row is a fact about the WALL, held in
-that workspace's config on the engine, and every control is one gesture across
+**Nothing on it is a preference.** Every row is a fact about the WORKSPACE, held in
+that workspace's config on the server, and every control is one gesture across
 the §8.5 boundary. A seat that kept its own copy would be a second authority for
 a file it does not own — so the pane holds exactly one piece of state, the draft
 of an assignment, because two words typed into two boxes are not a fact about
@@ -2299,7 +2301,7 @@ three levels and *off*, where off is the wire's `null` — the line removed, the
 provider's own default governing. The seat's list is therefore `Option`s and not
 strings, so the seat a control paints hands back exactly the value the envelope
 carries and no translation table exists to drift. A level the four seats do not
-name — a config written by a hand, or by a newer engine — is §4.9's rung 3 on
+name — a config written by a hand, or by a newer server — is §4.9's rung 3 on
 the glass: painted as itself, because four unselected seats would otherwise say
 the level is *off*, which is a different claim from the one the file makes.
 
@@ -2327,7 +2329,7 @@ warning, never a refusal.
 
 `src/ui/records.rs`. **The third covering pane, and §4.17's shape one noun
 over**: the subject is the SELECTED CONVERSATION where tuning's is the aimed
-wall, and every joint carries across. bl-213c built the conversation's ACTS —
+workspace, and every joint carries across. bl-213c built the conversation's ACTS —
 each answers a captured run, a kind this seat already painted — and left its
 records, each answering a kind nothing decoded. This pane lands the two an
 operator actually reaches for: **what the loop did** (`steps` — each step's
@@ -2341,7 +2343,7 @@ it).
 §4.17's reason verbatim: nothing on the glass is ever this end's prediction,
 and a seat with no records surface open asks nothing on any beat. It goes down
 when its subject moves: selecting another conversation or aiming at another
-wall retires the pane and every answer under it, because a pane about *the
+workspace retires the pane and every answer under it, because a pane about *the
 selected conversation* left standing over a new selection would paint one
 conversation's records under another's name for a beat.
 
@@ -2364,15 +2366,15 @@ addressed at one row rather than at the pane, so its control hangs on the row
 **A step row says its money** (yog REMOTE §9.23; bl-9111). Each row carries
 that step's own bill, priced by its own `(provider, model)`, and the row's
 headline paints it beside the count — `N tokens — $x.yz`, the count alone where
-the engine has no price table, and `at least $x.yz` where some of the step's
+the server has no price table, and `at least $x.yz` where some of the step's
 tokens no rate priced (`crate::reply::spend::priced`, the one sentence every
 surface says a count in; §4.41).
 
 ### 4.19 The decision queue: the pane about no focus (bl-f0ef)
 
 `src/ui/queue.rs`. **The fourth covering pane, and the first whose subject is
-neither the aimed wall nor the selected conversation.** REMOTE §6 is the
-engine's *what needs you* — a flattened roster across every enumerated
+neither the aimed workspace nor the selected conversation.** REMOTE §6 is the
+server's *what needs you* — a flattened roster across every enumerated
 workspace, filtered to the rows that are asking — and `attention` names no
 workspace, so the read **fans** and the pane is the union across channels, the
 way the roster is (§4.7, REMOTE §8.2). Three ops land with it: `attention` is
@@ -2386,9 +2388,9 @@ point of a flag is that a second party asks the operator to look. A seat that
 carries the field and paints it nowhere is the one place that ask goes to die,
 which is what bl-d774 recorded and this ball spends. So it leads a row's detail,
 above the failure clause and the parked invocation: it is the only line on a row
-that somebody *wrote* rather than something the engine observed.
+that somebody *wrote* rather than something the server observed.
 
-**Why a row asks is the engine's sentence, not its tokens** (bl-5507). Every
+**Why a row asks is the server's sentence, not its tokens** (bl-5507). Every
 queue row has carried `says` since PROTOCOL 12 — the signals read out with the
 remedy, *was cut off at its output cap — nothing was committed; raise the
 role's max_output_tokens…* — and the pane, the ask box (§4.42 item 8) and
@@ -2404,7 +2406,7 @@ Five decisions, and each is a choice rather than a mechanism:
   needs no aim and is offered on a seat that has aimed at nothing — which is the
   seat most likely to be asking the question. It sits outside the roster's
   scrolled region for the reason the heading does, and stands down under a
-  covering pane exactly as the two per-wall controls do.
+  covering pane exactly as the two per-workspace controls do.
 - **Nothing on the glass can retire it.** §4.17's pane goes down when the aim
   moves and §4.18's when the selection does, because each is *about* one of
   them. This one is about everything, so aiming and selecting leave it standing
@@ -2413,7 +2415,7 @@ Five decisions, and each is a choice rather than a mechanism:
   (`Standing::queue`), and there the argument is sharper than tuning's: a fan
   costs one round trip per channel per beat, so a seat with nothing open pays
   none of them.
-- **The read is one-shot even against an engine that holds** (§4.2, bl-09e1):
+- **The read is one-shot even against a server that holds** (§4.2, bl-09e1):
   the asker takes the first frame of each channel's answer and hangs up, so a
   held `attention` lane costs a pass one round trip per channel and never its
   30 s hold.
@@ -2424,20 +2426,20 @@ Five decisions, and each is a choice rather than a mechanism:
   down.** A queue row names its workspace as *its host* names it, which is not
   what a gesture from this box carries when an entry renames. The window's half
   of that mapping has one home — a roster row and `ui::Channel::address` — so
-  `Model::wall(channel, workspace)` asks it there, **in that channel's roster
-  chunk alone** (bl-666f): wall names are per engine and `home` is every fresh
-  engine's bootstrap wall, so a walk of the whole roster aimed a second engine's
+  `Model::workspace(channel, workspace)` asks it there, **in that channel's roster
+  chunk alone** (bl-666f): workspace names are per server and `home` is every fresh
+  server's bootstrap workspace, so a walk of the whole roster aimed a second server's
   rows at the first's `home`. Every door — *go to it*, `seen`, `answer`, and the
-  ask box (§4.42 item 8, which also requires the row's wall to resolve to the
+  ask box (§4.42 item 8, which also requires the row's workspace to resolve to the
   aim, not merely its id to match the selection) — carries the section's
   channel beside the row. Resolving within the stamp is sound because the
   stamp is the channel that ANSWERED: it once was the *aimed* channel instead
   (`src/offframe/poster.rs`), which is why this bullet used to call it a
   display fact and resolve without it, and **that is spent** (bl-c70d) —
   `seat::route` answers the seat-side name it chose (§4.7) and the poster
-  stamps it, so the aim is not read on that pass at all. And a row for a wall this seat
+  stamps it, so the aim is not read on that pass at all. And a row for a workspace this seat
   holds no name for is honestly unaddressable, and says so in the roster's own
-  sentence, rather than being aimed at a different wall by a guess.
+  sentence, rather than being aimed at a different workspace by a guess.
 - **`flag` is on the composer's second row and not on this pane**, which is the
   one placement decision the ball made outside it. A flag is *somebody asking
   the operator to look at this conversation*, so it is raised while looking at
@@ -2460,7 +2462,7 @@ have"*; §4.34 built it here instead, and the three verdicts are on this row —
 the pane whose whole question is *what is waiting on you* being the pane a
 parked call belongs to.
 
-**And one control on it crosses no wire.** *go to it* aims at the row's wall and
+**And one control on it crosses no wire.** *go to it* aims at the row's workspace and
 selects its conversation — the two doors a click on the roster and a click on
 the list already spend — and stands the pane down. It carries no `act:` token
 because §4.16 puts a view out of the parity contract: the ledger's unit is an
@@ -2498,9 +2500,9 @@ customer.
   control has room to say it.
 - **It holds that subject rather than following the aim.** The roster stays
   live and clickable under a covering pane, so an unmaking that re-read
-  `Model::aim` when it fired would unmake a wall the operator armed a different
+  `Model::aim` when it fired would unmake a workspace the operator armed a different
   one for. This is the opposite of what the tuning pane does (§4.17) and it is
-  the opposite for the right reason: a tuning write that lands on the wrong wall
+  the opposite for the right reason: a tuning write that lands on the wrong workspace
   is undone by writing the old value back.
 - **The way out comes first**, in the layout and therefore in the tab order, and
   it says what it keeps rather than what it abandons (`keep it`, not `cancel` —
@@ -2511,7 +2513,7 @@ customer.
   §4.11 refuses to be.
 - **The arming is the subject's own name, and where the wire makes it an
   arming the seat makes it an ENABLEMENT.** yog refuses `delete-workspace`
-  unless the workspace is the engine's own, nothing in it is live, and the typed
+  unless the workspace is the server's own, nothing in it is live, and the typed
   name matches exactly — so the act is **disabled** until the box holds that
   name, and **disabled rather than absent**, which is the tuning pane's `set`:
   the parameter is missing, not the subject, so the control stays on the glass
@@ -2527,11 +2529,11 @@ customer.
   bl-213c's composer row is not the precedent this section generalizes — it is
   the other half of the same distinction.
 - **The arming is never spent on firing.** A refusal is the COMMON case here:
-  the engine declines while anything in the workspace is live, which is exactly
+  the server declines while anything in the workspace is live, which is exactly
   the state an operator reaches for this control in. Clearing the box would
-  charge a retype for the engine's *no*, a toll on the safe path — where
+  charge a retype for the server's *no*, a toll on the safe path — where
   clearing a sent message costs nothing, because it was sent. Firing is said
-  instead (`asked — waiting for the engine`), for the reason the enrollment says
+  instead (`asked — waiting for the server`), for the reason the enrollment says
   `minting…`: the outbox is drained within the beat, so nothing else on the
   glass can answer *has this been asked*.
 - **The act carries `act:<op>` and the pane's own controls carry none** (§4.16).
@@ -2565,12 +2567,12 @@ answer here either.
 two customers above read their shape off the wire's grammar — `delete-agent`
 carries a `typed` parameter, `delete-workspace` is refused without a matching
 name — and the rule *"the seat … invents no policy"* was written against those
-two. `stop` carries neither: its cascade is a boolean flag the engine takes on
+two. `stop` carries neither: its cascade is a boolean flag the server takes on
 trust. So the arming there is an **enablement** this seat holds and never
 sends, compared against the conversation's own display name by the same rule
-the engine applies to `delete-agent`'s (surrounding whitespace forgiven,
+the server applies to `delete-agent`'s (surrounding whitespace forgiven,
 nothing else). What the seat still invents no policy about is the *act*: the
-flag it sends is exactly what the operator asked for, and the engine remains
+flag it sends is exactly what the operator asked for, and the server remains
 the only thing that can refuse.
 
 ### 4.21 The window's own reads: the three ops that name no workspace (bl-40ec)
@@ -2578,7 +2580,7 @@ the only thing that can refuse.
 `src/ui/roster/acts.rs`, `src/ui/commands.rs`, `src/ui/find.rs`,
 `src/ui/model/window.rs`, `src/verbs/window.rs`. **The sixth and seventh
 covering panes, and the one control that opens nothing.** §4.19's queue was the
-first surface whose subject is neither the aimed wall nor the selected
+first surface whose subject is neither the aimed workspace nor the selected
 conversation; these are the rest of that family, and the family has a
 mechanical definition rather than a taste: **an op with no `workspace`
 parameter cannot name a channel, so its subject is every channel this box
@@ -2593,7 +2595,7 @@ the trail channel-wide.
 and falls through to the flat root when there is none. That is right for
 `lernie ask`, where an operator named one channel by hand, and wrong for a
 frame: a window that composed `workspaces` would have asked this box's own
-engine and said nothing about the rest, which is bl-0d54's defect one surface
+server and said nothing about the rest, which is bl-0d54's defect one surface
 over. `src/offframe/poster.rs` now reads the envelope — a gesture naming no
 workspace is **fanned** over every channel the standing set holds, each answer
 stamped with the channel it came down and each failure reported against it.
@@ -2603,9 +2605,9 @@ it in the command line, so all three surfaces read one predicate.
 **The bare channel is enumerated when it is provisioned, or when it is the
 only thing there is** (bl-b858). The fan asks *every channel this box holds*,
 and a flat root with no material at all is not one — it is an ABSENCE. On a
-seat for an engine somewhere else, provisioned exactly as `enroll --into`
+seat for a server somewhere else, provisioned exactly as `enroll --into`
 instructs, it was enumerated anyway, so a paragraph of refusal beginning *"if
-an engine runs on this box"* stood above every working channel on every roster
+a server runs on this box"* stood above every working channel on every roster
 read, on a box where none does and none is meant to; the read had worked and
 its answer was underneath. The two arms are one sentence read twice rather than
 a case and its exception: a box that holds nothing at all still gets the
@@ -2621,14 +2623,14 @@ dropped is the one reading that is not about a channel at all.
 inconsistency.** `crate::seat::holds::listing` answers *what does this box
 hold*, and for that question the absence IS the answer — a row saying the bare
 channel holds nothing is what was asked for. The fan answers a question about
-walls, where the same sentence is noise above the answer. One surface prints an
+workspaces, where the same sentence is noise above the answer. One surface prints an
 absence because it was asked about it; the other does not because it was not.
 
 **§4.30 later narrowed what the poster infers from that predicate, and the
 narrowing belongs here** (bl-4855). *Names no workspace* establishes that a
 gesture cannot name a channel by its workspace; *therefore every channel is its
 subject* is a second step, true of these three reads and false of a `config`
-write about one engine's own file. The poster no longer takes it: a gesture
+write about one server's own file. The poster no longer takes it: a gesture
 carries the channel it is addressed to, and the fan is what addressing it to
 none means. Nothing about these three changed — they name none, and every
 channel is what they mean. The leg
@@ -2654,7 +2656,7 @@ Four decisions are theirs rather than the queue's:
 
 - **The reads are POSTED, not standing.** The queue stands on its pane because
   *what is asking* changes under the operator while they look at it. Neither of
-  these does: a verb table is fixed for the life of an engine build, and a
+  these does: a verb table is fixed for the life of a server build, and a
   search answers a needle somebody typed. A standing read here would spend a
   round trip per channel per beat forever on an answer that cannot have
   changed, and in the search's case would re-scan every store on the box while
@@ -2665,10 +2667,10 @@ Four decisions are theirs rather than the queue's:
   representable state that only the paint order resolves — two representations
   of one fact. `Model::lookup` is `Option<Lookup>`, one door closes either, and
   Escape's ladder gains one arm rather than two.
-- **The engine's `help` is not `lernie help`, and only one of them has an argv
+- **The server's `help` is not `lernie help`, and only one of them has an argv
   row.** `crate::verbs::help` answers *what does this BINARY take*, from a
-  table compiled into it, with nothing provisioned and no engine up; the wire's
-  `help` answers *what does that ENGINE offer*. Two subjects, one word, and
+  table compiled into it, with nothing provisioned and no server up; the wire's
+  `help` answers *what does that SERVER offer*. Two subjects, one word, and
   argv has one namespace — so the wire op is reached from the window, and
   `lernie ask '{"op":"help"}'` stays the door argv already has for every op with
   no row. It is the roster-without-a-row shape `prepare`, `prompt`, `effort`
@@ -2688,12 +2690,12 @@ Four decisions are theirs rather than the queue's:
 
 **What this does not close, and it is upstream's** (yog bl-ef16, the recurrence
 of yog bl-22ab). A `search` hit spells its workspace and its project as the
-ENGINE'S OWN ABSOLUTE PATH while every gesture this box composes carries a name
+SERVER'S OWN ABSOLUTE PATH while every gesture this box composes carries a name
 (REMOTE §8, *"paths never cross the wire"*). So the keys a row spells are the
 keys the acts take and the values are not: feed one back and it earns `unknown
 workspace`. The find pane therefore offers **no control that spends a hit**,
 and says why on the glass rather than in a comment — a *go to it* here would
-have to guess a name off a path, which is the mis-aim `Model::wall` exists to
+have to guess a name off a path, which is the mis-aim `Model::workspace` exists to
 refuse one layer down, and a control that silently did nothing would be worse.
 That is §4.19's decision about a parked invocation read one noun over: saying
 what was found is worth more than saying nothing while the address it names
@@ -2707,15 +2709,15 @@ Bare, `doctor` names no workspace, so it is this family by the mechanical
 definition: it fans, each channel answers for its own box, and the pane is
 sectioned per channel with the roster's header. Its workspace is OPTIONAL —
 upstream's only workspace-addressed read where it is, because the box it is for
-may hold none — and naming one adds that wall's two checks and routes the read
-down that wall's channel alone. So the one control asks the deeper question
+may hold none — and naming one adds that workspace's two checks and routes the read
+down that workspace's channel alone. So the one control asks the deeper question
 when the window is aimed and the bare one when it is not, rather than a second
 control asking the second; argv spells both as `lernie doctor [<workspace>]`, a
 door in `crate::verbs::doors` because an optional parameter is not a row. The
 read is POSTED, `help`'s cadence, and the held sections are cleared on asking,
 which `help`'s are not: two asks may have two subjects, and a bare ask's
 sections left under an aimed one would say every channel had answered the
-narrower question. Every line on a row is the engine's — the check, the fact,
+narrower question. Every line on a row is the server's — the check, the fact,
 the remedy verbatim — and the one thing the pane composes is whether a row
 holds, read off the row's own `ok`. The frame's top-level `ok` is not a verdict
 over the rows and is never read as one: upstream carries no tally, and the
@@ -2744,7 +2746,7 @@ the poster's own loop, and no arm puts one back. The crate's one repetition is
 `offframe::pump`'s cadence, which re-derives the standing READS from the model
 and never touches that queue. A property nothing enforces is a property that
 lasts until somebody adds a helpful retry, so the beat that proves it scripts
-an engine to hang up once and answer the second dial, and asserts the far end
+a server to hang up once and answer the second dial, and asserts the far end
 heard the gesture **once** across both.
 
 **The transport says whether the request crossed, and the seam is one it
@@ -2797,7 +2799,7 @@ READ's failure is unchanged and still lands on its channel's section.
 
 **Two sentences, because the remedies are opposite.** `Notice::Unsent` says the
 act never left this seat, so nothing happened and doing it again is safe.
-`Notice::InDoubt` says it reached the engine and may have run, so this seat
+`Notice::InDoubt` says it reached the server and may have run, so this seat
 never resends one — the fifth notice arm and **the first whose remedy is to do
 nothing**. Both name the op, because one bar serves the whole window and a
 sentence about an unnamed act is one nobody can act on.
@@ -2824,7 +2826,7 @@ and `enroll again` would mint a second over a first nobody can see.
 **The test seam is the finding upstream recorded not having.** yog bl-d1f1:
 *"The wire path's window is not drivable without a way to drop a connection
 mid-answer, which is itself a finding — the path with the worst recovery story
-is the one with no test seam for it."* The stand-in engine now takes
+is the one with no test seam for it."* The stand-in server now takes
 `Answer::Hangup`: it completes the handshake, reads the request, and closes
 without a frame or a terminator, which is the in-doubt window exactly. A plain
 `Vec<Value>` still converts into the ordinary arm, so no existing script
@@ -2868,7 +2870,7 @@ Six items, and the separator is where the one rule is:
 | `flag…` | selects the row and puts the cursor in the composer's reason box |
 | `delete…` | selects the row and puts the cursor in its arming box |
 
-**The rule: an item whose act takes only the wall and the conversation FIRES;
+**The rule: an item whose act takes only the workspace and the conversation FIRES;
 an item whose act takes a third parameter goes to the box that fills it.** That
 is what dissolves the question the ball asked — *how does an arming work inside
 a menu* — rather than answering it. A menu cannot hold either box: the composer
@@ -2956,11 +2958,11 @@ cannot tell one control from two.
 `src/ui/login.rs`, `src/ui/login/run.rs`, `src/ui/model/login.rs`,
 `src/reply/providers.rs`, `src/reply/login.rs`, `src/verbs/login.rs`,
 `src/offframe/signin.rs`. **The eighth covering pane, and the second whose
-subject is the aimed wall.** §4.17's tuning pane is what a wall's roles are set
-to; this is what that wall can sign in to, and the act that signs it in.
+subject is the aimed workspace.** §4.17's tuning pane is what a workspace's roles are set
+to; this is what that workspace can sign in to, and the act that signs it in.
 
-**The act is the ENGINE'S and this crate never spawns one.** `bz --login` runs
-on the engine, inside the named workspace's wall, so the credential lands where
+**The act is the SERVER'S and this crate never spawns one.** `bz --login` runs
+on the server, inside the named workspace's directory, so the credential lands where
 the agents that read it run and nothing credential-shaped crosses this wire
 (REMOTE §8.3). That is the whole reason the surface is portable at all: the
 seat asks, posts and paints, and the run holder, its one-run-per-pair
@@ -2975,11 +2977,11 @@ stated together:
 
 - **`providers` STANDS while the pane is open** (§4.17's rule, keyed on the
   pane). Here the standing buys something the tuning pane's does not: a
-  credential lands on the ENGINE while the operator is looking at the table, so
+  credential lands on the SERVER while the operator is looking at the table, so
   a row that said *no credential* says otherwise on the next beat with nothing
   asked again.
 - **`models` is POSTED** (§4.21's rule). What a row offers is fixed for the
-  life of the engine's own answer, so a standing read would spend a round trip
+  life of the server's own answer, so a standing read would spend a round trip
   a beat forever on something that cannot change under the operator. It is a
   read and not an act: asking twice is asking once.
 - **`login-tail` is HELD, on a fourth thread** (`src/offframe/signin.rs`). It
@@ -2998,17 +3000,17 @@ shape (`prepare` then `prompt`). A seat that tagged only the act would be
 claiming `login-tail` is reachable nowhere.
 
 **Which sphere the sign-in is for, said in the surface, and never as an
-address.** The wall's name and the channel it came down, and — for a wall held
+address.** The workspace's name and the channel it came down, and — for a workspace held
 elsewhere — that it is held elsewhere, read off the roster's own client-side
 channel stamp (`ui::Channel::named_there`, §8.2). Two entries naming one
 listener are still two trust relationships, and an address in this sentence
 would be this end telling the operator where a credential is about to land.
 
 **The loopback remedy is STATED and never built** (REMOTE §8.3). A row whose
-flow wants a browser at the engine's own loopback completes only from a browser
+flow wants a browser at the server's own loopback completes only from a browser
 on that box, or through a port-forward — *an operator act on boxes the operator
 administers*, which upstream rules is a remedy and not a channel feature.
-**It is said for every row on a wall held elsewhere rather than for the
+**It is said for every row on a workspace held elsewhere rather than for the
 browser-only ones**, and that is a limit rather than a choice: the `device`
 column is on yog's provider ROW and not on the view that crosses the wire
 (bl-7c9f), so this seat cannot tell the two apart. A stated remedy that is
@@ -3016,12 +3018,12 @@ sometimes unnecessary beats a silence that is sometimes wrong. If the column
 ever reaches the view, the sentence narrows to the rows that need it and
 nothing else here moves.
 
-**The run-by-hand fallback is the engine's sentence with one of ours beside
-it.** `fallback` is composed by the end that knows the wall and arrives only on
-a non-zero exit. The original surface (yog bl-1ddb) spelled a local wall's
-fallback as an `exec` on this box and an entry-held wall's as something else;
+**The run-by-hand fallback is the server's sentence with one of ours beside
+it.** `fallback` is composed by the end that knows the workspace and arrives only on
+a non-zero exit. The original surface (yog bl-1ddb) spelled a local workspace's
+fallback as an `exec` on this box and an entry-held workspace's as something else;
 there is no `exec` in this crate and both are the same case now — **an act the
-operator runs on the box that HOLDS the wall** — so what the pane adds is one
+operator runs on the box that HOLDS the workspace** — so what the pane adds is one
 sentence saying so, naming the channel and no address.
 
 **The pane holds two questions and no answer.** `Login { following, asking }`
@@ -3035,9 +3037,9 @@ open, for §4.17's reason verbatim. `asking` exists because the `models` reply
 carries no provider name: the question is the only thing that can say which row
 a listing answers.
 
-**And the pane goes with the wall.** `Model::aim_at` retires it and all three
+**And the pane goes with the workspace.** `Model::aim_at` retires it and all three
 answers, which is §4.17's rule in its sharper form: the act signs a credential
-into ONE wall's store, so a pane left standing over a new aim would offer to
+into ONE workspace's store, so a pane left standing over a new aim would offer to
 sign the operator in somewhere they are no longer looking.
 
 **The standing set stopped being flags** (`state::Open`). Four covering panes
@@ -3058,14 +3060,14 @@ surfaced and that file records absences.
 
 ### 4.25 The pin: an assertion about the world, not an arrangement of one screen (bl-7782)
 
-`src/verbs/workspace.rs`, `src/ui/roster/wall.rs`, `src/ui/model/acts.rs`. The
-strip has ordered pinned walls first since the roster could read a rank
+`src/verbs/workspace.rs`, `src/ui/roster/workspace.rs`, `src/ui/model/acts.rs`. The
+strip has ordered pinned workspaces first since the roster could read a rank
 (`roster::ordered`), and until this ball nothing on the glass could set one.
 
 **The pin crosses the boundary, and that is the point.** A seat-local sort would
 have been cheaper and would have been a different thing: yog's own help row says
 *"a pin is an assertion about the world, not an arrangement of one screen, so it
-is the same list on every seat and it survives a restart."* So it is the engine's
+is the same list on every seat and it survives a restart."* So it is the server's
 list, this seat asserts into it, and the rank comes back on the roster answer
 every beat already carries.
 
@@ -3077,7 +3079,7 @@ read a beat ago would be re-introducing exactly the race that wording removes. S
 **the control's word and its `act:` token both follow the row's own rank** —
 `pin to the front` on an unpinned row, `unpin` on a pinned one — which is a
 reading of what is on the glass rather than a state this end holds. It is the
-fifth per-wall control, hanging off the aimed row and off no other, standing down
+fifth per-workspace control, hanging off the aimed row and off no other, standing down
 under a covering pane with the other four.
 
 **Both answer the workspace listing**, so nothing new is decoded and the next
@@ -3087,57 +3089,57 @@ says so*, reached here for free because the roster read is already standing.
 **It costs the parity instrument a world rather than a pane** (§4.16, §4.11's
 matrix). Each row carries exactly the one act that is not already true of it, so
 the window at work can only ever put `pin` on the glass. `pinned` is the
-`seated` world with its aimed wall ranked, and it is the only screen `unpin`
+`seated` world with its aimed workspace ranked, and it is the only screen `unpin`
 exists on — *unproven is red*, and a control that lives on a screen the walk
 never visits fails honestly.
 
-### 4.26 The start's refusal: the engine's rung, and the seat's refund (bl-b180)
+### 4.26 The start's refusal: the server's rung, and the seat's refund (bl-b180)
 
 `src/ui/model/start.rs`, `src/ui/model/absorb.rs`, `src/state/traffic.rs`,
 `src/offframe/poster.rs`. The operator ruling this closes is yog's bl-1fd0: *on
-a wall holding no usable provider credential, typing a goal and hitting Enter
+a workspace holding no usable provider credential, typing a goal and hitting Enter
 will work zero percent of the time — the conversation is born, immediately dies
 on no-models, and the operator learns it from a dead row (or from nothing at
 all).* Both first goals typed that evening were lost. The ball arrived with
 three open questions, and each is answered by a house principle rather than a
 preference.
 
-**1. The engine decides, and the seat re-derives nothing.** The predicate is
+**1. The server decides, and the seat re-derives nothing.** The predicate is
 brazen's `credential` column plus one clause about the config's own role
-assignments, and it was written and tested on the engine once (yog `StartGate`)
+assignments, and it was written and tested on the server once (yog `StartGate`)
 before being deleted for having no caller — the doc that survived it said *if
 a seat ever needs yog to state the gate, it files against yog and the carrier
 is designed then*. This seat filed (yog bl-2291). A seat re-judging
 `Query::Providers` rows would be a second implementation of a settled decision
 (VISION §8), and with the phone beside this window it would be a third. So the
-rung lives at the engine's `Prompt` door, in the order blank goal → **sign in**
+rung lives at the server's `Prompt` door, in the order blank goal → **sign in**
 → confinement → ceiling, and **the carrier is the refusal every act already
 has**: `{"ok": false, "error": "sign in first: … — /login <provider> (rows: …)"}`.
 No new verb, no new shape, `PROTOCOL` unmoved, corpus unchanged (yog REMOTE
-§9.19). This side paints the engine's sentence and never learns the predicate.
+§9.19). This side paints the server's sentence and never learns the predicate.
 
 **2. A one-line refusal at the moment a goal would be spent, not a standing
 band.** The face is four panes wide and the composer is one control with two
-subjects; a band that stood for as long as the wall was unsigned would be paid
-for by the pane beside it, on every wall, whether or not the operator meant to
+subjects; a band that stood for as long as the workspace was unsigned would be paid
+for by the pane beside it, on every workspace, whether or not the operator meant to
 begin anything. The refusal is instead the **start's own receipt**, painted
-where the start's sentence already stands — `not started in <wall>: sign in
+where the start's sentence already stands — `not started in <workspace>: sign in
 first …` over the box — with the goal back in the box under it, because a
 refused fire spends nothing and what was typed is the operator's again. The
-standing fact about the wall belongs to the Login pane (bl-e3c5), whose rows
+standing fact about the workspace belongs to the Login pane (bl-e3c5), whose rows
 say *not signed in* for as long as it is true; this surface says it once, when
 it matters, and the sentence stands until the next start replaces it.
 
 **3. The waiting question dissolves.** The ball asked what happens to a start
 typed before a readiness answer is back. There is no readiness answer to wait
-on: the goal is posted as always and the engine's reply is the name or the
+on: the goal is posted as always and the server's reply is the name or the
 refusal. A special case was a missing reframe.
 
-**What the seat had to learn to do that — and it is not about the wall.** A
+**What the seat had to learn to do that — and it is not about the workspace.** A
 refusal wears no `kind`, so `Model::absorb` could not tell *whose* refusal it
 was filing, and the one gesture this window holds across two acts stayed
 outstanding under any refusal at all: a blank goal, the spend ceiling, a
-confinement refusal — each already an engine-side refusal of `prompt` — left
+confinement refusal — each already a server-side refusal of `prompt` — left
 the composer painting *starting…* with no box, forever. That is the seat-side
 half of the ruling, and it is a plain defect this ball found on its path:
 
@@ -3157,7 +3159,7 @@ half of the ruling, and it is a plain defect this ball found on its path:
   sentence about *that*, and the goal is the operator's — because a start
   nothing will ever answer is a composer with no box.
 - **The refund never overwrites a draft typed elsewhere.** The composer is one
-  box with two subjects, so a deposit drafted on another wall while the start
+  box with two subjects, so a deposit drafted on another workspace while the start
   was out is newer text and is kept; the refused start's own goal is then held
   only in the retired `Start`, which is the one narrow residual and is recorded
   rather than papered over.
@@ -3183,7 +3185,7 @@ Three things make it a rule rather than a patch:
   composes is built from what is on the glass and can be composed again by
   looking at it, so there is nothing to give back.
 - **Only where nothing crossed**, which is the whole of the asymmetry with the
-  start above. IN DOUBT means the engine had the gesture and may have run it,
+  start above. IN DOUBT means the server had the gesture and may have run it,
   and its sentence says so — words back under a live `send` would invite
   exactly the resend REMOTE §3 forbids.
 - **One refund, shared.** `Model::refund` is the start's, and the guard that
@@ -3197,13 +3199,13 @@ prediction one frame earlier); no second painted seat for the sentence (the bar
 already has a dismiss, the composer's slot already has the receipt, and one
 sentence in two places is two sentences).
 
-### 4.27 The trail: the engine's own record, and the classification that crosses (bl-4c48)
+### 4.27 The trail: the server's own record, and the classification that crosses (bl-4c48)
 
 `src/reply/ops.rs`, `src/verbs/trail.rs`, `src/ui/trail.rs`,
 `src/ui/model/trail.rs`. **The ninth covering pane, and the fourth whose
 subject is every channel rather than a focus.** It answers a question this seat
 carried the wire for and painted nowhere: *what has this box been doing*. The
-engine keeps one row per child process its boundary spawned — the argv, where
+server keeps one row per child process its boundary spawned — the argv, where
 it ran, how it ended and where its alarm stands — and until this ball the only
 place that record could be read was yog's own line surface.
 
@@ -3217,14 +3219,14 @@ across channels; and no aim or selection can invalidate it, so it survives both.
 **But the read STANDS, where §4.21's other two are posted once.** That is the
 one place it parts from the window's other channel-wide panes and it is a fact
 about the subject rather than a preference: a verb table is fixed for the life
-of an engine build and a search answers a needle somebody typed, so re-asking
+of a server build and a search answers a needle somebody typed, so re-asking
 either on every beat would spend a round trip per channel forever on an answer
 that cannot have changed. A trail is neither. Every act this seat spends
 appends a row to it, and an alarm goes up and comes down under an operator who
 is looking at it. So it is keyed on the pane exactly as the queue's is
 (`crate::state::Open::Trail`) and asked only while somebody is looking.
 
-**The seat reads the engine's words and classifies nothing** (REMOTE §9.17).
+**The seat reads the server's words and classifies nothing** (REMOTE §9.17).
 The reply carries `failed`, `exit_label` and `standing` precisely so that a
 client need not re-implement the sentinel table, the `128 + n` signal reading,
 the retirement key, the ack scan and the origin grouping — *"five derivations
@@ -3263,7 +3265,7 @@ ops and this is the read half of one of its two. The trail's two acts — `ack`,
 which is the operator's watermark and the second of the two ways an alarm comes
 down, and `clear-trail`, which truncates — were bl-b8f7: both name no
 workspace, so both take the poster's fanned path, and *one control truncating
-every engine's trail* was a question to settle before writing it rather than
+every server's trail* was a question to settle before writing it rather than
 after. Both have since landed, and both answers are §4.35's.
 The fleet family — `fleet`, `disband`, `arm`, `disarm`, `scan`, `science`,
 `work-diff` — was bl-a43a, and it addresses a workspace, so it is the tuning
@@ -3275,15 +3277,15 @@ readable half of the fleet belongs to the ball pane, which is what would decode
 bl-a43a was left holding is the fleet's controls and its own two reads, and
 that is §4.33.
 
-### 4.28 The clients pane: which machines may execute for this wall (REMOTE §5, §5.1; bl-e53c)
+### 4.28 The clients pane: which machines may execute for this workspace (REMOTE §5, §5.1; bl-e53c)
 
 `src/ui/clients.rs`, `src/ui/model/clients.rs`, `src/reply/clients.rs`,
 `src/verbs/clients.rs`. **The ninth covering pane, and the third whose subject
-is the aimed wall** — §4.17's is what its roles are set to, §4.24's is what it
+is the aimed workspace** — §4.17's is what its roles are set to, §4.24's is what it
 can sign in to, and this is which machines may run a tool for it.
 
 **Two lifetimes on one row, and the pane says both.** `present` is an
-observation — true at the instant the engine answered and recorded nowhere on
+observation — true at the instant the server answered and recorded nowhere on
 either end — and the advertised set is a statement the machine last made, which
 stands whether or not it is connected. A row therefore reads *not connected*
 beside a full set as the ordinary thing: a tool host holds its connection only
@@ -3297,7 +3299,7 @@ presence is not, and this seat paints the half that decides something: a row
 with no stamp at all has **never dialled** — an enrolment minted and abandoned,
 which is the row an operator can safely remove. The other half, *how long ago*
 a machine that has dialled last spoke, is an age, and an age needs a `now`.
-This crate holds no clock and every other age on this surface is one the engine
+This crate holds no clock and every other age on this surface is one the server
 computed and sent (`age_secs`), so painting one here would be this seat
 asserting a time nobody handed it. **The command line is where this matters
 most**: `present` reads false for every row there, because every verb opens and
@@ -3384,7 +3386,7 @@ the pane that would offer one does not exist.
 **The goal is spent on firing and the role is kept**, which is the composer's
 own split read one surface over (§4.11): a flag's reason is taken because what
 a flag says is said, and an unmaking's arming is cloned because clearing it
-would charge a retype for the engine's *no*. A fork's goal is the first — it
+would charge a retype for the server's *no*. A fork's goal is the first — it
 was said, to a child that now exists — and its role is the second, being the
 same name the next attempt off the same spine wants.
 
@@ -3416,13 +3418,13 @@ so a clear cannot read as a set that lost its field. **Their controls are here,
 not on the composer's strip beside `retarget`, for the fork's reason above**:
 `workflow`'s `config` is a lineage name, §9.24 rules that what a conversation
 can be marked to *is* `request/lineages`, and that listing is a read — so the
-control is one button per lineage the wall holds, each carrying its own name,
+control is one button per lineage the workspace holds, each carrying its own name,
 on the half that already paints which mark answers. The listing therefore
 stands on `Standing::records` as a sixth read, landing on the one
 `Model::lineages` the config pane fills (§4.30); with none answered nothing is
 offered. `clear-workflow` is offered only where a mark is read, the pin pair's
 rule (§4.25) — a mark inherited from an ancestor still gets it, because the
-holder is a descent id this seat does not map to an address, and the engine's
+holder is a descent id this seat does not map to an address, and the server's
 own outcome says whose mark it was.
 
 **Neither is §4.20's unmaking.** A mark is a ref litany writes and deletes; the
@@ -3433,20 +3435,20 @@ can only be set to a lineage's head — and that is the same loss `retarget`
 already accepts without an arming. So both are plain buttons, as `retarget` is.
 
 **A notch says its money** (yog REMOTE §9.23; bl-9111). The notch's figure is a
-rollup as of that step, and the engine prices the same rollup and sends it
+rollup as of that step, and the server prices the same rollup and sends it
 beside it — so the notch's headline says `N tokens — $x.yz` on §4.18's rule,
 the count alone where unpriced and `at least` where the rollup holds tokens no
 rate covered. A child's card carries no cost on this wire and so paints its
 count alone; a seat that summed one would be a second author of a price.
 
-### 4.30 The config pane: the files a wall's policy is written in (REMOTE §9, §9.18, §9.22; bl-5c53, bl-4855, bl-a1d6)
+### 4.30 The config pane: the files a workspace's policy is written in (REMOTE §9, §9.18, §9.22; bl-5c53, bl-4855, bl-a1d6)
 
 `src/ui/config.rs`, `src/ui/config/settings.rs`, `src/ui/config/edit.rs`,
 `src/ui/config/proposals.rs`, `src/ui/model/config.rs`,
 `src/ui/model/config/draft.rs`, `src/ui/model/config/proposal.rs`,
 `src/reply/config.rs`, `src/reply/lineages.rs`, `src/verbs/config.rs`,
 `src/ui/model/posted.rs`, `src/offframe/poster.rs`. **The eleventh covering pane,
-and the fourth whose subject is the aimed wall** — §4.17's is what its roles are
+and the fourth whose subject is the aimed workspace** — §4.17's is what its roles are
 set to, §4.24's what it can sign in to, §4.28's which machines may execute for
 it, and this is the files all of that is written in.
 
@@ -3457,7 +3459,7 @@ this pane inherits: a schema alone does not say what the values ARE, so a seat
 would always join it against a byte read, and two reads of one file have
 staleness between them. What is on the glass is one moment.
 
-**The judgement is the engine's.** A setting's `fault` is the same call yog's
+**The judgement is the server's.** A setting's `fault` is the same call yog's
 own pick gate makes, so what this pane paints as wrong is what the far end says
 is wrong — and its absence is *nothing is wrong with this value*, not *nobody
 looked*. A seat that derived one would be a second authority across a boundary.
@@ -3469,45 +3471,45 @@ raw-text destinations are *"the general path with empty input rather than a
 branch"*; the pane says so in its own sentence rather than showing an empty
 list.
 
-**Two destinations name a workspace and three name an ENGINE, so the pane
+**Two destinations name a workspace and three name a SERVER, so the pane
 addresses two different things.** `brazen` and a lineage's `branch` carry
 `workspace` inside `target`, which `crate::envelope` already reads as the
 gesture's address — §8.2's routing and its rename apply untouched (bl-4a36 put
 that in place). litany's global models file, its workflows and yog's own
-`cadence.yaml` belong to the engine and name no workspace at all, so what they
+`cadence.yaml` belong to the server and name no workspace at all, so what they
 address is a **channel**: the pane asks them down the channel the window is
 aimed at, by name, exactly as a roster read is asked. Letting them fall through
-`seat::route` would have asked this box's own engine about a file on somebody
+`seat::route` would have asked this box's own server about a file on somebody
 else's.
 
 **It writes, and the fan was never a rule about workspace-less gestures**
 (bl-4855). `config` is one op that is a read or a write depending on whether it
 carries `text` at all (upstream's discriminator), so the editor is one field
 away — and the field was never the problem. §4.21's poster fanned every gesture
-naming no workspace, so an ACT composed for one engine's `cadence.yaml` would
+naming no workspace, so an ACT composed for one server's `cadence.yaml` would
 have been written to **every channel this box holds**, putting one operator's
-policy onto every engine they are a client of.
+policy onto every server they are a client of.
 
 The fix is not an arm saying *do not fan this one*. §4.21's predicate is
 `crate::verbs::Verb::addresses_a_workspace`, and what it actually establishes is
 that such a gesture **cannot name a channel by its workspace** — from which the
 poster inferred *therefore every channel is its subject*. That inference is
 true of a window-level READ, whose subject genuinely is the box's whole set, and
-false of a `config` write about one engine's own file. So the address stops
+false of a `config` write about one server's own file. So the address stops
 being inferred: `crate::ui::Posted` carries the channel a gesture is addressed
 to, `crate::offframe::poster::legs` sends it down that one, and **the fan is
 what addressing it to no channel in particular means** — the general path with
 empty input rather than a branch. It is recorded at the control for the reason
 `Posted::act` already is (§4.22, *"the composing control already knows, for
 free"*) and for the poster's own (bl-c70d): the aim is not read on the send pass
-at all, because an operator may compose one gesture aimed at a wall on one
+at all, because an operator may compose one gesture aimed at a workspace on one
 channel and fire another at a row on a second before either leaves.
 
 **So the write is addressed exactly as the read is**, and the branch is the same
 one in both halves: a destination naming a workspace is routed by it — which is
 what performs an entry's rename at the channel boundary, and what naming a
-channel would bypass — and one naming the ENGINE goes down the channel the
-window is aimed at, by name. `crate::offframe::asker::wall` for the read,
+channel would bypass — and one naming the SERVER goes down the channel the
+window is aimed at, by name. `crate::offframe::asker::workspace` for the read,
 `Model::write_config` for the write, one predicate
 (`Where::addresses_a_workspace`) read twice.
 
@@ -3517,7 +3519,7 @@ ceases to exist. This one's subject is a file that still exists afterwards, and
 the control cannot be reached by a mis-aimed click because reaching it means
 having authored the file's whole text. So it takes §4.20's other half, the
 ENABLEMENT: `write` and `revert` are dark until the box differs from what the
-engine last answered, and the refusal is spelled beside them, *"because a
+server last answered, and the refusal is spelled beside them, *"because a
 greyed control says a thing is not live and nothing about what would make it
 live"*. `revert` is what makes §4.20's own test — *undone by doing the other
 thing* — true rather than claimed: the other thing is on the glass beside it.
@@ -3529,11 +3531,11 @@ moved under it; a `config` act *"carries no hash guard, and needs none"* because
 a gesture states its whole text in one atomic instruction (REMOTE §9.18). That
 is true of the gesture and false of the operator, who types for minutes while a
 standing read replaces the answer underneath them. `Draft::seed` — the bytes the
-box and the engine last agreed on — is the guard restated as a sentence:
+box and the server last agreed on — is the guard restated as a sentence:
 the file is neither what the box holds nor what the two last agreed on, which
 leaves exactly one reading, another writer. Our own write in flight is excluded
 because the answer is still the anchor, and our own write landed because the
-answer IS the box. The engine remains the only thing that judges.
+answer IS the box. The server remains the only thing that judges.
 
 **Nothing records that a write is in flight, and that is the enablement working
 rather than a gap.** The control asks *is there anything to write*, which is a
@@ -3568,8 +3570,8 @@ two verdicts hang on its row:
 
 - **The listing stands while the pane does**, and a row is the id, the
   standing, the lineage it would move, the diffstat and the reviewer's subject.
-  `fresh` and `stale` are the engine's own reading and never inferred here off
-  an empty `lineages` (§9.4): only the engine read the two in one pass.
+  `fresh` and `stale` are the server's own reading and never inferred here off
+  an empty `lineages` (§9.4): only the server read the two in one pass.
 - **Naming a row deepens the one read; it does not post a second.**
   `proposals` is one op at two depths, so the standing read is asked with the
   named id and its answer carries the listing and that proposal whole. The
@@ -3589,7 +3591,7 @@ two verdicts hang on its row:
   opened row states its subject and what each verdict does before offering
   them, the way out (`leave it staged`) comes first, the arming is not spent
   on firing — a stale accept refuses in litany's own words — and firing is
-  said (`asked — waiting for the engine`). The subject is held for §4.20's
+  said (`asked — waiting for the server`). The subject is held for §4.20's
   reason at no cost: the id is the pane's, and the workspace is the aim's,
   which cannot move under this pane because the act that moves the aim
   retires it.
@@ -3600,11 +3602,11 @@ two verdicts hang on its row:
 The row control carries `act:proposals` and each verdict `act:proposal`, so
 both lines left `parity.toml` in the commit that painted them.
 
-### 4.31 The ball pane: the board, the bindings, and what a wall holds (bl-d2af)
+### 4.31 The ball pane: the board, the bindings, and what a workspace holds (bl-d2af)
 
 `src/reply/balls.rs`, `src/reply/board.rs`, `src/reply/spend.rs`,
 `src/verbs/balls.rs`, `src/ui/board.rs`, `src/ui/board/rows.rs`,
-`src/ui/board/wall.rs`, `src/ui/model/board.rs`. **The twelfth covering
+`src/ui/board/workspace.rs`, `src/ui/model/board.rs`. **The twelfth covering
 pane**,
 and the one that answers what this window carried the wire for and painted
 nowhere: the task store the conversations are working. Until it landed an
@@ -3617,17 +3619,17 @@ defines mechanically (`crate::verbs::Verb::addresses_a_workspace`). `balls` —
 the whole box's ball⇄workspace binding table — and `board` — that table folded
 into columns — name no workspace, so they fan and their sections are the union
 across channels, which is §4.19's shape exactly. `workspace-balls` and `marks`
-name one, so they are §4.17's: asked of the aimed wall, and retired when the
+name one, so they are §4.17's: asked of the aimed workspace, and retired when the
 aim moves. Splitting them into two panes would put *the board* and *what this
-wall holds* on two screens, and they are one question asked at two widths; so
+workspace holds* on two screens, and they are one question asked at two widths; so
 they are one pane with one section that says which width it is about
-(`src/ui/board/wall.rs`).
+(`src/ui/board/workspace.rs`).
 
-**The pane survives an aim and its wall half does not.** That is not an
+**The pane survives an aim and its workspace half does not.** That is not an
 exception to §4.17's retirement rule, it is that rule applied to each half of
 the subject: a pane about every channel's board does not stop being about them
-because the operator aimed elsewhere, and painting the old wall's balls under
-the new wall's name is exactly what the retirement prevents. So
+because the operator aimed elsewhere, and painting the old workspace's balls under
+the new workspace's name is exactly what the retirement prevents. So
 `Model::aim_at` drops `holding` and `marks` and leaves `Lookup::Board`
 standing.
 
@@ -3657,7 +3659,7 @@ clause, because a figure over one stamped conversation renders as no clause at
 all and the clause alone cannot tell that from *workspace-wide*. The four
 counters are `crate::reply::steps::Spend` read from where they already live,
 never restated — one shape on this wire, one encoder upstream, one reading
-here. **The money half is one reader too** (bl-9111): `Cost` — the engine's
+here. **The money half is one reader too** (bl-9111): `Cost` — the server's
 `usd` and how many tokens no rate priced — is read by `spend::money` wherever
 it rides, inline on a figure or under its own key on the four shapes REMOTE
 §9.23 gave one, and `unpriced_tokens` above zero makes it a floor the seat says
@@ -3666,7 +3668,7 @@ as `at least` (§4.41).
 **One control carries four tokens**, which is PARITY §3's rule that the
 ledger's unit is the op rather than the widget, spent on the widest control
 this window has. Opening the pane stands all four reads up: two of every
-channel this box holds, and — when the window is aimed — two of that wall. The
+channel this box holds, and — when the window is aimed — two of that workspace. The
 two aimed ones are asked by that click and by no other, so that is where their
 token belongs (`src/ui/roster/acts.rs`).
 
@@ -3716,9 +3718,9 @@ decoded**, because this seat paints the bytes and §4.9 does not carry a field
 for no glass. That is the ledger's own rule spent inside a shape rather than
 across one.
 
-**Three of the facts are the engine's own rendering and none is recomputed.**
+**Three of the facts are the server's own rendering and none is recomputed.**
 The strip's characteristics are prose one derivation assembles with per-segment
-omission rules; the money is the engine's spelling of the integer beside it;
+omission rules; the money is the server's spelling of the integer beside it;
 and the context percent is its rounding, deliberately **unclamped**, so a
 context that has outgrown its window reads as `140%`. A seat that divided the
 two figures itself would be re-taking a decision upstream took on purpose.
@@ -3734,18 +3736,18 @@ not having two.
 **The cascade is the pane's one act on the conversation itself** (bl-3686),
 and it is here because this is the pane that says what is under there. The
 header's descent line says what the conversation hangs under, the spine's cards
-say what was dispatched off it, and the offers line is the engine's own
+say what was dispatched off it, and the offers line is the server's own
 sentence about whether `stop children` is available at all — so the control
 that fires it sits on that line, and its label is [`word`]'s own string for
 `Offer::Children` rather than a second spelling of it. It is **absent** where
-the engine offers no cascade and **disabled** until the arming box holds the
+the server offers no cascade and **disabled** until the arming box holds the
 conversation's name, which is §4.20's two states read one after the other: what
 is missing in the first case is the subject, and in the second a parameter. The
 composer's `stop` and the row menu's stay the BARE form, because both are
 routine surfaces and §4.20 keeps a subtree off one.
 
 **The boundary field has one site in this window, and retiring it deletes one
-line.** litany bl-3114 made every engine stop take its children, so yog retires
+line.** litany bl-3114 made every litany stop take its children, so yog retires
 `stop`'s `children` field at its next PROTOCOL bump (yog bl-6efc). The only
 place in this seat that means *yes* is `Model::post_cascade`'s `true`, and that
 literal is what the bump deletes. What the bump does not settle is where the
@@ -3774,11 +3776,11 @@ time behind a section selector — is a view this pane may still grow, and it
 would dissolve the constraint rather than pay it.
 
 
-### 4.33 The fleet: running a wall's balls, watching them, and what they changed (bl-a43a)
+### 4.33 The fleet: running a workspace's balls, watching them, and what they changed (bl-a43a)
 
 `src/reply/diff.rs`, `src/reply/science.rs`, `src/verbs/fleet.rs`,
 `src/ui/fleet.rs`, `src/ui/fleet/rows.rs`, `src/ui/model/fleet.rs`. **The
-thirteenth covering pane, and the fifth whose subject is the aimed wall.** It
+thirteenth covering pane, and the fifth whose subject is the aimed workspace.** It
 is the other half of bl-4c48, whose trail half is §4.27 and whose board half is
 §4.31: seven ops, all of them carrying a workspace, and until this landed a
 workspace could be watched from this seat and never run.
@@ -3808,12 +3810,12 @@ one thing that would make the unmaking's arming worthless. What they get
 instead is the unmaking's ORDER: the acts that start things first, the acts
 that stop them under.
 
-**It holds the wall it was opened on rather than following the aim**, which is
+**It holds the workspace it was opened on rather than following the aim**, which is
 §4.20's unmaking arrangement and here for a sharper form of its reason: these
 acts start drones and spend money in ONE workspace, so a gesture composed
 against whatever the aim happened to be at the moment of the click would be a
 control that moved under the operator. The pane is retired when the aim moves,
-so the two can never disagree — and holding the wall is what makes that a fact
+so the two can never disagree — and holding the workspace is what makes that a fact
 rather than a promise.
 
 **Three boxes, because three acts carry a word nothing on the glass can
@@ -3877,7 +3879,7 @@ each wider reach the held row's `scopes` lists (§4.42 item 8; bl-da16): the
 pane paints the ask's own `choices`, one list for both surfaces.
 
 **Nothing names the invocation, and that is the gesture's own shape.** The
-engine reads the held `tool_use` off the conversation's hold mark at fire time,
+server reads the held `tool_use` off the conversation's hold mark at fire time,
 so the envelope carries a verdict and an address and nothing else. A seat that
 carried an id would be able to answer a call that is no longer parked.
 
@@ -3891,7 +3893,7 @@ that is not already true of it, and the ball expected to read the rank off
 `reply/agent`. It is not there: the `agent` answer §4.32 decodes in full
 carries no floor field, and `floored`'s `standing` is the receipt of an act
 just performed rather than a standing fact. What dissolves it is that
-**neither act can be refused**. A floor is one row appended to the engine's
+**neither act can be refused**. A floor is one row appended to the server's
 trail and the reply is re-derived from that trail afterwards, so `restore` on a
 conversation nobody floored is not an error, and `restore` under a
 still-floored ancestor leaves the floor standing and *says so*. There is no act
@@ -3928,7 +3930,7 @@ section. It is refused, for three reasons that are one reason:
   scope an operator has to reconstruct from where they clicked.
 - **`ack` is the operator's watermark, and the operator is one.** It records
   *I have looked at what is standing*. Somebody looking at the union has looked
-  at every section; a per-engine watermark would be bookkeeping this seat
+  at every section; a per-server watermark would be bookkeeping this seat
   invented and the operator would have to keep.
 - **A channel on `Posted` would be a second addressing table.** This crate
   routes by the envelope's own `workspace` field and nowhere else — that is
@@ -3937,7 +3939,7 @@ section. It is refused, for three reasons that are one reason:
   the first exists to answer.
 
 What the seat owes instead is **saying so**, which is why the cut's pane names
-the engines it reaches one to a line rather than counting them, and why its
+the servers it reaches one to a line rather than counting them, and why its
 word is `cut every trail…`.
 
 **The cut is an unmaking, so it is a PLACE** (§4.20) — a covering pane of its
@@ -3956,14 +3958,14 @@ WIRE makes it one: `delete-workspace` carries a `typed` field and refuses
 unless it matches. `clear-trail` carries no field at all, and that same section
 rules that *"the seat reads which of the two a `typed` is off the wire's own
 grammar and invents no policy"*. A box this seat invented would be an arming
-the engine does not have on an act it does not gate — and a second confirmation
+the server does not have on an act it does not gate — and a second confirmation
 shape beside §4.20's, which is exactly what that section was written to
 prevent. What the arming was FOR is bought by the place instead: the subject is
 stated before the act is offered, and the act is not a control an operator
 passes.
 
 **Two departures from the unmaking, each with its own reason.** Its pane stays
-up saying *asked — waiting for the engine*, because a refusal is the common
+up saying *asked — waiting for the server*, because a refusal is the common
 case for `delete-workspace` and the arming has to survive it. Nothing refuses a
 truncation, so this pane stands down onto the trail as it fires: the place to
 be standing when the answer arrives is the pane that answers, and the trail's
@@ -4012,7 +4014,7 @@ watch a board and could not touch it.
 project and the `--as` name and NO workspace, so `crate::verbs::Verb::
 addresses_a_workspace` is false for every one of them and the poster's own
 rule would spread each over every channel this box holds — one click filing
-the same ball on five engines, or asking five engines to deliver a ball one of
+the same ball on five servers, or asking five servers to deliver a ball one of
 them holds. That rule is right about the window's own reads and wrong here,
 and the envelope cannot tell the two apart because on the wire they are the
 same shape. **The composing control can, for free**, which is bl-4855's
@@ -4023,31 +4025,31 @@ already there, and the question was whether these five were allowed to use it.
 
 **The `--as` name is the workspace's, so this seat needs no identity.** The
 ball that filed this asked where a seat-side operator name would come from — a
-box, a setting, or the aimed wall's `owner`. It comes from none of them,
+box, a setting, or the aimed workspace's `owner`. It comes from none of them,
 because it is not an operator name at all: yog spells the field *"the `--as`
 stamp every `bl` verb carries (§3.2): the ball's bound workspace name, never
 the operator `$USER`"*, and `projects::join::owner_name` binds a ball to a
-workspace on exactly that equality. So the stamp is the aimed wall's name and
+workspace on exactly that equality. So the stamp is the aimed workspace's name and
 the whole question dissolves — a seat that invented an operator name would
 break the binding it was making.
 
 **It is read off the CHANNEL and not off the aim**, which is the one subtlety
 in it. `crate::seat::route` rewrites a `workspace` field to the host's spelling
 where an entry renames, and none of these five has such a field; so an aim's
-`address` — this box's leaf — would cross as a claimant nobody on that engine
+`address` — this box's leaf — would cross as a claimant nobody on that server
 is. `Model::stamp` reads `Channel::named_there`, which is that same rename
 seen from the other end, and falls back to the address for the channel that
 does not rename.
 
 **Where each hangs is where its fields already are.** `assign` is on a board
-row, because a ball nobody holds IS a row of that section and the wall it
+row, because a ball nobody holds IS a row of that section and the workspace it
 would be claimed for is the aim; it is offered off the row's own `claimant`
 rather than off the column's word, so a `gated` row — upstream's *"a ball you
 could claim but could not deliver"* — offers it and a claimed one does not. The
-other four are in an authoring **block** the aimed wall's section opens, which
+other four are in an authoring **block** the aimed workspace's section opens, which
 is where the ball's project, its id and the name its verbs stamp all already
 are. One block with two subjects — a ball that does not exist yet, and one this
-wall holds — because authoring a ball's words is one act; upstream folds them
+workspace holds — because authoring a ball's words is one act; upstream folds them
 the same way and says why, *"one vocabulary, so a fact balls learns is added in
 one place instead of in the roster, the codec's field list and a second struct
 beside them"*.
@@ -4078,8 +4080,8 @@ then a control on one of its rows — and the arming is a third. **The arming
 names its own subject**, which is why nothing records which ball is armed: the
 box holds an id and the control it enables is the one on the ball with that id.
 And it is never spent on firing, for §4.20's reason: a refusal is the common
-case here — the engine declines while the gate fails — and clearing the box
-would charge a retype for the engine's *no*.
+case here — the server declines while the gate fails — and clearing the box
+would charge a retype for the server's *no*.
 
 **Nothing new is decoded and no receipt is invented.** All five answer with a
 captured run, which §4.9 already paints: a refusal arrives in the child's own
@@ -4143,9 +4145,9 @@ network rather than about the operator.
 
 **`deliver` and `retire` are §4.30's first customer**, and without that ruling
 this ball could not have landed. Neither names a workspace anywhere in its
-envelope — their subject is a ball in a project on ONE engine — so the poster
+envelope — their subject is a ball in a project on ONE server — so the poster
 would have fanned them over every channel this box holds, accepting one
-candidate on every engine the operator is a client of. `Model::post_candidate`
+candidate on every server the operator is a client of. `Model::post_candidate`
 addresses them down the channel the pane stands on. `fan` needs none of that:
 it carries its workspace inside the prepared body, which `crate::envelope`
 already reads.
@@ -4177,7 +4179,7 @@ where the cap's carry a bare glyph, because two steppers on one pane spelled
 the same way are one control an operator cannot tell from another.
 
 **The ball is always named.** All three take an optional `ball` upstream, and
-omitting it means *the engine's own focused ball* — a focus a seat does not
+omitting it means *the server's own focused ball* — a focus a seat does not
 have, since its gestures are composed off a row that already names one. The
 three ball-less frames are recorded in `src/verbs/tests/corpus/emits.rs` by
 count and reason.
@@ -4249,11 +4251,11 @@ refusal whose arguments contain `--json` says where the word goes.
 
 **A rendering elides, and it says where it did.** That is the reading rule
 above with a name on it, and the work diff is where it was broken: the frame
-carries `truncated` — the engine stopped listing files at its own bound — and
+carries `truncated` — the server stopped listing files at its own bound — and
 the rendering decoded the field and printed nothing, so a cut listing read as
 the whole change (bl-2e1d). The worktree listing had held the same rule with
 its own `(truncated)` since bl-6ae7; the diff now holds it with a line naming
-what it knows and what it does not, because the count the engine dropped is
+what it knows and what it does not, because the count the server dropped is
 genuinely not on this wire.
 
 **And that diff is a NUMSTAT, which bounds what a diff rendering here can be.**
@@ -4331,7 +4333,7 @@ lands on exactly what the pane composed, and the accessibility node it
 registers is labelled with the same words — which is what keeps the snapshot
 walk and the parity ledger reading the restyled window unchanged.
 
-**What the eye lands on is green, and only green.** A wall or a conversation
+**What the eye lands on is green, and only green.** A workspace or a conversation
 that is asking wears the attention rule; the queue's entry in the roster's
 band wears the attention accent while anything waits; the composer glows. A
 window with nothing waiting has nothing green on it, which is the same fact
@@ -4358,12 +4360,12 @@ said of the deposit and holds of the START as well since §4.39's ruling
 landed: that mode is the same field at the same rows with `start` inside it
 where this one says `send`, and the sentences below about what the row
 offers are the deposit's alone — what the start's row carries is §4.39's.
-Under the field, **the row offers what the engine
+Under the field, **the row offers what the server
 offers**: `interrupt` and `stop` while the conversation's own row says its
 driver may be stopped, `nudge` while it says an advance may be started, and
-all three until the engine has answered about it at all — an absent reading
+all three until the server has answered about it at all — an absent reading
 is not a refusal. That reverses §4.32's ruling that the composer's controls
-do not read the four gates; what stands here is the engine's own answer read
+do not read the four gates; what stands here is the server's own answer read
 off the same row the header paints, not a prediction, and a `nudge` offered
 on a streaming conversation was a control whose every press was a refusal.
 The acts on the conversation as an object stand behind one `…` control
@@ -4381,7 +4383,7 @@ the body font.
 on one body-size line, which read as the first row of a list. It now stands
 at `HEADING` size with the state word beside it, the model and the spend on
 one weak line under it, and the subtree path under that where the row's
-`ancestors` says it hangs under anything — every clause still the engine's,
+`ancestors` says it hangs under anything — every clause still the server's,
 composed by `records::header` and read from there. The size is asserted off
 the glass as a height: the name's laid rect is taller than the state word's.
 
@@ -4396,8 +4398,8 @@ have made it read as a separator. Asserted off the glass as heights and
 gaps, never as a picture.
 
 **The two bands are compact strips** (bl-f251, item 4; `src/ui/roster/acts.rs`,
-`src/ui/roster/wall.rs`). The window's acts were six full-width rows of prose
-at the top of the roster and the wall's a wrapped band of eight sentences
+`src/ui/roster/workspace.rs`). The window's acts were six full-width rows of prose
+at the top of the roster and the workspace's a wrapped band of eight sentences
 under its row; both are now one wrapped row of compact controls a short verb
 each — the `OPEN` word of every pane shortened to its noun and ellipsis, the
 pin to `pin` — asserted at the roster's own width as a count of the lines
@@ -4409,7 +4411,7 @@ anything waits.
 **Every empty state names the next act in one weak line** (bl-f251, item 5;
 `theme::paint::empty`). *Pick a conversation* said what was missing and
 nothing about where to get one; each pane's empty sentence now ends in the
-act that fills it — the `+` on the engine's row, the box below, the strip's
+act that fills it — the `+` on the server's row, the box below, the strip's
 `refresh`, a fleet run — and every one is painted through one shape in
 `INK_WEAK`, wrapped, so a pane with nothing in it reads as a pointer rather
 than a blank with a caption. The words are still the constants every test
@@ -4425,7 +4427,7 @@ control inside. Labels are now outside the set the walk judges, with the
 other-direction beat beside it; §4.32's density constraint still holds for
 every CONTROL, which is the reachability the assertion exists for.
 
-### 4.39 The two-column window: engines, their conversations beneath, and edges an operator can drag (bl-46e5)
+### 4.39 The two-column window: servers, their conversations beneath, and edges an operator can drag (bl-46e5)
 
 **Superseded for the LAYOUT by §4.42 (bl-7859): one column, a status rule, a prompt line and overlays. What stands below is the record and the model-side rulings; where a sentence here says where a thing is painted, §4.42 says otherwise.**
 
@@ -4435,114 +4437,114 @@ three-column shape §4.11 and `docs/STYLE.md` §2 stand on, and bl-fef8's
 ruling in §4.11 that a dragged width is *subtraction rather than loss*. The
 ruling in the operator's own terms: the three columns cannot be dragged and
 every pane edge should be; *channels* at the top left means nothing; the
-pane is the engines this seat reaches, by name, as a list where the last-used
+pane is the servers this seat reaches, by name, as a list where the last-used
 one is open and pinned to the top, at most one is ever open, the rest are
 ordered by when each was last opened, and the open one shows its conversations
-beneath it; a `+` to the right of the engine's name begins a conversation;
+beneath it; a `+` to the right of the server's name begins a conversation;
 and while no conversation is selected the same box stands at the bottom with
 the same options. Four parts, each gated on this section and each its own
 ball, and the order they land in is stated at the end.
 
-**The word on the glass is *engines*, and the crate's word stays *channel*.**
+**The word on the glass is *servers*, and the crate's word stays *channel*.**
 A channel is what this crate calls the client-side entry that reaches one
-engine (§4.6: the `<leaf>` is the client's name, the fifth file the host's),
+server (§4.6: the `<leaf>` is the client's name, the fifth file the host's),
 and that is the right word for a thing in `wire/workspaces/`. It is the wrong
 word over a list an operator reads, because what they are looking at is yogs:
 the box's own and the ones it dials, each by the name this box gave it. So
-`roster::HEADING` becomes `engines`, the narrow bar's word follows it for
+`roster::HEADING` becomes `servers`, the narrow bar's word follows it for
 free (§4.11: a column's name has ONE home), and nothing under `src/channel/`
 or `src/ui/model/channel.rs` is renamed — the rename is of a word a person
 reads, and one home for it is the whole point of §4.11's rule.
 
-**The roster is an accordion of engines, and it is the window's one list.**
-Each engine is a row — `roster::header`'s words, the host's name beside it
+**The roster is an accordion of servers, and it is the window's one list.**
+Each server is a row — `roster::header`'s words, the host's name beside it
 where the two differ and its dial state after — carrying one control at its
-right edge, the `+` below. At most one engine is *open*. The open one is
+right edge, the `+` below. At most one server is *open*. The open one is
 painted first, above the rest; the rest follow in the order each was last
 opened on this seat, most recent first, and the name breaks a tie. Opening
 one closes the other, so the arrangement is a single fact — *which* — and
-not a set of flags to keep consistent. **What the fold hides is the WALLS,
-never what an engine says about itself** (bl-cff1): §4.7's ruling is that a
+not a set of flags to keep consistent. **What the fold hides is the WORKSPACES,
+never what a server says about itself** (bl-cff1): §4.7's ruling is that a
 channel that cannot be dialled says so under its own header and never in the
 shell-wide bar, which holds one sentence and keeps the last writer's — so a
-seat with two unreachable engines could discover only one of them from the
-glass if a closed row went silent. A closed engine paints its row and its
-own sentences; its walls are what standing under an open one buys. Under the
-open engine stand its walls, and under each wall row the conversations that wall holds: the rows
+seat with two unreachable servers could discover only one of them from the
+glass if a closed row went silent. A closed server paints its row and its
+own sentences; its workspaces are what standing under an open one buys. Under the
+open server stand its workspaces, and under each workspace row the conversations that workspace holds: the rows
 §4.11's middle pane painted, `convs::row::conversation` with its rails,
 elbows and menu (§4.23) carried across unchanged, because a threaded row was
 never a fact about which column it sat in. The middle column is gone. What
-it painted is now beneath the wall it belonged to, which is where the
-operator's sentence put it — *conversations are pinned under the engine* —
+it painted is now beneath the workspace it belonged to, which is where the
+operator's sentence put it — *conversations are pinned under the server* —
 and a two-level tree under one heading is one scroll region rather than two
 panes disagreeing about what is selected.
 
-**The wall stays, as a heading and not a level to navigate to.** The
-operator's sentence names engines and conversations and no workspace, and
+**The workspace stays, as a heading and not a level to navigate to.** The
+operator's sentence names servers and conversations and no workspace, and
 the interpretation is stated here rather than taken silently: a conversation
 is begun IN a workspace (yog DESIGN §3.1 — a world bootstraps `home` when its
-first conversation is started), an engine that holds two walls holds two
-lists, and a seat that flattened them would have to write the wall's name on
-every row to say what a `+` would begin in. So the wall is a row between the
-engine and its conversations, `ordered` as §4.25 already orders it, wearing
-its own state rule and its five controls when it is the aimed one — and an
-engine with one wall, which is the common case, reads as an engine with its
-conversations under it and one weak line between. Clicking a wall aims it;
-clicking a conversation selects it and aims its wall in the same act, which
+first conversation is started), a server that holds two workspaces holds two
+lists, and a seat that flattened them would have to write the workspace's name on
+every row to say what a `+` would begin in. So the workspace is a row between the
+server and its conversations, `ordered` as §4.25 already orders it, wearing
+its own state rule and its five controls when it is the aimed one — and a
+server with one workspace, which is the common case, reads as a server with its
+conversations under it and one weak line between. Clicking a workspace aims it;
+clicking a conversation selects it and aims its workspace in the same act, which
 is §4.11's *one door for a click and a keypress* with the second list folded
-into the first. Opening an engine aims the wall this seat last aimed in it,
-and its first wall by `ordered` where it has never aimed one, so an open
-engine is never open over nothing.
+into the first. Opening a server aims the workspace this seat last aimed in it,
+and its first workspace by `ordered` where it has never aimed one, so an open
+server is never open over nothing.
 
 **What opens and in what order is the seat's own, and that is not the pin's
 exception.** §4.25 rules that a pin crosses the boundary because it is *an
 assertion about the world, not an arrangement of one screen*. This is the
 other case, and the line between them is §4.6's: a channel is a client-side
 fact, named by this box and held by no other, so the order this box shows
-its channels in can be nobody else's and there is no engine to assert it
+its channels in can be nobody else's and there is no server to assert it
 into. It goes in the place file (§4.13), as keys beside `aim`: the open
-engine's name, what each engine's last opening RANKS as, and the wall last
+server's name, what each server's last opening RANKS as, and the workspace last
 aimed under each — unknown keys ignored, a missing key absence, a first run
-opening the aim's own engine and, with no aim, the first by name. *Last
+opening the aim's own server and, with no aim, the first by name. *Last
 used* means last OPENED on this seat, by the click on its row or by the `+`;
 a beat that answered down a channel is not a use, or the list would reorder
 itself under the pointer.
 
 **A rank and not a clock reading** (bl-cff1, amending the sentence above,
 which said *instant*). Ordering is the only question ever asked of the
-number: an opening writes one past the highest any engine holds, so the
-engine just opened outranks every opening before it by construction. Two
-engines opened inside one tick of a wall clock would TIE, and the tie-break
+number: an opening writes one past the highest any server holds, so the
+server just opened outranks every opening before it by construction. Two
+servers opened inside one tick of a wall clock would TIE, and the tie-break
 is the name — which would order them alphabetically at the exact moment the
 operator's two most recent choices are what the list is supposed to be
 about. A counter cannot tie, needs no clock injected into a pure model, and
 round-trips through the place file as the integer it already is.
 
 **The `+` is the start, reached without leaving the list.** It clears the
-selection, keeps the aim on the engine's aimed wall, opens the engine if it
+selection, keeps the aim on the server's aimed workspace, opens the server if it
 was closed, and puts the caret in the box — which is the composer's own
-start mode (§4.38, `src/ui/composer/start.rs`: *a wall, no conversation →
+start mode (§4.38, `src/ui/composer/start.rs`: *a workspace, no conversation →
 the start*), reached by a control rather than by finding a way to deselect.
 It crosses no wire: `prepare` and `prompt` still fire from the `start`
 control the box carries and stay tagged there (§4.16), so the parity ledger
-does not move. A `+` on a closed engine opens it because a start is a use,
-and an engine that just began a conversation is the one an operator is
+does not move. A `+` on a closed server opens it because a start is a use,
+and a server that just began a conversation is the one an operator is
 using.
 
 **The keyboard walks one list, in paint order.** The two cursor tracks
 (`keys::Pane::Roster` over `roster::aimable`, `Pane::Conversations` over
 `Model::rows`) were two because the lists were two panes; there is one pane,
-so there is one track — engine rows, wall rows and conversation rows in the
+so there is one track — server rows, workspace rows and conversation rows in the
 order the glass paints them, derived from the same rows and the same order
 the paint uses, which is the rule `roster::aimable` already keeps. Landing
-on a wall aims it and landing on a conversation selects it, exactly as the
-pointer does; landing on an engine row stands there, and Enter or Space
-opens it, since the walk moving through a closed engine must not open every
-engine it passes. **The two begins are stops of that kind too** (bl-f991):
-`+ new` under each wall and `+ new workspace` at the own engine's foot (§4.42
+on a workspace aims it and landing on a conversation selects it, exactly as the
+pointer does; landing on a server row stands there, and Enter or Space
+opens it, since the walk moving through a closed server must not open every
+server it passes. **The two begins are stops of that kind too** (bl-f991):
+`+ new` under each workspace and `+ new workspace` at the own server's foot (§4.42
 item 7) are on the track where the glass paints them, the walk stands on
 them without beginning anything, and Enter or Space fires each as its click
-does — one `Model::standing` (`Stand`: an engine's row or a begin) for every
+does — one `Model::standing` (`Stand`: a server's row or a begin) for every
 row the cursor stands on without selecting, never a second track. Left and
 right keep their narrow-shape meaning (a column sideways) and gain none. yog's QUALITY F1 stands: every act the pointer
 reaches here, a key reaches.
@@ -4550,7 +4552,7 @@ reaches here, a key reaches.
 **Two columns, and the policy loses a term rather than gaining a case.**
 `shell::policy::widths` yields one list pane to the conversation's floor
 instead of two, the list's worth being `CONVS`'s (its widest row is a
-conversation's headline and preview; the engine and wall rows are shorter),
+conversation's headline and preview; the server and workspace rows are shorter),
 `Column` has two variants, the bar names two, and the narrow shape's floor
 is where the one list can no longer keep `CHAT_FLOOR` beside it. `SIDE_FLOOR`
 stays what it is. `convs.rs`'s pane-level render and its `HEADING` go; its
@@ -4620,17 +4622,17 @@ none, because it fires no op: it states a field of the `prompt` the start
 control is already tagged for, and a second token would be a second control
 claiming one op), and the row is `composer::offers::starting`. The control
 is **a seat worded `plan`** — a glyph and a word, as every compact control
-on this row is — and not a picker over the wall's roles and not a box. The
+on this row is — and not a picker over the workspace's roles and not a box. The
 reasoning is `ui/records/spine.rs`'s own, one noun over: a role resolves
 against the governing config, this seat holds no standing read that lists
 what that config declares, and *a picker over a list this seat cannot obtain
 would be capability theatre*. What it can offer honestly is the one role
 choice the WIRE names — REMOTE §9.21: *"the seat deposits the body back as
 `/prompt` with `"role": "planner"`"* — which enumerates nothing and is the
-choice an operator already has a word for. A wall whose config declares no
+choice an operator already has a word for. A workspace whose config declares no
 such role is refused by litany before the fork, in its own words, which
 REMOTE §9.21 rules is the right division. The day a standing read lists a
-wall's roles, this seat is where they go and the fold is one control wide.
+workspace's roles, this seat is where they go and the fold is one control wide.
 The choice is held as `Model::plan`, because the field is written by the
 frame that absorbs `prepare`'s receipt (`ui/model/start.rs::fire`) and that
 frame reads the window rather than the gesture; a fan's candidates still
@@ -4640,16 +4642,16 @@ is not on the glass.
 **Built in bl-b9a3, and eleven things are stated here because reality differs
 from the prediction above.**
 
-1. **A wall that is not aimed paints NOTHING beneath it** — not its
+1. **A workspace that is not aimed paints NOTHING beneath it** — not its
    conversations, and not an emptiness either. The prediction left this open
-   (*"paint what the model holds and say in the doc what a non-aimed wall
-   shows"*), and what the model holds about a wall it has not aimed at is
-   nothing: §4.12's standing set asks about the AIMED wall, and `Model::aim_at`
-   retires the rows when the aim moves. A *waiting to hear about this wall*
-   under every other wall would be a column of sentences about questions
+   (*"paint what the model holds and say in the doc what a non-aimed workspace
+   shows"*), and what the model holds about a workspace it has not aimed at is
+   nothing: §4.12's standing set asks about the AIMED workspace, and `Model::aim_at`
+   retires the rows when the aim moves. A *waiting to hear about this workspace*
+   under every other workspace would be a column of sentences about questions
    nobody asked, and *no conversations here* would be a definite fact this seat
    has no evidence for — the same thing `convs::UNCERTAIN` refuses one level
-   down. So the rows appear under the wall you aim at, and aiming is the act
+   down. So the rows appear under the workspace you aim at, and aiming is the act
    that asks.
 2. **`keys::Pane` is deleted, not narrowed.** The ball says
    `Pane::Conversations` goes; what is left is a one-variant enum, a
@@ -4663,29 +4665,29 @@ from the prediction above.**
    *"keep their narrow-shape meaning and gain none"* read strictly. They used
    to name one of two list panes; there is one, so the key has no place to
    point at and points at none.
-4. **Clicking a conversation SELECTS, and the aim is already its wall's.** The
-   ruling asks for *"selects it and aims its wall in the same act"*; because a
-   row stands only under the aimed wall (1), the aim half is true before the
+4. **Clicking a conversation SELECTS, and the aim is already its workspace's.** The
+   ruling asks for *"selects it and aims its workspace in the same act"*; because a
+   row stands only under the aimed workspace (1), the aim half is true before the
    click. A branch for the other case would be a branch no surface can reach.
 5. **So `Model::aim_at` is idempotent, and that is a real change** — the one
-   the fold forced. The single cursor crosses the aimed wall's own row every
-   time it moves between the engine above it and the conversations beneath it,
+   the fold forced. The single cursor crosses the aimed workspace's own row every
+   time it moves between the server above it and the conversations beneath it,
    and `aim_at` retired the rows unconditionally: an arrow key would have
-   emptied the list under the cursor and put *waiting to hear about this wall*
+   emptied the list under the cursor and put *waiting to hear about this workspace*
    where the rows had been, which is bl-f780's transient defect made reachable
-   by a keypress. An aim always puts the cursor on the wall and drops the
-   selection under it; it retires the wall's answers and the panes about the
-   wall **only when it moved**.
+   by a keypress. An aim always puts the cursor on the workspace and drops the
+   selection under it; it retires the workspace's answers and the panes about the
+   workspace **only when it moved**.
 6. **`src/ui/convs.rs` stayed where it is.** §4.39 left the move under
    `roster/` open. The roster is its only caller but not its only reader:
    `crate::ui::queue` spells a row's age and its uncertainty mark with
    `convs::age` and `convs::UNCERTAIN`. A vocabulary two panes share is a
    module beside them, not inside one of them.
-7. **A conversation row stands one `STEP` in from its wall**, which is the
+7. **A conversation row stands one `STEP` in from its workspace**, which is the
    fold making a level of what used to be a column: `convs::row::indent` starts
    at one step rather than at zero, and every connector, elbow and second line
    moves with it because all four read that one function.
-8. **The `+` stands down under a covering pane**, which is the per-wall
+8. **The `+` stands down under a covering pane**, which is the per-workspace
    controls' own rule one row kind over. What it does is put the caret in the
    composer's box; the composer stands down under every covering pane, so a `+`
    offered there would drop the selection and ask for a caret in a box that is
@@ -4697,8 +4699,8 @@ from the prediction above.**
    where to go and asks for the box there — and `composer/start.rs` takes the
    request in the frame that paints the box.
 10. **`Model::aimed_at` is deleted.** It asked whether a row was the aimed one,
-    for a pane that painted rows about a wall it was not standing under. A
-    wall's row now builds the `Aim` its own click composes and compares that,
+    for a pane that painted rows about a workspace it was not standing under. A
+    workspace's row now builds the `Aim` its own click composes and compares that,
     which is the same question asked with the value the click already needs.
 11. **The place file's two width keys collapse to one, `list_width`**, and
     `roster_width`/`convs_width` are read by nothing. A file written by an
@@ -4706,28 +4708,28 @@ from the prediction above.**
     rule costing exactly one drag.
 
 **The order the four land in.** The drag (edges, the place file's width
-keys) and the accordion (the heading, the engine rows, the order and the
-open state, the place file's engine keys) share nothing but the place file
+keys) and the accordion (the heading, the server rows, the order and the
+open state, the place file's server keys) share nothing but the place file
 and land in parallel; the composer's second mode shares nothing with either.
-The fold — the middle column deleted, the conversations beneath the wall,
+The fold — the middle column deleted, the conversations beneath the workspace,
 the `+`, the one cursor track, the two-variant policy — lands last, gated on
 the first two, so the policy is reshaped once with the drag already in it
 and the rows are folded under an accordion that already exists.
 
 
-### 4.40 The punched wire: an entry that finds its engine, and the ladder a dial climbs (REMOTE §13.2–§13.4; yog bl-653a, bl-65ee)
+### 4.40 The punched wire: an entry that finds its server, and the ladder a dial climbs (REMOTE §13.2–§13.4; yog bl-653a, bl-65ee)
 
-REMOTE §13 puts the engine behind a residential NAT with **no publicly
+REMOTE §13 puts the server behind a residential NAT with **no publicly
 dialable listener at all** (its ruling 2), so an entry's `address` stops being
 the whole of how a seat reaches it. Discovery rides the BitTorrent mainline DHT
 as a commons, the data path is a TCP simultaneous open both ends arrange, and
-the connection that costs seconds to make is held. The engine's end landed in
-yog (bl-4263); this is the seat's, and the engine's `rendezvous/{item,
+the connection that costs seconds to make is held. The server's end landed in
+yog (bl-4263); this is the seat's, and the server's `rendezvous/{item,
 material, punch}.rs` are the byte-for-byte reference.
 
 **The material grows by two files, optional as a pair** (`src/channel/
 rendezvous.rs`; §4.5's three answers, one level down). `rendezvous.pub` is
-the engine's 32-byte ed25519 rendezvous public key and `pairing.salt` the
+the server's 32-byte ed25519 rendezvous public key and `pairing.salt` the
 32-byte secret the pair shares, both hex, both carried into the entry by hand
 exactly as `ca.pem` is — the seat reads and writes nothing (REMOTE §1.4).
 Neither present is an entry with no roving: dialled at its address and
@@ -4736,10 +4738,10 @@ present is the half-provisioned refusal a missing leaf earns. Everything else
 both ends need is HKDF-SHA256 over the salt under `yog rendezvous`, one label
 each — `presence salt`, `inbox salt`, `seal key`, and `inbox key`, an ed25519
 SEED — so the seat mints no keypair of its own to write the inbox and the
-engine holds no client key to poll it. Every derivation, the sealed-item
+server holds no client key to poll it. Every derivation, the sealed-item
 format (`nonce(12) ‖ ChaCha20-Poly1305 ‖ tag(16)` over a count byte, a family
 byte, the address and a big-endian port; a call prefixes an 8-byte nonce) and
-a signed BEP 44 item are pinned in the suite to bytes the engine's own code
+a signed BEP 44 item are pinned in the suite to bytes the server's own code
 produced, so cross-implementation compatibility is asserted rather than
 assumed.
 
@@ -4750,9 +4752,9 @@ iterative walk; a pure client over std UDP — no node, no listener, nothing
 for the commons to dial back, which keeps §3's *a seat dials and is never
 dialled* true of the rendezvous itself. It links `ring` directly, the
 provider rustls already brought, and nothing new. The bare `find_node` walk
-the engine keeps is not here: the two BEP 44 verbs are all a rendezvous asks.
+the server keeps is not here: the two BEP 44 verbs are all a rendezvous asks.
 
-**The walk is the engine's, rule for rule, as rebuilt on live measurement**
+**The walk is the server's, rule for rule, as rebuilt on live measurement**
 (bl-e437; yog bl-f6e1, bl-9408, bl-d00f, bl-d9c1 — the four measurement
 tables are yog's `docs/REMOTE.md` §13.7 ruling 3). The copy this section
 first landed predated all four and carried every defect they fixed:
@@ -4777,7 +4779,7 @@ first landed predated all four and carried every defect they fixed:
   about one walk in three and a re-ask draws fresh ones. **A re-ask knocks
   only where the door answered** (yog bl-f519): a bootstrap address silent
   past its first deadline leaves the door for the rest of the walk, as a
-  silent node leaves the frontier. From the deployed engine box the roster
+  silent node leaves the frontier. From the deployed server box the roster
   resolves to five addresses of which three never answer, and re-asking all
   five spent three of every five door queries on nothing — in the walks that
   ended dark, most of the cap.
@@ -4791,72 +4793,72 @@ first landed predated all four and carried every defect they fixed:
   it. `put` spends every holder's token in one flight at once.
 
 Defaults α 8, K 8, a 1 s deadline per query (`Config::deadline`, formerly a
-2 s `round`) and 64 queries; the bootstrap is the engine's four mainline
-hosts. **The engine's vote on BEP 42's `ip` is ported** (bl-53be, from yog
+2 s `round`) and 64 queries; the bootstrap is the server's four mainline
+hosts. **The server's vote on BEP 42's `ip` is ported** (bl-53be, from yog
 bl-efae): a reply's `ip` — six bytes or eighteen, anything else is no claim —
 is one node's word on where it saw the query come from, the walk keeps one
 per answering node (the door's included), and `Dht::observed` answers per
 family the endpoint named more often than any other, nothing on a tie, and
 nothing after a dark walk. A seat publishes no presence, but its call is an
 endpoint list too, and on a hotspot or a carrier NAT the observed address is
-the only one the engine can reach (yog's `docs/REMOTE.md` §13.8). What yog measured after all four: lookup
+the only one the server can reach (yog's `docs/REMOTE.md` §13.8). What yog measured after all four: lookup
 10/10 at a median of ~6.5 s, `put` 10/10 and `get` 9/10 at ~7.5 s.
 
 **A dial climbs a ladder, cheapest rung first** (`src/channel/ladder.rs`),
 and nothing above `Channel::dial` knows which rung answered:
 
 1. **A live held line** — a punched connection kept from an earlier ask.
-2. **The direct address** — a LAN, a stable server, loopback. An entry with
+2. **The direct address** — a LAN, a stable box, loopback. An entry with
    no material stops here, byte for byte as before: the connect is unbounded
    and its refusal is the sentence. With material below it the connect is
    bounded (`Roving::direct`), because a NAT that drops the SYN would
    otherwise cost minutes before the next rung.
-3. **A re-call from cached presence** (yog bl-278f) — the engine's
+3. **A re-call from cached presence** (yog bl-278f) — the server's
    endpoints at its punch port, as the last call that LANDED found them:
    write a fresh call naming this box (its route-local addresses and the
    addresses the last walk observed, since a re-call writes before it walks)
    and punch. One DHT walk, not two. **It replaced a client-only re-punch at
-   the same endpoints, which cannot land against an engine behind a NAT**:
-   measured 2026-09-29, the engine's home NAT holds no mapping once its
-   served stream ends and the engine sends no SYN outside a call's window,
+   the same endpoints, which cannot land against a server behind a NAT**:
+   measured 2026-09-29, the server's home NAT holds no mapping once its
+   served stream ends and the server sends no SYN outside a call's window,
    so a re-punch's SYNs reach nothing. The held line's pings are the only
    thing that keeps a mapping alive, so a dropped line is always a call. A
    call that expires unanswered — re-call or full — clears the cache, so the
    climb falls to presence and the next climb reads it again.
-4. **The full rendezvous** — `get` presence under `(engine key, presence
+4. **The full rendezvous** — `get` presence under `(server key, presence
    salt)`, open it, `put` a sealed call under the derived inbox keypair
    naming this box's route-local addresses, then every address the `get`
    walk observed that is not one of them — all at its punch port, never the
    observed port, which is the DHT socket's UDP mapping (yog's
    `docs/REMOTE.md` §13.2) — with a fresh nonce and a rising sequence, then punch. **The DHT is touched by rungs 3
    and 4 and nowhere else**: a seat pays nothing for the machinery when idle, and only
-   the engine polls.
+   the server polls.
 
 Whichever rung produced the stream, `Channel::line` runs the same inner mTLS
-over it against the same `ca.pem`, verifying the same engine name off the
+over it against the same `ca.pem`, verifying the same server name off the
 same `address` (§4.4) — the ladder decides how a socket is obtained and
 nothing about what is trusted on it. **The address therefore stays required**
-even where the material would let the seat find the engine without one: it is
+even where the material would let the seat find the server without one: it is
 the one home of the name the certificate is verified against (REMOTE §8), and
 an entry naming none is the deferred question this section leaves open.
 
 **The punch** (`src/channel/rendezvous/punch.rs`) binds one port twice over —
-a listener per family — and connects toward every engine endpoint from a
+a listener per family — and connects toward every server endpoint from a
 third socket bound to the same port, v6 first, one SYN per two seconds
 inside the window; `socket2` sets `SO_REUSEADDR`/`SO_REUSEPORT`, the one
-approved new dependency (operator ruling 2026-09-23, on the engine's terms).
-The seat keeps the **first** stream that lands and the engine serves every
+approved new dependency (operator ruling 2026-09-23, on the server's terms).
+The seat keeps the **first** stream that lands and the server serves every
 one, which dissolves any negotiation over which to keep. That listener is the
 one a seat has, and it is not a contradiction of §3: it accepts only during
-a punch this end started toward an engine it just called, and what it
+a punch this end started toward a server it just called, and what it
 accepts is spoken TO as a client over the same mTLS, never served.
 
 **A punched line is held between asks, and a direct one is not**
 (`src/channel/line.rs`; REMOTE §13.4 meets §10's criterion in its own terms).
-The engine pings the silence with `{"ping":true}` every 25 seconds and hangs
+The server pings the silence with `{"ping":true}` every 25 seconds and hangs
 up after two minutes of silence in all; the seat discards the ping wherever a
 frame is read — it is never the start of a reply stream — and judges a held
-line gone **one ping before the bound**, the arithmetic the engine's own
+line gone **one ping before the bound**, the arithmetic the server's own
 `pings_at` runs, so a line is never reused at the moment the far end is
 closing it. Time is the injected `Clock` (`src/channel/clock.rs`), so the
 suite crosses the bound by hand. Before a held line is spoken on it is asked
@@ -4866,12 +4868,12 @@ behind the last answer, a reset, bytes that are not TLS, or nothing but
 pings still to read — and a dropped line re-enters the ladder at the next
 ask instead of turning it into an act IN DOUBT. A held line owes no preface;
 the request alone goes down it. A follower that stops early drops its line,
-which was always the word to the engine (§4.2), and a line with an answer
+which was always the word to the server (§4.2), and a line with an answer
 still on it is never reused.
 
 **What worked stays RAM for the run and never disk** (`state::worked`; the
 runtime half of REMOTE §8's `:0` discipline). The held lines, the cached
-presence a landed call answered to and where the commons last saw this end, the punch port bound once so the engine's peer sees one
+presence a landed call answered to and where the commons last saw this end, the punch port bound once so the server's peer sees one
 port, and the inbox sequence. Keyed by the entry's directory, because entries
 share nothing (§4.6). It is the **second tenant of `src/state.rs`** and it
 belongs there on the rule's own terms: a channel is opened per gesture and
@@ -4884,9 +4886,9 @@ it.
 
 **Every rung is said, on stderr, as families and counts** (`src/channel/say.rs`;
 the seat's half of yog's REMOTE §13.4 "The operator's view of the loop",
-bl-355c on the engine and bl-3e5b here). Before it, a live dial could be
-watched only from socket state on the engine. On an entry with rendezvous
-material each climb says what it saw, in the engine's shape under this
+bl-355c on the server and bl-3e5b here). Before it, a live dial could be
+watched only from socket state on the server. On an entry with rendezvous
+material each climb says what it saw, in the server's shape under this
 binary's name:
 
     lernie: rendezvous: held line taken up — no dial
@@ -4897,7 +4899,7 @@ binary's name:
     lernie: rendezvous: no presence is published under this pairing
     lernie: rendezvous: presence seq <s> did not open under this pairing's seal key
     lernie: rendezvous: presence read — seq <s>, <k> endpoint(s) (<families>)
-    lernie: rendezvous: every address the call carries (<families>) is in an overlay or carrier-NAT range — an engine outside that network cannot reach it
+    lernie: rendezvous: every address the call carries (<families>) is in an overlay or carrier-NAT range — a server outside that network cannot reach it
     lernie: rendezvous: re-call from cached presence — nonce <n>, seq <s>, <k> endpoint(s) (<families>), <a> ack(s)
     lernie: rendezvous: call nonce <n> written — seq <s>, <k> endpoint(s) (<families>), <a> ack(s)
     lernie: rendezvous: call nonce <n> not written — the DHT walk failed (reason withheld: it names nodes)
@@ -4923,16 +4925,16 @@ such a rendezvous should be spent at all is yog bl-f612's to decide. The sink
 is a knob of `Roving`, stderr by default, so the suite reads every line off a
 captured one.
 
-**What this leaves for the engine, and for a later ball.** The engine's
+**What this leaves for the server, and for a later ball.** The server's
 `wire-certs` does not yet lay `rendezvous.pub` beside a client leaf — the
 public key of its `rendezvous.key` — so an operator derives it by hand until
 it does (named to yog on bl-653a). The call carries the observed ADDRESS
 beside the route-local ones and trusts port preservation; a carrier that
 rewrites the port (yog's `docs/REMOTE.md` §13.8) is the case it does not
 reach, and stays open. The enrollment envelope
-(§4.15) carries no rendezvous material until the engine's reply does. The
+(§4.15) carries no rendezvous material until the server's reply does. The
 cadence defaults — a five-second direct bound, a forty-second punch window
-covering the engine's fifteen-second poll and its own twenty-second window —
+covering the server's fifteen-second poll and its own twenty-second window —
 are stated so they can be wrong in public (§13.7 ruling 3).
 
 
@@ -4940,13 +4942,13 @@ are stated so they can be wrong in public (§13.7 ruling 3).
 
 `src/reply/prices.rs`, `src/reply/spend.rs`, `src/verbs/prices.rs`,
 `src/verbs/doors.rs`, `src/cli/prices.rs`, `src/seat/aimed.rs`, `src/ui/prices.rs`,
-`src/ui/model/pricing.rs`, `src/ui/roster/wall.rs`. **A token count is never
-painted without the cost the engine put beside it** (yog DESIGN §3.5), and this
+`src/ui/model/pricing.rs`, `src/ui/roster/workspace.rs`. **A token count is never
+painted without the cost the server put beside it** (yog DESIGN §3.5), and this
 section is that rule's seat half: one sentence for every count, a column on the
 roster, and one window-level pane over the two money facts.
 
 **One sentence, said everywhere a count is.** `crate::reply::spend::priced` is
-`N tokens — $x.yz` where the engine priced the count, the count alone where it
+`N tokens — $x.yz` where the server priced the count, the count alone where it
 has no price table — an absent `cost` is UNPRICED, never zero, and a `$0.00` is
 a priced subscription — and `at least $x.yz` where `unpriced_tokens` is above
 zero, because then the figure is a floor. The step row (§4.18), the notch
@@ -4954,11 +4956,11 @@ zero, because then the figure is a floor. The step row (§4.18), the notch
 conversation's own spend all say it, on the glass and on the command line. The
 money is upstream's rendering, verbatim; nothing here multiplies.
 
-**The roster is a ledger.** `reply/workspaces` rows carry `spend`, the wall's
+**The roster is a ledger.** `reply/workspaces` rows carry `spend`, the workspace's
 whole priced figure, and the row's line paints it after the state rollups and
 before the weak facts — money is the second thing an operator scans a roster
 for, and the line is elided from the right (§4.39). `lernie workspaces` prints
-it as `spent $x`. A wall the engine has no table for says nothing, which is the
+it as `spent $x`. A workspace the server has no table for says nothing, which is the
 fact.
 
 **The pane is §4.21's shape, one noun over.** `prices` names no workspace, so
@@ -4977,7 +4979,7 @@ Four decisions are its own:
   that drifts under the operator; opening the pane re-asks it. A standing read
   would spend a round trip a beat on an answer that almost never moved.
 - **Each act goes down ONE channel.** Neither `price` nor `ceiling` names a
-  workspace, so the poster would fan either over every engine this box is a
+  workspace, so the poster would fan either over every server this box is a
   client of — §4.30's hazard. Each control fires from its section and is
   addressed down that channel (`Posted::down`). On argv the two are doors
   (`lernie price <provider> <model> <input> <output> [<cache_read>
@@ -4990,20 +4992,20 @@ Four decisions are its own:
   write, naming its channels; a name it holds no channel by refuses naming
   them too, and never falls through to the flat root. They used to fan on
   `lernie ack`'s terms, which wrote one typed number into every world the box
-  is a client of; an idempotent acknowledgement means every engine, a price
+  is a client of; an idempotent acknowledgement means every server, a price
   means one. `lernie prices`, the read, still fans. They are doors and not rows
   because their arguments are numbers that may be absent, which the gesture
   table's rule refuses (§4.10); `prices` takes nothing and is a row.
-- **A rate is a JSON number, never an `f64`.** The engine reads rates back
+- **A rate is a JSON number, never an `f64`.** The server reads rates back
   exactly as written, so `15` must go out as `15` and not `15.0` — the corpus
   round-trip holds it. A word that is not a number is refused at the seat; a
-  negative number is a number, and the engine's in-band refusal names it.
+  negative number is a number, and the server's in-band refusal names it.
 - **The provider is checked against the roster the seat already holds.** Where
-  the window is aimed at a wall on the section's channel and that wall has
+  the window is aimed at a workspace on the section's channel and that workspace has
   answered `providers` (opening the pane asks it, which is why the opening
   control carries `act:prices act:providers`), a provider it does not name
   disables the price control with the reason beside it. Anywhere else — no aim,
-  another channel, `lernie price` — the engine's own refusal names it.
+  another channel, `lernie price` — the server's own refusal names it.
 
 **`ceiling` is not armed, and §4.20 is why.** A bound set under the world's
 spend PARKS every conversation over it — conversations no control on the pane
@@ -5054,7 +5056,7 @@ parts, in its vertical order, each with what it becomes here.
    notice's place above the rule and the rule standing down under an overlay
    stand as written; §4.45 item 3 (bl-4792) moves the rule under the box,
    at the window's bottom edge.* **The status rule** (`src/ui/status.rs`) is one line, left to right:
-   `─ <state> · <elapsed> │ <model> │ <spend> │ <N waiting> │ <N engines> ─
+   `─ <state> · <elapsed> │ <model> │ <spend> │ <N waiting> │ <N servers> ─
    <name>`. The state is the wire's own word for the selected conversation
    in its state's ink (`theme::state_of`), `ready` in weak ink at rest, and
    **the notice stands in the state slot** in its own ink while there is one
@@ -5067,16 +5069,16 @@ parts, in its vertical order, each with what it becomes here.
    notice (`status::calm`). The segments
    are the chat header's facts (§4.38) moved onto the rule: the model that
    answered, what the conversation has spent (§4.41's words, never `$0`), how
-   many conversations across every engine are asking (in the attention
+   many conversations across every server are asking (in the attention
    accent while it is non-zero — the one green on a resting window), and how
-   many engines this seat reaches. **Reaches, not holds** (bl-4cac): the
-   segment reads `N engines` while every channel has answered and `R of N
-   engines` while any has not — in the error accent where one will not dial,
+   many servers this seat reaches. **Reaches, not holds** (bl-4cac): the
+   segment reads `N servers` while every channel has answered and `R of N
+   servers` while any has not — in the error accent where one will not dial,
    weak while one is merely unheard — and the waiting count leaves out a
-   channel that will not dial, because a green read off walls nobody can
+   channel that will not dial, because a green read off workspaces nobody can
    reach is a count nobody can act on. The right end is the selected
-   conversation's name, the aimed wall's where none is selected, and the
-   word `engines` where nothing is aimed. Segments drop from the right as the
+   conversation's name, the aimed workspace's where none is selected, and the
+   word `servers` where nothing is aimed. Segments drop from the right as the
    width runs out, the name last. While `/plan` is on, `plan` in the brand
    stands first among the facts (bl-6f3f): the box's hint that also says so is
    gone at the first character typed. The rule replaces the conversation heading,
@@ -5095,12 +5097,12 @@ parts, in its vertical order, each with what it becomes here.
    hint in weak ink while it is empty. There is no `send` control: **the field
    is the control**, it wears the `message` tag, Enter fires it and
    Shift+Enter breaks a line (§4.38's one read, `composer::entered`, kept).
-   The start is the same line with the same glyph and a hint naming the wall
-   a conversation would begin on — **or, where the wall's worker role
+   The start is the same line with the same glyph and a hint naming the workspace
+   a conversation would begin on — **or, where the workspace's worker role
    resolves a provider row that holds no credential, `no provider yet —
    /login or /config, then pick one on the rule`** (bl-7a77,
    `start::unsigned`): the goal's question is the wrong one to ask first on
-   a wall whose start the engine will refuse. *Holds no credential* is read
+   a workspace whose start the server will refuse. *Holds no credential* is read
    off the providers read's own words — the row's fact ends `not signed in`
    or `no credential stored` (`ProviderRow::bare`), because the wire carries
    that fact as words and no flag; a fact this build cannot read claims
@@ -5112,11 +5114,11 @@ parts, in its vertical order, each with what it becomes here.
    aim, so the seat that has aimed at nothing (§4.19's seat *most likely to be
    asking the question*) can still ask it. The hint says nothing is aimed and
    names `/` and Ctrl+X; prose has nowhere to go, so Enter on it deposits
-   nothing, wears no tag and leaves the draft standing. The wall's and the
+   nothing, wears no tag and leaves the draft standing. The workspace's and the
    conversation's verbs are not on its menu. The row of offers under the field goes: `stop`,
    `interrupt <words>` — the same cut with something to say instead —
    `nudge`, `records…`, `…` and everything that strip opened are slash verbs
-   (5), listed only while the engine offers them. **The baseline's Ctrl+C
+   (5), listed only while the server offers them. **The baseline's Ctrl+C
    is not bound** (bl-3fd6): in egui's box the chord is *copy*, and a chord
    that copied with a selection and killed a driver without one would be
    two acts under one key, which `crate::ui::keys` refuses; the verbs are
@@ -5127,7 +5129,7 @@ parts, in its vertical order, each with what it becomes here.
 4. **The transcript idiom** (`src/ui/chat.rs`; bl-a40c). **Amended by
    §4.45 items 4, 5 and 7 (bl-4792): every block stands on a bubble by
    role, a trail folds itself once its turn settled, and a message this
-   seat sent stands at the end in the pending ink until the engine's row
+   seat sent stands at the end in the pending ink until the server's row
    replaces it.** An operator's turn
    is a row with the prompt's glyph in the gutter in the brand and its words
    in body ink; the model's prose carries `¦` in the gutter in weak ink (the
@@ -5140,7 +5142,7 @@ parts, in its vertical order, each with what it becomes here.
    result folded to its head and unfolded in place — and `└─ response` parts
    the trail from the prose that follows it; turns are parted by `───` in the
    hairline; blank lines fall only where the kind of block changes. **A wound
-   ends the transcript in the error accent** (bl-d34f): the engine's virtual
+   ends the transcript in the error accent** (bl-d34f): the server's virtual
    `wounded` entry (PROTOCOL 9 — the class `refused`, `no_response` or
    `output_limit`, the adapter's words, the provider row a refusal routed
    to) is decoded rather than left to the unknown-entry fallback, and
@@ -5162,16 +5164,16 @@ parts, in its vertical order, each with what it becomes here.
    ruled block of §4.38 goes with its side rules: who spoke is the gutter
    glyph, and weight is still the speaker's (`theme::speaker`). At the head of
    a transcript stands the **conversation panel**: a framed card carrying the
-   conversation's facts — name, engine and wall, model, spend, where it hangs
+   conversation's facts — name, server and workspace, model, spend, where it hangs
    (§4.29's spine) — as one line each and the long ones behind `▸` folds; a
    window with nothing selected paints the **seat panel** there instead: the
-   engines this seat reaches, one row each with its dial state, walls and
+   servers this seat reaches, one row each with its dial state, workspaces and
    counts — and **the dial state is read, not assumed** (bl-4cac): a channel
    that will not dial says the wire's own sentence (`Held::Unheld`, the one
    `lernie entries` prints — on a first run, *nothing provisioned*) whole
-   and wrapped in the error accent in place of its counts, as does an engine
+   and wrapped in the error accent in place of its counts, as does a server
    that refused the roster (`Held::Refused`, bl-693d), and one not heard
-   from yet says *waiting to hear from this engine* in weak ink; the
+   from yet says *waiting to hear from this server* in weak ink; the
    version, and the ways in — `/help for commands · Ctrl+X for a
    conversation · Ctrl+O for the model · /login for a provider` (item 10).
 
@@ -5182,7 +5184,7 @@ parts, in its vertical order, each with what it becomes here.
    Tab or Enter taking the row. A row is a control and wears its verb's tag,
    so the parity walk reads the menu where it read the strips; the menu's
    open state is a world (`snapshot::worlds`). The two strips of §4.38 — the
-   window's and the aimed wall's — and the conversation's `…` strip go: every
+   window's and the aimed workspace's — and the conversation's `…` strip go: every
    pane they opened is `/word` — **and the word is the word the control
    carried, minus its ellipsis** (bl-e016): a pane's noun opens the pane and
    a verb's word fires the verb, so a hand that reached for `records…` types
@@ -5190,13 +5192,13 @@ parts, in its vertical order, each with what it becomes here.
    `/help`, `/doctor`, `/trail`, `/board`, `/prices`, `/find`, `/enroll`,
    `/roles` (and `/model`, the same pane by the word an operator reaches for
    — item 10), `/login`, `/clients`, `/config`, `/fleet`, `/unmake` — and **`/help` answers with what this window takes
-   first**, the menu's own rows in its order and the keys, then the engines'
-   op tables headed as each engine's own spelling, because most of those
+   first**, the menu's own rows in its order and the keys, then the servers'
+   op tables headed as each server's own spelling, because most of those
    words are not the box's (bl-55ed). The verbs:
-   `/refresh`, `/pin` or `/unpin` by the wall's rank, `/interrupt`, `/stop`,
+   `/refresh`, `/pin` or `/unpin` by the workspace's rank, `/interrupt`, `/stop`,
    `/nudge`, `/revoke`, `/restore`, `/retarget`, `/flag`, `/delete`, and
-   `/plan` in the start's mode. Only what the engine offers on the selected
-   conversation is listed, which is §4.38's *the row offers what the engine
+   `/plan` in the start's mode. Only what the server offers on the selected
+   conversation is listed, which is §4.38's *the row offers what the server
    offers* with the row deleted; the summary beside each wire verb is the
    verb table's own. A verb that takes words takes them on the same line —
    `/flag <reason>`, `/interrupt <words>`, `/delete <name>` is the arming,
@@ -5206,7 +5208,7 @@ parts, in its vertical order, each with what it becomes here.
    armed by the conversation's own name and by nothing else**: the wire's
    typed name arms only the subtree and deletes a leaf on any word, an empty
    one included, so the seat composes no envelope until the word is the name
-   the engine compares, and the refusal states that name (§4.20: an
+   the server compares, and the refusal states that name (§4.20: an
    unmaking states its subject before it offers the act). **The bar's
    trashcan is the second arming** (bl-e837; §4.44 item 1): a row under the
    pointer offers it, and the seat types the row's own name into the one
@@ -5241,16 +5243,16 @@ parts, in its vertical order, each with what it becomes here.
    replaced let a heading row overflow the column sideways, so the pane was
    judged at a width it did not have.
 
-7. *Amended by §4.44: the bar is the pointer's door to one wall's rows; this stays the keyboard's and the whole seat's.* **The roster is the switcher** (`src/ui/switcher.rs`, **Ctrl+X** or
-   `/conversations`): an overlay listing every engine as a heading row, each
-   wall under it, and each conversation under its wall as one row — state
+7. *Amended by §4.44: the bar is the pointer's door to one workspace's rows; this stays the keyboard's and the whole seat's.* **The roster is the switcher** (`src/ui/switcher.rs`, **Ctrl+X** or
+   `/conversations`): an overlay listing every server as a heading row, each
+   workspace under it, and each conversation under its workspace as one row — state
    glyph in its state's ink (`▶` working, `?` asking in the attention
    accent, `✔` at rest — the body font has no `✓`, and `theme::tests`
    refuses a tofu box — `■` stopped, a trailing `?` where nothing observed
    the state), the name, its age and what waits under it, every count worded by the one
    helper `render::counted` (`1 conversation`, bl-967f) — with `+ new`
-   under every wall, which is §4.39's `+` moved off the engine's row onto
-   the wall it begins on (bl-d357: a bare `+` at the far edge of another
+   under every workspace, which is §4.39's `+` moved off the server's row onto
+   the workspace it begins on (bl-d357: a bare `+` at the far edge of another
    row was the begin a first-time operator did not find). The decision
    queue's rows lead with the same glyph from the same spelling
    (`convs::glyph`, bl-6e59) — always the asking `?` there — where they
@@ -5260,48 +5262,48 @@ parts, in its vertical order, each with what it becomes here.
    conversation. Enter selects, which is §4.11's
    one door for a click and a keypress, and closes the overlay; `+ new` puts
    the caret in the field in start mode. **`+ new workspace` stands last
-   under this box's own engine** (bl-673e): a fresh engine holds no wall
+   under this box's own server** (bl-673e): a fresh server holds no workspace
    this client is registered in, so there is no `+ new` to pick, and the
-   engine's own remedy is *a workspace this client founds itself registers
+   server's own remedy is *a workspace this client founds itself registers
    it too* (REMOTE §4). It puts the caret in the field in a founding mode
    whose hint asks for `<name> <what it is for>` on one line; Enter stages
-   the ordinary start on the named wall, whose `prepare` founds the
-   workspace on the host (REMOTE §4.1's raise), and **the wall is aimed when
+   the ordinary start on the named workspace, whose `prepare` founds the
+   workspace on the host (REMOTE §4.1's raise), and **the workspace is aimed when
    that `prepare` is answered** (`Model::founded`, bl-693d) — aimed at
    Enter, its standing reads went out ahead of the act that registers the
    client and were refused into the bar — one line rather than a
    two-step, because a name held between two Enters would be a second state
    to put down. Esc, an aim or a selection puts the mode down. It stands
-   under no entry's engine: a name no entry holds routes to the flat root
-   (REMOTE §8.2), so it would found the wall on a different engine than the
+   under no entry's server: a name no entry holds routes to the flat root
+   (REMOTE §8.2), so it would found the workspace on a different server than the
    one it was offered under. The seat's card names it among the ways in, and
    the field with nothing aimed says *Ctrl+X for a conversation or a new
-   workspace*. **A selection the engine no longer knows is put
+   workspace*. **A selection the server no longer knows is put
    down** (bl-6dfd): the selected conversation's own row is read every beat,
    and a refusal of that `agent` read — deleted from another seat, or a row
-   aimed at the wrong engine — drops the selection back to the wall (the
+   aimed at the wrong server — drops the selection back to the workspace (the
    start's hint, the seat's card) and stands in the bar once; held, it
    re-posted every beat faster than Esc put it down. Which op a read about
    the selection answered rides with it (`state::Said::About`), because a
-   refusal cannot say so itself. **Opening it puts down whatever overlay stood** (bl-339d): one stands at a time, and a switcher stacked over a pane handed the operator back to the pane after they chose. The accordion's order, open engine
-   and ranks (§4.39, `model/engines.rs`) are what the overlay paints, so the
+   refusal cannot say so itself. **Opening it puts down whatever overlay stood** (bl-339d): one stands at a time, and a switcher stacked over a pane handed the operator back to the pane after they chose. The accordion's order, open server
+   and ranks (§4.39, `model/servers.rs`) are what the overlay paints, so the
    place file keeps those keys and loses the two layout ones.
 
 8. **The ask stands above the field** (`src/ui/ask.rs`; bl-dc3d): while the
    selected conversation is asking, a framed box in the attention accent
    stands between the transcript and the rule carrying the queue row's own
-   words — the parked call, the flag, why it asks (the engine's own `says`
+   words — the parked call, the flag, why it asks (the server's own `says`
    sentence, carrying its remedy, and the raw signal words only where the
-   engine wrote none; bl-5507), the failure, the last words — and its choices as numbered rows: `1. seen`, and where a call is
+   server wrote none; bl-5507), the failure, the last words — and its choices as numbered rows: `1. seen`, and where a call is
    parked `2. pass · 3. pass for this conversation · 4. pass for this
    workspace · 5. refuse · 6. hold` — the three scopes being the baseline's
    *once*, *this session* and *always* in this wire's own words, §4.19's
    acts and no others; `go to it` is not among them because the operator is
    there. **The `pass` rows are the reaches the held row lists** (`scopes`,
    yog bl-0da6; bl-da16): a secret or destructive call lists `call` alone
-   and is offered `2. pass · 3. refuse · 4. hold`, since the engine refuses
+   and is offered `2. pass · 3. refuse · 4. hold`, since the server refuses
    every wider answer to it and the seat never re-derives the class from the
-   reason's prose; a row that lists none is an older engine and offers all
+   reason's prose; a row that lists none is an older server and offers all
    three; and the queue pane paints this same list (`ask::choices`), so the
    two surfaces cannot drift. **The prompt keeps the caret while it asks** (bl-1252; STYLE §1 —
    a focus that is not where the words go is worse than none): a digit
@@ -5314,33 +5316,33 @@ parts, in its vertical order, each with what it becomes here.
    is offered, no digits before the queue's row lands). Round 2 found the
    caret held out of the box so a digit could answer, which sent typed
    words nowhere and spent Enter on the question. A click on a row is the
-   same answer. **While the aimed engine will not dial nothing is answered**
+   same answer. **While the aimed server will not dial nothing is answered**
    (bl-8d6d): the choices go faint and take no click, digit or Enter, the
-   box's key line goes, and the field's hint is the engine's own sentence
+   box's key line goes, and the field's hint is the server's own sentence
    (`diagnostics::down`, bl-4cac's reading) — a box saying *Enter sends*
    over an answer that cannot land was a promise the seat could not keep. It is §4.19's
    queue entry for the one conversation on the glass, painted where the
    answer is typed; the queue itself (`/attention`) is the same rows for
    every conversation, and the count on the rule is its door. **The queue's
    read stands while the selected conversation asks** (`Standing::asking`),
-   **on a lane of its own** (`offframe::queue`, bl-5439: an engine can take
+   **on a lane of its own** (`offframe::queue`, bl-5439: a server can take
    half a minute to answer `attention`, and the serial pass that asked it
    starved every other pane and the transcript for as long),
    so the box is answered on the frame the row lands — the roster's own
    word says it asks before the queue has said what. **And it goes down on
    the frame the answer lands** (bl-6802): `seen` answers `acknowledged`,
-   the item acted on plus the whole queue that remains on that engine, and
+   the item acted on plus the whole queue that remains on that server, and
    it is filed as that channel's queue answer (`Model::asking`) with a
    one-line receipt on the bar saying what was seen — by the name the panel,
-   the rule and the switcher paint, read off its queue row or its wall's row
+   the rule and the switcher paint, read off its queue row or its workspace's row
    rather than the id the receipt carries (bl-c887) — and whether it is still
    asking — read off the remaining rows, never predicted.
 
 9. *Amended by §4.46 item 4: whether it stands unfolded when the window opens is the `dock` knob.* **The live dock** (`src/ui/dock.rs`; bl-e661) stands above the rule —
    **which §4.45 item 3 (bl-4792) puts under the box, so the dock stands
    between the rule and the box** —
-   while anything runs under the aimed wall — its conversations whose
-   drivers are live or in flight, by the engine's own word, read off the
+   while anything runs under the aimed workspace — its conversations whose
+   drivers are live or in flight, by the server's own word, read off the
    rows the roster already carries so the dock asks nothing of its own —
    one folded line, `+ 2 running · <the first's name> · Ctrl+T`, unfolded
    with **Ctrl+T** or a click into one row apiece, name, state and age, a
@@ -5359,11 +5361,11 @@ parts, in its vertical order, each with what it becomes here.
     switcher, the waiting count opens the queue (item 8's *the count on the
     rule is its door*, made true by bl-2cb0 — and on a window aimed at
     nothing, because `/attention` needs no aim), and the model segment opens
-    the role tuning — where a wall's
-    model per role is read and set — and a wall whose transcript has named
-    no model says the worker role's model there where the wall's roles are
+    the role tuning — where a workspace's
+    model per role is read and set — and a workspace whose transcript has named
+    no model says the worker role's model there where the workspace's roles are
     in hand, and `model…` in weak ink where they are not (bl-0966: `no
-    model` read as a misconfiguration the wall did not have), so the door
+    model` read as a misconfiguration the workspace did not have), so the door
     stands before anything has answered. Each door **is a completion-menu row
     painted elsewhere** (`status::door`): it is a door exactly while the
     menu offers its row, it wears that row's `act:` tags, and a click fires
@@ -5377,7 +5379,7 @@ parts, in its vertical order, each with what it becomes here.
     **Ctrl+O fires it** — the baseline's model picker — and is admitted by
     the keyboard's rule because a click on the rule's model does the same
     and nothing else. The provider is not a door on the rule: the rule
-    carries no provider fact, and a sign-in is the wall's (`/login`), so it
+    carries no provider fact, and a sign-in is the workspace's (`/login`), so it
     is named where the ways in are named instead — the seat's card and the
     prompt's hint, which drops its trailing ways one by one where the line
     has no room for them, as the rule drops its segments.
@@ -5405,38 +5407,38 @@ parts, in its vertical order, each with what it becomes here.
     words and nothing where no rate priced it, and the context's own
     percent, all off the selected conversation's `agent` row. The name at
     the right end stays the switcher's door (item 10). **`N waiting` and
-    `N engines` leave the rule**: they are seat-wide. The waiting count —
+    `N servers` leave the rule**: they are seat-wide. The waiting count —
     still leaving out a channel that will not dial (bl-4cac) — is the
     queue's door on the seat panel and at the switcher's head
-    (`status/waiting.rs`), beside `/attention`; the engines' dial state is
-    the seat panel's engine rows (bl-4cac's sentence in the error accent).
+    (`status/waiting.rs`), beside `/attention`; the servers' dial state is
+    the seat panel's server rows (bl-4cac's sentence in the error accent).
     **The one dial fact that stays is this conversation's**: while the
-    aimed engine will not dial, the state slot says its sentence in the
+    aimed server will not dial, the state slot says its sentence in the
     error accent (`diagnostics::down`), under any notice.
     **A notice that names a menu word carries its door** (bl-7a77): each
     `/word` in its sentence that is a row the menu offers right now stands
     after the slot as a run in the brand firing that row, once each
-    (`diagnostics::named`) — so the engine's *sign in first … write its key
-    into this wall with /config brazen* is a click on `/config` as well as
-    a sentence. The engine words the remedy and the menu decides what is a
+    (`diagnostics::named`) — so the server's *sign in first … write its key
+    into this workspace with /config brazen* is a click on `/config` as well as
+    a sentence. The server words the remedy and the menu decides what is a
     door; the seat names no verb of its own. A refused start's sentence,
     which stands over the box rather than in the slot (`composer::start`),
     carries the same doors after it.
 
-    **The frame around the engine's sentence, and the seat's own door**
+    **The frame around the server's sentence, and the seat's own door**
     (bl-8a4b; operator 2026-10-13: *a ton of error message … is opaque to a
     user that doesn't deeply understand the internals*, and a refusal naming
-    *the Config editors* with no way named to reach them). `the engine
+    *the Config editors* with no way named to reach them). `the server
     refused:` is **kept**: it says the act did not happen and whose words
-    follow, so the nouns in them read as the engine's and not as this
-    window's — the seat never rewrites them, and an engine sentence that is
-    opaque is filed against the engine. Where the seat **knows** the door
+    follow, so the nouns in them read as the server's and not as this
+    window's — the seat never rewrites them, and a server sentence that is
+    opaque is filed against the server. Where the seat **knows** the door
     because it knows the op it sent, it appends its own sentence after an
     em dash: a refused `model`, `effort` or `priority` ends *— /config opens
     the settings editors* (`Notice::refused`), which `named` then makes a
     run like any other. The signal is the op the receipt answers, never the
-    engine's prose. A dial that will not open leads with *cannot reach this
-    engine:* before the wire's own sentence (`Held::said`, `UNHELD`) on the
+    server's prose. A dial that will not open leads with *cannot reach this
+    server:* before the wire's own sentence (`Held::said`, `UNHELD`) on the
     card, the slot and the ask's hint alike, because that sentence is
     `lernie entries`' too and names files and transports. The seat's own
     sentences follow one test: a person who has never read the code knows
@@ -5445,7 +5447,7 @@ parts, in its vertical order, each with what it becomes here.
     act as what it was (*your message*, *the new conversation*, *the
     nudge*), never as `/word`, which would be a door inviting the resend
     REMOTE §3 forbids; an unreadable answer says updating lernie may fix it;
-    and *wall*, *seat*, *channel*, *lineage*, *op* and *boundary* do not
+    and *seat*, *channel*, *lineage*, *op* and *boundary* do not
     reach the glass in this window's own words.
 
     **Three readings of the ruling, each checked against the wire.**
@@ -5454,20 +5456,20 @@ parts, in its vertical order, each with what it becomes here.
     `reply/roles` rows, and there is no context knob to select — so effort
     takes the slot the operator called context. *Context window usage* IS
     stated — the `agent` row carries `context` (`prompt_tokens`, `window`,
-    the engine's own unclamped `percent`; `reply::agent::Fullness`) — so it
+    the server's own unclamped `percent`; `reply::agent::Fullness`) — so it
     is painted as `context N%` and asks nothing upstream. *Yellow* is the
     **annotation accent**: `docs/STYLE.md` §1's palette has no yellow, and
     the accent that says *something is happening here, not wrong* is the
     nearest it has; the check is the attention accent, the palette's green.
 
     **What each selector holds, lists and fires.** The selectors speak for
-    the **worker** role — the role that answers — on the aimed wall, read
+    the **worker** role — the role that answers — on the aimed workspace, read
     off the `roles` read, which now **stands on the aim** rather than on the
-    tuning pane (`offframe::asker::wall`): a selector that knew its fact
+    tuning pane (`offframe::asker::workspace`): a selector that knew its fact
     only while a pane two gestures away was open would usually be blank.
-    *Workspace* lists every wall the roster holds (with its engine where the
+    *Workspace* lists every workspace the roster holds (with its server where the
     seat reaches more than one), reloads with `workspaces`, and a pick aims
-    — the switcher's own door, `Model::aim_at` with the engine's opening.
+    — the switcher's own door, `Model::aim_at` with the server's opening.
     *Provider* lists the providers read's rows, reloads with `providers` —
     a read that stands on the aim beside the roles' (bl-7a77; it stood on
     the login pane alone before) — and a pick opens the *model* list on that row rather than writing,
@@ -5648,8 +5650,8 @@ as the keyboard's door and the whole seat's view.
    column, painted before the column so the column fits beside it at every
    size of the snapshot matrix (`snapshot::SIZES`: 400, 900 and 1400 wide).
    It lists **the aimed workspace's conversations** — `Model::convs`, the
-   one listing the seat holds for the aimed wall, the rows the switcher
-   paints under that wall — one row each, in the listing's own order, with
+   one listing the seat holds for the aimed workspace, the rows the switcher
+   paints under that workspace — one row each, in the listing's own order, with
    the subtree's indent (`ConvRow::depth`). It is a second painter of one
    listing and not a second listing: no row, state or count lives on the
    bar that `convs::` does not already spell (`convs::mark`, `convs::age`,
@@ -5682,7 +5684,7 @@ as the keyboard's door and the whole seat's view.
    and forgotten when the linger lapses, and while it is held the pointer
    is judged against the open width, so a pointer resting in the open bar
    with no event to wake a frame keeps it open. With nothing to list the
-   open bar says why — the wall answered empty, the wall not answered yet
+   open bar says why — the workspace answered empty, the workspace not answered yet
    (`convs::NOT_ANSWERED`), nothing aimed — and the collapsed bar says
    nothing. Its controls are painted before every other panel, so they
    lead the Tab order.
@@ -5701,28 +5703,28 @@ as the keyboard's door and the whole seat's view.
    target and stands a row taller than a body line.
 
    **`+ new`** stands at the bar's head on the right (bl-d357's `+ new`
-   from under the wall, on the bar too): it puts the caret in the field in
-   start mode on the aimed wall, the switcher's own door
-   (`composer::start`), and stands only while a wall is aimed. Collapsed,
+   from under the workspace, on the bar too): it puts the caret in the field in
+   start mode on the aimed workspace, the switcher's own door
+   (`composer::start`), and stands only while a workspace is aimed. Collapsed,
    it is the bare `+`. It is the pin's door at the pin's size, heading-sized
    with `S` of air inside the seat (bl-bc9d).
 
    **The foot is the workspace** — the one place on the glass a workspace is
-   chosen. It is item 11's workspace selector moved whole: the aimed wall's
+   chosen. It is item 11's workspace selector moved whole: the aimed workspace's
    name with `⏶` inside its door (5), a click opening the dropup (`status/dropup.rs`,
-   `Selector::Workspace`) **upward from the bar's foot** listing every wall
-   the roster holds with its engine where the seat reaches more than one,
+   `Selector::Workspace`) **upward from the bar's foot** listing every workspace
+   the roster holds with its server where the seat reaches more than one,
    reloading with `workspaces`, a pick aiming (`Model::aim_at`) — which is
    a new listing, a new providers read, a new roles read and a new set of
    tabs (2), because the ruling's *entirely different yog backend* is the
    fact the aim already is. `+ new workspace` (bl-673e) is the dropup's
-   last row under this box's own engine where that engine is held
+   last row under this box's own server where that server is held
    (`Pick::Found`), beside the choice it belongs to. **The switcher keeps
    its row too** (bl-46b9): it is the keyboard's door (4), and the walk,
    the field's hints and the refusal's remedy all name it there. With
    nothing aimed the foot says `workspace ⏶` and the list is the whole of
    what the bar shows. Collapsed, the foot is as much of
-   the wall's name, with the selector's mark.
+   the workspace's name, with the selector's mark.
 
    **The list stands inside the bar, and holds it open** (bl-46b9). It is
    the rule's dropup (`status::dropup::stand`) laid on a foreground layer
@@ -5771,10 +5773,10 @@ as the keyboard's door and the whole seat's view.
    tab by selecting, so there is no second act that opens one. A click on a
    tab selects; the close removes the tab, and where it was the selected
    one the neighbour to its left (or right, at the left end) is selected,
-   or the selection is put down to the wall where it was the last. **A tab
+   or the selection is put down to the workspace where it was the last. **A tab
    whose conversation the listing no longer knows leaves with it**
-   (bl-6dfd's rule): a selection the engine put down is a tab put down. The
-   strip stands only while a tab stands; a wall with nothing open is the
+   (bl-6dfd's rule): a selection the server put down is a tab put down. The
+   strip stands only while a tab stands; a workspace with nothing open is the
    transcript's own empty column. **A start's tab is its claim's**
    (bl-03c1): the receipt selects the minted name, so the tab opens under
    it; no listing prunes that name while the claim stands, and the listing
@@ -5797,7 +5799,7 @@ as the keyboard's door and the whole seat's view.
    is its one segment.
 
 4. **What stays.** The switcher (item 7, Ctrl+X) stands as the keyboard's
-   door and the one view across every engine; the bar is one wall's view
+   door and the one view across every server; the bar is one workspace's view
    with the pointer. Both paint `convs::` rows, so a glyph, a word or a
    count changes in one place for both. The rule's name stays the
    switcher's door (item 10). The seat's card still names Ctrl+X among the
@@ -5846,9 +5848,9 @@ as the keyboard's door and the whole seat's view.
    space and glyph the door lays (`status::cost`).
 
 **What this does not solve, and the principle that answers it.** A bar
-listing one wall is blind to another wall's asking conversations; the
+listing one workspace is blind to another workspace's asking conversations; the
 seat-wide green is the switcher's head, the seat panel and `/attention`
-(item 11's placement, kept), and a bar that showed every wall's rows would be
+(item 11's placement, kept), and a bar that showed every workspace's rows would be
 the switcher again with the pointer over it. The 1.5 s is a number read off
 the ruling and held in one constant; the width constants are the bar's own
 and the matrix proves the column still fits beside them at 400 wide.
@@ -5872,7 +5874,7 @@ immediately, 'I'm reading the message I wrote'"*
 
 **One sentence of it is the principle and the rest are its instances**:
 *state should always be immediately represented*. A message the operator
-sent is state the moment Enter is pressed, whatever the engine has heard;
+sent is state the moment Enter is pressed, whatever the server has heard;
 which width the bar stands at is state the operator set; whether a trail is
 still running is state its fold should say; what a pointer is over is state
 the glass should show; and who said a block is state a fill can say faster
@@ -5911,7 +5913,7 @@ changes.
    drag moves one end of the travel and the ease still runs between the
    ends. **And a collapsed bar dragged wider shows more of each name**
    (bl-773e): a collapsed row paints the whole name and the foot the whole
-   wall, each elided with `…` at the width it has, as every row on the
+   workspace, each elided with `…` at the width it has, as every row on the
    glass is (STYLE §5) — §4.44's *first three characters* was a cut at the
    default width and is withdrawn, since a width the operator set is the
    width to use.
@@ -5961,9 +5963,9 @@ changes.
    - **The transcript** (`chat::rows`): the frame the committed transcript
      holds an operator delivery with those words at an index past the
      recorded length, the record is dropped — the words are now the
-     engine's own row, and one row, never two.
+     server's own row, and one row, never two.
    - **A refusal**: the record is dropped and **the words go back in the
-     box**, the start's own rule (bl-b180: *the engine's refusal retires the
+     box**, the start's own rule (bl-b180: *the server's refusal retires the
      start into its own sentence with the goal back in the box*) — a refused
      message cleared from the draft and gone from the transcript would be
      state represented nowhere. **Ahead of whatever has been typed since**,
@@ -5975,7 +5977,7 @@ changes.
      the record the same way, because no receipt and no read will ever
      retire it, and the words are the refund's (bl-e85f). A lost reply
      leaves the row standing in the pending ink beside the in-doubt notice,
-     which is the honest picture: the engine may have it.
+     which is the honest picture: the server may have it.
    The records are keyed by conversation, so a tab change keeps each with its
    own transcript, and they are per run like the tabs: a seat that reopened
    carrying yesterday's unacknowledged words would be claiming a gesture
@@ -6059,8 +6061,8 @@ changes.
    known, and never by the painter counting.
 
 **What this does not solve, and the principle that answers it.** The
-pending row says what this seat sent and nothing about what the engine did
-with it; the engine's own row, when it lands, is the record, and the seat's
+pending row says what this seat sent and nothing about what the server did
+with it; the server's own row, when it lands, is the record, and the seat's
 row leaves the frame it does. A drag that narrows the collapsed bar below
 its own glyph is clamped, not refused, so the floor is one number and not a
 sentence. A control egui paints as a button already lights; the audit's
@@ -6083,8 +6085,8 @@ let's get a settings pane and knobs for pretty much everything."*
 **The principle under it is §4.45's, read for the hand instead of the
 eye**: what a control does is state, and the glass says it before the hand
 commits — under the pointer, as a sentence; on the keyboard, as a chord the
-sentence names. The *earlier version* is the engine era's window (yog before
-its severance, bl-7942), where every control carried a `HOVER` constant
+sentence names. The *earlier version* is the window yog carried before
+its severance (bl-7942), where every control carried a `HOVER` constant
 beside its word and the acceptance suite drove the keys; the shape returns,
 the mechanism is this seat's. Four items, each one rule applied to one
 surface.
@@ -6281,7 +6283,7 @@ the keyboard's door to a conversation.
 | `src/cli/verdict.rs` | what an invocation says, and with what exit code: the four constructors, the two codes, and the one-line pointer a refusal carries instead of the whole usage (§4.10, bl-b232). | ~110 |
 | `src/cli/text.rs` | what this binary says about itself: the version line, and the usage whose verb section is derived. | ~75 |
 | `src/paths.rs` | the two roots — what the operator carried here, and what the seat generates about itself — from one ladder and no knob of its own. Neither variable set is a refusal, never a guess. | ~130 |
-| `src/place.rs` | where the seat was pointed and how its engines were arranged, remembered between runs (§4.13, §4.39): the aim, the open engine, what each engine's last opening ranks as, the wall last aimed under each, the bar's pin (§4.44) and the settings set off their defaults (§4.46 item 4). Every way the file can be wrong is absence, per field. | ~190 |
+| `src/place.rs` | where the seat was pointed and how its servers were arranged, remembered between runs (§4.13, §4.39): the aim, the open server, what each server's last opening ranks as, the workspace last aimed under each, the bar's pin (§4.44) and the settings set off their defaults (§4.46 item 4). Every way the file can be wrong is absence, per field. | ~190 |
 | `src/settings.rs` | **the knob table** (§4.46 item 4): every seat-local setting as one row — key, label, help sentence, kind with its unit and bounds, default — the typed `Settings` the readers read, and the two projections, from the table's JSON and to it, writing only what is off its default. | ~250 |
 | `src/ui/settings.rs` | the settings pane (`/settings`, Ctrl+,): the knob table painted, a slider per number and a check per toggle, each over its sentence, and `defaults` at the foot. Paints the table; decides nothing. | ~150 |
 | `src/envelope.rs` | the gesture envelope from the seat's side: is it one, which workspace does it name, did the last reply say ok. **One table, not two** — the read answers through the write. | ~150 |
@@ -6291,10 +6293,10 @@ the keyboard's door to a conversation.
 | `src/seat/fan.rs` | a gesture that names no workspace, asked of every channel this box holds — the union, stamped with where each answer came from, where an unprovisioned bare channel is an absence rather than a section. That enumeration is `held`, and `aimed` counts it too. | ~130 |
 | `src/seat/aimed.rs` | a workspace-less ACT down one channel (bl-1bb9): the one `--on` named, opened by `dial`, or the one the box holds — refused, naming them, where it holds more. | ~55 |
 | `src/seat/start.rs` | the §8.1 start family's two acts, spelled as one word — the composite, and the local between them. | ~80 |
-| `src/seat/follow.rs` | holding the line on one conversation until it comes to rest (§4.10, bl-3dca, bl-f076): the reads it holds across the engine's step boundaries, and the sink the product is written to as it arrives. | ~190 |
+| `src/seat/follow.rs` | holding the line on one conversation until it comes to rest (§4.10, bl-3dca, bl-f076): the reads it holds across the server's step boundaries, and the sink the product is written to as it arrives. | ~190 |
 | `src/seat/follow/rest.rs` | when that watch stops and what it says then, split from the file above at the cap on the seam the word has (bl-3a1f): the three readings of the standing row — working, at rest, or PARKED at the capability boundary — the inbox read that says whether a rest is one (bl-87ab, bl-3ecd), and the two sentences an ending can be. | ~170 |
 | `src/seat/model.rs` | the role assignment, against the list the same seat can already fetch (§4.10, bl-1e5a): the read that goes ahead of the write, the warning a listing nobody offers earns, and every way a silent read costs the assignment nothing. | ~95 |
-| `src/channel.rs` | one wire to one engine: ask, follow, and what the engine at the far end could SPELL as of the last dial (§4.9). | ~210 |
+| `src/channel.rs` | one wire to one server: ask, follow, and what the server at the far end could SPELL as of the last dial (§4.9). | ~210 |
 | `src/channel/dial.rs` | how a socket is obtained and first spoken on: the ladder climbed for a line, the preface and the request down it, and the sentence a failed write earns (§4.40). Split from the root at the budget. | ~90 |
 | `src/channel/frame.rs` | the framing. | ~105 |
 | `src/channel/hello.rs` | the version preface: write the major and this build's edition, confirm, and the refusal that names both numbers. The edition refuses nothing (§4.9). | ~120 |
@@ -6306,13 +6308,13 @@ the keyboard's door to a conversation.
 | `src/channel/reach.rs` | why an exchange produced no answer, and the one fact a sentence cannot carry: whether the request crossed (§4.22). | ~70 |
 | `src/channel/material.rs` | what the operator carried here, and what its absence means — the two remedies its absence earns, and which of them is the caller's fact (§4.5, bl-ad7f, bl-5cbe). | ~160 |
 | `src/channel/entries.rs` | the client-side workspaces this box holds elsewhere. | ~165 |
-| `src/channel/clock.rs` | the seat's one reading of time, injected: monotonic for a held line's silence and a DHT query's deadline, the wall for a BEP 44 sequence (§4.40). The DHT reads the system's always — its waits are on a real socket — and only its own suite steers it (bl-7b83). | ~50 |
+| `src/channel/clock.rs` | the seat's one reading of time, injected: monotonic for a held line's silence and a DHT query's deadline, the workspace for a BEP 44 sequence (§4.40). The DHT reads the system's always — its waits are on a real socket — and only its own suite steers it (bl-7b83). | ~50 |
 | `src/channel/ladder.rs` | the four rungs a dial climbs — held line, direct address, then the commons' two — the knobs the roving rungs turn, and each climb's transcript handed to `say` (§4.40). | ~165 |
 | `src/channel/ladder/commons.rs` | rungs 3 and 4, the ones that touch the DHT: the re-call from cached presence, else presence read; either way the call written — the observed address beside the local ones — and the punch, each step said, and the cache kept only for a call that landed (§4.40). Split from the ladder at the budget. | ~165 |
 | `src/channel/say.rs` | what the rendezvous path says on stderr (yog REMOTE §13.4, "The operator's view of the loop"): every line built here, families and counts and never an address; a transcript identical to the entry's last is not said again; the sink injected (§4.40). | ~205 |
-| `src/channel/line.rs` | one line to one engine: what a rung handed back, the ping discard (counted, so it can be said), the liveness check and why it failed, and what is kept of it between asks (§4.40). | ~180 |
+| `src/channel/line.rs` | one line to one server: what a rung handed back, the ping discard (counted, so it can be said), the liveness check and why it failed, and what is kept of it between asks (§4.40). | ~180 |
 | `src/channel/rendezvous.rs` | the two files an entry may carry beside `ca.pem`, and the four HKDF derivations both ends must agree on (§4.40). | ~130 |
-| `src/channel/rendezvous/item.rs` | presence and the call: the sealed byte format, mirrored from the engine and pinned to its bytes (§4.40). | ~140 |
+| `src/channel/rendezvous/item.rs` | presence and the call: the sealed byte format, mirrored from the server and pinned to its bytes (§4.40). | ~140 |
 | `src/channel/rendezvous/punch.rs` | the simultaneous open from one port, and the box's route-local addresses (§4.40). | ~190 |
 | `src/dht.rs` | the seat's DHT client root: the walk's parameters, the client, the id it queries as, and the vote on where the commons sees it (§4.40). | ~150 |
 | `src/dht/bencode.rs` | bencode, canonical out and strict in. | ~180 |
@@ -6329,15 +6331,15 @@ the keyboard's door to a conversation.
 | `src/render.rs` | the rendering (§4.37): the two forms, the one place a reply stream becomes text — a frame read, then rendered, refused or named unreadable — and the held read's frame, rendered against the fold its follower holds. | ~140 |
 | `src/render/parts.rs` | the vocabulary every rendering is built from, and where the present/absent branches live so they are not written forty-one times. | ~115 |
 | `src/render/answer.rs` | the one dispatch — an answer, and the family that renders it. A kind added to the census is a match arm missing here. | ~85 |
-| `src/render/walls.rs` | the roster, the decision queue and the live tail — plus the line a watch ends on, which is the seat's own narration rather than a frame's rendering and rides the same gutter (§4.37). | ~210 |
-| `src/render/walls/convs.rs` | the conversation index, which is the one of the four whose listing has a RULE and not just a row shape: the fold to roots, and the subtree named on its root's line (§4.11, bl-96cd). | ~110 |
-| `src/render/chat.rs` | the conversation as prose: its transcript, and its own whole row with the engine's offers on it. | ~165 |
+| `src/render/workspaces.rs` | the roster, the decision queue and the live tail — plus the line a watch ends on, which is the seat's own narration rather than a frame's rendering and rides the same gutter (§4.37). | ~210 |
+| `src/render/workspaces/convs.rs` | the conversation index, which is the one of the four whose listing has a RULE and not just a row shape: the fold to roots, and the subtree named on its root's line (§4.11, bl-96cd). | ~110 |
+| `src/render/chat.rs` | the conversation as prose: its transcript, and its own whole row with the server's offers on it. | ~165 |
 | `src/render/records.rs` | one conversation's records: its steps, its worktree, its inbox, its spine, and the commit governing it. | ~155 |
 | `src/render/step.rs` | one step drilled into — its captured documents printed as what they are, never parsed. | ~75 |
-| `src/render/policy.rs` | what a wall's policy is written in: its roles, its lineages, one config file, and the machines registered to it. | ~100 |
-| `src/render/tasks.rs` | the balls, the board, one wall's own balls and the delivery attempts. What those attempts CHANGED split out at the cap: a listing of rows and a diff are two shapes. | ~120 |
+| `src/render/policy.rs` | what a workspace's policy is written in: its roles, its lineages, one config file, and the machines registered to it. | ~100 |
+| `src/render/tasks.rs` | the balls, the board, one workspace's own balls and the delivery attempts. What those attempts CHANGED split out at the cap: a listing of rows and a diff are two shapes. | ~120 |
 | `src/render/work.rs` | the work diff as a diff (§4.37, bl-2e1d): the two commits a comparison resolved to, the totals folded over the churn, and the mark an elision earns. | ~145 |
-| `src/render/reads.rs` | the three reads whose subject is an engine rather than a wall: its verb table, a search, the trail. | ~70 |
+| `src/render/reads.rs` | the three reads whose subject is a server rather than a workspace: its verb table, a search, the trail. | ~70 |
 | `src/render/acts.rs` | what an act came back saying: a captured run, a staged start, a sign-in, and the receipts that carry one fact. | ~165 |
 | `src/reply.rs` | the reply vocabulary's module list, the three outcomes one frame can be, and the four-rung decode policy stated once. The census split out at the cap (`reply/kinds.rs`) on the seam this row used to name. | ~180 |
 | `src/reply/kinds.rs` | **the one census** — every kind this window draws, and the captured run three of the ops come back as. It moves every time a pane lands, where the policy beside it almost never does. | ~180 |
@@ -6360,12 +6362,12 @@ the keyboard's door to a conversation.
 | `src/reply/steps.rs` | the steps a conversation's loop has taken: one strict row per step, the nested spend, and the class tokens carried verbatim with `"none"` the one word the pane reads (§4.18). | ~135 |
 | `src/reply/files.rs` | what a conversation's worktree holds: the listing whose absence is a fact, the bounded preview's three classes plus the rung-3 word, and where the work lands (§4.18). | ~125 |
 | `src/reply/rail.rs` | the conversation's spine (§4.29): the notches, the two absences each is read as a pair, and the label derived off the commit that stores it. | ~170 |
-| `src/reply/governing.rs` | which config commit a conversation resolves its policy from (§4.29): one enum rebuilt off one key, and the engine's own two wordings rather than a third. | ~120 |
+| `src/reply/governing.rs` | which config commit a conversation resolves its policy from (§4.29): one enum rebuilt off one key, and the server's own two wordings rather than a third. | ~120 |
 | `src/reply/agent.rs` | the conversation's own row, whole (§4.32): twenty-one facts, every optional one read as an absence, the priced figure read by the ball pane's own reader rather than respelled, and the context percent carried rather than divided out again. | ~240 |
 | `src/reply/step.rs` | one step's records (§4.32): the record vocabulary, the capture-log vocabulary beside it, and the parsed tree that is deliberately not decoded. | ~155 |
 | `src/reply/inbox.rs` | the undelivered mail (§4.32): the forgiving parse read as a reading, and the two facts only a result message states. | ~85 |
 | `src/verbs.rs` | the typed gesture surface: which words exist, which module each row lives in, and what the table is for. | ~155 |
-| `src/verbs/verb.rs` | what a verb IS: the row, the usage it computes, the flags its own word can raise (§4.10, bl-9fd1), and the two doors onto the one envelope it becomes — the second stating an optional string field, for the one request that carries one (bl-971c). Split from the surface at the wall, because the two change for different reasons. | ~160 |
+| `src/verbs/verb.rs` | what a verb IS: the row, the usage it computes, the flags its own word can raise (§4.10, bl-9fd1), and the two doors onto the one envelope it becomes — the second stating an optional string field, for the one request that carries one (bl-971c). Split from the surface at the workspace, because the two change for different reasons. | ~160 |
 | `src/verbs/rows.rs` | the reads, the deposit and the advance, as data — each with the typed door the window composes by name — beside the one table that enumerates every row wherever it is declared. | ~240 |
 | `src/verbs/enroll.rs` | the enrollment: its row, `address` — the one optional field a request on this surface carries (§4.15, bl-971c) — and the door both faces compose it through. One subject, one file: its reply is the only one this seat renders rather than prints. | ~70 |
 | `src/verbs/conversation.rs` | the conversation's own four acts as rows — the cut, the kill, the change of lineage and the unmaking. Here and not in the exemption ledger because every one of them answers a captured run, which is a kind this seat already paints. | ~110 |
@@ -6375,80 +6377,80 @@ the keyboard's door to a conversation.
 | `src/verbs/spine.rs` | the conversation's spine as rows — the notches and the governing commit — beside the `fork` door that shares their subject and cannot be a row, because it carries a list (§4.29). | ~115 |
 | `src/verbs/candidates.rs` | the n-attempt path's three envelopes — the spread, the acceptance and the release — as doors and never rows, because argv has no channel selector for a gesture naming no workspace (§4.36). | ~105 |
 | `src/verbs/capability.rs` | the boundary's three acts as rows — the parked call's answer with its three verdicts, and the floor's two directions, neither of which can be refused (§4.34). | ~110 |
-| `src/verbs/workspace.rs` | the wall's own three acts as rows — the unmaking, whose `typed` is an arming rather than a parameter (§4.20), and the pin pair, which are assertions rather than a toggle (§4.25). | ~100 |
-| `src/reply/help.rs` | one engine's own verb table (§4.21): five required strings a row, the classification carried verbatim, and the headline the pane paints. It is the same shape `src/snapshot/parity/roster.rs` reads the parity roster off. | ~85 |
+| `src/verbs/workspace.rs` | the workspace's own three acts as rows — the unmaking, whose `typed` is an arming rather than a parameter (§4.20), and the pin pair, which are assertions rather than a toggle (§4.25). | ~100 |
+| `src/reply/help.rs` | one server's own verb table (§4.21): five required strings a row, the classification carried verbatim, and the headline the pane paints. It is the same shape `src/snapshot/parity/roster.rs` reads the parity roster off. | ~85 |
 | `src/reply/search.rs` | what a needle found (§4.21): the four facts about a match, the four address fields that are optional because a hit is one of three shapes, and the unreadable list that is a different claim from finding nothing. | ~135 |
-| `src/verbs/window.rs` | the window's own two ops (§4.21) — the engine's verb table, which has no argv row because its word is `lernie help`'s, and the search, which does. | ~80 |
+| `src/verbs/window.rs` | the window's own two ops (§4.21) — the server's verb table, which has no argv row because its word is `lernie help`'s, and the search, which does. | ~80 |
 | `src/verbs/prices.rs` | the money ops (§4.41): `prices` as a row, `price` and `ceiling` as typed doors because their figures are numbers that may be absent, and the one reading of a typed rate or bound as a JSON number. | ~120 |
 | `src/reply/prices.rs` | the price table, the bound, the world's spend against it and what a ceiling act woke (§4.41) — rates held as JSON numbers so they read back as written. | ~125 |
 | `src/cli/prices.rs` | `price` and `ceiling` as argv spells them: a word that is not a number refused here with the door's usage, and the trailing `--on <channel>` read off. | ~75 |
 | `src/ui/prices.rs` | the prices pane (§4.41): each channel's table, its bound and spend, and the acts addressed down that channel, each disabled with its reason. | ~150 |
 | `src/ui/model/pricing.rs` | the prices pane between frames: the per-channel tables, the four draft boxes, the roster check and the four acts. | ~180 |
-| `src/ui/commands.rs` | the commands pane (§4.21): what this window takes first — the menu's rows and the keys read off `keys::BINDINGS` (§4.46 item 3) — then one section per channel of what that engine answers to, each row's line, sentence, page and classification. | ~110 |
+| `src/ui/commands.rs` | the commands pane (§4.21): what this window takes first — the menu's rows and the keys read off `keys::BINDINGS` (§4.46 item 3) — then one section per channel of what that server answers to, each row's line, sentence, page and classification. | ~110 |
 | `src/ui/find.rs` | the find pane (§4.21): the needle, the act that is disabled until there is one, the hits, and the standing sentence saying why none of them can be aimed at (yog bl-ef16). | ~150 |
 | `src/ui/model/window.rs` | the window's two panes between frames — which one stands as one field rather than two flags, the per-channel filing both share, the needle that is not spent on firing, and the roster refresh. | ~175 |
 | `src/reply/doctor.rs` | whether this box is wired (§4.21): one row per check — three required fields and the remedy, optional and verbatim — the headline both faces paint, and the count of failing rows that is the only tally. | ~75 |
 | `src/verbs/doctor.rs` | the doctor's envelope (§4.21) — a door, because its one workspace is optional: bare it fans, named it is routed. | ~35 |
 | `src/ui/doctor.rs` | the doctor pane (§4.21): one section per channel, one row per check in the colour of its state, the remedy under a row that does not hold. | ~95 |
-| `src/ui/model/doctor.rs` | the doctor pane between frames — the ask, bare or carrying the aimed wall, cleared on asking, and each channel's checks replacing its own section. | ~70 |
+| `src/ui/model/doctor.rs` | the doctor pane between frames — the ask, bare or carrying the aimed workspace, cleared on asking, and each channel's checks replacing its own section. | ~70 |
 | `src/verbs/tests/corpus/emits/ledger.rs` | the frames this seat's encoder cannot compose, by op, count and reason — split from the mechanism at the cap, because a builder changing and a surface not being built are two different reasons to edit. | ~120 |
 | `src/verbs/start.rs` | the start family's two envelopes — doors without rows, and why — the two rungs a `dir` chooses between, the join that fires a rung's prefill ahead of what was typed (§4.10, bl-4371), and the born-on role's field and the one word plan mode is (REMOTE §9.21). | ~175 |
 | `src/verbs/doors.rs` | the words whose grammar the gesture table cannot express: a word, a usage line and prose, with no envelope builder behind it. | ~190 |
-| `src/verbs/help.rs` | the two rosters and one word's page, answered with no engine up. | ~110 |
+| `src/verbs/help.rs` | the two rosters and one word's page, answered with no server up. | ~110 |
 | `src/ui.rs` | the window's module list and what a frame may not do. | small |
-| `src/ui/model.rs` | the model's module list and re-export surface. Four pieces split out at the cap onto seams this row used to name: the door a reply comes in through (`model/absorb.rs`), the aim (`model/aim.rs`), the accordion (`model/engines.rs`), the records pane's seven answers held as one value (`model/records.rs`'s `Records`), and the struct itself (`model/held.rs`). | ~95 |
+| `src/ui/model.rs` | the model's module list and re-export surface. Four pieces split out at the cap onto seams this row used to name: the door a reply comes in through (`model/absorb.rs`), the aim (`model/aim.rs`), the accordion (`model/servers.rs`), the records pane's seven answers held as one value (`model/records.rs`'s `Records`), and the struct itself (`model/held.rs`). | ~95 |
 | `src/ui/model/held.rs` | **what the window holds between frames** — the snapshot a frame reads, and every field documented where it is declared. | ~285 |
 | `src/ui/model/held/asked.rs` | the two questions asked of the model that no pane owns: how many rows the composer's field stands at (§4.39), and whether a keyboard walk owes its selection a place on the glass — which since the fold asks no pane, there being one list. Split from the file above at the cap when the drag added the second — a field is what a pane learned to hold, a question is what two panes need one answer to. | ~35 |
-| `src/ui/model/aim.rs` | which wall the window is aimed at — the address every composed gesture is built from — and the two readings taken of its channel: the one a gesture goes down, and whether this box holds one by that name at all. | ~50 |
-| `src/ui/model/fold.rs` | **one engine, every name it is held under** (§4.6, bl-13b9): the roster folded by the address each channel dials — the engine the seat card, the switcher and the seat-wide waiting count read, its lead, its walls once each, and which channel a gesture at a wall goes down. A query over the roster, never a second one. | ~140 |
-| `src/ui/model/engines.rs` | **the accordion** (§4.39): which engine is open, what each engine's last opening ranks as, the wall last aimed under each, the three derivations over them — which one is open on a seat nobody has told, the order the pane paints, and what an opening aims at — and the `+`'s own act, which opens an engine, clears the selection and asks for the composer's box. The seat's own and in the place file, never across the boundary. | ~170 |
+| `src/ui/model/aim.rs` | which workspace the window is aimed at — the address every composed gesture is built from — and the two readings taken of its channel: the one a gesture goes down, and whether this box holds one by that name at all. | ~50 |
+| `src/ui/model/fold.rs` | **one server, every name it is held under** (§4.6, bl-13b9): the roster folded by the address each channel dials — the server the seat card, the switcher and the seat-wide waiting count read, its lead, its workspaces once each, and which channel a gesture at a workspace goes down. A query over the roster, never a second one. | ~140 |
+| `src/ui/model/servers.rs` | **the accordion** (§4.39): which server is open, what each server's last opening ranks as, the workspace last aimed under each, the three derivations over them — which one is open on a seat nobody has told, the order the pane paints, and what an opening aims at — and the `+`'s own act, which opens a server, clears the selection and asks for the composer's box. The seat's own and in the place file, never across the boundary. | ~170 |
 | `src/ui/model/absorb.rs` | **the one door a reply comes in through**: what is filed, what becomes the notice, and the act's receipt — the same door knowing which act it answers (§4.26). | ~230 |
 | `src/ui/model/absorb/unanswered.rs` | the leg that brought no reply at all: a channel this seat could not reach, said on its own section, and an act that earned no answer, said in the bar — with its words given back where nothing crossed (§4.26). | ~100 |
 | `src/ui/model/notice.rs` | what the seat last heard that was not content: six kinds — five failures and one act's receipt (§4.34, §4.36) — and the line that says whose sentence each is. | ~170 |
 | `src/ui/model/posted.rs` | a gesture on its way out: whether a lost reply leaves it in doubt (§4.22), and the channel it is addressed to where its envelope names no workspace (§4.30) — both recorded at the control because neither can be computed. | ~110 |
-| `src/ui/model/delete.rs` | **a conversation's deletion** (§4.44 item 1; §4.42 item 5; bl-e837): the name the engine compares, the confirmation's two answers, and `post_delete` — the one composition of `delete-agent` the trashcan and `/delete` share. | ~60 |
-| `src/ui/model/acts.rs` | what a control does, whichever control did it — the one home a binding and a click share: the aim, the selection, Escape's ladder, the enrollment's four and the wall's pin. | ~220 |
-| `src/ui/model/channel.rs` | what a channel is, what a gesture aimed down one must be addressed as, and what its section says when it has no walls. | ~110 |
+| `src/ui/model/delete.rs` | **a conversation's deletion** (§4.44 item 1; §4.42 item 5; bl-e837): the name the server compares, the confirmation's two answers, and `post_delete` — the one composition of `delete-agent` the trashcan and `/delete` share. | ~60 |
+| `src/ui/model/acts.rs` | what a control does, whichever control did it — the one home a binding and a click share: the aim, the selection, Escape's ladder, the enrollment's four and the workspace's pin. | ~220 |
+| `src/ui/model/channel.rs` | what a channel is, what a gesture aimed down one must be addressed as, and what its section says when it has no workspaces. | ~110 |
 | `src/ui/model/start.rs` | a start between its two acts: what is held, what each receipt does to it, the born-on role written onto the body the fire carries back (§4.39), and the refusal that retires it with the goal back in the box (§4.26). | ~255 |
 | `src/ui/model/start/spread.rs` | the same start with n in the middle (§4.36): the obligation it is over, the fan its staging receipt composes, and the one fire per candidate the fan's own answer does. | ~130 |
 | `src/ui/model/claim.rs` | the claim a start leaves on the selection: the row it stands in for, what is not asked about it, and the answer that spends it. | ~130 |
 | `src/ui/model/subtree.rs` | what hangs under a conversation, and whether it is on the glass: the descent fold `Model::rows` applies, and the set of what an operator has opened (§4.11). | ~85 |
-| `src/ui/model/tabs.rs` | **the tabs between frames** (§4.44 item 2): `Tab`, the strip's query, the open `Model::select` performs, the close onto a neighbour or the wall, and the two ways the engine takes one — a listing that no longer knows it, a selection it put down — plus a start's claimed name renamed to the root it resolves to. | ~125 |
+| `src/ui/model/tabs.rs` | **the tabs between frames** (§4.44 item 2): `Tab`, the strip's query, the open `Model::select` performs, the close onto a neighbour or the workspace, and the two ways the server takes one — a listing that no longer knows it, a selection it put down — plus a start's claimed name renamed to the root it resolves to. | ~125 |
 | `src/ui/model/sent.rs` | **a sent message between frames** (§4.45 item 4): `Sent`, the one door both deposits go through that records what it composed beside the act, the selected conversation's records as a query, and the three endings decided where each fact arrives — the receipt that changes the ink, the read that carries the words and retires the record, the refusal or unsent act that drops it with the words back in the box ahead of the draft. | ~170 |
-| `src/ui/roster.rs` | **the window's one list** (§4.39): the engines this seat reaches as an accordion, the open one's workspaces under it and the aimed wall's conversations under their own row — the word on the glass, the sections, what each says when it has none, and the header naming the address it dials. The strip of window-level acts split out at the design-time budget (`roster/acts.rs`), one wall's own row with it (`roster/wall.rs`), and the engine's own row and order with them (`roster/engine.rs`). | ~190 |
-| `src/ui/roster/engine.rs` | **one engine's row and the window's cursor track** (§4.39): the row an operator clicks to open one (the `+` that stood at its right edge is `+ new` under each wall, §4.42 item 7), and the three kinds of stop the walk makes — a row it only stands on (an engine's, or a begin: `+ new`, `+ new workspace`; bl-f991); a wall under the open one, which it aims; and a conversation under the aimed wall, which it selects. The track is a query off the same rows and the same order the paint draws, so a key cannot walk where a click cannot reach. | ~180 |
-| `src/ui/roster/wall.rs` | one workspace's row: the line it wears, the row this seat holds no name for, the eight per-wall controls that hang off the aimed one — the pin among them, whose word and op follow the row's own rank (§4.25) — under those, the aimed wall's conversations (§4.39), and `+ new` last under every wall (§4.42 item 7). | ~150 |
+| `src/ui/roster.rs` | **the window's one list** (§4.39): the servers this seat reaches as an accordion, the open one's workspaces under it and the aimed workspace's conversations under their own row — the word on the glass, the sections, what each says when it has none, and the header naming the address it dials. The strip of window-level acts split out at the design-time budget (`roster/acts.rs`), one workspace's own row with it (`roster/workspace.rs`), and the server's own row and order with them (`roster/server.rs`). | ~190 |
+| `src/ui/roster/server.rs` | **one server's row and the window's cursor track** (§4.39): the row an operator clicks to open one (the `+` that stood at its right edge is `+ new` under each workspace, §4.42 item 7), and the three kinds of stop the walk makes — a row it only stands on (a server's, or a begin: `+ new`, `+ new workspace`; bl-f991); a workspace under the open one, which it aims; and a conversation under the aimed workspace, which it selects. The track is a query off the same rows and the same order the paint draws, so a key cannot walk where a click cannot reach. | ~180 |
+| `src/ui/roster/workspace.rs` | one workspace's row: the line it wears, the row this seat holds no name for, the eight per-workspace controls that hang off the aimed one — the pin among them, whose word and op follow the row's own rank (§4.25) — under those, the aimed workspace's conversations (§4.39), and `+ new` last under every workspace (§4.42 item 7). | ~150 |
 | `src/verbs/tuning.rs` | the role-tuning family: the `roles` read and the `model` assignment as rows, and `effort` and `priority` as doors without rows — a nullable level and a bool are not named strings. | ~155 |
 | `src/reply/queue.rs` | the decision queue's rows: what is asking, why, the flag somebody raised on it and the invocation parked at its boundary — three nullable facts each read as an absence (§4.19). | ~165 |
-| `src/reply/ops.rs` | the trail's rows: what crossed the boundary, how it ended in the engine's own words, and where its alarm stands — a classification that crosses so no seat re-derives it (§4.27). | ~95 |
+| `src/reply/ops.rs` | the trail's rows: what crossed the boundary, how it ended in the server's own words, and where its alarm stands — a classification that crosses so no seat re-derives it (§4.27). | ~95 |
 | `src/reply/roles.rs` | what one workspace's roles are set to: four required fields and the effort, which reports rather than asserts and so is an option carried verbatim. | ~80 |
-| `src/ui/tuning.rs` | the tuning pane: what a wall's roles are set to, the four seats and one toggle that retune each, and the assignment editor under its own row. **The settings surface `src/snapshot/reach.rs` was written to say this seat did not have.** | ~190 |
+| `src/ui/tuning.rs` | the tuning pane: what a workspace's roles are set to, the four seats and one toggle that retune each, and the assignment editor under its own row. **The settings surface `src/snapshot/reach.rs` was written to say this seat did not have.** | ~190 |
 | `src/ui/model/tuning.rs` | the tuning pane between frames — a two-state enum rather than a flag beside an option — and the four acts its controls spend. | ~190 |
 | `src/ui/tuning/offers.rs` | what a provider row offers, on the tuning pane (§4.17): the error-accent mark on a row whose model its provider's listing lacks, and the offered ids under the editor, each filling the model field. Split from `tuning.rs` on the read's seam — `roles` there, `models` here. | ~55 |
 | `src/ui/model/tuning/offers.rs` | the offerings between frames (§4.17): which provider rows the pane asks, each stamped answer filed under its row, and the one fact a listing in hand supports — absence is not evidence. | ~70 |
-| `src/ui/queue.rs` | the decision queue (§4.19): the union across channels, a section an engine (bl-52d2), every line a row can carry with the flag leading, the acknowledgement, the choices `ask::choices` offers a held row — the three verdicts, and `pass` at each wider reach the row permits, each naming its reach for itself (§4.34, PROTOCOL 18; bl-da16) — and the way out to the conversation. Its beats split at the cap on the subject's own seam — `tests.rs` is what the pane says, `tests/answer.rs` the one act whose subject is the invocation behind the row. | ~250 |
-| `src/ui/clear.rs` | the place a trail is cut in (§4.35): the engines the cut reaches, named; the way out first; and the act last, with no arming because the wire offers no field to arm on. | ~100 |
-| `src/ui/trail.rs` | the trail (§4.27): the union across channels, what ran and how it ended in the engine's words, and the standing that is silence for a clean run and its own word for every other. | ~150 |
+| `src/ui/queue.rs` | the decision queue (§4.19): the union across channels, a section a server (bl-52d2), every line a row can carry with the flag leading, the acknowledgement, the choices `ask::choices` offers a held row — the three verdicts, and `pass` at each wider reach the row permits, each naming its reach for itself (§4.34, PROTOCOL 18; bl-da16) — and the way out to the conversation. Its beats split at the cap on the subject's own seam — `tests.rs` is what the pane says, `tests/answer.rs` the one act whose subject is the invocation behind the row. | ~250 |
+| `src/ui/clear.rs` | the place a trail is cut in (§4.35): the servers the cut reaches, named; the way out first; and the act last, with no arming because the wire offers no field to arm on. | ~100 |
+| `src/ui/trail.rs` | the trail (§4.27): the union across channels, what ran and how it ended in the server's words, and the standing that is silence for a clean run and its own word for every other. | ~150 |
 | `src/ui/records.rs` | the records pane (§4.18): the frame, the steps half and the files half, every empty state its own sentence, every line a pure function beside the paint. Its five other halves are files of their own (§4.29, §4.30). | ~275 |
 | `src/ui/records/spine.rs` | the pane's third half (§4.29): the governing commit, the notches, the cards off them, and the one fork control an operable notch carries. | ~180 |
-| `src/ui/records/workflow.rs` | the workflow mark on the governing half (§4.29, REMOTE §9.24): its three renderings, one `workflow` control per lineage the wall holds, and the clear where a mark is read. | ~85 |
+| `src/ui/records/workflow.rs` | the workflow mark on the governing half (§4.29, REMOTE §9.24): its three renderings, one `workflow` control per lineage the workspace holds, and the clear where a mark is read. | ~85 |
 | `src/ui/records/steps.rs` | the steps half: the orphan banner, one row per step with its drill-in, and the step's strings. Split from `records.rs` at the cap. | ~150 |
 | `src/ui/records/files.rs` | the files half: the worktree's listing, its preview in each of its four classes, and the sentence for a listing cut short. | ~75 |
 | `src/ui/records/header.rs` | the pane's header (§4.32): the conversation's own row, said several facts to a line because the pane has to fit the window. | ~215 |
 | `src/ui/records/cascade.rs` | the pane's one act on the conversation itself (§4.20, §4.32): the stop that takes the subtree, its arming, and the one site the boundary's `children` field has in this window. | ~95 |
 | `src/ui/records/drill.rs` | one step's records under the row that addresses them (§4.32): the control on the row, and the bytes rather than a tree. | ~155 |
 | `src/ui/records/mail.rs` | the undelivered mail (§4.32): the deposit's header with each unstated fact said as itself, and its body. | ~90 |
-| `src/ui/model/queue.rs` | the queue between frames — a flag, the per-channel filing, its fold by engine (`sections`, bl-52d2), and the roster lookup that is the one place a row's address is resolved (§4.19). | ~135 |
+| `src/ui/model/queue.rs` | the queue between frames — a flag, the per-channel filing, its fold by server (`sections`, bl-52d2), and the roster lookup that is the one place a row's address is resolved (§4.19). | ~135 |
 | `src/reply/spend.rs` | what a ball has cost and what the sum is over: the money as upstream rendered it, and the attribution that says the classification and the clause because the clause alone cannot say it (§4.28). | ~80 |
 | `src/reply/board.rs` | the fleet board: every live ball in its column, the column and the binding as two facts, and the armed loops — which ride here because there is no `fleet` read on this wire and are absent rather than empty (§4.31). | ~180 |
-| `src/reply/balls.rs` | the balls themselves — the whole box's binding table and its three absences, one wall's own balls with the figure that is required there and nowhere else, and the branch a wall tracks its tasks on (§4.31). | ~110 |
+| `src/reply/balls.rs` | the balls themselves — the whole box's binding table and its three absences, one workspace's own balls with the figure that is required there and nowhere else, and the branch a workspace tracks its tasks on (§4.31). | ~110 |
 | `src/verbs/balls.rs` | the balls family as rows: four reads — two naming no workspace and two naming one, a division read off the parameters rather than listed twice — and the three acts that claim, release and deliver a ball; `marks` is here as its READ, the amending form being a write with a confirmation to design (§4.31, §4.35). | ~175 |
 | `src/verbs/balls/edit.rs` | the two authoring acts, which can never be rows: `create`'s body and each of `update`'s three may be ABSENT, and an empty string asks upstream to blank a field nobody touched (§4.35). | ~105 |
-| `src/ui/board.rs` | the ball pane (§4.31): the union across channels, the aimed wall's section between its two halves, the two emptinesses that are the union's rather than the wall's, and the claim offered on a row nobody holds (§4.35). | ~200 |
+| `src/ui/board.rs` | the ball pane (§4.31): the union across channels, the aimed workspace's section between its two halves, the two emptinesses that are the union's rather than the workspace's, and the claim offered on a row nobody holds (§4.35). | ~200 |
 | `src/ui/board/acts.rs` | the authoring block: one block with two subjects, the way out first, and the enablement that arms the one act with no undoing (§4.35). | ~205 |
-| `src/ui/board/rows.rs` | the words a board row wears — every line a pure function of the row, the loop's line being the engine's own with the two facts it omits hung off it. | ~135 |
-| `src/ui/board/wall.rs` | the aimed wall's half: what it holds, what each cost, the branch it tracks on, four emptinesses because they are four different claims, and the two controls that open the authoring block (§4.35). | ~100 |
-| `src/ui/model/board.rs` | the ball pane between frames — the two per-channel unions, the wall's two answers, and the retirement that takes the wall half and leaves the pane (§4.31). | ~120 |
+| `src/ui/board/rows.rs` | the words a board row wears — every line a pure function of the row, the loop's line being the server's own with the two facts it omits hung off it. | ~135 |
+| `src/ui/board/workspace.rs` | the aimed workspace's half: what it holds, what each cost, the branch it tracks on, four emptinesses because they are four different claims, and the two controls that open the authoring block (§4.35). | ~100 |
+| `src/ui/model/board.rs` | the ball pane between frames — the two per-channel unions, the workspace's two answers, and the retirement that takes the workspace half and leaves the pane (§4.31). | ~120 |
 | `src/ui/model/board/acts.rs` | what the model does with the five acts: the `--as` stamp read off the channel, the two openings, and the one door that sends down one channel (§4.35). | ~130 |
 | `src/ui/model/board/block.rs` | the block itself — what it holds, and the four gestures whose absence IS the enablement of the control that spends them (§4.35). | ~155 |
 | `src/reply/diff.rs` | what one attempt changed — the row the work diff answers with and the same row nested in every science attempt, one type because upstream has one encoder; binary read off the shape, and the patch deliberately unread (§4.32). | ~115 |
@@ -6457,56 +6459,56 @@ the keyboard's door to a conversation.
 | `src/ui/fleet.rs` | the fleet pane (§4.33): five acts in the unmaking's order, three boxes and the two controls each holds down, and the two standing listings under them. | ~205 |
 | `src/ui/fleet/candidates.rs` | the n-attempt path on the listing that already names every value it takes (§4.36): which act a row earns, the two words and the count the three spend, and the acceptance addressed down one channel. | ~180 |
 | `src/ui/fleet/rows.rs` | the words a fleet row wears — the receipt that names its op, an attempt's lines and no others, and the churn read off the shape. | ~125 |
-| `src/ui/model/fleet.rs` | the fleet pane between frames (§4.33) — three words for its own acts and two more for the candidates' (§4.36), the receipt filed under the op that earned it, and the retirement that takes the pane and both its answers with the wall. | ~175 |
+| `src/ui/model/fleet.rs` | the fleet pane between frames (§4.33) — three words for its own acts and two more for the candidates' (§4.36), the receipt filed under the op that earned it, and the retirement that takes the pane and both its answers with the workspace. | ~175 |
 | `src/ui/model/trail.rs` | the trail between frames — a flag and the per-channel filing, on the queue's own terms, with the read standing because a trail is what is happening (§4.27). | ~70 |
 | `src/ui/model/records.rs` | the records pane between frames: **the seven answers as one value** (`Records`), its open/close acts, the retirement with its subject, and the one `covered` question every pane shares. | ~140 |
 | `src/ui/model/spine.rs` | the pane's one draft (§4.29) — the two words a fork is composed from, why the goal is spent on firing and the role is not, and the act that spends them. | ~85 |
 | `src/ui/model/deep.rs` | the one read this pane posts rather than stands, and why the answer's own `seq` is the whole of what says which row it belongs to (§4.32). | ~55 |
 | `src/reply/config.rs` | one config file as the typed thing it is: the bytes, the settings the schema found in them, and the bounds that ride a control (§4.30). | ~130 |
 | `src/reply/lineages.rs` | the config lineages one workspace holds — the listing the file read indexes into, with the tip in both spellings (§4.30). | ~70 |
-| `src/reply/proposals.rs` | what a reviewer has staged for one workspace's config, and — where the read named one — that proposal whole (REMOTE §9.22, PROTOCOL 18). `fresh` crosses as the engine's own reading and is never inferred here from an empty lineage list. | ~130 |
+| `src/reply/proposals.rs` | what a reviewer has staged for one workspace's config, and — where the read named one — that proposal whole (REMOTE §9.22, PROTOCOL 18). `fresh` crosses as the server's own reading and is never inferred here from an empty lineage list. | ~130 |
 | `src/reply/clients.rs` | the machines registered in one workspace: presence as an observation, the advertised set as a statement, and the consent whose absence is a reading (§4.28). | ~110 |
-| `src/reply/providers.rs` | what a wall can sign in to, and what one row offers: the four required fields, the block whose absence is the whole of *signable*, and the two capability booleans (§4.24). | ~110 |
-| `src/reply/login.rs` | one sign-in run as the engine streams it — both tagged streams, the fold a frame is an append onto, and the two settled facts whose absence is a reading (§4.24). | ~115 |
+| `src/reply/providers.rs` | what a workspace can sign in to, and what one row offers: the four required fields, the block whose absence is the whole of *signable*, and the two capability booleans (§4.24). | ~110 |
+| `src/reply/login.rs` | one sign-in run as the server streams it — both tagged streams, the fold a frame is an append onto, and the two settled facts whose absence is a reading (§4.24). | ~115 |
 | `src/verbs/proposals.rs` | the learning loop's two gestures: the listing at both its depths (the id is an optional string and rides the `stating` door), and the settle whose id and verdict are both required and neither defaulted. | ~100 |
 | `src/verbs/config.rs` | the config family: the lineage listing as a row, and the one envelope the read and the write both are — the five places a config file lives, typed, and `text` the whole of what separates the halves (§4.30). | ~190 |
 | `src/verbs/clients.rs` | the one op on the tool-host surface a seat is owed, and the four that are a machine's — with why `invocations` must never be asked from here (§4.28). | ~65 |
-| `src/verbs/login.rs` | the sign-in family as rows: the table, the offering, the act that starts a run in the wall, and the lane that streams it — four ops, one subject (§4.24). | ~115 |
+| `src/verbs/login.rs` | the sign-in family as rows: the table, the offering, the act that starts a run in the workspace, and the lane that streams it — four ops, one subject (§4.24). | ~115 |
 | `src/ui/config.rs` | the config pane: what can be read — the four destinations that are picked and the fifth that is typed (§4.30). | ~215 |
-| `src/ui/config/settings.rs` | the typed view: every setting the engine's schema found in those bytes, its bounds, and the engine's own judgement of the value (§4.30). | ~50 |
+| `src/ui/config/settings.rs` | the typed view: every setting the server's schema found in those bytes, its bounds, and the server's own judgement of the value (§4.30). | ~50 |
 | `src/ui/config/edit.rs` | the editor: the box the new bytes are typed into, the enablement that is its arming, and the sentence for a file that moved under it (§4.30). | ~90 |
-| `src/ui/config/proposals.rs` | what a reviewer has staged for the wall's config (§4.30, bl-a1d6): the listing in the engine's own standing, the named proposal whole and verbatim, and the two verdicts armed by its id under §4.20. | ~180 |
+| `src/ui/config/proposals.rs` | what a reviewer has staged for the workspace's config (§4.30, bl-a1d6): the listing in the server's own standing, the named proposal whole and verbatim, and the two verdicts armed by its id under §4.20. | ~180 |
 | `src/ui/clients.rs` | the clients pane: the three empty states, the two lifetimes on a row, and the consent said on every tool (§4.28). | ~130 |
-| `src/ui/login.rs` | the login pane: the wall's two sentences, the provider table, and the two controls on a row. The followed run's half split out at the design-time budget (`login/run.rs`). | ~200 |
+| `src/ui/login.rs` | the login pane: the workspace's two sentences, the provider table, and the two controls on a row. The followed run's half split out at the design-time budget (`login/run.rs`). | ~200 |
 | `src/ui/login/run.rs` | what one sign-in printed: both streams, the settled exit and the run-by-hand command (§4.24). | ~70 |
 | `src/ui/model/config.rs` | the config pane between frames — which file it is pointed at, the two reads that stand on it, the box, and the write it composes (§4.30). | ~195 |
-| `src/ui/model/config/draft.rs` | the box and the two readings it takes against the engine's answer: is there anything to write, and did the file go somewhere neither end of this box put it (§4.30). | ~75 |
+| `src/ui/model/config/draft.rs` | the box and the two readings it takes against the server's answer: is there anything to write, and did the file go somewhere neither end of this box put it (§4.30). | ~75 |
 | `src/ui/model/config/proposal.rs` | the staged proposals between frames — which row is named, the depth the standing read is asked at (the named id while the listing still carries it), the arming, and the verdict it composes (§4.30). | ~140 |
 | `src/ui/model/clients.rs` | the clients pane between frames — the aim that gates it, and what it retires with (§4.28). | ~55 |
 | `src/ui/model/listing.rs` | the three panes that are pure listings, and the one field that says which is standing (§4.28). | ~70 |
-| `src/ui/model/login.rs` | the login pane between frames — two questions rather than two modes — the three acts its controls spend, and where the engine is, read off the channel stamp. | ~165 |
+| `src/ui/model/login.rs` | the login pane between frames — two questions rather than two modes — the three acts its controls spend, and where the server is, read off the channel stamp. | ~165 |
 | `src/state.rs` | **the link** (§4.12): what the frame and the off-frame threads say to each other, and the crate's one lock. `settle` is the frame's whole side of it, and it publishes two projections — what to ask, and what to keep (§4.13). Its second tenant is what worked for an entry this run — held lines, endpoints, the punch port (§4.40). | ~235 |
 | `src/state/traffic.rs` | what crosses the lock — a worker's report in its kinds — among them a routed gesture's reply stamped with the op it answers (§4.26) and a `models` answer stamped with the provider row asked (§4.17) — and the standing question set the frame publishes, whose open pane is one field rather than a flag apiece (§4.12). | ~205 |
 | `src/offframe.rs` | the four off-frame threads (§4.12): the one leg both fanning workers share, the filing every answer goes through, and the pump that is a cadence rather than a timeout. | ~120 |
 | `src/offframe/asker.rs` | one pass of the standing set, in two halves: the reads whose subject is every channel, the nest under the focus, and the channel that costs only itself (§4.12). The selected conversation's reads lead every leg they have not yet been asked at (bl-1f22). The seam is the wire's own, so a pane asking at both widths appears in both halves rather than as a case (§4.31). | ~190 |
-| `src/offframe/asker/wall.rs` | the second half, split out at the design-time budget: every question that names one workspace, asked of the aimed wall. It is where six panes' pane-keyed reads nest, so it is the half that grows. | ~150 |
+| `src/offframe/asker/workspace.rs` | the second half, split out at the design-time budget: every question that names one workspace, asked of the aimed workspace. It is where six panes' pane-keyed reads nest, so it is the half that grows. | ~150 |
 | `src/offframe/poster.rs` | one pass of the outbox (§4.12): the gesture that is routed and its reply stamped with the op (§4.26) and with the channel it crossed (§4.7), the channels a workspace-less one goes down — the one it named, or every one where it named none (§4.30) — and which sentence a failed leg earns. | ~165 |
 | `src/offframe/follow.rs` | one pass of the follow lane: the held read on the focused conversation, stamped with what it is about (§4.12). | ~90 |
 | `src/offframe/signin.rs` | one pass of the sign-in lane: the held read on the followed provider row, stamped with what it is about (§4.24). | ~90 |
-| `src/ui/unmake.rs` | the unmaking pane (§4.20): the wall it would unmake, the refusal stated before the act, the arming box, and the act that is on the glass without being live until the name matches. | ~135 |
+| `src/ui/unmake.rs` | the unmaking pane (§4.20): the workspace it would unmake, the refusal stated before the act, the arming box, and the act that is on the glass without being live until the name matches. | ~135 |
 | `src/ui/model/unmake.rs` | an unmaking between frames — the subject it holds rather than follows, the arming that is a readiness test and is never spent, and whether it has been asked. | ~105 |
-| `src/ui/convs.rs` | **the conversations that stand under a wall** (§4.39): the rows the roster paints beneath the aimed one, the two emptinesses left once the pane became a level, the headline, the age, and `continues` — whether a thread goes on past a row, which is what the connectors are drawn from. The row itself is `convs/row.rs`, its acts `convs/menu.rs`. It stays beside the roster rather than under it because `ui/queue.rs` reads the same age and the same uncertainty mark. | ~155 |
-| `src/ui/convs/row.rs` | one threaded row: the row with its state rule, the lines hung beneath it at its words' edge, the subtree control as a row under them, and the connectors — a rail per ancestor thread that continues, an elbow into the words. Its indent starts one step under the wall it hangs from (§4.39), and every connector reads that one function. | ~200 |
-| `src/ui/convs/menu.rs` | the conversation row's context menu (§4.23): the acts that fire on the row, the three that lead somewhere and spend nothing, and the admission test that separates them — a door taking the wall and the conversation, and nothing else. | ~150 |
-| `src/ui/model/fill.rs` | which box on the composer was asked for the cursor — the two parameter boxes a row menu names (§4.23), and the draft itself, which the engine row's `+` names (§4.39) — and the one door that goes there. Taken once, by the frame that paints the box. | ~95 |
+| `src/ui/convs.rs` | **the conversations that stand under a workspace** (§4.39): the rows the roster paints beneath the aimed one, the two emptinesses left once the pane became a level, the headline, the age, and `continues` — whether a thread goes on past a row, which is what the connectors are drawn from. The row itself is `convs/row.rs`, its acts `convs/menu.rs`. It stays beside the roster rather than under it because `ui/queue.rs` reads the same age and the same uncertainty mark. | ~155 |
+| `src/ui/convs/row.rs` | one threaded row: the row with its state rule, the lines hung beneath it at its words' edge, the subtree control as a row under them, and the connectors — a rail per ancestor thread that continues, an elbow into the words. Its indent starts one step under the workspace it hangs from (§4.39), and every connector reads that one function. | ~200 |
+| `src/ui/convs/menu.rs` | the conversation row's context menu (§4.23): the acts that fire on the row, the three that lead somewhere and spend nothing, and the admission test that separates them — a door taking the workspace and the conversation, and nothing else. | ~150 |
+| `src/ui/model/fill.rs` | which box on the composer was asked for the cursor — the two parameter boxes a row menu names (§4.23), and the draft itself, which the server row's `+` names (§4.39) — and the one door that goes there. Taken once, by the frame that paints the box. | ~95 |
 | `src/ui/chat.rs` | the transcript read by its gutter and its bubble (§4.42, §4.45): the glyph per speaker, each block on the fill its role wears, the turn's working gathered into one block on the trail's bubble, the `response` line while that block is open and the hairline between turns, and the sent row in the pending ink at the end. | ~180 |
 | `src/ui/chat/scroll.rs` | a scroll the keyboard asked of the transcript (§4.46 item 3): the ask held in the toolkit's memory across the frame, spent inside the area as a page or an end, the area built unstuck and uneased on that frame, and how far down it stands written back for the suite. | ~70 |
 | `src/ui/chat/working.rs` | the working in three stages (§4.45 item 5): the grouping's counted line as a door, each step whole while in flight or compact once finished — a call's line and one elided line of its output, a note one elided line — each compact step a door that opens it whole in place, the defaults from the turn's state and a toggle remembered. | ~160 |
 | `src/ui/chat/trail.rs` | one step of the working, whole (§4.42 item 4, §4.45 item 5): its mark on its stem, its name — a door that shuts it where it was opened from compact — a result folded to its head, and an intermediate prose on its own fill inside the working's. | ~100 |
-| `src/ui/chat/panel.rs` | the two cards at the head of the pane (§4.42): the conversation's facts, and the seat's — each engine with what it holds, the version, the two ways in — where nothing is selected. | ~120 |
-| `src/ui/ask.rs` | **the ask** (§4.42): the selected conversation's queue row above the rule while it asks — its words, its choices as numbered rows (the one list the queue pane paints too; the `pass` reaches follow the held row's `scopes`, bl-da16, `tests/scopes.rs`), faint while its engine will not dial. | ~270 |
+| `src/ui/chat/panel.rs` | the two cards at the head of the pane (§4.42): the conversation's facts, and the seat's — each server with what it holds, the version, the two ways in — where nothing is selected. | ~120 |
+| `src/ui/ask.rs` | **the ask** (§4.42): the selected conversation's queue row above the rule while it asks — its words, its choices as numbered rows (the one list the queue pane paints too; the `pass` reaches follow the held row's `scopes`, bl-da16, `tests/scopes.rs`), faint while its server will not dial. | ~270 |
 | `src/ui/ask/keys.rs` | the digit, the arrows and Enter an empty prompt lends the ask, and the field's hint while it asks (bl-1252). | ~75 |
-| `src/ui/dock.rs` | **the live dock** (§4.42): what runs under the aimed wall, one line — a door — above the rule or a row apiece when Ctrl+T unfolds it. | ~100 |
+| `src/ui/dock.rs` | **the live dock** (§4.42): what runs under the aimed workspace, one line — a door — above the rule or a row apiece when Ctrl+T unfolds it. | ~100 |
 | `src/ui/chat/rows.rs` | one conversation as rows: every committed entry, projected, with the live fold painted in the `Streaming` entry's place and nowhere else (§4.9, bl-f6b5). | ~160 |
 | `src/ui/chat/rows/live.rs` | the turn that has not settled — the two halves of the prose and the tool window under them, plus `half`, the rule both routes share and neither may copy. | ~105 |
 | `src/ui/chat/rows/sent.rs` | what this seat sent, as rows (§4.45 item 4): `whole`, the pane as data — the committed rows and the live fold, then one operator row per standing record for the selected conversation, pending until acknowledged — which paints what stands and retires nothing. | ~40 |
@@ -6515,17 +6517,17 @@ the keyboard's door to a conversation.
 | `src/ui/chat/code/inline.rs` | the prose between fences (bl-f5a7): code spans and heading lines split, pure, and laid as one wrapped job with each run in its face. | ~115 |
 | `src/ui/chat/fold.rs` | what a machine's answer hides when it is folded, and the two counts a reader chooses between. | ~90 |
 | `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects, and the one read of Enter both of the box's modes share (§4.39); a slash line is the menu's and not the deposit's (§4.42); a deposit is recorded as sent the frame it is composed (§4.45 item 4). | ~200 |
-| `src/ui/slash.rs` | **the slash verbs** (§4.42): the rows this seat offers right now — the conversation's, the wall's, the window's — each the word its control carried; what a typed line parses to; what firing a word does; and the completion menu over the box, a window of rows around the chosen one. | ~300 |
+| `src/ui/slash.rs` | **the slash verbs** (§4.42): the rows this seat offers right now — the conversation's, the workspace's, the window's — each the word its control carried; what a typed line parses to; what firing a word does; and the completion menu over the box, a window of rows around the chosen one. | ~300 |
 | `src/ui/overlay.rs` | **the one frame every pane floats in** (§4.42): the box at the bottom of the pane it is called in, the name line with the subject and *Esc closes* on it, and the order the panes are tried in. A child region, never an `Area`. | ~135 |
 | `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one — the deposit's own field at the deposit's own rows, with `start` inside it (§4.39). | ~90 |
-| `src/ui/keys.rs` | the keyboard: the table below run first, then the one cursor track's walk, which is the selection — over three kinds of row since the fold (§4.39) — and the one binding that is not a walk, Enter on the row the cursor stands on (an engine's, or a begin), fired only while no control holds the keyboard. There is no `Pane`: one list needs no field saying which. The registry of boxes that take text split out at the cap (`keys/boxes.rs`). | ~200 |
+| `src/ui/keys.rs` | the keyboard: the table below run first, then the one cursor track's walk, which is the selection — over three kinds of row since the fold (§4.39) — and the one binding that is not a walk, Enter on the row the cursor stands on (a server's, or a begin), fired only while no control holds the keyboard. There is no `Pane`: one list needs no field saying which. The registry of boxes that take text split out at the cap (`keys/boxes.rs`). | ~200 |
 | `src/ui/keys/bindings.rs` | **the bindings table** (§4.46 item 3): every key the window binds as one row — a *fired* row is a chord and the act it fires, run here from anywhere; a *told* row is a key read where it is read, in the table so the printed list is whole. `run` fires the rows, `/help` prints them, and `cited` writes a chord after a control's sentence. | ~280 |
 | `src/ui/keys/acts.rs` | what each fired row does: one arm per act, each naming a door a control already fires — the tab step, the scroll ask, the scale knob moved through its own row. Split from the table at the cap. | ~110 |
 | `src/ui/keys/boxes.rs` | **every box on the glass that takes text**, by the id it wears, and the gate that asks whether one of them holds the keyboard right now — a comparison against a named list and never egui's *is anything focused at all* (§4.23). | ~100 |
 | `src/ui/shell.rs` | the layout: the bar, then one column (§4.42, §4.44, §4.45) — the transcript, the prompt directly under it, the dock and the rule under the prompt, the menu and the overlay over it, and what stands down under what. | ~60 |
-| `src/ui/bar.rs`, `bar/drag.rs`, `bar/rows.rs`, `bar/foot.rs`, `bar/confirm.rs` | **the bar** (§4.44 item 1; §4.45 items 1–2): the left panel listing the aimed workspace's conversations, a glyph column until the pointer is over it, lingering 0.75 s after it leaves, pinned by its head, `+ new` beside the pin; its two widths, each dragged at its right edge (`drag.rs`: the seat, the floor and the ceiling, which width a drag writes held from its first frame) and remembered in the place; the aimed wall's conversations as `convs::` spells them, each row's trashcan under the pointer (`rows.rs`; bl-e837) and the confirmation its click opens on the box (`confirm.rs`: `keep` and `delete`, Esc and Enter); and the workspace at its foot, with the workspace's dropup standing inside it. | ~215, ~130, ~110, ~60, ~85 |
+| `src/ui/bar.rs`, `bar/drag.rs`, `bar/rows.rs`, `bar/foot.rs`, `bar/confirm.rs` | **the bar** (§4.44 item 1; §4.45 items 1–2): the left panel listing the aimed workspace's conversations, a glyph column until the pointer is over it, lingering 0.75 s after it leaves, pinned by its head, `+ new` beside the pin; its two widths, each dragged at its right edge (`drag.rs`: the seat, the floor and the ceiling, which width a drag writes held from its first frame) and remembered in the place; the aimed workspace's conversations as `convs::` spells them, each row's trashcan under the pointer (`rows.rs`; bl-e837) and the confirmation its click opens on the box (`confirm.rs`: `keep` and `delete`, Esc and Enter); and the workspace at its foot, with the workspace's dropup standing inside it. | ~215, ~130, ~110, ~60, ~85 |
 | `src/ui/status.rs` | **the status rule** (§4.42): the state slot — the notice, the selected conversation's word and age, or `ready` — the facts between it and the name, which facts fit at a width, and the name at the right end; the model and the name as doors, each the menu row it fires (item 10). | ~250 |
-| `src/ui/status/selectors.rs`, `status/diagnostics.rs`, `status/dropup.rs` | **the rule's line** (§4.42 item 11, §4.44 item 3): the four selectors and their marks, the workspace's run the bar's foot paints, this conversation's diagnostics and the aimed engine's dial sentence, and a selector's dropup — its list over the segment, its keys and its picks. | ~120 each |
+| `src/ui/status/selectors.rs`, `status/diagnostics.rs`, `status/dropup.rs` | **the rule's line** (§4.42 item 11, §4.44 item 3): the four selectors and their marks, the workspace's run the bar's foot paints, this conversation's diagnostics and the aimed server's dial sentence, and a selector's dropup — its list over the segment, its keys and its picks. | ~120 each |
 | `src/ui/status/waiting.rs` | **the seat-wide waiting count off the rule** (item 11, bl-4cac): leaving out a channel that will not dial, painted as the queue's door on the seat panel and at the switcher's head. | ~35 |
 | `src/ui/model/dropup.rs` | **a dropup between frames**: which selector is open, its cursor, whether its read has landed, the read it posts and what a pick fires (`dropup/choices.rs`: what each lists). | ~200 |
 | `src/ui/switcher.rs` | **the switcher** (§4.42): the roster as an overlay, opened by Ctrl+X or `/conversations`, kept open by the walk and closed by a choice. | ~55 |
@@ -6554,7 +6556,7 @@ the keyboard's door to a conversation.
 | `src/snapshot.rs` | **the seat rendered off-screen**: the matrix's sizes, where a shot lands, and the one settled frame. Every size is judged — the width gate went with bl-dfda, the policy now answering at every width. `cfg(test)`. | ~120 |
 | `src/snapshot/worlds/column.rs` | the column's own states — the ask, the dock, the tabs, the notice — split from `worlds.rs` at the cap. `cfg(test)`. | ~60 |
 | `src/snapshot/worlds/covered.rs` | the covered states, one world per pane that stands over the conversation, each answered because an unanswered pane offers no control at all and `PARITY.md` §5 reads unproven as red. `cfg(test)`. | ~175 |
-| `src/snapshot/worlds.rs` | the named world states the matrix photographs — the shapes the window takes with nothing covering it, the covered ones being `worlds/covered.rs`'s; built from the window fixtures rather than from a second set — the first-run one seeded the way `src/main.rs` seeds a roster, because an empty `Vec` of channels is a state no box reaches and no pane has a sentence for, and the accordion's one photographing a seat with one engine open and another closed, which a one-engine seat never is. The whole screen set is part of the parity instrument, which is why every pane's world is here and why each is answered. `cfg(test)`. | ~160 |
+| `src/snapshot/worlds.rs` | the named world states the matrix photographs — the shapes the window takes with nothing covering it, the covered ones being `worlds/covered.rs`'s; built from the window fixtures rather than from a second set — the first-run one seeded the way `src/main.rs` seeds a roster, because an empty `Vec` of channels is a state no box reaches and no pane has a sentence for, and the accordion's one photographing a seat with one server open and another closed, which a one-server seat never is. The whole screen set is part of the parity instrument, which is why every pane's world is here and why each is answered. `cfg(test)`. | ~160 |
 | `src/snapshot/reach.rs` | assertion (a): the walk to each of the seat's seven covered panes and back, asked of the accessibility tree. Two legs per pane, and three in the narrow shape — the length is the bound, and the bound is a fact about the shape. `cfg(test)`. | ~175 |
 | `src/snapshot/blank.rs` | assertion (b): every rectangle the layout put content in, read off the rendered glass. `cfg(test)`. | ~145 |
 | `src/snapshot/clipped.rs` | assertion (c): no control laid out wholly off the window, and none offered without a rectangle. `cfg(test)`. | ~70 |
@@ -6575,23 +6577,23 @@ the keyboard's door to a conversation.
 | `tests/packaged_files.rs` | what `cargo publish` would ship, over the real `cargo package --list` — the manifest's `include` allowlist, restated so a widening edit is red here. | ~200 |
 | `scripts/refresh-corpus.sh` | the vendoring, from a yog checkout. It copies and sweeps; it never classifies. | ~90 |
 | `src/test_support/corpus.rs` | the one walk over the corpus, the stamped shape record, and the protocol stamp checked on every file read. `cfg(test)`. | ~160 |
-| `src/test_support/corpus/editions.rs` | projecting a frame back to an older edition and mutating a word in it — the two engines a seat meets that nobody can vendor. `cfg(test)`. | ~130 |
+| `src/test_support/corpus/editions.rs` | projecting a frame back to an older edition and mutating a word in it — the two servers a seat meets that nobody can vendor. `cfg(test)`. | ~130 |
 | `src/reply/tests/corpus.rs` | the replay, reply direction: every frame lands in the class its directory names, every upstream shape is classified exactly once, and an unpainted kind is refused BY NAME. | ~175 |
 | `src/reply/tests/editions.rs` | the grows-only replay: every answer at every edition of this major, and every vocabulary word replaced by one no build has heard of. | ~110 |
 | `src/verbs/tests/corpus.rs` | the replay, request direction, read half: every frame in the vocabulary decodes as a gesture and routes by the address its shape carries. | ~120 |
 | `src/verbs/tests/corpus/emits.rs` | the write half: every frame this seat composes round-trips, and what it cannot compose is recorded by count and reason. | ~110 |
 | `src/test_support.rs` | the scaffolding the suite shares and nothing production reads: the throwaway directory, a loopback address held dead for the process — bound, never listening, so no later bind is handed its port (bl-73f2) — and the two things that live here because the seat may not do them — mint a certificate, and listen. `cfg(test)`. | ~115 |
-| `src/test_support/wire.rs` | a data root with an engine standing behind one of its channels — the one fixture for both arrangements, the flat root and one entry. `cfg(test)`. | ~50 |
+| `src/test_support/wire.rs` | a data root with a server standing behind one of its channels — the one fixture for both arrangements, the flat root and one entry. `cfg(test)`. | ~50 |
 | `src/test_support/window.rs` | the window's fixtures: the rows a pane is built from, and the model at work every pane's suite clicks in. `cfg(test)`. | ~155 |
-| `src/test_support/window/panes.rs` | the fixtures for the covering panes whose subject is a FOCUS — the aimed wall, one of its rows — each open and answered. `cfg(test)`. | ~100 |
+| `src/test_support/window/panes.rs` | the fixtures for the covering panes whose subject is a FOCUS — the aimed workspace, one of its rows — each open and answered. `cfg(test)`. | ~100 |
 | `src/test_support/window/panes/records.rs` | the records pane's own fixture, split out at the budget because it is the one covering pane with seven reads under it. `cfg(test)`. | ~230 |
 | `src/test_support/window/panes/union.rs` | the fixtures for the four whose subject is EVERY CHANNEL (§4.19, §4.21, §4.27): the decision queue, the verb table, a search and the trail. Split on the seam DESIGN draws, not at the cap. `cfg(test)`. | ~185 |
 | `src/test_support/window/panes/fleet.rs` | the fleet pane's fixtures (§4.32) — its own file rather than the ball pane's neighbour, on the seam DESIGN draws: that pane is two widths and this one is one. `cfg(test)`. | ~130 |
-| `src/test_support/window/panes/board.rs` | the ball pane's fixtures (§4.31) — the one pane whose subject is both every channel and the aimed wall, so it is neither file's neighbour and gets its own. `cfg(test)`. | ~130 |
+| `src/test_support/window/panes/board.rs` | the ball pane's fixtures (§4.31) — the one pane whose subject is both every channel and the aimed workspace, so it is neither file's neighbour and gets its own. `cfg(test)`. | ~130 |
 | `src/test_support/glass.rs` | **the one door to a GPU renderer in the test binary** (bl-f824): a `TestRenderer` held, created and dropped under one process-wide lock, because the system Vulkan loader is not safe across threads — one test's `vkEnumeratePhysicalDevices` `dlclose`d a driver library while another test called through it, and the whole binary died of SIGSEGV with no test named. `cfg(test)`. | ~50 |
 | `src/test_support/mint.rs` | the operator's out-of-channel act, performed by the suite. **The crate's one spawn site.** | ~200 |
-| `src/test_support/engine.rs` | the stand-in engine: a real listener, a real handshake, a real preface. | ~150 |
-| `src/test_support/roving.rs` | the far end of a PUNCHED wire: an engine serving a held line — pinging it and counting the pings, ending it every way a line can end — a reset or garbage only on the test's word that the answer was taken (bl-73f2) — or calling back what the seat wrote to its inbox (§4.40). `cfg(test)`. | ~255 |
+| `src/test_support/server.rs` | the stand-in server: a real listener, a real handshake, a real preface. | ~150 |
+| `src/test_support/roving.rs` | the far end of a PUNCHED wire: a server serving a held line — pinging it and counting the pings, ending it every way a line can end — a reset or garbage only on the test's word that the answer was taken (bl-73f2) — or calling back what the seat wrote to its inbox (§4.40). `cfg(test)`. | ~255 |
 | `src/test_support/clock.rs` | the suite's clock: an offset the test advances by hand (§4.40). `cfg(test)`. | ~60 |
 
 **The three confined files, and two of them do not exist.** A confinement rule
@@ -6600,7 +6602,7 @@ picks the location by being written.
 
 | Kind | Confined to | Rule | State |
 |---|---|---|---|
-| `unsafe` block or `unsafe fn` | `src/sys.rs` | `unsafe-outside-sys.yml` | **absent, and expected to stay so.** A seat dials a socket, frames JSON and paints; upstream's raw effects are all engine-side. An ask to create this file is an ask to explain what the seat is now doing. |
+| `unsafe` block or `unsafe fn` | `src/sys.rs` | `unsafe-outside-sys.yml` | **absent, and expected to stay so.** A seat dials a socket, frames JSON and paints; upstream's raw effects are all server-side. An ask to create this file is an ask to explain what the seat is now doing. |
 | `Mutex` / `RwLock` | `src/state.rs` | `locks-outside-state.yml` | **occupied, by the tenant the rule was written for, and by one more** (§4.12, §4.40). The rule named this file before there was anything in it, and the off-frame threads filled it; the punched wire added the table of what worked for an entry this run, because a held connection is shared by every thread and outlives the channel that made it — the state this chokepoint exists to inventory, in the one file. |
 | Building and forking a child | `src/test_support/mint.rs` | `no-bare-command.yml`, `no-bare-fork.yml` | **occupied, by test scaffolding.** The seat forks nothing in production, so the rule names the one place that does rather than an aspirational file nothing would ever go in. If production ever needs a child, the location moves to `src/spawn.rs` in the commit that writes the first site — never a second entry, because two confined files are two inventories. |
 
@@ -6638,7 +6640,7 @@ one-time judgement whose remedy is destructive. There is still no
 `make publish`.
 
 **0.1.0 is published** (bl-3be4, 2026-08-30). What had stopped it was never in
-this tree: the registry crate `lernie` already carries the engine era's 0.0.x
+this tree: the registry crate `lernie` already carries the litany era's 0.0.x
 line and is set to accept Trusted Publishing only, so a token `cargo publish`
 is refused whatever the manifest says. Two owner acts opened it — relax the
 setting, or land §6.2's workflow at the filename the crate's existing trusted
@@ -6670,10 +6672,10 @@ same edit, so the gate still runs exactly once per push.
 publishing until the registry entry is updated. There is no credential in this
 repository and there should never be one — that is what trusted publishing buys.
 
-**The tag is bare `v<version>`.** The sibling engine crate prefixes its tags
+**The tag is bare `v<version>`.** The sibling litany crate prefixes its tags
 because ONE history there holds both eras of this name; this repository was
-founded fresh for the seat, holds one crate, will never carry an engine commit,
-and had no tags at all. The engine-era `lernie` tags live in the other
+founded fresh for the seat, holds one crate, will never carry an litany commit,
+and had no tags at all. The litany-era `lernie` tags live in the other
 repository, where nothing this tree pushes can reach them. `release-plz.toml`
 carries that reasoning beside the key.
 
@@ -6705,7 +6707,7 @@ table, and three were refused on the record before this section was written:
 cross-linking against SDK stubs in a Linux container (the licence, above);
 a macOS runner leg as the artifact's one home, uploading what it built (below);
 and something neither sibling repo needed (nothing was found — the seat's
-difference from the foot and the engine is the window, and the window is the
+difference from the foot and the server is the window, and the window is the
 whole of what the licence reaches). **The fourth holds: `cargo install lernie
 --locked` on the mac IS the artifact, and the repository ships none.**
 

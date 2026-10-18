@@ -22,7 +22,7 @@ fn a_shut_pane_paints_nothing_and_reports_it() {
 
 /// **The answered pane paints every line a hit can carry**, plus the standing
 /// sentence saying why none of them can be acted on (yog bl-ef16) and the
-/// engine's own echo of the needle.
+/// server's own echo of the needle.
 #[test]
 fn the_answered_pane_paints_the_subject_the_field_the_excerpt_and_why_it_is_read_only() {
     let mut model = finding();
@@ -30,7 +30,7 @@ fn the_answered_pane_paints_the_subject_the_field_the_excerpt_and_why_it_is_read
         render(ui, &mut model);
     });
     for word in [
-        "(this box's own engine)",
+        "(this box's own server)",
         NOT_ADDRESSABLE,
         "looked for \"gate\"",
         "conversation  /ws/home  20260830T051200Z-a1b2",
@@ -44,7 +44,7 @@ fn the_answered_pane_paints_the_subject_the_field_the_excerpt_and_why_it_is_read
 }
 
 /// **There is no control that spends a hit**, and that is the ball's scope
-/// rather than an omission: a row's workspace is the engine's own path, so a
+/// rather than an omission: a row's workspace is the server's own path, so a
 /// gesture built from it would be refused. The queue's own *go to it* word must
 /// not appear here.
 #[test]
@@ -63,7 +63,7 @@ fn no_control_on_this_pane_spends_a_hit() {
 /// **The two empty states are different sentences**, and a channel that
 /// answered and found nothing says so under its own header rather than being
 /// silent — unlike the queue, where a quiet section is noise: here the
-/// question was asked of that engine and it answered.
+/// question was asked of that server and it answered.
 #[test]
 fn every_empty_state_is_its_own_sentence() {
     let mut unasked = Model {

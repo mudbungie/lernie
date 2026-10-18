@@ -86,7 +86,7 @@ fn call(window: &Window) -> Vec<Row> {
     parked.into_iter().chain(opened).chain(landed).collect()
 }
 
-/// The word a parked call is said in — the agent row's own (`render::walls`),
+/// The word a parked call is said in — the agent row's own (`render::workspaces`),
 /// so the park reads the same whichever read carried it.
 const HELD: &str = "held";
 
@@ -100,7 +100,7 @@ const HELD: &str = "held";
 /// fold at write cadence, the committed entry at ask cadence — and a second
 /// copy of the filter is a rule one of the two will stop obeying. It did: the
 /// committed path painted a `(thinking)` header over nothing for every empty
-/// thinking block the engine emitted, which reads as *the model thought
+/// thinking block the server emitted, which reads as *the model thought
 /// something and this seat lost it* (bl-beb7).
 pub(super) fn half(speaker: &str, mark: &str, said: &str) -> Option<Row> {
     (!said.is_empty()).then(|| {

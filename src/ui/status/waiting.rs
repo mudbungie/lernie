@@ -3,21 +3,21 @@
 //! switcher's head — beside `/attention` itself.
 //!
 //! It counts only channels that dial (bl-4cac): a channel that will not keeps
-//! the walls it last answered, and a green read off them is a count nobody
+//! the workspaces it last answered, and a green read off them is a count nobody
 //! can act on.
 
 use crate::ui::{Model, theme};
 
-/// **How many conversations are asking**, across every engine that dials —
-/// counted an engine at a time (bl-13b9): two channels dialling one address
+/// **How many conversations are asking**, across every server that dials —
+/// counted a server at a time (bl-13b9): two channels dialling one address
 /// are one server, and its queue counted twice is a lie in green.
 pub fn waiting(model: &Model) -> u64 {
     model
         .folded()
         .iter()
-        .filter(|engine| !matches!(engine.held(), crate::ui::Held::Unheld(_)))
-        .flat_map(crate::ui::model::Engine::walls)
-        .map(|wall| wall.attention)
+        .filter(|server| !matches!(server.held(), crate::ui::Held::Unheld(_)))
+        .flat_map(crate::ui::model::Server::workspaces)
+        .map(|workspace| workspace.attention)
         .sum()
 }
 

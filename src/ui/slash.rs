@@ -5,7 +5,7 @@
 //! A `/` at the head of the draft opens the **completion menu** — one row per
 //! verb this seat offers right now, its word and what it does — and the word
 //! typed after the slash is the act. The three strips this replaces (the
-//! window's acts above the roster, the aimed wall's band under its row, and
+//! window's acts above the roster, the aimed workspace's band under its row, and
 //! the composer's row of offers with its `…` strip) were fifteen controls on
 //! three surfaces; every one of them is a row here, reached from the box the
 //! operator is already in.
@@ -23,13 +23,13 @@
 //! # Only what is offered is listed
 //!
 //! A row is on the menu where its control would have been on the glass: the
-//! window's own verbs always; the aimed wall's once a wall is aimed at, the
+//! window's own verbs always; the aimed workspace's once a workspace is aimed at, the
 //! pin and the unpin by the row's own rank (DESIGN §4.25); the selected
 //! conversation's once one is selected and addressable, `interrupt` and
-//! `stop` while the engine says the driver runs and `nudge` while it rests
-//! (§4.38's *the row offers what the engine offers*, with the row deleted);
+//! `stop` while the server says the driver runs and `nudge` while it rests
+//! (§4.38's *the row offers what the server offers*, with the row deleted);
 //! and `plan` in the start's own mode. An absent reading is not a refusal:
-//! until the engine has answered about the conversation, every act is
+//! until the server has answered about the conversation, every act is
 //! listed.
 //!
 //! # The words a verb takes ride the same line
@@ -59,7 +59,7 @@ pub const LEAD: char = '/';
 /// start is a plan, said until it is said again. Not a wire verb — it states
 /// a field of the `prompt` the start is already tagged for.
 pub const PLAN: &str = "plan";
-/// The verb that asks every engine for its roster again.
+/// The verb that asks every server for its roster again.
 pub const REFRESH: &str = "refresh";
 /// The verb that unmakes the selected conversation — `delete-agent` on the
 /// wire, the word the composer's strip carried on the glass.

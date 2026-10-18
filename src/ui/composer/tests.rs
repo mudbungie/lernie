@@ -16,9 +16,9 @@ use crate::ui::Model;
 use crate::ui::theme::glyph;
 use serde_json::json;
 
-/// **One box, three subjects, and what decides is the selection.** With no wall
+/// **One box, three subjects, and what decides is the selection.** With no workspace
 /// aimed at there is neither a conversation to speak to nor one to begin, and
-/// the hint says so over a box that still takes a verb (bl-2cb0) — a wall
+/// the hint says so over a box that still takes a verb (bl-2cb0) — a workspace
 /// with nothing selected on it is where a conversation is *begun*.
 #[test]
 fn what_the_composer_is_for_follows_from_what_is_selected() {
@@ -134,7 +134,7 @@ fn an_empty_draft_fires_nothing_and_costs_nothing() {
 
 /// **The address is the aim's, not the row's name.** They differ exactly where
 /// an entry renames, and a deposit that carried the host's spelling would be
-/// routed to this box's own engine instead.
+/// routed to this box's own server instead.
 #[test]
 fn the_deposit_carries_the_address_the_channel_resolves() {
     let mut model = seated();
@@ -172,9 +172,9 @@ fn the_advance_composes_its_own_gesture_and_takes_no_draft() {
 /// **The one case with no box at all.** A conversation this window started is
 /// not addressable until its driver writes the branch, and this seat knows it:
 /// the start's own sentence stands where the box was, so nothing can be
-/// composed that this end already knew the engine would refuse.
+/// composed that this end already knew the server would refuse.
 #[test]
-fn a_started_conversation_the_engine_cannot_resolve_yet_has_no_box() {
+fn a_started_conversation_the_server_cannot_resolve_yet_has_no_box() {
     let mut model = Model {
         conversation: Some("brisk-otter".to_owned()),
         start: Some(crate::ui::model::Start {

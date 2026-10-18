@@ -11,7 +11,7 @@ use crate::ui::Model;
 
 use super::super::{own, seated};
 
-/// One queue row, quiet: on the wall `seated` is aimed at, asking for nothing
+/// One queue row, quiet: on the workspace `seated` is aimed at, asking for nothing
 /// anybody wrote down.
 pub(crate) fn waiting(workspace: &str, agent: &str) -> crate::reply::queue::QueueRow {
     crate::reply::queue::QueueRow {
@@ -34,7 +34,7 @@ pub(crate) fn waiting(workspace: &str, agent: &str) -> crate::reply::queue::Queu
 /// **The seated model with the decision queue open and answered** (bl-f0ef):
 /// a flagged row carrying every line the pane can hang off one — the raise,
 /// the failure clause, the parked invocation and the signals — a quiet row,
-/// and a row on a wall this seat holds no name for. Every sentence the pane
+/// and a row on a workspace this seat holds no name for. Every sentence the pane
 /// can say, on one screen.
 pub(crate) fn queued() -> Model {
     let raised = crate::reply::queue::QueueRow {
@@ -106,7 +106,7 @@ pub(crate) fn commanded() -> Model {
     }
 }
 
-/// One hit, in a conversation on a wall the engine names by its own path —
+/// One hit, in a conversation on a workspace the server names by its own path —
 /// which is the whole of yog bl-ef16 in one value.
 pub(crate) fn hit(at: &str) -> crate::reply::search::Hit {
     crate::reply::search::Hit {
@@ -122,7 +122,7 @@ pub(crate) fn hit(at: &str) -> crate::reply::search::Hit {
 }
 
 /// **The seated model with the find pane open and answered** (bl-40ec): a
-/// needle already spent, one hit, and a subject the engine could not read —
+/// needle already spent, one hit, and a subject the server could not read —
 /// every sentence the pane can say, on one screen.
 pub(crate) fn finding() -> Model {
     Model {
@@ -193,7 +193,7 @@ pub(crate) fn trailing() -> Model {
 }
 
 /// **The seated model with the place a trail is cut in standing** (bl-b8f7):
-/// the trail already answered under it, so the pane names the engine the cut
+/// the trail already answered under it, so the pane names the server the cut
 /// would reach and its act is the only control on the glass that destroys.
 pub(crate) fn clearing() -> Model {
     Model {
@@ -208,7 +208,7 @@ pub(crate) fn checked(check: &str, ok: bool) -> crate::reply::doctor::Check {
         check: check.to_owned(),
         fact: format!("what {check} was found to be"),
         ok,
-        remedy: (!ok).then(|| format!("the engine's own remedy for {check}")),
+        remedy: (!ok).then(|| format!("the server's own remedy for {check}")),
     }
 }
 

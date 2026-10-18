@@ -28,7 +28,7 @@ fn the_answered_pane_paints_the_line_the_sentence_the_page_and_who_it_is_for() {
         render(ui, &mut model);
     });
     for word in [
-        "(this box's own engine)",
+        "(this box's own server)",
         "/message <workspace>  [control]",
         "what message is for",
         "the page for message, at the length a page runs to",
@@ -40,7 +40,7 @@ fn the_answered_pane_paints_the_line_the_sentence_the_page_and_who_it_is_for() {
 }
 
 /// **The two empty states are different sentences.** Nobody answered yet is
-/// not *this engine names no op*, which is the roster's own doctrine one noun
+/// not *this server names no op*, which is the roster's own doctrine one noun
 /// over.
 #[test]
 fn every_empty_state_is_its_own_sentence() {
@@ -107,10 +107,10 @@ fn the_roster_opens_it_asking_for_the_table_and_its_own_word_shuts_it() {
 }
 
 /// **The window answers first** (bl-55ed): every row of the menu, in the
-/// menu's order, and every key — then the engines' tables under a heading
-/// that says they are the engines' spelling, not the box's.
+/// menu's order, and every key — then the servers' tables under a heading
+/// that says they are the servers' spelling, not the box's.
 #[test]
-fn the_window_s_own_words_and_keys_come_before_the_engines() {
+fn the_window_s_own_words_and_keys_come_before_the_servers() {
     let mut model = commanded();
     let painted = pane(|ui| {
         render(ui, &mut model);
@@ -133,7 +133,7 @@ fn the_window_s_own_words_and_keys_come_before_the_engines() {
         let line = format!("{}  {}", row.says(), row.does);
         assert!(painted.contains(&line), "{line}:\n{painted}");
     }
-    let engines = painted.find(super::ENGINES).expect("the engines' heading");
-    let message = painted.find("/message <workspace>").expect("an engine row");
-    assert!(at < engines && engines < message, "{painted}");
+    let servers = painted.find(super::SERVERS).expect("the servers' heading");
+    let message = painted.find("/message <workspace>").expect("a server row");
+    assert!(at < servers && servers < message, "{painted}");
 }

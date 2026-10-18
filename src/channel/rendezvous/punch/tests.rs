@@ -10,10 +10,10 @@ fn loopback(port: u16) -> SocketAddr {
 
 #[test]
 fn a_punch_lands_on_the_peers_listener_and_carries_bytes() {
-    let engine = TcpListener::bind("127.0.0.1:0").unwrap();
-    let target = engine.local_addr().unwrap();
-    let served = std::thread::spawn(move || {
-        let (mut stream, _) = engine.accept().unwrap();
+    let server = TcpListener::bind("127.0.0.1:0").unwrap();
+    let target = server.local_addr().unwrap();
+    let far_end = std::thread::spawn(move || {
+        let (mut stream, _) = server.accept().unwrap();
         let mut byte = [0u8; 1];
         stream.read_exact(&mut byte).unwrap();
         byte[0]
@@ -26,7 +26,7 @@ fn a_punch_lands_on_the_peers_listener_and_carries_bytes() {
         "the SYN left from the fixed port"
     );
     stream.write_all(b"x").unwrap();
-    assert_eq!(served.join().unwrap(), b'x');
+    assert_eq!(far_end.join().unwrap(), b'x');
 }
 
 #[test]
@@ -76,23 +76,23 @@ fn v6_is_punched_first() {
 
 #[test]
 fn a_v6_loopback_punch_lands_where_the_box_has_v6() {
-    let engine = Punch::bind(0).unwrap();
-    let target: SocketAddr = format!("[::1]:{}", engine.port()).parse().unwrap();
-    let has_v6 = engine.listeners.len() == 2;
+    let server = Punch::bind(0).unwrap();
+    let target: SocketAddr = format!("[::1]:{}", server.port()).parse().unwrap();
+    let has_v6 = server.listeners.len() == 2;
     let client = Punch::bind(0).unwrap();
     // Where a v6 listener stands, both punches return the moment the SYN
     // lands, so the window is how long a HUNG one gets and never a bet on the
     // box's load — 600 ms was, and a loaded builder lost it (bl-7b83). Where
     // none stands, nothing can land however long either waits.
     let window = Duration::from_millis(if has_v6 { 60_000 } else { 500 });
-    let served = std::thread::spawn(move || engine.punch(vec![], window));
+    let far_end = std::thread::spawn(move || server.punch(vec![], window));
     let landed = client.punch(vec![target], window);
     assert_eq!(
         landed.is_some(),
         has_v6,
         "a v6 SYN lands exactly where a v6 listener is"
     );
-    assert_eq!(served.join().unwrap().is_some(), has_v6);
+    assert_eq!(far_end.join().unwrap().is_some(), has_v6);
 }
 
 #[test]

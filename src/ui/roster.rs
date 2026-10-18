@@ -1,25 +1,25 @@
-//! **The window's one list** (DESIGN §4.39): the engines this seat reaches as
+//! **The window's one list** (DESIGN §4.39): the servers this seat reaches as
 //! an accordion, the open one's workspaces under it, and the AIMED workspace's
-//! conversations under their own wall's row.
+//! conversations under their own workspace's row.
 //!
 //! It is one list and one scroll region because the middle column is gone:
 //! what `crate::ui::convs` painted as a pane is a level of this one, a tree
 //! under one heading rather than two panes disagreeing about what is selected.
 //!
 //! The grouping is the point. A seat holds one channel per workspace it
-//! participates in elsewhere plus this box's own engine (§8.2), and those are
+//! participates in elsewhere plus this box's own server (§8.2), and those are
 //! separate trust relationships that share nothing — not anchors, not leaves,
 //! not addresses. Painting them as one flat list would say they are one thing.
 //!
-//! **At most one engine is open**, and it is painted first; the rest follow in
+//! **At most one server is open**, and it is painted first; the rest follow in
 //! the order each was last opened on this seat, most recent first, the name
-//! breaking a tie (`crate::ui::model::Engines`). A closed engine paints its
-//! row and whatever it has to say about itself, and no walls. Opening one
+//! breaking a tie (`crate::ui::model::Servers`). A closed server paints its
+//! row and whatever it has to say about itself, and no workspaces. Opening one
 //! closes the other, so the arrangement is one fact and not a set of flags.
 //!
-//! **And a wall that is not the aimed one paints no conversations**, not even
+//! **And a workspace that is not the aimed one paints no conversations**, not even
 //! an emptiness (§4.39, §4.12): the standing read set asks about the aimed
-//! wall, so this seat holds no rows for any other and no evidence that there
+//! workspace, so this seat holds no rows for any other and no evidence that there
 //! are none — aiming is the act that asks.
 //!
 //! **A row carries the channel it came from as a client-side stamp** and no
@@ -27,29 +27,29 @@
 //! ([`crate::ui::Model::absorb`]) and read here.
 
 use crate::reply::roster::WsRow;
-use crate::ui::model::Engine;
+use crate::ui::model::Server;
 use crate::ui::{Channel, Model, theme};
 
 /// The four ops whose subject is every channel, and the strip they hang on.
-/// One engine's row, the order the rows stand in, and the pane's cursor track.
-pub mod engine;
-/// One wall's row, and the five per-wall controls that hang off the aimed one.
-pub mod wall;
+/// One server's row, the order the rows stand in, and the pane's cursor track.
+pub mod server;
+/// One workspace's row, and the five per-workspace controls that hang off the aimed one.
+pub mod workspace;
 
-pub use engine::{Step, track};
-pub use wall::{NO_NAME_HERE, PIN, UNPIN, line};
+pub use server::{Step, track};
+pub use workspace::{NO_NAME_HERE, PIN, UNPIN, line};
 
 /// **What a section says while nothing has come down its channel yet.**
 ///
 /// The [`crate::ui::convs`] rows' doctrine one noun over: an empty list is not
 /// evidence that a thing holds nothing until somebody has looked. It stands
-/// from the window's first paint — before any engine is dialled, deliberately
+/// from the window's first paint — before any server is dialled, deliberately
 /// — until the first roster answer lands.
-pub const NOT_ANSWERED: &str = "waiting to hear from this engine";
+pub const NOT_ANSWERED: &str = "waiting to hear from this server";
 
-/// What a section says for an engine that answered and holds no workspace. A
-/// fact about that engine, and the one empty state that is not a wait.
-pub const NO_WALLS: &str = "this engine holds no workspace this box is in";
+/// What a section says for a server that answered and holds no workspace. A
+/// fact about that server, and the one empty state that is not a wait.
+pub const NO_WORKSPACES: &str = "this server holds no workspace this box is in";
 
 /// The word this pane wears, and the subject the arrows act on when it is
 /// focused. **It is painted by `crate::ui::shell`** — above the pane in the
@@ -57,12 +57,12 @@ pub const NO_WALLS: &str = "this engine holds no workspace this box is in";
 /// column's name has one home and which one it is depends on the shape, and
 /// the narrow bar's word follows this one for free.
 ///
-/// **The word is *engines*, and the crate's word stays *channel*** (§4.39).
+/// **The word is *servers*, and the crate's word stays *channel*** (§4.39).
 /// A channel is what this crate calls the client-side entry that reaches one
-/// engine (§4.6), which is the right word for a thing in `wire/workspaces/`
+/// server (§4.6), which is the right word for a thing in `wire/workspaces/`
 /// and the wrong one over a list an operator reads: what they are looking at
 /// is yogs, each by the name this box gave it.
-pub const HEADING: &str = "engines";
+pub const HEADING: &str = "servers";
 
 /// Paint the roster and take a click on it. **The heading is the shell's** —
 /// see [`HEADING`].
@@ -80,38 +80,38 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         .id_salt(HEADING)
         .auto_shrink(false)
         .show(ui, |ui| {
-            let open = model.engine_open();
-            for engine in model.engine_rows() {
-                let showing = open.as_deref() == Some(engine.name());
-                section(ui, model, &engine, showing, reveal);
+            let open = model.server_open();
+            for server in model.server_rows() {
+                let showing = open.as_deref() == Some(server.name());
+                section(ui, model, &server, showing, reveal);
             }
         });
 }
 
-/// One engine's section: its row, what it has to say about itself, and — while
-/// it is the open one — its walls.
+/// One server's section: its row, what it has to say about itself, and — while
+/// it is the open one — its workspaces.
 ///
 /// **What it says about itself is painted open or closed** (bl-e620): the bar
 /// holds one sentence and the last writer wins, so a seat with two unreachable
-/// engines could discover only one of them from the glass. A channel that
+/// servers could discover only one of them from the glass. A channel that
 /// cannot be dialled says so under its own row whether or not anybody has
-/// opened it. What the accordion folds away is the WALLS.
-fn section(ui: &mut egui::Ui, model: &mut Model, engine: &Engine, open: bool, reveal: bool) {
+/// opened it. What the accordion folds away is the WORKSPACES.
+fn section(ui: &mut egui::Ui, model: &mut Model, server: &Server, open: bool, reveal: bool) {
     // **Air and a weak word, never a line** (`docs/STYLE.md` §1, rule 2): the
     // separator that used to stand here was a stroke, and the one stroke this
     // window spends is the brand ring on the field holding the caret. What
-    // divides two engines is the space between them.
+    // divides two servers is the space between them.
     ui.add_space(theme::space::S);
-    engine::render(ui, model, engine, open, reveal);
+    server::render(ui, model, server, open, reveal);
     // **A channel that cannot be reached says so HERE**, under its own header
     // and beside whatever it last answered — never in the shell-wide bar, which
-    // is for what an engine said about a gesture (bl-e620). It stands above the
-    // walls rather than in place of them: the rows are the last thing that
+    // is for what a server said about a gesture (bl-e620). It stands above the
+    // workspaces rather than in place of them: the rows are the last thing that
     // channel did say, and they are worth keeping while it is down.
-    // Every channel's own sentence, once each: one engine held under two
+    // Every channel's own sentence, once each: one server held under two
     // names is two sets of files, and either may be the one that is broken.
     let mut said: Vec<String> = Vec::new();
-    for chunk in engine.chunks() {
+    for chunk in server.chunks() {
         if let Some(why) = chunk.held.said()
             && !said.contains(&why)
         {
@@ -123,7 +123,7 @@ fn section(ui: &mut egui::Ui, model: &mut Model, engine: &Engine, open: bool, re
             said.push(why);
         }
     }
-    let lead = &engine.lead;
+    let lead = &server.lead;
     for note in [lead.stale.as_ref(), lead.growth.as_ref()]
         .into_iter()
         .flatten()
@@ -133,30 +133,30 @@ fn section(ui: &mut egui::Ui, model: &mut Model, engine: &Engine, open: bool, re
     if !open {
         return;
     }
-    let walls = engine.walls();
-    if walls.is_empty() {
+    let workspaces = server.workspaces();
+    if workspaces.is_empty() {
         // **An empty section says which emptiness it is** (bl-08b6). The pane
         // used to carry one sentence, for an empty ROSTER — which is
-        // unreachable, because every box holds its own engine's slot whether or
+        // unreachable, because every box holds its own server's slot whether or
         // not anything is provisioned in it (`crate::seat::channels`). So the
         // box the sentence was written for got a section header over a blank,
         // on the first run of a seat, which is the whole of what it has. The
         // unheld case is already said above, in its own words.
-        match engine.held() {
+        match server.held() {
             crate::ui::Held::Unheard => {
                 theme::paint::empty(ui, NOT_ANSWERED);
             }
             crate::ui::Held::Heard => {
-                theme::paint::empty(ui, NO_WALLS);
+                theme::paint::empty(ui, NO_WORKSPACES);
             }
             // Already said above, in its own words.
             crate::ui::Held::Unheld(_) | crate::ui::Held::Refused(_) => {}
         }
     }
-    for row in ordered(&walls) {
-        wall::render(ui, model, engine.aim(&row), &row, reveal);
+    for row in ordered(&workspaces) {
+        workspace::render(ui, model, server.aim(&row), &row, reveal);
     }
-    engine::found(ui, model, engine, reveal);
+    server::found(ui, model, server, reveal);
 }
 
 /// The section header: what this box calls the channel, what its host calls the
@@ -169,8 +169,8 @@ fn section(ui: &mut egui::Ui, model: &mut Model, engine: &Engine, open: bool, re
 /// The rename is here because a local rename is the remedy for a name
 /// collision, and an operator has to be able to see one. The address is here
 /// because the pane used to drop the one fact that explains a duplicate
-/// (bl-77df): an entry whose `address` file holds what this box's own engine
-/// listens on paints every workspace of that engine twice, under two headers,
+/// (bl-77df): an entry whose `address` file holds what this box's own server
+/// listens on paints every workspace of that server twice, under two headers,
 /// with nothing on either saying they are the same server. `lernie entries`
 /// prints the address under every row and the window did not.
 pub fn header(channel: &Channel) -> String {
@@ -190,9 +190,9 @@ pub fn header(channel: &Channel) -> String {
 ///
 /// The rank is what makes this a sort rather than a filter: a seat given only a
 /// flag would have to read the pin list back to order them, which is the seat
-/// joining an answer against a document only the engine holds.
-pub fn ordered(walls: &[WsRow]) -> Vec<WsRow> {
-    let mut rows = walls.to_vec();
+/// joining an answer against a document only the server holds.
+pub fn ordered(workspaces: &[WsRow]) -> Vec<WsRow> {
+    let mut rows = workspaces.to_vec();
     rows.sort_by(|a, b| {
         (a.pinned.unwrap_or(u64::MAX), &a.workspace)
             .cmp(&(b.pinned.unwrap_or(u64::MAX), &b.workspace))

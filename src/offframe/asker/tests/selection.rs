@@ -4,14 +4,14 @@
 use super::super::{caught_up, tick};
 use super::asking;
 use crate::test_support::Scratch;
-use crate::test_support::engine::Engine;
+use crate::test_support::server::Server;
 use crate::test_support::wire::{entry, flat, wired};
 use crate::ui::{Aim, Model};
 use serde_json::{Value, json};
 
-/// The ops one engine was asked, in order.
-fn ops(engine: &Engine) -> Vec<String> {
-    engine
+/// The ops one server was asked, in order.
+fn ops(server: &Server) -> Vec<String> {
+    server
         .heard()
         .iter()
         .filter_map(|said| said.get("op").and_then(Value::as_str))
@@ -114,7 +114,7 @@ fn a_leg_boundary_asks_only_about_a_selection_that_moved() {
 /// **A selection's read that lands after the selection moved is dropped**
 /// (bl-19b8). The transcript names no conversation, so the leg stamps it with
 /// the one it asked about, and the settle files it only while that one is
-/// still selected — `+ new` keeps the wall and empties the selection, and
+/// still selected — `+ new` keeps the workspace and empties the selection, and
 /// the old transcript used to land in the empty one.
 #[test]
 fn a_selection_s_read_is_filed_only_while_it_is_selected() {

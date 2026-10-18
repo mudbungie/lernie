@@ -1,4 +1,4 @@
-//! The two readings a draft takes against the engine's answer, over the
+//! The two readings a draft takes against the server's answer, over the
 //! lifecycle they exist for: opened, typed in, written, answered, and written
 //! over by somebody else.
 
@@ -15,7 +15,7 @@ fn a_box_opened_on_the_file_has_nothing_to_say() {
 }
 
 /// **Typing is unwritten and is not a file that moved.** The answer is still
-/// what the box and the engine last agreed on, which is the whole of what the
+/// what the box and the server last agreed on, which is the whole of what the
 /// anchor is for.
 #[test]
 fn typing_is_unwritten_and_is_not_a_file_that_moved() {
@@ -56,7 +56,7 @@ fn a_write_this_seat_sent_never_reads_as_a_file_that_moved() {
 }
 
 /// **Another writer is the one reading left**: the answer is neither the box
-/// nor what the box and the engine last agreed on.
+/// nor what the box and the server last agreed on.
 #[test]
 fn a_file_written_by_somebody_else_is_the_one_reading_left() {
     let mut draft = Draft::of("beat: 1\n");

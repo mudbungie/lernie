@@ -18,7 +18,7 @@
 //! common is that they hold nothing of their own. `super::tuning` holds a
 //! draft, `super::login` holds two questions, `super::unmake` holds an arming
 //! and a subject, `super::window`'s find pane holds a needle. The records pane,
-//! the decision queue and the clients pane hold **only what the engine
+//! the decision queue and the clients pane hold **only what the server
 //! answered** — so *which one is up* is the entire state, and the answer to
 //! that is one word.
 
@@ -33,7 +33,7 @@ pub enum Listing {
     /// **The decision queue** — everything asking for the operator, anywhere
     /// (`super::queue`; DESIGN §4.19).
     Queue,
-    /// **The clients pane** — the machines registered in the aimed wall's
+    /// **The clients pane** — the machines registered in the aimed workspace's
     /// workspace (`super::clients`; DESIGN §4.28).
     Clients,
 }

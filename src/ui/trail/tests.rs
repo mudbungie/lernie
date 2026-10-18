@@ -19,7 +19,7 @@ fn the_word_opens_the_pane() {
 }
 
 /// **The three emptinesses are three sentences.** Nobody has answered, the
-/// engines answered and hold nothing, and rows — the conversation list's own
+/// servers answered and hold nothing, and rows — the conversation list's own
 /// doctrine, on a pane whose subject is every channel.
 #[test]
 fn each_emptiness_says_which_one_it_is() {
@@ -64,10 +64,10 @@ fn a_channel_holding_nothing_gets_no_header() {
     assert!(!glass.contains("elsewhere"), "{glass}");
 }
 
-/// **The engine's own words reach the glass** — the label and the standing,
+/// **The server's own words reach the glass** — the label and the standing,
 /// never a classification this seat made (REMOTE §9.17).
 #[test]
-fn the_row_paints_the_engine_s_own_reading_of_how_it_ended() {
+fn the_row_paints_the_server_s_own_reading_of_how_it_ended() {
     let mut model = trailing();
     let glass = painted(&mut model);
     for said in [
@@ -104,7 +104,7 @@ fn a_clean_row_says_nothing_and_every_other_standing_says_itself() {
     );
 }
 
-/// The headline is the command and the engine's label, and the exit integer
+/// The headline is the command and the server's label, and the exit integer
 /// rides in the detail — carried because it is the next thing an operator asks
 /// for, never because the pane reads it.
 #[test]
@@ -172,7 +172,7 @@ fn the_watermark_is_one_control_and_it_fans() {
 /// **It is offered only where there is a trail to acknowledge** — the
 /// enablement rule with the SUBJECT missing rather than a parameter. *A trail*
 /// is the one reading of these rows this pane makes: whether an alarm is
-/// standing stays the engine's classification (REMOTE §9.17).
+/// standing stays the server's classification (REMOTE §9.17).
 #[test]
 fn the_watermark_is_dead_where_no_row_has_crossed() {
     let mut model = Model {

@@ -28,7 +28,7 @@ fn the_answered_header_paints_the_conversation_whole() {
         "pennant waiting",
         "120 tokens — $4.00, over 3 conversations",
         "context 2% — 4000 of 200000 for claude-x",
-        "the engine offers stop, stop with its children",
+        "the server offers stop, stop with its children",
     ] {
         assert!(text.contains(word), "{word:?}:\n{text}");
     }
@@ -109,11 +109,11 @@ fn an_absent_conversation_says_so_rather_than_trailing_off() {
         offers: vec![crate::reply::agent::Offer::Nudge],
         ..own_row()
     };
-    assert_eq!(offered(&quiet), "the engine offers nudge");
+    assert_eq!(offered(&quiet), "the server offers nudge");
 }
 
 /// **The money is only said where there is a price table**, and the
-/// attribution sentence only where the engine wrote one.
+/// attribution sentence only where the server wrote one.
 #[test]
 fn an_unpriced_figure_says_only_its_counters() {
     let mut figure = own_row().spend;
@@ -129,10 +129,10 @@ fn an_unpriced_figure_says_only_its_counters() {
     assert_eq!(spent(&priced), "120 tokens — at least $4.00");
 }
 
-/// The percent is the engine's, painted as it came — including one that has
+/// The percent is the server's, painted as it came — including one that has
 /// outgrown its window, which upstream deliberately does not clamp.
 #[test]
-fn the_context_percent_is_the_engines_own_unclamped_figure() {
+fn the_context_percent_is_the_servers_own_unclamped_figure() {
     let over = crate::reply::agent::Fullness {
         model: "claude-x".to_owned(),
         prompt_tokens: 280_000,

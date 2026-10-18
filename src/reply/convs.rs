@@ -3,12 +3,12 @@
 //!
 //! **Two names, and they are not interchangeable.** [`ConvRow::display`] is
 //! what the row paints; [`ConvRow::name`] is what a later act may **address**,
-//! and it is absent exactly when the engine has a name it will not answer to.
+//! and it is absent exactly when the server has a name it will not answer to.
 //! [`ConvRow::root_id`] is the address that always works, so a seat that
-//! stayed with the id can never post a gesture the engine will refuse.
+//! stayed with the id can never post a gesture the server will refuse.
 //!
 //! **[`ConvRow::uncertain`] is not derivable from the state beside it.** The
-//! engine's classifier answers a state *and* whether it could observe one, and
+//! server's classifier answers a state *and* whether it could observe one, and
 //! the two are separate facts: a conversation it cannot probe reads as settled
 //! and is not known to be. A seat that dropped the flag would paint a definite
 //! reading of something nothing looked at — which is also the shape this
@@ -38,14 +38,14 @@ pub struct ConvRow {
     pub root_id: String,
     /// What the row is labelled with.
     pub display: String,
-    /// **The addressable name**, when the engine has one it will answer to.
+    /// **The addressable name**, when the server has one it will answer to.
     /// Absent where it holds a name that is display-only, which is a name no
     /// stored fact backs: handing it over would be handing over a target the
-    /// engine is going to refuse.
+    /// server is going to refuse.
     pub name: Option<String>,
     /// The badge state, aggregated over the whole subtree.
     pub state: AgentState,
-    /// **Whether the engine could observe the state above.** A conversation it
+    /// **Whether the server could observe the state above.** A conversation it
     /// cannot probe — no lock to read, no step to frame — answers a state
     /// anyway and flags it here, so a reading nothing witnessed never paints as
     /// a definite one.
@@ -80,7 +80,7 @@ pub struct ConvRow {
     ///
     /// It is carried and never derived from [`tone`](Self::tone), nor the tone
     /// from it. The hue is the sighting and the words are the explanation —
-    /// two facts the engine states separately, and a seat that computed either
+    /// two facts the server states separately, and a seat that computed either
     /// from the other would be holding a second opinion about a reading it did
     /// not take.
     pub failure: Option<String>,

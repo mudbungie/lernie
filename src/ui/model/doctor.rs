@@ -5,7 +5,7 @@
 //!
 //! Bare, `doctor` names no workspace, so it fans like the verb table and the
 //! pane is the union — one section per channel, each answer replacing its own.
-//! Naming a workspace adds that wall's checks and goes down that wall's
+//! Naming a workspace adds that workspace's checks and goes down that workspace's
 //! channel alone. The pane takes the aim as that name when there is one, which
 //! is the one place this read differs from `help`: it is offered on an unaimed
 //! seat exactly as `help` is, and an aimed seat asks the deeper question
@@ -32,7 +32,7 @@ pub struct Diagnosis {
 }
 
 impl Model {
-    /// **Open the doctor pane and ask** — about the aimed wall as well where
+    /// **Open the doctor pane and ask** — about the aimed workspace as well where
     /// the window is aimed at one, and about every channel's box where it is
     /// not. Nothing gates it: the seat most likely to be asking is the one
     /// with nothing to aim at.

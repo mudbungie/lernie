@@ -49,7 +49,7 @@ fn aiming_and_selecting_leave_it_standing() {
 }
 
 /// **One channel's answer replaces its own section and no other.** A box
-/// serving three engines does not lose the two that answered.
+/// serving three servers does not lose the two that answered.
 #[test]
 fn an_answer_replaces_its_own_channel_and_leaves_the_others_standing() {
     let mut model = seated();

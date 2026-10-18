@@ -8,18 +8,18 @@ fn the_punch_port_is_bound_once_for_the_run() {
     let (listener, at) = listener();
     let b = Bench::new(dead(), Some(presence(at)));
     let script = vec![Reply::yes().then(Fate::Fin), Reply::yes()];
-    let engine = Engine::listen(b.scratch.path(), listener, script);
+    let server = Server::listen(b.scratch.path(), listener, script);
     let channel = b.channel();
     assert!(channel.ask(&request(1)).is_ok());
     let (port, asked) = (b.punch_port(), b.node.queries());
-    // As if the engine had never been found this run — but the port stands.
+    // As if the server had never been found this run — but the port stands.
     crate::state::worked(&b.scratch.path().display().to_string(), |w| {
         w.endpoints.clear();
     });
     // The FIN is on the wire when this end's line can see it (bl-73f2).
     ended(&b);
     assert!(channel.ask(&request(2)).is_ok());
-    assert_eq!(engine.connections(), 2);
+    assert_eq!(server.connections(), 2);
     assert!(b.node.queries() > asked, "the commons was asked again");
     assert_eq!(b.punch_port(), port, "the same port, so the peer sees one");
     assert_eq!(
@@ -37,7 +37,7 @@ fn the_call_carries_the_observed_address_at_the_punch_port_once() {
             Some(presence(at)),
             Mood::Claim(SocketAddr::new(claim, 6881)),
         );
-        let _engine = Engine::listen(b.scratch.path(), listener, vec![Reply::yes()]);
+        let _server = Server::listen(b.scratch.path(), listener, vec![Reply::yes()]);
         assert!(b.channel().ask(&request(1)).is_ok());
         (b.call().map(|c| c.endpoints), b.punch_port())
     };

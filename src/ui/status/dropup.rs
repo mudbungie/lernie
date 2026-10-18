@@ -54,12 +54,12 @@ pub fn toggle(ui: &egui::Ui, model: &mut Model, selector: Selector) {
     ui.data_mut(|d| d.insert_temp(egui::Id::new(TOGGLED), pass));
 }
 
-/// **The ops a row's pick spends**: the aim reads the wall's conversations,
+/// **The ops a row's pick spends**: the aim reads the workspace's conversations,
 /// a provider opens its model list, and the rest are the tuning writes.
 fn ops(pick: &Pick) -> &'static [&'static str] {
     use crate::verbs;
     match pick {
-        Pick::Wall(_) => &[verbs::CONVERSATIONS.word],
+        Pick::Workspace(_) => &[verbs::CONVERSATIONS.word],
         Pick::Found(_) => &[verbs::PREPARE, verbs::PROMPT],
         Pick::Provider(_) => &[verbs::MODELS.word],
         Pick::Model(_) => &[verbs::MODEL.word],

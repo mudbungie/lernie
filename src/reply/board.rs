@@ -1,7 +1,7 @@
 //! **The fleet board** — every live ball in its column, and the loops that are
 //! running them (yog's `docs/REMOTE.md` §9.7, VISION §5 V4; bl-d2af).
 //!
-//! It is the engine's own fold over its task store: the three familiar rungs
+//! It is the server's own fold over its task store: the three familiar rungs
 //! `bl list` derives, plus `gated` — a ball you could claim but could not
 //! deliver, shown with the ball whose close mints its gate. Each claimed row
 //! names the conversations working it and carries what it has cost.
@@ -37,7 +37,7 @@ use super::{fields, spend};
 /// The kind token this reading answers to.
 pub(crate) const KIND: &str = "board";
 
-/// **One engine's board**: the rows, and whatever loops are running them.
+/// **One server's board**: the rows, and whatever loops are running them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Board {
     pub rows: Vec<BoardRow>,
@@ -58,7 +58,7 @@ pub struct BoardRow {
     /// Lower is more urgent, and it may be negative.
     pub priority: i64,
     pub project: String,
-    /// The wall its verbs run in, where one holds it.
+    /// The workspace its verbs run in, where one holds it.
     pub workspace: Option<String>,
     /// Who holds it, where anybody does.
     pub claimant: Option<String>,
@@ -68,7 +68,7 @@ pub struct BoardRow {
     pub gates: Vec<Gate>,
     /// The conversations working it.
     pub drones: Vec<Drone>,
-    /// What it has cost, where the engine could price it.
+    /// What it has cost, where the server could price it.
     pub spend: Option<Figure>,
     /// What its live subtree has cost, on an epic.
     pub rollup: Option<Figure>,
@@ -90,7 +90,7 @@ pub struct Drone {
     pub name: String,
 }
 
-/// **One armed loop's facts**, as the engine derived them.
+/// **One armed loop's facts**, as the server derived them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Fleet {
     pub workspace: String,
@@ -103,7 +103,7 @@ pub struct Fleet {
     pub room: bool,
     /// The spend gate that would stop it, where one is standing.
     pub ceiling: Option<String>,
-    /// The engine's own line about the whole of the above.
+    /// The server's own line about the whole of the above.
     pub label: String,
 }
 

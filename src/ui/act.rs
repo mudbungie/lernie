@@ -26,7 +26,7 @@
 //! # One control may fire more than one op, so the token list is a list
 //!
 //! Two of this seat's controls compose a second gesture the walk can never see
-//! as its own control. Start fires `prepare` and, when the engine's reply
+//! as its own control. Start fires `prepare` and, when the server's reply
 //! lands, the frame fires `prompt` (`crate::ui::model::start`); selecting a
 //! conversation causes both the `transcript` read and the `follow` lane. The
 //! tokens ride the one control that begins each, space separated, which is

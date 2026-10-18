@@ -105,7 +105,7 @@ fn with_no_pane_the_row_acts_do_nothing() {
 
 /// **Each verdict is dark until the id is typed back**, and armed it composes
 /// the envelope the verb row builds — keeping the arming, because a stale
-/// accept refuses and a retype would be a toll on the engine's *no*.
+/// accept refuses and a retype would be a toll on the server's *no*.
 #[test]
 fn each_verdict_fires_only_armed_and_keeps_the_arming() {
     for verdict in crate::verbs::proposals::VERDICTS {
@@ -135,10 +135,10 @@ fn a_gone_row_or_a_missing_aim_settles_nothing() {
 }
 
 /// **A new aim takes the listing with the pane**, on the config answers' own
-/// terms: a proposal is one wall's candidate.
+/// terms: a proposal is one workspace's candidate.
 #[test]
 fn a_new_aim_retires_the_listing() {
     let mut model = configured();
-    model.aim_at("(this box's own engine)", "elsewhere");
+    model.aim_at("(this box's own server)", "elsewhere");
     assert_eq!(model.proposals, None);
 }

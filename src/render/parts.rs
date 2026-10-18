@@ -19,7 +19,7 @@ pub(crate) const BRIEF: usize = 100;
 /// the work itself produced.
 ///
 /// The follow lane is the one surface where the two are interleaved as they
-/// arrive — the model's prose, and this seat's narration of what the engine is
+/// arrive — the model's prose, and this seat's narration of what the server is
 /// doing while it writes it — and without a column an eye tells them apart by
 /// reading them (bl-293d). So the model's answer keeps the left margin,
 /// unmarked, and everything the seat says about the run rides behind this.
@@ -94,7 +94,7 @@ pub(crate) fn things(count: u64, singular: &str) -> Option<String> {
 
 /// **A count of a countable noun, always said** — the one place a count is
 /// worded for every surface that words one (bl-967f): `1 conversation`,
-/// `2 conversations`, `0 walls`. A surface that spelled its own plural said
+/// `2 conversations`, `0 workspaces`. A surface that spelled its own plural said
 /// `1 conversations` beside a card that said it right.
 pub(crate) fn counted(count: u64, singular: &str) -> String {
     format!("{count} {singular}{}", if count == 1 { "" } else { "s" })

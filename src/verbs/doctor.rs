@@ -14,7 +14,7 @@
 //!
 //! Bare, it names no workspace and so fans: every channel this box holds is
 //! asked about its own wiring, and the answer is their union. Naming one, it
-//! goes down that wall's channel alone and adds the wall's two checks
+//! goes down that workspace's channel alone and adds the workspace's two checks
 //! (`crate::envelope::workspace`; DESIGN §4.21). **Absent is absent**: the
 //! bare form states no field, never a `null`.
 
@@ -25,7 +25,7 @@ use crate::envelope;
 /// The word this door spells, and the envelope's `op`. One fact.
 pub const DOCTOR: &str = "doctor";
 
-/// **The doctor**, about the box alone or about one wall on it as well.
+/// **The doctor**, about the box alone or about one workspace on it as well.
 pub fn doctor(workspace: Option<String>) -> Value {
     let mut map = Map::new();
     map.insert(envelope::OP.to_owned(), Value::String(DOCTOR.to_owned()));

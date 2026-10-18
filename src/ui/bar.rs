@@ -6,7 +6,7 @@
 //! policy's default where they did not.
 //!
 //! It is a second painter of one listing and not a second listing: its rows
-//! are [`Model::rows`], the switcher's under the aimed wall, spelled by
+//! are [`Model::rows`], the switcher's under the aimed workspace, spelled by
 //! `crate::ui::convs` ([`rows`]). Its head is the pin and `+ new`; its foot is
 //! the workspace, the one place on the glass a workspace is chosen ([`foot`]).
 //! A row under the pointer offers its trashcan, and the confirmation that
@@ -165,7 +165,7 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
         });
 }
 
-/// **The head**: the pin at the left, `+ new` at the right while a wall is
+/// **The head**: the pin at the left, `+ new` at the right while a workspace is
 /// aimed and the box can take the caret. **Both are doors at the heading
 /// size with `S` of air inside the seat** (bl-bc9d; operator: *the + and
 /// pin buttons are too small*), so the head is a comfortable target
@@ -203,7 +203,7 @@ fn head(ui: &mut egui::Ui, model: &mut Model, open: bool) {
             // over the pin and take its click.
             ui.set_clip_rect(ui.max_rect().intersect(ui.clip_rect()));
             let said = if open {
-                crate::ui::roster::wall::NEW
+                crate::ui::roster::workspace::NEW
             } else {
                 PLUS
             };

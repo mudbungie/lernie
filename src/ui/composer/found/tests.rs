@@ -40,7 +40,7 @@ fn the_box_asks_for_a_name_then_a_goal() {
 /// **`<name> <goal>` founds the workspace by starting on it**: the posted
 /// envelope is the start's own `prepare` naming the new workspace and the goal
 /// is held for the fire — and **nothing is aimed until the `prepare` is
-/// answered** (bl-693d): the wall's reads asked ahead of the act that
+/// answered** (bl-693d): the workspace's reads asked ahead of the act that
 /// registers this client were refused into the bar.
 #[test]
 fn enter_stages_a_start_on_the_named_workspace() {
@@ -56,7 +56,7 @@ fn enter_stages_a_start_on_the_named_workspace() {
     );
     assert_eq!(
         model.aim, before,
-        "nothing is asked of a wall not founded yet"
+        "nothing is asked of a workspace not founded yet"
     );
     assert!(model.founding.is_some());
     assert_eq!(
@@ -82,7 +82,7 @@ fn enter_stages_a_start_on_the_named_workspace() {
 }
 
 /// **A `prepare` that never left this box aims too**: the founding is put
-/// down with the goal back in the box, under the wall it named.
+/// down with the goal back in the box, under the workspace it named.
 #[test]
 fn an_unsent_founding_aims_and_gives_the_goal_back() {
     let mut model = founding();
@@ -128,7 +128,7 @@ fn esc_and_a_selection_put_it_down() {
 }
 
 /// **The parity ledger reads the start's two acts off the founding box**:
-/// it is the start, naming a wall nobody has made yet.
+/// it is the start, naming a workspace nobody has made yet.
 #[test]
 fn the_founding_box_carries_the_start_s_acts() {
     let harness = crate::snapshot::seat(founding(), 1400.0, 900.0);

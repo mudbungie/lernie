@@ -4,9 +4,9 @@
 use super::{AgentState, ConvRow, Tone, row};
 use serde_json::json;
 
-/// A whole row, with every field the list paints and several the engine sends
+/// A whole row, with every field the list paints and several the server sends
 /// that this build does not read — rung 4, which is what makes a field the
-/// engine adds a non-event here.
+/// server adds a non-event here.
 #[test]
 fn a_row_carries_what_the_list_paints_and_ignores_what_it_does_not() {
     let read = row(&json!({
@@ -48,7 +48,7 @@ fn a_row_carries_what_the_list_paints_and_ignores_what_it_does_not() {
 }
 
 /// **The failure clause, and the absence that is not a null** (REMOTE §9.10,
-/// PROTOCOL 3). The engine leaves the key out on a conversation whose latest
+/// PROTOCOL 3). The server leaves the key out on a conversation whose latest
 /// model call did not fail, so a reader never has to tell *no failure* from *a
 /// failure with nothing to say* — and the row above, which carries no key at
 /// all, is the other half of this assertion.
@@ -84,9 +84,9 @@ fn the_failure_clause_is_read_and_its_absence_is_a_reading() {
     assert!(refusal.contains("\"failure\""), "{refusal}");
 }
 
-/// **A name the engine will not answer to is withheld, and the id still
+/// **A name the server will not answer to is withheld, and the id still
 /// works.** That is the whole reason the two are separate fields: a seat that
-/// posted the display name would be posting a target the engine refuses.
+/// posted the display name would be posting a target the server refuses.
 #[test]
 fn a_display_only_name_is_absent_and_the_id_remains() {
     let read = row(&json!({
@@ -114,7 +114,7 @@ fn an_age_may_be_negative_because_two_clocks_may_disagree() {
 }
 
 /// **The uncertainty flag is its own fact and it is required.** A state and
-/// whether anything observed it are two answers: a conversation the engine
+/// whether anything observed it are two answers: a conversation the server
 /// cannot probe reads settled and is not known to be, and a reader that let the
 /// flag default would paint that reading as definite.
 #[test]

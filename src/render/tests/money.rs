@@ -37,8 +37,8 @@ fn a_notch_is_a_floor_where_tokens_went_unpriced() {
     assert!(said.contains("120 tokens — at least $1.20"), "{said}");
 }
 
-/// The conversation's own row, a delivery attempt, a wall's balls and the
-/// roster's ledger column — each with the money the engine put there.
+/// The conversation's own row, a delivery attempt, a workspace's balls and the
+/// roster's ledger column — each with the money the server put there.
 #[test]
 fn every_other_count_carries_its_money() {
     for (name, said) in [

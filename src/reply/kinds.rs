@@ -1,4 +1,4 @@
-//! **The census of what an engine can answer** — the kinds this window draws,
+//! **The census of what a server can answer** — the kinds this window draws,
 //! and the captured run three of the ops on this surface come back as.
 //!
 //! Split from [`super`] at the 300-line cap on the seam that module's own doc
@@ -37,7 +37,7 @@ pub enum Reply {
     Conversations(Vec<convs::ConvRow>),
     /// **What one workspace's roles are set to** — the read the tuning pane
     /// opens on, and the read back of what its own three writes landed. It is
-    /// a listing rather than a map: the engine's order is the config's order,
+    /// a listing rather than a map: the server's order is the config's order,
     /// and a seat that re-sorted it would be holding a second opinion about a
     /// file it did not write.
     Roles(Vec<roles::RoleRow>),
@@ -45,11 +45,11 @@ pub enum Reply {
     /// the whole of what the chat pane paints.
     Transcript(transcript::Transcript),
     /// **Everything waiting on the operator**, across every workspace the
-    /// engine can see — the decision queue's rows, standing while its pane is
+    /// server can see — the decision queue's rows, standing while its pane is
     /// open (bl-f0ef).
     Attention(Vec<queue::QueueRow>),
     /// **`seen`'s receipt** (PROTOCOL 12, bl-6802): the item acted on, and the
-    /// whole queue that remains on that engine, re-derived after the write —
+    /// whole queue that remains on that server, re-derived after the write —
     /// so a reading of it is never a receipt to discard.
     Acknowledged(queue::Acknowledged),
     /// **The parked invocation was answered** (§4.34, bl-bce2): which call the
@@ -67,7 +67,7 @@ pub enum Reply {
         verdict: String,
         /// **How far the answer stands** (PROTOCOL 18): the held call, the
         /// conversation and its descent, or the workspace. Read back rather
-        /// than assumed from what was asked — the engine narrows a wide answer
+        /// than assumed from what was asked — the server narrows a wide answer
         /// on a destructive or credential-reaching call, so the receipt is the
         /// only place the reach the boundary actually took is stated. Carried
         /// verbatim on rung 3, like the verdict beside it.
@@ -111,7 +111,7 @@ pub enum Reply {
     /// **A capability floor was written** (§4.34, bl-bce2): whether one
     /// **stands** over the conversation now.
     ///
-    /// Re-derived from the engine's trail after the write rather than echoed
+    /// Re-derived from the server's trail after the write rather than echoed
     /// back from the direction that was asked, and the two differ exactly
     /// where it matters: restoring a conversation whose ancestor is still
     /// floored leaves it floored, and a receipt saying otherwise would lie.
@@ -160,34 +160,34 @@ pub enum Reply {
     /// changed meaning at PROTOCOL 5 under an unchanged spelling, and
     /// `governing`'s own module doc is where that is written down.
     Governing(governing::Governing),
-    /// **One engine's own verb table** — what the commands pane paints, and
+    /// **One server's own verb table** — what the commands pane paints, and
     /// the same rows the parity roster is generated from (bl-40ec). It names
     /// no workspace, so it is one channel's answer and the pane is the union.
     Help(Vec<help::HelpRow>),
-    /// **What a needle found**, across everything one engine can see — the
+    /// **What a needle found**, across everything one server can see — the
     /// find pane's answer, on the same fanned terms (bl-40ec).
     Found(search::Found),
     /// **The whole box's ball⇄workspace binding table** — the ball pane's
     /// widest read (bl-d2af). It names no workspace, so it is one channel's
     /// answer and the pane is the union.
     Balls(Vec<balls::BallRow>),
-    /// **One engine's fleet board** — every live ball in its column, and the
+    /// **One server's fleet board** — every live ball in its column, and the
     /// armed loops running them, which is the only place a loop's own facts
     /// are answered at all (bl-d2af). It names no workspace either.
     Board(board::Board),
-    /// **The balls one wall holds**, with what each has cost — the ball pane's
+    /// **The balls one workspace holds**, with what each has cost — the ball pane's
     /// aimed half, standing on the pane exactly as the roles read does.
     WorkspaceBalls(Vec<balls::BoundBall>),
-    /// **The branch a wall tracks its tasks on**, re-read. It is one field, so
+    /// **The branch a workspace tracks its tasks on**, re-read. It is one field, so
     /// it is carried as one rather than wrapped in a struct with nothing else
     /// in it.
     Marks { branch: String },
-    /// **The trail one engine keeps** — every action that crossed its boundary,
+    /// **The trail one server keeps** — every action that crossed its boundary,
     /// standing while the trail pane is open (bl-4c48). It names no workspace,
     /// so it is one channel's answer and the pane is the union.
     Ops(Vec<ops::OpRow>),
-    /// **What this wall can sign in to** — the login pane's first read,
-    /// standing while it is open (bl-e3c5). It is the engine's listing order,
+    /// **What this workspace can sign in to** — the login pane's first read,
+    /// standing while it is open (bl-e3c5). It is the server's listing order,
     /// which is brazen's own routing order, and a seat that re-sorted it would
     /// be holding a second opinion about a table it does not own.
     Providers(Vec<providers::ProviderRow>),
@@ -198,7 +198,7 @@ pub enum Reply {
     Clients(Vec<clients::ClientRow>),
     /// **Whether this box is wired** — one row per check, the remedy verbatim
     /// (bl-9bbb). Bare it is one channel's answer and the pane is the union;
-    /// naming a workspace it is that wall's channel alone.
+    /// naming a workspace it is that workspace's channel alone.
     Doctor(Vec<doctor::Check>),
     /// **One config file's bytes, and the settings its schema found in them**
     /// — the config pane's second read, standing on the destination it is
@@ -254,7 +254,7 @@ pub enum Reply {
     /// than a delta: a frame **replaces** what a seat holds, so nothing has to
     /// be reassembled and a follow lane needs no second parser.
     Follow(stream::Stream),
-    /// **A start, staged.** The fire-time parameters as the engine settled
+    /// **A start, staged.** The fire-time parameters as the server settled
     /// them, which the next act hands straight back — the one reply on this
     /// surface a seat has to hold between two gestures.
     Prepared(start::Prepared),
@@ -262,7 +262,7 @@ pub enum Reply {
     /// secret, held while a symbol is on screen and written down nowhere
     /// (REMOTE §8.4; DESIGN §3).
     Enrolled(enrolled::Enrolled),
-    /// **A start, fired**, and the name the engine minted for it. It carries
+    /// **A start, fired**, and the name the server minted for it. It carries
     /// nothing else for the reason [`Nudged`](Self::Nudged) carries nothing:
     /// what the model does with the turn arrives on the transcript. What is
     /// new is the name, and the name is an address the reply just made

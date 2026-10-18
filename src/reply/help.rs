@@ -1,7 +1,7 @@
-//! **What one engine answers to** — its own verb table, published as a reply
+//! **What one server answers to** — its own verb table, published as a reply
 //! (yog's `docs/REMOTE.md` §3; PROTOCOL 7).
 //!
-//! One row per op the engine has a word for: the line to type, one sentence on
+//! One row per op the server has a word for: the line to type, one sentence on
 //! what it is for, the page under that, and the classification saying whether
 //! the op is spoken by an operator or by a program.
 //!
@@ -16,18 +16,18 @@
 //!
 //! # `surface` rides verbatim
 //!
-//! [`super`]'s rung 3: a classification is carried as the word the engine sent
+//! [`super`]'s rung 3: a classification is carried as the word the server sent
 //! and never narrowed to a closed set here. The parity roster has to refuse a
 //! word it has no reading for — it decides what this seat *owes*, and guessing
 //! there would quietly shrink the obligation — but a pane only shows what an
-//! op is for, and a word a newer engine grew paints as itself rather than as a
+//! op is for, and a word a newer server grew paints as itself rather than as a
 //! neighbour it is not.
 //!
 //! # Why the wire `help` is not `lernie help`
 //!
 //! `crate::verbs::help` answers *what does this BINARY take*, from a table
-//! compiled into it, with nothing provisioned and no engine up. This answers
-//! *what does that ENGINE offer*, which is a different question with a
+//! compiled into it, with nothing provisioned and no server up. This answers
+//! *what does that SERVER offer*, which is a different question with a
 //! different author — and the two are painted in different places for that
 //! reason (`crate::ui::commands`).
 
@@ -38,13 +38,13 @@ use super::fields;
 /// The kind token this reading answers to.
 pub(crate) const KIND: &str = "help";
 
-/// One op the engine has a word for.
+/// One op the server has a word for.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HelpRow {
     /// The op itself — the same token the envelope's discriminant, the corpus
     /// filename and an `act:` tag all spell (`crate::ui::act`).
     pub verb: String,
-    /// The line an operator types on the engine's own control line.
+    /// The line an operator types on the server's own control line.
     pub usage: String,
     /// One sentence: what the op is for.
     pub summary: String,

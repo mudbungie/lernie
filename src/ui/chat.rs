@@ -22,7 +22,7 @@
 //! At the head of a transcript stands the conversation's panel, and where
 //! nothing is selected the seat's ([`panel`]). At its end stands each message
 //! this seat sent that the committed transcript does not yet carry, its words
-//! in the pending ink until the engine's receipt lands ([`rows::sent`];
+//! in the pending ink until the server's receipt lands ([`rows::sent`];
 //! DESIGN §4.45 item 4).
 //!
 //! It is a **pure projection** of what the model holds: nothing here fires,
@@ -56,7 +56,7 @@ pub const HEADING: &str = "conversation";
 /// What the pane says with nothing selected, under the seat's panel.
 pub const NO_CONVERSATION: &str = "Ctrl+X picks a conversation, or begin one in the box below";
 /// **And with nothing aimed**, where the box below begins nothing: a start
-/// needs a wall (bl-2cb0), so the sentence names the key that picks one.
+/// needs a workspace (bl-2cb0), so the sentence names the key that picks one.
 pub const NO_AIM: &str = "Ctrl+X picks a workspace to begin in, or a conversation";
 pub const LIVE: &str = "«live»";
 /// What parts an open working from the prose that follows it.
@@ -197,7 +197,7 @@ fn said(ui: &mut egui::Ui, at: usize, row: &Row) {
                 theme::speaker(row.weight)
             };
             ui.label(egui::RichText::new(&row.who).color(who).strong());
-            // **A message the engine has not acknowledged wears the pending
+            // **A message the server has not acknowledged wears the pending
             // ink** (§4.45 item 4): the ink of what is not yet settled.
             let words = if row.pending {
                 theme::INK_WEAK

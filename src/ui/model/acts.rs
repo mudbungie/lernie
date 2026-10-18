@@ -1,6 +1,6 @@
 //! **What a control does, whichever control did it.**
 //!
-//! The acts the window affords beyond composing a gesture: aim at a wall,
+//! The acts the window affords beyond composing a gesture: aim at a workspace,
 //! select a conversation, put a notice down, and the enrollment's four — open
 //! it, spend it, file what it answered, close it and forget. Each used to live
 //! inside the `if …clicked()` that made it, which is fine while a pointer is
@@ -16,10 +16,10 @@
 //!
 //! # Each act clears exactly what it invalidated
 //!
-//! Aiming at another wall retires the conversation list, what that list was an
+//! Aiming at another workspace retires the conversation list, what that list was an
 //! answer to, the selection and everything under it, because none of it is
-//! about the new wall. Retiring the *answer* beside the rows is what lets the
-//! pane say it has not heard yet rather than reporting an empty wall. Selecting a
+//! about the new workspace. Retiring the *answer* beside the rows is what lets the
+//! pane say it has not heard yet rather than reporting an empty workspace. Selecting a
 //! conversation retires the transcript and the live tail, because they are the
 //! old one's. Nothing else is touched — and in particular the draft is not,
 //! because what an operator typed is theirs until they send it.
@@ -31,22 +31,22 @@
 use super::{Aim, Model};
 
 impl Model {
-    /// **Aim at a wall**, down the channel that resolved it.
+    /// **Aim at a workspace**, down the channel that resolved it.
     ///
     /// `address` is what a gesture must carry rather than the name the row
     /// wears; the two differ exactly where an entry renames, and the roster is
     /// what maps one to the other.
     ///
     /// **Aiming where the window is already aimed retires nothing** (DESIGN
-    /// §4.39, bl-b9a3). Since the conversations stand under their wall, the
-    /// one cursor crosses the aimed wall's own row every time it moves between
-    /// the engine above it and the rows beneath it — and a cursor passing over
-    /// a row is not an operator asking about that wall again. Re-asking would
+    /// §4.39, bl-b9a3). Since the conversations stand under their workspace, the
+    /// one cursor crosses the aimed workspace's own row every time it moves between
+    /// the server above it and the rows beneath it — and a cursor passing over
+    /// a row is not an operator asking about that workspace again. Re-asking would
     /// empty the list under the cursor and put *waiting to hear about this
-    /// wall* where the rows had been, which is bl-f780's transient defect made
+    /// workspace* where the rows had been, which is bl-f780's transient defect made
     /// reachable by an arrow key. What an aim always does is put the cursor on
-    /// the wall and drop the selection under it; what it does only when it
-    /// MOVED is retire everything that was about the wall it left.
+    /// the workspace and drop the selection under it; what it does only when it
+    /// MOVED is retire everything that was about the workspace it left.
     pub fn aim_at(&mut self, channel: &str, address: &str) {
         let aim = Aim {
             channel: channel.to_owned(),
@@ -55,21 +55,21 @@ impl Model {
         let moved = self.aim.as_ref() != Some(&aim);
         self.aim = Some(aim);
         self.founding = None;
-        // **The engine remembers the wall it was left on** (DESIGN §4.39), so
-        // an engine an operator comes back to is the engine they left. It is
+        // **The server remembers the workspace it was left on** (DESIGN §4.39), so
+        // a server an operator comes back to is the server they left. It is
         // recorded here rather than by each surface that aims, for this
         // module's own reason: two spellings of *what aiming means* would
         // drift, and the one that drifted would be the one nobody points at.
-        // Keyed by the engine and not the channel (bl-13b9): one engine
+        // Keyed by the server and not the channel (bl-13b9): one server
         // held under two names is one place to come back to.
-        let engine = self.engine_of(channel);
-        self.engines.aimed.insert(engine, address.to_owned());
-        // **And the roster's cursor is a wall again.** The walk stands on an
-        // engine row without selecting it; an aim is a selection, so the two
+        let server = self.server_of(channel);
+        self.servers.aimed.insert(server, address.to_owned());
+        // **And the roster's cursor is a workspace again.** The walk stands on a
+        // server row without selecting it; an aim is a selection, so the two
         // cannot both be where the operator is.
         self.standing = None;
-        // **The selection goes whichever wall this is**, because the cursor is
-        // on the wall now: `Model::select` is the only thing that puts it back
+        // **The selection goes whichever workspace this is**, because the cursor is
+        // on the workspace now: `Model::select` is the only thing that puts it back
         // on a conversation, and it is the same clearing that one does.
         self.moving_to(None);
         self.conversation = None;
@@ -80,39 +80,39 @@ impl Model {
         }
         self.convs.clear();
         self.answered = None;
-        // **The tuning pane goes with the wall it was opened on** (bl-4a2c).
+        // **The tuning pane goes with the workspace it was opened on** (bl-4a2c).
         // It holds no aim of its own, deliberately — every gesture it composes
         // reads `Model::aim` at the moment of composing — so leaving it open
-        // over a new wall would leave an operator looking at one wall's rows
+        // over a new workspace would leave an operator looking at one workspace's rows
         // while its controls wrote to another's. Retiring the ROWS beside it is
-        // the same reading `answered` above gets: `None` is a wall nobody has
-        // asked yet, and the old wall's answer is not this wall's.
+        // the same reading `answered` above gets: `None` is a workspace nobody has
+        // asked yet, and the old workspace's answer is not this workspace's.
         self.tuning = None;
         self.roles = None;
         self.offers.clear();
-        // **The login pane goes with the wall too** (bl-e3c5), and for the
+        // **The login pane goes with the workspace too** (bl-e3c5), and for the
         // sharper form of the same reason: its act signs a credential into ONE
-        // wall's own store, so a pane left standing over a new aim would offer
+        // workspace's own store, so a pane left standing over a new aim would offer
         // to sign the operator in somewhere they are no longer looking.
         self.retire_login();
         // **And the clients pane with them** (bl-e53c), on the login pane's own
         // terms: its rows are one workspace's registrations, so a pane left
-        // standing over a new aim would paint one wall's machines under
+        // standing over a new aim would paint one workspace's machines under
         // another's name.
         self.retire_clients();
         // **And the config pane with them** (bl-5c53), sharper again: a
         // destination carries the aim's own workspace inside it, so a pane
-        // left standing over a new aim would read one wall's file and paint it
+        // left standing over a new aim would read one workspace's file and paint it
         // under another's name.
         self.retire_configuring();
         self.retire_records();
-        // **The ball pane's WALL half goes with the wall, and the pane does
+        // **The ball pane's WORKSPACE half goes with the workspace, and the pane does
         // not** (bl-d2af). Two of its four reads name every channel, so the
         // pane's subject survives an aim that moved; the two that name one
-        // wall do not, and painting the old wall's balls under the new wall's
+        // workspace do not, and painting the old workspace's balls under the new workspace's
         // name is exactly what the retirement above prevents one level up.
-        self.retire_wall_balls();
-        // **The fleet pane goes with the wall too** (bl-a43a), and for the
+        self.retire_workspace_balls();
+        // **The fleet pane goes with the workspace too** (bl-a43a), and for the
         // login pane's sharper reason: its acts run drones and spend money in
         // ONE workspace, so a pane left standing over a new aim would offer to
         // start a fleet somewhere the operator is no longer looking.
@@ -130,12 +130,12 @@ impl Model {
         self.transcript = crate::reply::transcript::Transcript::default();
         self.live = None;
         // **The records pane goes with the conversation it was opened on**
-        // (bl-2cf7) — the same rule the tuning pane keeps for its wall, one
+        // (bl-2cf7) — the same rule the tuning pane keeps for its workspace, one
         // noun over (`super::records`).
         self.retire_records();
     }
 
-    /// **Assert this wall's place in the strip** — pinned, or not (bl-7782).
+    /// **Assert this workspace's place in the strip** — pinned, or not (bl-7782).
     ///
     /// `pinned` is what the operator is asking FOR, not what the row currently
     /// is: the wire's two ops are assertions rather than a toggle, and upstream
@@ -143,7 +143,7 @@ impl Model {
     /// which is what lets two seats send it at once and agree."* So this end
     /// composes the act it means and never flips a flag it read a beat ago.
     ///
-    /// The aim is the gate, exactly as it is for every other per-wall act, and
+    /// The aim is the gate, exactly as it is for every other per-workspace act, and
     /// what says it landed is the next roster answer: both ops reply with the
     /// listing carrying the ranks it now has, which is a kind this seat already
     /// paints.
@@ -230,7 +230,7 @@ impl Model {
         }
     }
 
-    /// **Open an enrollment aimed at the wall the window is pointed at**, or do
+    /// **Open an enrollment aimed at the workspace the window is pointed at**, or do
     /// nothing where it is pointed at none.
     ///
     /// The aim is the gate rather than a separate check: the act mints a
@@ -271,13 +271,13 @@ impl Model {
     /// symbol is drawn once, here, because a frame may not compute one. Where
     /// it is **not** — the operator closed it while the act was in flight — the
     /// material has arrived with nowhere to go, and it is dropped *and said so*:
-    /// the enrollment did happen on the engine, and an operator who is not told
+    /// the enrollment did happen on the server, and an operator who is not told
     /// would go looking for a box that has a registration and no material. A
     /// silent drop is the one thing this model's door does not do.
     pub(super) fn enrolled(&mut self, material: &crate::reply::enrolled::Enrolled) {
         let Some(enrolling) = self.enroll.as_mut() else {
             self.notice = Some(super::Notice::Said(format!(
-                "the engine enrolled {} after the enroll pane closed, so its code is \
+                "the server enrolled {} after the enroll pane closed, so its code is \
                  gone — /enroll makes another",
                 material.caption()
             )));

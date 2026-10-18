@@ -1,4 +1,4 @@
-//! **One line to one engine** (yog's `docs/REMOTE.md` §13.4; DESIGN §4.40):
+//! **One line to one server** (yog's `docs/REMOTE.md` §13.4; DESIGN §4.40):
 //! the stream a rung of the ladder handed back, how it is read, and what is
 //! kept of it once the answer is in.
 //!
@@ -8,12 +8,12 @@
 //! payer §10 of that document waited for. A direct dial costs milliseconds
 //! and stays what it always was: one connection per ask.
 //!
-//! **The engine pings the silence and this end discards the ping.** Between
-//! asks the engine writes `{"ping":true}` as a frame every 25 seconds of
+//! **The server pings the silence and this end discards the ping.** Between
+//! asks the server writes `{"ping":true}` as a frame every 25 seconds of
 //! nothing, to keep both NATs' mappings alive; it is never the start of a
-//! reply stream, so [`read`] skips it wherever a frame is read. The engine
+//! reply stream, so [`read`] skips it wherever a frame is read. The server
 //! hangs up after two minutes of silence in all, so a held line is judged
-//! gone **one ping before that bound** — the same arithmetic the engine's own
+//! gone **one ping before that bound** — the same arithmetic the server's own
 //! `pings_at` runs — rather than reused at the moment the far end is closing
 //! it. Judged by the injected clock, so the suite crosses the bound by hand.
 //!
@@ -34,15 +34,15 @@ use serde_json::{Value, json};
 
 use super::frame;
 
-/// How long a read may find nothing, in all, before the engine is judged
-/// gone — the engine's own bound, and the bound it hangs up on.
+/// How long a read may find nothing, in all, before the server is judged
+/// gone — the server's own bound, and the bound it hangs up on.
 ///
 /// It is a bound on the **transport**, not on the wait. An ordinary ask is
-/// answered at once; a follow-class read is answered by the engine at the
+/// answered at once; a follow-class read is answered by the server at the
 /// rate the thing being followed writes, so this has to sit comfortably
 /// above that cadence or an idle tail would read as a dead channel.
 pub(crate) const GONE: Duration = Duration::from_mins(2);
-/// How often the engine pings a held line's silence.
+/// How often the server pings a held line's silence.
 pub(crate) const PING: Duration = Duration::from_secs(25);
 
 /// The mTLS stream over one TCP connection.
@@ -51,7 +51,7 @@ pub(crate) type Tls = StreamOwned<ClientConnection, TcpStream>;
 /// A connection a rung produced, with a request about to go down it.
 pub(crate) struct Line {
     pub(crate) tls: Tls,
-    /// What the engine stated it could spell on this connection's preface.
+    /// What the server stated it could spell on this connection's preface.
     pub(crate) spelled: u32,
     /// Whether the preface is still owed: a stream a rung just opened.
     pub(crate) fresh: bool,
@@ -94,7 +94,7 @@ pub(crate) struct Held {
 }
 
 impl Held {
-    /// Why this line is no longer one the engine would answer on — past the
+    /// Why this line is no longer one the server would answer on — past the
     /// silence bound with no ping to spare, or hung up at the far end — or
     /// `None` while it still is.
     pub(crate) fn gone(&mut self, now: Instant) -> Option<&'static str> {
@@ -135,7 +135,7 @@ fn open(tls: &mut Tls) -> bool {
 }
 
 /// Read one frame that is not a ping: `Some` a frame of the answer, `None`
-/// the terminator. The engine's ping is discarded here, wherever a frame is
+/// the terminator. The server's ping is discarded here, wherever a frame is
 /// read, because it is never part of any answer — and counted into `pings`,
 /// so the discard can be said.
 pub(crate) fn read(r: &mut dyn io::Read, pings: &mut usize) -> io::Result<Option<Value>> {
@@ -147,7 +147,7 @@ pub(crate) fn read(r: &mut dyn io::Read, pings: &mut usize) -> io::Result<Option
     }
 }
 
-/// The frame the engine writes into a held line's silence.
+/// The frame the server writes into a held line's silence.
 pub(crate) fn ping() -> Value {
     json!({"ping": true})
 }
@@ -157,7 +157,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_bounds_are_the_engines() {
+    fn the_bounds_are_the_servers() {
         assert_eq!(GONE, Duration::from_mins(2));
         assert_eq!(PING, Duration::from_secs(25));
         assert_eq!(ping(), json!({"ping": true}));

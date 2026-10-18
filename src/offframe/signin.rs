@@ -14,7 +14,7 @@
 //! guard is a pure comparison at the settle — where what the pane is following
 //! is known for certain — rather than a poll here racing the socket.
 //!
-//! **Closing the pane ends the lane and terminates nothing.** The run is engine
+//! **Closing the pane ends the lane and terminates nothing.** The run is server
 //! RAM, one per workspace × provider, bounded by its own hour sweep (REMOTE
 //! §8.3): hanging up is this end saying it has stopped watching, and a run with
 //! no lane at all still settles and still writes its `ops.jsonl` row. That is a
@@ -26,12 +26,12 @@ use crate::reply::login::Signin;
 use crate::reply::{Read, Reply};
 use crate::state::{Link, Said};
 
-/// Hold the line on the followed row's sign-in until it moves or the engine
+/// Hold the line on the followed row's sign-in until it moves or the server
 /// ends the stream.
 ///
 /// **The fold's whole lifetime is this call**, exactly as the tail's is: one
 /// read is one `tick`, so a lane that dropped re-opens on an empty fold and the
-/// engine's own cursor starts at zero — which is why *re-ask replays* needs no
+/// server's own cursor starts at zero — which is why *re-ask replays* needs no
 /// rule of its own at either end.
 pub fn tick(link: &Link, root: &Path) {
     let standing = link.standing();
@@ -76,8 +76,8 @@ fn absorbed(fold: &mut Signin, frame: &serde_json::Value) -> Read {
 /// Whether the window is still following this run.
 ///
 /// **Both halves**, because either can move: an operator who aims at another
-/// wall has left this sign-in as surely as one who starts another on the same
-/// wall — and aiming away retires the pane outright
+/// workspace has left this sign-in as surely as one who starts another on the same
+/// workspace — and aiming away retires the pane outright
 /// (`crate::ui::Model::retire_login`), which is the same answer reached by the
 /// other field.
 fn still_on(link: &Link, aim: &crate::ui::Aim, provider: &str) -> bool {

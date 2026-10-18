@@ -5,7 +5,7 @@
 //! conversation; its run is still spelled here ([`workspace`]), once.
 //!
 //! The four are the **worker role's** row off the
-//! `roles` read, which stands on the aim (`crate::offframe::asker::wall`).
+//! `roles` read, which stands on the aim (`crate::offframe::asker::workspace`).
 //! Effort and priority stand only where the worker's provider row takes them
 //! — or where the providers read has not said, because absence is not
 //! evidence (`crate::ui::model::tuning::offers`' own rule).
@@ -18,7 +18,7 @@ pub const NO_WORKSPACE: &str = "workspace";
 /// The provider slot where the worker's row is not in hand.
 pub const NO_PROVIDER: &str = "provider…";
 /// The model slot where neither the worker's row nor the transcript names
-/// one (bl-0966: it names the control and claims nothing about the wall).
+/// one (bl-0966: it names the control and claims nothing about the workspace).
 pub const NO_MODEL: &str = "model…";
 /// What heads the effort and the priority segment's words.
 pub const EFFORT: &str = "effort";
@@ -94,15 +94,15 @@ fn answered_by(model: &Model) -> Option<String> {
         })
 }
 
-/// **The workspace's run** — the aimed wall's name, or [`NO_WORKSPACE`] —
+/// **The workspace's run** — the aimed workspace's name, or [`NO_WORKSPACE`] —
 /// which the bar's foot paints and the rule does not (DESIGN §4.44 item 3).
 pub(crate) fn workspace(model: &Model) -> Run {
-    let wall = model.aim.as_ref().map(|aim| aim.address.clone());
-    selector(model, Selector::Workspace, wall, NO_WORKSPACE)
+    let workspace = model.aim.as_ref().map(|aim| aim.address.clone());
+    selector(model, Selector::Workspace, workspace, NO_WORKSPACE)
 }
 
 /// **The selectors the rule offers, in order**, and how many of them never
-/// drop: with nothing aimed none stands; with a wall aimed the provider and
+/// drop: with nothing aimed none stands; with a workspace aimed the provider and
 /// the model, and effort and priority where the worker's row takes them.
 pub fn selectors(model: &Model) -> (Vec<Run>, usize) {
     let mut out = Vec::new();

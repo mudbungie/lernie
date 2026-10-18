@@ -1,9 +1,9 @@
-//! **The ops trail** — every action that crossed the engine's boundary, what
+//! **The ops trail** — every action that crossed the server's boundary, what
 //! it did, and where its alarm stands (yog's `docs/REMOTE.md` §9.17, PROTOCOL
 //! 11; bl-4c48).
 //!
-//! It is the engine's own record of what it RAN: one row per child process the
-//! boundary spawned, newest last, with the classification the engine already
+//! It is the server's own record of what it RAN: one row per child process the
+//! boundary spawned, newest last, with the classification the server already
 //! made rather than the integer a reader would have to classify itself.
 //!
 //! # The classification crosses, so this seat does not make one
@@ -56,10 +56,10 @@ pub const CLEAN: &str = "clean";
 /// One action that crossed the boundary.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OpRow {
-    /// When it ran, in the engine's own spelling.
+    /// When it ran, in the server's own spelling.
     pub ts: String,
     /// **Who made the act** — a connection's certificate common name, or
-    /// `local` for the window, the gestures inbox and the engine's own loops
+    /// `local` for the window, the gestures inbox and the server's own loops
     /// (REMOTE §9.20). Read strictly, like [`Self::standing`]: it is the
     /// second field on this row a reader cannot recompute from the line beside
     /// it, and the one that cannot be recovered later at all.
@@ -72,7 +72,7 @@ pub struct OpRow {
     /// The row's **own** question, answerable of one line held alone — where
     /// [`Self::standing`] is a fact about its place in a tail.
     pub failed: bool,
-    /// How it ended, in the engine's words. The seat paints this and never
+    /// How it ended, in the server's words. The seat paints this and never
     /// classifies [`Self::exit`] itself.
     pub exit_label: String,
     /// The status behind that label, carried because it is the next thing an

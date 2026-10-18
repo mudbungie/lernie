@@ -52,11 +52,11 @@ fn every_answer_in_the_corpus_renders_as_something_other_than_its_frame() {
     assert!(seen > 30, "the corpus walk found {seen} answers");
 }
 
-/// A refusal is the engine's own sentence, printed and not interpreted; bytes
+/// A refusal is the server's own sentence, printed and not interpreted; bytes
 /// this seat cannot read say so about ITSELF and name the act that still shows
 /// them (DESIGN §4.9's rung 2).
 #[test]
-fn a_refusal_is_the_engines_words_and_an_unreadable_frame_names_the_escape() {
+fn a_refusal_is_the_servers_words_and_an_unreadable_frame_names_the_escape() {
     assert_eq!(
         rendered(&json!({"ok": false, "error": "unknown workspace \"hoem\""})),
         "refused: unknown workspace \"hoem\""
@@ -87,9 +87,9 @@ fn the_json_form_is_the_frames_exactly_as_they_crossed() {
 
 /// **The empty world says the next act** (bl-b00f). A fresh world answers
 /// `rows: []` correctly and terminally, and the one thing a person needs at
-/// that moment is that starting a conversation founds the first wall.
+/// that moment is that starting a conversation founds the first workspace.
 #[test]
-fn an_empty_roster_names_the_act_that_founds_the_first_wall() {
+fn an_empty_roster_names_the_act_that_founds_the_first_workspace() {
     let said = rendered(&json!({"ok": true, "kind": "workspaces", "rows": []}));
     assert!(said.contains("lernie start home"), "{said}");
     let queue = rendered(&json!({"ok": true, "kind": "attention", "rows": []}));
@@ -138,13 +138,13 @@ fn an_in_flight_step_paints_as_itself_and_never_as_the_word_for_a_kill() {
     assert!(!said.contains("killed"), "{said}");
 }
 
-/// **What a reviewer staged for a wall's config, and one of them whole**
-/// (PROTOCOL 18, yog bl-dd88). The standing crosses as the engine's own word —
+/// **What a reviewer staged for a workspace's config, and one of them whole**
+/// (PROTOCOL 18, yog bl-dd88). The standing crosses as the server's own word —
 /// `fresh` means the lineage still stands where the reviewer read it — and is
 /// never inferred here from an empty `lineages`, which is REMOTE §9.4's rule
 /// that the wire states a derivation so no seat owns one.
 #[test]
-fn a_proposals_listing_says_the_standing_the_engine_read_and_never_infers_one() {
+fn a_proposals_listing_says_the_standing_the_server_read_and_never_infers_one() {
     let row = |id, fresh, lineages| {
         json!({"id": id, "fresh": fresh, "lineages": lineages, "parent": "9f2c1ab4",
                "diffstat": "1 file changed, 6 insertions(+)", "subject": "notes: what it taught"})
@@ -164,15 +164,15 @@ fn a_proposals_listing_says_the_standing_the_engine_read_and_never_infers_one() 
     assert!(said.contains("commit 71011c3d"), "{said}");
     assert!(
         rendered(&json!({"ok": true, "kind": "proposals", "rows": []}))
-            .contains("nothing is staged for this wall"),
+            .contains("nothing is staged for this workspace"),
         "nothing staged is an empty answer, not a refusal"
     );
 }
 
-/// **The CLI's queue says why in the engine's words** (bl-5507): `says` in
-/// place of the raw signal list wherever the engine wrote one.
+/// **The CLI's queue says why in the server's words** (bl-5507): `says` in
+/// place of the raw signal list wherever the server wrote one.
 #[test]
-fn a_queue_row_prints_the_engine_s_sentence_over_its_signals() {
+fn a_queue_row_prints_the_server_s_sentence_over_its_signals() {
     let said = rendered(&json!({"ok": true, "kind": "attention", "rows": [
         {"workspace": "home", "agent": "c-1", "display": "Cobalt", "state": "stopped",
          "uncertain": false, "preview": "", "age_secs": 5, "pending": 0,

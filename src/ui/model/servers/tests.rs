@@ -1,8 +1,8 @@
-//! **The accordion**: the order as a pure function, which engine is open on a
+//! **The accordion**: the order as a pure function, which server is open on a
 //! seat nobody has told, and what an opening aims at.
 
-use super::Engines;
-use crate::test_support::window::{own, seated, wall};
+use super::Servers;
+use crate::test_support::window::{own, seated, workspace};
 use crate::ui::{Aim, Channel, Chunk, Model};
 
 /// The names, as a list a sort reads.
@@ -10,8 +10,8 @@ fn names(said: &[&str]) -> Vec<String> {
     said.iter().map(|name| (*name).to_owned()).collect()
 }
 
-/// One engine holding the walls it is given.
-fn engine(name: &str, walls: &[&str]) -> Chunk {
+/// One server holding the workspaces it is given.
+fn server(name: &str, workspaces: &[&str]) -> Chunk {
     Chunk {
         channel: Channel {
             name: name.to_owned(),
@@ -19,7 +19,10 @@ fn engine(name: &str, walls: &[&str]) -> Chunk {
             dials: None,
         },
         held: crate::ui::Held::Heard,
-        walls: walls.iter().map(|wall_name| wall(wall_name)).collect(),
+        workspaces: workspaces
+            .iter()
+            .map(|workspace_name| workspace(workspace_name))
+            .collect(),
         ..Chunk::default()
     }
 }
@@ -28,64 +31,64 @@ fn engine(name: &str, walls: &[&str]) -> Chunk {
 /// tie** — the whole of the order, as a pure function over which is open, what
 /// each opening ranks as, and the names.
 #[test]
-fn the_open_engine_is_first_and_the_rest_follow_the_last_time_each_was_opened() {
-    let mut engines = Engines::default();
-    engines.opened.insert("beta".to_owned(), 1);
-    engines.opened.insert("delta".to_owned(), 2);
+fn the_open_server_is_first_and_the_rest_follow_the_last_time_each_was_opened() {
+    let mut servers = Servers::default();
+    servers.opened.insert("beta".to_owned(), 1);
+    servers.opened.insert("delta".to_owned(), 2);
     let held = names(&["alpha", "beta", "delta", "gamma"]);
     assert_eq!(
-        engines.order(&held, Some("alpha")),
+        servers.order(&held, Some("alpha")),
         names(&["alpha", "delta", "beta", "gamma"]),
         "the open one is hoisted and the never-opened pair fall to the bottom by name"
     );
     assert_eq!(
-        engines.order(&held, Some("gamma")),
+        servers.order(&held, Some("gamma")),
         names(&["gamma", "delta", "beta", "alpha"]),
     );
     assert_eq!(
-        engines.order(&held, None),
+        servers.order(&held, None),
         names(&["delta", "beta", "alpha", "gamma"]),
         "with nothing open the order is the openings alone"
     );
 }
 
-/// **An opening ranks one past the highest anybody holds**, so the engine just
+/// **An opening ranks one past the highest anybody holds**, so the server just
 /// opened is the most recently opened by construction — and a second opening
 /// of one already open moves it back to the front rather than tying.
 #[test]
 fn an_opening_outranks_every_opening_before_it() {
     let mut model = Model {
-        roster: vec![engine("alpha", &["a"]), engine("beta", &["b"])],
+        roster: vec![server("alpha", &["a"]), server("beta", &["b"])],
         ..Model::default()
     };
-    model.open_engine("alpha");
-    model.open_engine("beta");
-    assert_eq!(model.engines.open.as_deref(), Some("beta"));
+    model.open_server("alpha");
+    model.open_server("beta");
+    assert_eq!(model.servers.open.as_deref(), Some("beta"));
     assert_eq!(
-        model.engine_rows()[0].name(),
+        model.server_rows()[0].name(),
         "beta",
         "the open one paints first"
     );
-    model.open_engine("alpha");
+    model.open_server("alpha");
     let order: Vec<String> = model
-        .engine_rows()
+        .server_rows()
         .iter()
-        .map(|engine| engine.name().to_owned())
+        .map(|server| server.name().to_owned())
         .collect();
     assert_eq!(order, names(&["alpha", "beta"]));
 }
 
-/// **Which engine is open on a seat nobody has told**: the aim's own, and with
+/// **Which server is open on a seat nobody has told**: the aim's own, and with
 /// no aim the first by name. A name this seat no longer holds is inert, which
 /// is the place file's whole rule about a stale place.
 #[test]
-fn a_seat_nobody_has_told_opens_the_aims_engine_and_otherwise_the_first_by_name() {
-    let held = vec![engine("beta", &["b"]), engine("alpha", &["a"])];
+fn a_seat_nobody_has_told_opens_the_aims_server_and_otherwise_the_first_by_name() {
+    let held = vec![server("beta", &["b"]), server("alpha", &["a"])];
     let bare = Model {
         roster: held.clone(),
         ..Model::default()
     };
-    assert_eq!(bare.engine_open().as_deref(), Some("alpha"));
+    assert_eq!(bare.server_open().as_deref(), Some("alpha"));
     let aimed = Model {
         aim: Some(Aim {
             channel: "beta".to_owned(),
@@ -94,47 +97,47 @@ fn a_seat_nobody_has_told_opens_the_aims_engine_and_otherwise_the_first_by_name(
         roster: held.clone(),
         ..Model::default()
     };
-    assert_eq!(aimed.engine_open().as_deref(), Some("beta"));
+    assert_eq!(aimed.server_open().as_deref(), Some("beta"));
     let said = Model {
-        engines: Engines {
+        servers: Servers {
             open: Some("beta".to_owned()),
-            ..Engines::default()
+            ..Servers::default()
         },
         ..aimed.clone()
     };
-    assert_eq!(said.engine_open().as_deref(), Some("beta"));
+    assert_eq!(said.server_open().as_deref(), Some("beta"));
     let gone = Model {
-        engines: Engines {
+        servers: Servers {
             open: Some("a channel this seat gave up".to_owned()),
-            ..Engines::default()
+            ..Servers::default()
         },
         ..aimed
     };
     assert_eq!(
-        gone.engine_open().as_deref(),
+        gone.server_open().as_deref(),
         Some("beta"),
         "a name nothing resolves is inert and the aim answers instead"
     );
-    assert_eq!(Model::default().engine_open(), None, "nothing to open");
+    assert_eq!(Model::default().server_open(), None, "nothing to open");
 }
 
-/// **Opening aims the wall last aimed under that engine, and its first by
-/// `ordered` where this seat has never aimed one** — so an open engine is
+/// **Opening aims the workspace last aimed under that server, and its first by
+/// `ordered` where this seat has never aimed one** — so an open server is
 /// never open over nothing.
 #[test]
-fn opening_aims_the_wall_this_seat_was_last_on_under_it() {
+fn opening_aims_the_workspace_this_seat_was_last_on_under_it() {
     let mut model = Model {
-        roster: vec![engine("alpha", &["second", "first"])],
+        roster: vec![server("alpha", &["second", "first"])],
         ..Model::default()
     };
-    model.open_engine("alpha");
+    model.open_server("alpha");
     assert_eq!(
         model.aim.as_ref().map(|aim| aim.address.clone()),
         Some("first".to_owned()),
         "its first by `ordered`, which is by name here"
     );
     model.aim_at("alpha", "second");
-    model.open_engine("alpha");
+    model.open_server("alpha");
     assert_eq!(
         model.aim.as_ref().map(|aim| aim.address.clone()),
         Some("second".to_owned()),
@@ -142,8 +145,8 @@ fn opening_aims_the_wall_this_seat_was_last_on_under_it() {
     );
 }
 
-/// **A wall this seat can no longer address is not aimed at** by an opening,
-/// and an engine with no addressable wall at all aims nothing rather than
+/// **A workspace this seat can no longer address is not aimed at** by an opening,
+/// and a server with no addressable workspace at all aims nothing rather than
 /// aiming at a name no envelope carries.
 #[test]
 fn an_opening_aims_nothing_where_there_is_nothing_this_seat_can_address() {
@@ -153,56 +156,56 @@ fn an_opening_aims_nothing_where_there_is_nothing_this_seat_can_address() {
             named_there: Some("theirs".to_owned()),
             dials: None,
         },
-        walls: vec![wall("not-ours")],
+        workspaces: vec![workspace("not-ours")],
         ..Chunk::default()
     };
     let mut model = Model {
         roster: vec![unreachable],
-        engines: Engines {
+        servers: Servers {
             aimed: [("elsewhere".to_owned(), "gone".to_owned())]
                 .into_iter()
                 .collect(),
-            ..Engines::default()
+            ..Servers::default()
         },
         ..Model::default()
     };
-    model.open_engine("elsewhere");
+    model.open_server("elsewhere");
     assert_eq!(model.aim, None);
-    // An engine no roster carries is opened and aims nothing: the place file
+    // A server no roster carries is opened and aims nothing: the place file
     // may name one this seat has since given up.
-    model.open_engine("a channel this seat gave up");
+    model.open_server("a channel this seat gave up");
     assert_eq!(model.aim, None);
 }
 
-/// **Aiming records the wall under its engine**, wherever the aim came from —
+/// **Aiming records the workspace under its server**, wherever the aim came from —
 /// one door, so the two surfaces cannot spell *what aiming means* differently.
 #[test]
-fn aiming_writes_the_wall_down_under_its_engine() {
+fn aiming_writes_the_workspace_down_under_its_server() {
     let mut model = seated();
-    model.standing = Some(crate::ui::Stand::Engine(own().channel.name.clone()));
-    model.aim_at("(this box's own engine)", "home");
+    model.standing = Some(crate::ui::Stand::Server(own().channel.name.clone()));
+    model.aim_at("(this box's own server)", "home");
     assert_eq!(
-        model.engines.aimed.get("(this box's own engine)"),
+        model.servers.aimed.get("(this box's own server)"),
         Some(&"home".to_owned())
     );
     assert_eq!(model.standing, None, "an aim is where the cursor is");
 }
 
-/// **`+ new` aims its wall, drops the selection and asks for the box**
-/// (DESIGN §4.42 item 7) — and the engine's opening ranks: a start is a use.
+/// **`+ new` aims its workspace, drops the selection and asks for the box**
+/// (DESIGN §4.42 item 7) — and the server's opening ranks: a start is a use.
 #[test]
-fn beginning_on_a_wall_aims_it_ranks_its_engine_and_asks_for_the_box() {
+fn beginning_on_a_workspace_aims_it_ranks_its_server_and_asks_for_the_box() {
     let mut model = Model {
-        roster: vec![own(), engine("lab", &["bench", "annex"])],
+        roster: vec![own(), server("lab", &["bench", "annex"])],
         ..seated()
     };
     model.begin_at(&Aim {
         channel: "lab".to_owned(),
         address: "annex".to_owned(),
     });
-    assert_eq!(model.engine_open().as_deref(), Some("lab"));
+    assert_eq!(model.server_open().as_deref(), Some("lab"));
     assert_eq!(
-        model.engines.opened.get("lab").copied(),
+        model.servers.opened.get("lab").copied(),
         Some(1),
         "an opening ranks, whichever control made it"
     );

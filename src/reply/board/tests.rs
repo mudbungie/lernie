@@ -54,7 +54,7 @@ fn a_claimed_row_carries_its_column_its_holder_its_gates_and_its_figures() {
 }
 
 /// **Every absence is a reading.** A ball nobody holds names no claimant, no
-/// wall and no epic, and it has no figure — four different claims from four
+/// workspace and no epic, and it has no figure — four different claims from four
 /// empty strings.
 #[test]
 fn an_unheld_row_names_no_holder_no_epic_and_no_figure() {

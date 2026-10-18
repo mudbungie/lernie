@@ -9,10 +9,10 @@ use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, escape, fleeting, painted, seated};
 use crate::ui::Model;
 
-/// **The control hangs off the aimed wall's row and opens the pane**, which is
+/// **The control hangs off the aimed workspace's row and opens the pane**, which is
 /// the only thing that says that button is wired to that door.
 #[test]
-fn the_wall_s_control_opens_the_pane() {
+fn the_workspace_s_control_opens_the_pane() {
     let mut model = seated();
     assert!(crate::ui::slash::fire(&mut model, WORD, ""));
     assert!(model.fleet.is_some(), "the word opened nothing");
@@ -50,7 +50,7 @@ fn the_two_acts_that_carry_a_word_are_dead_until_it_is_typed() {
 }
 
 /// **The three that need no word fire at once**, each composing the envelope
-/// its own op takes against the aimed wall.
+/// its own op takes against the aimed workspace.
 #[test]
 fn the_three_wordless_acts_compose_their_own_gestures() {
     for (word, op) in [(DISBAND, "disband"), (DISARM, "disarm"), (SCAN, "scan")] {
@@ -64,7 +64,7 @@ fn the_three_wordless_acts_compose_their_own_gestures() {
     }
 }
 
-/// **And the two that need one fire once it is there**, carrying the wall, the
+/// **And the two that need one fire once it is there**, carrying the workspace, the
 /// word and — for the loop — the cap the operator set.
 #[test]
 fn the_two_worded_acts_carry_the_words_the_pane_holds() {
@@ -102,7 +102,7 @@ fn the_cap_moves_under_its_own_two_controls_and_never_below_one() {
 }
 
 /// **The two emptinesses are two sentences, and each listing has its own** —
-/// nobody has answered, and the wall answered and has none.
+/// nobody has answered, and the workspace answered and has none.
 #[test]
 fn each_listing_says_which_emptiness_it_is_in() {
     let mut waiting = seated();

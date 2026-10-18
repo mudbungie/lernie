@@ -69,7 +69,7 @@ fn an_effort_that_is_null_or_absent_is_the_absence_and_not_a_refusal() {
 
 /// **Rung 3: a level outside the closed set is carried verbatim.** The gesture
 /// asserts one of four; this reports what the config file holds, and a file may
-/// hold a word written by a hand or by a newer engine.
+/// hold a word written by a hand or by a newer server.
 #[test]
 fn a_level_this_seat_has_no_word_for_is_carried_rather_than_refused() {
     let mut frame = tuned();

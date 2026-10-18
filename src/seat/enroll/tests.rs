@@ -3,7 +3,7 @@
 //! Split at the design-time budget on the seam the act itself has. [`said`] is
 //! what a spent enrollment PRODUCES — the symbol, the line it encodes, the
 //! entry a named destination gets, and the tree that is still untouched without
-//! one. [`faults`] is every way the act does not get there: the engine
+//! one. [`faults`] is every way the act does not get there: the server
 //! answering no, a frame this seat cannot read, a channel that will not open,
 //! and the answer that crossed and came back to nobody. They change for
 //! different reasons, which is the test that a seam is real.
@@ -16,7 +16,7 @@ use serde_json::{Value, json};
 use super::enroll;
 use crate::test_support::{Scratch, wire};
 
-/// The fabricated material an engine answers with. Every string is marked
+/// The fabricated material a server answers with. Every string is marked
 /// `notreal`, and the key deliberately carries no private-key banner: the
 /// disclosure gate reads every committed byte of this tree.
 const CA: &str = "-----BEGIN CERTIFICATE-----\nnotreal-ca\n-----END CERTIFICATE-----\n";
@@ -97,7 +97,7 @@ fn as_form(
     form: crate::render::Form,
 ) -> (crate::cli::Verdict, Vec<String>) {
     let scratch = Scratch::new();
-    let _engine = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
+    let _server = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
     acted(scratch.path(), "phone-1", "foot", None, into, form)
 }
 
@@ -105,7 +105,7 @@ fn as_form(
 /// no destination named — the ordinary path, which writes nothing.
 fn spent(answer: Vec<Value>) -> (crate::cli::Verdict, Vec<String>, Vec<String>) {
     let scratch = Scratch::new();
-    let _engine = wire::wired(&scratch, &wire::flat(), vec![answer]);
+    let _server = wire::wired(&scratch, &wire::flat(), vec![answer]);
     let before = tree(scratch.path());
     let (verdict, _) = acted(
         scratch.path(),

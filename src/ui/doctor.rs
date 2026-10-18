@@ -8,10 +8,10 @@
 //! names no workspace and its subject is every channel this box holds — so it
 //! is offered on a seat that has aimed at nothing, which is the seat most
 //! likely to be asking whether anything is wired at all. Aimed, the same
-//! control asks the deeper question about that wall (`crate::ui::model::
+//! control asks the deeper question about that workspace (`crate::ui::model::
 //! doctor`).
 //!
-//! # Every line is the engine's
+//! # Every line is the server's
 //!
 //! The check, the fact and the remedy are painted as sent: a diagnostic with
 //! its own opinion is a second authority for a settled decision. The one thing
@@ -27,9 +27,9 @@ pub const WORD: &str = "doctor";
 pub const HEADING: &str = "is this box wired";
 /// What it says before any channel has answered.
 pub const NOT_ANSWERED: &str = "waiting to hear whether this box is wired";
-/// What a section says for an engine that answered and ran no check — a fact
-/// about that engine, and the one empty state here that is not a wait.
-pub const NO_CHECKS: &str = "this engine ran no check";
+/// What a section says for a server that answered and ran no check — a fact
+/// about that server, and the one empty state here that is not a wait.
+pub const NO_CHECKS: &str = "this server ran no check";
 
 /// Paint the pane and take the clicks on it. Answers whether there was one to
 /// paint, so the shell knows whether the conversation still stands.
@@ -63,7 +63,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
 }
 
 /// One check: whether it holds, what was checked and what was found, in the
-/// colour of its state — then the engine's remedy, verbatim and wrapped, where
+/// colour of its state — then the server's remedy, verbatim and wrapped, where
 /// there is one.
 fn check(ui: &mut egui::Ui, row: &Check) {
     let state = if row.ok {

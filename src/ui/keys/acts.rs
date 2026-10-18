@@ -44,7 +44,7 @@ pub fn fire(act: Act, ctx: &egui::Context, model: &mut Model) {
 }
 
 /// **What `+ new` does** (`crate::ui::bar`): a conversation begun on the
-/// aimed wall, under the same guard the door stands behind — nothing is
+/// aimed workspace, under the same guard the door stands behind — nothing is
 /// aimed, or a pane covers the window and it is not the switcher.
 fn new(model: &mut Model) {
     if model.covered() && !model.switching {

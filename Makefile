@@ -148,7 +148,7 @@ leak-scan:
 # the other direction). yog mints the wire protocol version and this crate
 # VENDORS a copy of the constant, so the skew is two-directional: yog must not
 # publish a bump ahead of its consumers, and this repository must not publish
-# one ahead of the engine. thrall took the second road first — 0.0.15 shipped
+# one ahead of the server. thrall took the second road first — 0.0.15 shipped
 # PROTOCOL 16 while the newest published yog spoke 15.
 #
 # `.github/workflows/release-plz.yml`'s `merge-release-pr` job spends the
@@ -392,14 +392,14 @@ uninstall:
 # an edit, and a box that should stop tracking releases stops with a
 # `systemctl --user disable` and no change here at all.
 #
-# It seats a timer; it does not carry a build. The engine's deployment moves an
+# It seats a timer; it does not carry a build. The server's deployment moves an
 # image because an image is its unit of install; a seat's unit of install is a
 # published version and the registry already serves it, so what crosses the ssh
 # channel is three small text files. Nothing is restarted, because a seat is a
 # window somebody launched: `cargo install` replaces the binary by rename, an
 # open window finishes its session on the build it started under, and the next
 # launch is the adoption. `scripts/deploy/lernie-update`'s header carries the
-# protocol-skew consequence — a seat may run ahead of its engine for up to an
+# protocol-skew consequence — a seat may run ahead of its server for up to an
 # hour, and the fail-closed hello refusing it is the designed behavior.
 # With no HOST it seats THIS box, and that is the common case rather than the
 # fallback: a seat is a window, the box most likely to run a window is the

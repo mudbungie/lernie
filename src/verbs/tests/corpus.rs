@@ -82,7 +82,7 @@ fn addressed(signature: &Signature, frame: &Value) -> Option<String> {
 
 /// **The vendored request set is upstream's, whole**, both directions — and
 /// every op the seat has a word for is in it, so a verb naming an op the
-/// engine never had fails here rather than on a connection.
+/// server never had fails here rather than on a connection.
 #[test]
 fn every_request_shape_is_vendored_and_every_verb_is_one() {
     // Sorted, because the two sides are ordered by different keys and only a

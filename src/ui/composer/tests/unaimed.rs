@@ -2,7 +2,7 @@
 //! verbs are typed into it and fire, and prose typed into it goes nowhere.
 //!
 //! Its own file because the subject is the one mode the rest of the suite
-//! never reaches: every other composer test is seated on a wall.
+//! never reaches: every other composer test is seated on a workspace.
 
 use super::super::{NOWHERE, UNAIMED};
 use crate::paint_probe::frame::{Window, locate_in, press};
@@ -60,7 +60,7 @@ fn a_slash_verb_that_needs_no_aim_fires_with_nothing_aimed() {
 }
 
 /// **Prose with nothing aimed composes nothing** and costs nothing: there is
-/// no wall for a deposit or a start, and what was typed is still the
+/// no workspace for a deposit or a start, and what was typed is still the
 /// operator's.
 #[test]
 fn prose_with_nothing_aimed_deposits_nothing_and_stays() {
@@ -71,7 +71,7 @@ fn prose_with_nothing_aimed_deposits_nothing_and_stays() {
 }
 
 /// **The menu offers exactly the verbs that need no aim**: the window's own
-/// are listed, and none whose subject is a wall or a conversation.
+/// are listed, and none whose subject is a workspace or a conversation.
 #[test]
 fn the_menu_with_nothing_aimed_lists_only_the_window_verbs() {
     let words: Vec<&str> = crate::ui::slash::rows(&Model::default())

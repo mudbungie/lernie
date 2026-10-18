@@ -11,7 +11,7 @@
 //!   `cfg(test)`, it shells to the tool an operator would use, and **no
 //!   certificate is ever committed**: a fixture key in a tree is a private key
 //!   in a repository, which is the exact class `make leak-scan` refuses.
-//! - **The stand-in engine** ([`engine`]), which LISTENS — the one thing a seat
+//! - **The stand-in server** ([`server`]), which LISTENS — the one thing a seat
 //!   must never do. That is precisely why it is here and not in the crate
 //!   proper.
 
@@ -24,19 +24,19 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 pub(crate) mod clock;
 /// The one walk over the wire conformance corpus, shared by both replays.
 pub(crate) mod corpus;
-/// The far end of the wire, so a channel can be tested against something that
-/// speaks the protocol.
-pub(crate) mod engine;
 /// The one door to a GPU renderer, held under the binary's one lock.
 pub(crate) mod glass;
 /// The operator's out-of-channel act, performed by the suite.
 pub(crate) mod mint;
-/// The far end of a PUNCHED wire: an engine that serves a held line, or
+/// The far end of a PUNCHED wire: a server that serves a held line, or
 /// that calls back what the seat wrote to its inbox.
 pub(crate) mod roving;
+/// The far end of the wire, so a channel can be tested against something that
+/// speaks the protocol.
+pub(crate) mod server;
 /// The window's fixtures, and the two ways a test looks at one.
 pub(crate) mod window;
-/// A data root with an engine behind one of its channels.
+/// A data root with a server behind one of its channels.
 pub(crate) mod wire;
 
 /// How many scratch directories this process has minted, so two tests running

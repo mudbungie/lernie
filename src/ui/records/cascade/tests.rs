@@ -12,7 +12,7 @@ fn word() -> &'static str {
     crate::ui::records::header::word(Offer::Children)
 }
 
-/// **The control is painted where the engine offers the cascade**, with the
+/// **The control is painted where the server offers the cascade**, with the
 /// box that arms it — whose hint is the sentence saying what would.
 #[test]
 fn the_offered_cascade_paints_its_box_and_its_word() {
@@ -24,7 +24,7 @@ fn the_offered_cascade_paints_its_box_and_its_word() {
     }
 }
 
-/// **A conversation the engine offers no cascade on carries no control at
+/// **A conversation the server offers no cascade on carries no control at
 /// all** — absent, not disabled: what is missing is the subject, not a
 /// parameter.
 #[test]
@@ -40,7 +40,7 @@ fn a_row_with_no_children_offer_carries_no_control() {
 }
 
 /// **The arming is the display name back**, surrounding whitespace forgiven
-/// and nothing else — the engine's own rule for the arming `delete-agent`
+/// and nothing else — the server's own rule for the arming `delete-agent`
 /// takes.
 #[test]
 fn the_arming_is_the_name_back_with_whitespace_forgiven() {
@@ -75,7 +75,7 @@ fn the_armed_control_fires_the_stop_that_takes_the_children() {
         envelope["children"], true,
         "the cascade, and not the bare form the composer fires"
     );
-    // **The arming is never spent**, so the engine's refusal costs no retype.
+    // **The arming is never spent**, so the server's refusal costs no retype.
     assert_eq!(model.cascade, own_row().display);
 }
 
@@ -91,7 +91,7 @@ fn moving_the_subject_takes_the_arming_with_it() {
     assert_eq!(model.cascade, "");
 }
 
-/// **A cascade with no wall and one with no conversation compose nothing** —
+/// **A cascade with no workspace and one with no conversation compose nothing** —
 /// the two states the pane cannot paint this control in, made unreachable
 /// rather than merely unlikely (`crate::ui::model::records`).
 #[test]
@@ -114,7 +114,7 @@ fn a_cascade_with_no_subject_composes_nothing() {
 }
 
 /// **A row nobody has answered about arms nothing**, which is the third gate:
-/// the arming is compared against the engine's own row, and there is none.
+/// the arming is compared against the server's own row, and there is none.
 #[test]
 fn an_unanswered_row_arms_nothing() {
     let mut model = Model {

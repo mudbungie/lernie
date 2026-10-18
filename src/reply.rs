@@ -15,16 +15,16 @@
 //! spellings below are read off REMOTE and off the encoders it governs, and
 //! where this module and that document disagree, one of them is a bug.
 //!
-//! **It decodes only what it paints.** The engine's reply surface is forty-odd
+//! **It decodes only what it paints.** The server's reply surface is forty-odd
 //! kinds and most of them belong to panes that do not exist here.
 //! Thirty-four do
 //! not: the roster, the conversation list, one workspace's role tuning, the
 //! transcript, the live tail, the conversation's records pair — the steps its
 //! loop took and what its worktree holds — its spine pair, the operable
 //! commits and the config commit governing them — the decision queue and the receipt
-//! that raises a row onto it, the window's own three reads — the engine's verb
+//! that raises a row onto it, the window's own three reads — the server's verb
 //! table, what a needle found and the trail — the ball pane's four — the
-//! world's binding table, the fleet board, one wall's own balls and the branch
+//! world's binding table, the fleet board, one workspace's own balls and the branch
 //! it tracks them on — the login pane's three — the provider
 //! table, what one row offers and a sign-in run — a captured run, the detached
 //! advance's receipt, the start family's two — the staged body and the minted
@@ -61,7 +61,7 @@
 //!    neighbour is what is actually forbidden: a token painted as a word it is
 //!    not is a lie, where a token painted as itself is merely unstyled.
 //! 4. **An unknown *field* is ignored, structurally.** Every reader indexes by
-//!    key, so a field the engine added rides through untouched. That is the
+//!    key, so a field the server added rides through untouched. That is the
 //!    other half of REMOTE §3's rule that a new field is not a bump, and it is
 //!    the one tolerance this reader gets for free.
 //!
@@ -77,7 +77,7 @@
 
 /// The conversation's own row, whole — the deepest read of one conversation.
 pub mod agent;
-/// The balls themselves: the binding table, one wall's own, and its branch.
+/// The balls themselves: the binding table, one workspace's own, and its branch.
 pub mod balls;
 /// The fleet board: every live ball in its column, and the loops running them.
 pub mod board;
@@ -99,23 +99,23 @@ pub(crate) mod fields;
 pub mod files;
 /// Which config commit a conversation resolves its policy from.
 pub mod governing;
-/// The engine's own verb table, which is also the parity roster's source.
+/// The server's own verb table, which is also the parity roster's source.
 pub mod help;
 /// The undelivered mail waiting in one conversation's inbox.
 pub mod inbox;
-/// The census of what an engine can answer, and the captured run.
+/// The census of what a server can answer, and the captured run.
 mod kinds;
 /// The config lineages one workspace holds.
 pub mod lineages;
-/// One sign-in run, as the engine streams it.
+/// One sign-in run, as the server streams it.
 pub mod login;
-/// Every action that crossed the engine's boundary, and where its alarm stands.
+/// Every action that crossed the server's boundary, and where its alarm stands.
 pub mod ops;
 /// The price table and the ceiling — the world's two money facts.
 pub mod prices;
 /// What a reviewer has staged for a workspace's config, and one of them whole.
 pub mod proposals;
-/// What a wall can sign in to, and what one row is offering.
+/// What a workspace can sign in to, and what one row is offering.
 pub mod providers;
 /// The decision queue: what is asking for the operator, anywhere.
 pub mod queue;
@@ -129,7 +129,7 @@ pub mod roles;
 pub mod roster;
 /// Every delivery attempt of one workspace, with what it cost and how it ended.
 pub mod science;
-/// Text found across the balls, workspaces and conversations an engine sees.
+/// Text found across the balls, workspaces and conversations a server sees.
 pub mod search;
 /// What a ball has cost, and what the sum is over.
 pub mod spend;
@@ -155,7 +155,7 @@ const OK: &str = "ok";
 /// verdict there — a `bl close` that failed the gate is `ok: false` and is an
 /// answer, not a refusal.
 const KIND: &str = "kind";
-/// The refusal's own text — the engine's sentence about why nothing happened.
+/// The refusal's own text — the server's sentence about why nothing happened.
 const ERROR: &str = "error";
 
 /// **What one reply frame turned out to be.** Three outcomes rather than a
@@ -163,7 +163,7 @@ const ERROR: &str = "error";
 /// distinction is the whole product of this module:
 ///
 /// - an answer it draws,
-/// - a refusal it shows in the engine's own words,
+/// - a refusal it shows in the server's own words,
 /// - bytes it could not read, which is a statement about *this seat* and
 ///   carries this seat's own sentence.
 ///
@@ -175,9 +175,9 @@ const ERROR: &str = "error";
 /// reply, so the equality given up is one no caller spends.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Read {
-    /// The engine answered, and this is the answer typed.
+    /// The server answered, and this is the answer typed.
     Answer(Reply),
-    /// The engine refused, in its own words (§7.3's story). A gesture that
+    /// The server refused, in its own words (§7.3's story). A gesture that
     /// never ran, a gate that said no, an address that resolved to nothing.
     Refusal(String),
     /// Bytes this seat cannot read: a malformed envelope, or a `kind` this

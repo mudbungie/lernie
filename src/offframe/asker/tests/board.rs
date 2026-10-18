@@ -4,7 +4,7 @@
 //! A module of its own beside [`super::login`], on the seam that file's doc
 //! draws: [`super::nesting`] is *how the three questions nest*, and these are
 //! reads that nest under none of them. What is peculiar to this pane is that
-//! two of its four fan over every channel and two are asked of the aimed wall,
+//! two of its four fan over every channel and two are asked of the aimed workspace,
 //! from one standing — so the pass has to put both up together and both down
 //! together, and that is what is asserted here.
 
@@ -21,7 +21,7 @@ use serde_json::{Value, json};
 #[test]
 fn the_ball_pane_s_four_reads_stand_only_while_it_is_open() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![
@@ -57,7 +57,7 @@ fn the_ball_pane_s_four_reads_stand_only_while_it_is_open() {
     model.begin_board();
     link.settle(&mut model);
     tick(&link, scratch.path());
-    let ops: Vec<String> = engine
+    let ops: Vec<String> = server
         .heard()
         .iter()
         .filter_map(|said| said.get("op").and_then(Value::as_str))
@@ -86,7 +86,7 @@ fn the_ball_pane_s_four_reads_stand_only_while_it_is_open() {
     assert_eq!(
         model.holding,
         Some(Vec::new()),
-        "the wall's balls are filed"
+        "the workspace's balls are filed"
     );
     assert_eq!(model.marks.as_deref(), Some("balls/tasks"));
 }

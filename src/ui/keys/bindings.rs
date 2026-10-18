@@ -173,7 +173,7 @@ pub const BINDINGS: &[Binding] = &[
     Binding::fired(
         Chord::ctrl(Key::X),
         Act::Switch,
-        "every engine, its workspaces and their conversations",
+        "every server, its workspaces and their conversations",
     ),
     Binding::fired(
         Chord::ctrl(Key::O),

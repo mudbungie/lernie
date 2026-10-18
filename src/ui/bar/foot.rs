@@ -1,5 +1,5 @@
 //! **The bar's foot is the workspace** (DESIGN §4.44 item 1): item 11's
-//! workspace selector moved whole off the rule — the aimed wall's name with
+//! workspace selector moved whole off the rule — the aimed workspace's name with
 //! `⏶` beside it, `workspace ⏶` with nothing aimed, elided with `…` at the
 //! width the bar has, so a collapsed bar dragged wider shows more of it
 //! (§4.45 item 2; bl-773e) — and the dropup a click opens, standing upward

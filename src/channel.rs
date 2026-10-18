@@ -1,4 +1,4 @@
-//! **The channel**: the seat's end of one wire to one engine (yog's
+//! **The channel**: the seat's end of one wire to one server (yog's
 //! `docs/REMOTE.md` §3, §8, §8.2; DESIGN §4.2-4.4).
 //!
 //! **A seat dials and is never dialled.** Every leg is an answer to something
@@ -21,8 +21,8 @@
 //! knows which rung answered, and nothing about what is trusted changes with
 //! it — the same mTLS verifies the same name off the same address.
 //!
-//! **The engine's name comes from the address and from nowhere else.** A dotted
-//! quad or a bracketed v6 literal is verified as an IP address — the engine's
+//! **The server's name comes from the address and from nowhere else.** A dotted
+//! quad or a bracketed v6 literal is verified as an IP address — the server's
 //! leaf must carry the matching `IP:` subject alternative name — and anything
 //! else is a DNS name. There is nothing to configure and nothing that can
 //! disagree with what was dialled (REMOTE §8: *"the name a client verifies is
@@ -53,7 +53,7 @@ pub mod hello;
 pub mod ladder;
 /// The grade, read off this box's own certificate before anything is dialled.
 pub mod leaf;
-/// One line to one engine, and what is kept of it between asks.
+/// One line to one server, and what is kept of it between asks.
 pub(crate) mod line;
 /// What the operator carried to this box.
 pub mod material;
@@ -87,12 +87,12 @@ pub struct Channel {
     /// paths costs nothing and is what turns rustls' own wording into a remedy.
     anchors: PathBuf,
     chain: PathBuf,
-    /// **What the engine at the far end could spell, as of the last dial**
+    /// **What the server at the far end could spell, as of the last dial**
     /// (yog's `docs/REMOTE.md` §3.2). A capability rather than an agreement:
     /// the major is settled by the preface's strict equality, and this decides
     /// only whether one control paints a fact or greys it.
     ///
-    /// It starts at [`edition::FLOOR`] — the least an engine of this major can
+    /// It starts at [`edition::FLOOR`] — the least a server of this major can
     /// be — so a channel that has never dialled answers about the fields this
     /// major requires and about nothing else. An atomic and not a lock: it is
     /// one integer written by whichever thread dialled last, the crate's locks
@@ -103,8 +103,8 @@ pub struct Channel {
 
 impl Channel {
     /// Open the channel from provisioned material. **Nothing is dialled here**:
-    /// a channel is a fact about what this box may say, not about whether an
-    /// engine happens to be up.
+    /// a channel is a fact about what this box may say, not about whether a
+    /// server happens to be up.
     pub fn open(m: &Material) -> Result<Self, String> {
         Ok(Self {
             config: tls::client_config(m)?,
@@ -136,11 +136,11 @@ impl Channel {
         }
     }
 
-    /// **Whether the engine can spell one field of one shape** (yog's
+    /// **Whether the server can spell one field of one shape** (yog's
     /// `docs/REMOTE.md` §3.2, [`edition`]).
     ///
     /// The question a control asks before it paints a fact that arrived after
-    /// this major was cut: `false` says *this engine cannot say*, which is a
+    /// this major was cut: `false` says *this server cannot say*, which is a
     /// different claim from the field's default and the only reason to ask. A
     /// channel that has not dialled answers for the floor, which is every
     /// field this major requires.
@@ -161,7 +161,7 @@ impl Channel {
     /// **Except where the frames replace** ([`crate::verbs::queue::replaces`],
     /// REMOTE §14.1): there the answer is whole on its first frame, and every
     /// later one is the same answer restated after a change, so the read stops
-    /// at one and drops the line — which is the word to the engine that ends
+    /// at one and drops the line — which is the word to the server that ends
     /// its hold. Collecting to the terminator there is a 30 s wait for nothing
     /// the first frame had not said (bl-09e1).
     ///
@@ -187,8 +187,8 @@ impl Channel {
     /// written in terms of this rather than beside it.
     ///
     /// `on_frame` answers whether to stay: `false` ends the read, which is how
-    /// a reader whose subject moved stops without a word to the engine
-    /// (dropping the connection is the word). `Ok(())` is the engine
+    /// a reader whose subject moved stops without a word to the server
+    /// (dropping the connection is the word). `Ok(())` is the server
     /// terminating the stream — the ordinary end, not an event.
     ///
     /// **Every failure past [`dial`](Self::dial) is [`Reach::Unanswered`]**, and
@@ -211,7 +211,7 @@ impl Channel {
         }
         // The whole answer is in, so a kept line goes back to its pool; a
         // follower that stopped early returned above and dropped its line,
-        // which is the word to the engine. A ping discarded on the way is
+        // which is the word to the server. A ping discarded on the way is
         // said, the way the climb's rungs were (`say::tell`).
         say::tell(
             self,
@@ -223,7 +223,7 @@ impl Channel {
     }
 }
 
-/// The name to verify the engine's certificate against, read off the address.
+/// The name to verify the server's certificate against, read off the address.
 fn server_name(address: &str) -> Result<ServerName<'static>, String> {
     let host = address.rsplit_once(':').map_or(address, |(head, _)| head);
     let host = host.trim_start_matches('[').trim_end_matches(']');

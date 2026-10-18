@@ -29,7 +29,7 @@ use serde_json::Value;
 
 use super::Verb;
 
-/// **The cut.** Two acts under one word on the engine's side — the driver is
+/// **The cut.** Two acts under one word on the server's side — the driver is
 /// killed and the content deposited, stamped as one gesture — and one row here,
 /// because what crosses the wire is one envelope of three named strings.
 pub const INTERRUPT: Verb = Verb {
@@ -63,7 +63,7 @@ pub const STOP: Verb = Verb {
              the root's driver dies, a child's driver deposits into it, and it \
              is running again seconds later — which is what bl-9fd1 measured, \
              on two conversations in two workspaces, at 796,522 further tokens. \
-             The engine says which forms it is offering on the conversation \
+             The server says which forms it is offering on the conversation \
              itself (`lernie agent <workspace> <agent>` prints its offers), so \
              a seat need not guess whether there is a subtree under there.",
 };
@@ -96,7 +96,7 @@ pub const WORKFLOW: Verb = Verb {
              there while its models, souls and manifest keep following the tip \
              it already follows. Marking a root switches its whole tree. An \
              unknown lineage, or a head whose version or workflow.yaml will \
-             not parse, comes back in the engine's own words before anything \
+             not parse, comes back in the server's own words before anything \
              is written. `governing` reads which mark, if any, answers now.",
 };
 
@@ -118,7 +118,7 @@ pub const DELETE_AGENT: Verb = Verb {
     params: &["workspace", "agent", "typed"],
     flags: &[],
     summary: "delete a conversation; typing its name confirms it, and takes its children too",
-    detail: "Removes the conversation and everything the engine holds for it — \
+    detail: "Removes the conversation and everything the server holds for it — \
              its ref, worktree, steps and inbox. Refused while it is live, so a \
              conversation still working is not deleted out from under itself. \
              An EMPTY `typed` deletes the one conversation; typing its name \

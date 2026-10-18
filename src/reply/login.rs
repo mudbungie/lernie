@@ -1,4 +1,4 @@
-//! **One sign-in run, as the engine is streaming it** (yog's `docs/REMOTE.md`
+//! **One sign-in run, as the server is streaming it** (yog's `docs/REMOTE.md`
 //! §8.3; PROTOCOL 13).
 //!
 //! The act and the read answer one kind, which is upstream's own decision and
@@ -9,7 +9,7 @@
 //! # A frame is an APPEND, exactly as the live tail's is
 //!
 //! `Query::LoginTail` hands over what the run has said **since the last frame**
-//! — the engine's lane advances a per-read cursor — so the first frame of any
+//! — the server's lane advances a per-read cursor — so the first frame of any
 //! read is the whole buffer and a seat that lost its connection re-asks and is
 //! whole again. [`Signin::absorb`] is that fold, and it is
 //! [`super::stream::Stream::absorb`]'s rule one noun over: lines accrete in
@@ -25,7 +25,7 @@
 //!
 //! `outcome` is the terminal exit status, and `fallback` is set **only** on a
 //! non-zero one — the command to run by hand, in the workspace-bound spelling
-//! the engine composes because it is the end that knows the wall. Neither is
+//! the server composes because it is the end that knows the workspace. Neither is
 //! `null` on the wire while the run is live, so neither is a gap here: a run
 //! with no outcome is a run that has not finished.
 //!

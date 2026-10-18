@@ -58,7 +58,7 @@ pub struct Diff {
     pub missing: Vec<String>,
     /// What changed, on a `diff` row.
     pub files: Vec<Churn>,
-    /// Whether the engine stopped listing files before the end.
+    /// Whether the server stopped listing files before the end.
     pub truncated: Option<bool>,
 }
 

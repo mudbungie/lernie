@@ -23,9 +23,9 @@ fn asking() -> ConvRow {
     }
 }
 
-/// **The seat standing on the engines column in the narrow shape**, which is
+/// **The seat standing on the servers column in the narrow shape**, which is
 /// where a conversation's row is since DESIGN §4.39 folded the rows under
-/// their wall.
+/// their workspace.
 ///
 /// That width is chosen rather than convenient: the composer stands down off
 /// the conversation's own column there (`crate::ui::shell`), so every word the
@@ -142,7 +142,7 @@ fn the_records_item_selects_the_row_and_opens_the_pane_on_it() {
 
 /// **The two that need words open the box and do not fire**, end to end: after
 /// the item, the cursor is in that box, the column carrying the composer is on
-/// the glass, and nothing has been asked of any engine.
+/// the glass, and nothing has been asked of any server.
 #[test]
 fn flag_and_delete_land_the_cursor_in_their_box_and_ask_for_nothing() {
     for (word, typed) in [(FLAG, "/flag "), (DELETE, "/delete ")] {

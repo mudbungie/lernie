@@ -2,7 +2,7 @@
 //! §8.2; DESIGN §4.1).
 //!
 //! REMOTE §3 is emphatic that *"the wire is a transport for the boundary, not a
-//! vocabulary"*: what crosses is the same JSON envelope the engine's own
+//! vocabulary"*: what crosses is the same JSON envelope the server's own
 //! `gestures/` inbox carries, `op` the discriminant and every parameter a named
 //! field. **So the seat carries the envelope; it does not own it.** This module
 //! is deliberately the whole of what a seat has to understand about one, and
@@ -16,14 +16,14 @@
 //!   goes down (§8.2);
 //! - whether the last reply frame said **ok**, because that is the exit code.
 //!
-//! Nothing else is read and nothing else is written. A gesture the engine has
+//! Nothing else is read and nothing else is written. A gesture the server has
 //! learned and this build has not crosses unchanged and is answered normally,
 //! which is REMOTE §3's own rule that a new verb is not a protocol bump: an
 //! `op` the far end does not know refuses in band, naming it, and that is the
 //! boundary correcting itself rather than two protocols meeting.
 //!
 //! **The typed ASK vocabulary is NOT here and its absence is the design.** yog
-//! holds `Action`/`Query` and their codec because the engine adjudicates them.
+//! holds `Action`/`Query` and their codec because the server adjudicates them.
 //! Reimplementing that side to *route* a gesture would be a second table over
 //! thirty-odd variants whose only job is to answer a question one field already
 //! answers — and the arm that drifted would send a client's own leaf to a host
@@ -56,7 +56,7 @@ pub const WORKSPACE: &str = "workspace";
 /// inside (`prompt`, `fan`) — one of the two places the name is a level down.
 pub const PREPARED: &str = "prepared";
 /// The destination the config family carries its workspace inside — the other
-/// place the name is a level down, and the wall a config act edits.
+/// place the name is a level down, and the workspace a config act edits.
 pub const TARGET: &str = "target";
 /// The reply envelope's verdict field.
 pub const OK: &str = "ok";
@@ -150,9 +150,9 @@ pub fn with_workspace(envelope: &Value, name: &str) -> Value {
 /// oddities. The name inside a prepared body is handed straight back out as the
 /// next act's address, so a prepared left in the host's spelling routes its own
 /// follow-up to a name no entry claims. The name inside a config destination is
-/// the wall whose file the act edits, so a config act aimed at an entry under a
+/// the workspace whose file the act edits, so a config act aimed at an entry under a
 /// §8.2 rename would otherwise resolve to no entry at all, fall through to this
-/// box's own engine, and write the wrong wall's file — silently (bl-4a36, and
+/// box's own server, and write the wrong workspace's file — silently (bl-4a36, and
 /// yog's twin bl-523f fixing the same row in the typed table).
 ///
 /// **What is still deliberately NOT a slot**: a `workspace` nested anywhere
@@ -192,7 +192,7 @@ fn named(obj: &mut Map<String, Value>) -> Option<&mut String> {
 /// **Whether a reply stream succeeded**, which is the seat's exit code.
 ///
 /// The LAST frame decides: an ordinary answer is one frame, and a follow-class
-/// read's last frame is its newest state. An empty stream is an engine that
+/// read's last frame is its newest state. An empty stream is a server that
 /// terminated without answering, and that is not ok. Neither is a frame that
 /// carries no `ok` — a seat does not read a missing verdict as a good one.
 pub fn succeeded(stream: &[Value]) -> bool {

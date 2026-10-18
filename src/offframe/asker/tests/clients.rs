@@ -1,9 +1,9 @@
-//! The sixth question: the machines registered in the aimed wall's workspace,
+//! The sixth question: the machines registered in the aimed workspace,
 //! which stands on the clients pane and on nothing else.
 //!
 //! A module of its own for [`super::login`]'s reason exactly — [`super::nesting`]
 //! is at the design-time budget, and this read nests under none of the three
-//! questions there: it is the aimed wall's, keyed on a pane.
+//! questions there: it is the aimed workspace's, keyed on a pane.
 
 use super::super::tick;
 use super::asking;
@@ -14,13 +14,13 @@ use serde_json::{Value, json};
 
 /// **The sixth question is the pane's, not the aim's** — the provider table's
 /// rule one noun over. And the standing buys the sharper form of what it buys
-/// there: a row's presence is true only at the instant the engine answered it
+/// there: a row's presence is true only at the instant the server answered it
 /// (REMOTE §5), so a read saying a foot is connected is worth nothing unless it
 /// is asked again.
 #[test]
 fn the_machines_read_stands_only_while_the_clients_pane_is_open() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![
@@ -54,7 +54,7 @@ fn the_machines_read_stands_only_while_the_clients_pane_is_open() {
     model.begin_clients();
     link.settle(&mut model);
     tick(&link, scratch.path());
-    let ops: Vec<String> = engine
+    let ops: Vec<String> = server
         .heard()
         .iter()
         .filter_map(|said| said.get("op").and_then(Value::as_str))

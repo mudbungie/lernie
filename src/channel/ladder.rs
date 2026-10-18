@@ -3,14 +3,14 @@
 //!
 //! 1. **A live held line** — a punched connection kept from an earlier ask,
 //!    still inside the silence bound and still open ([`Held::gone`]).
-//! 2. **The entry's direct address** — a LAN, a stable server, loopback. An
+//! 2. **The entry's direct address** — a LAN, a stable box, loopback. An
 //!    entry with no rendezvous material stops here, exactly as it always did:
 //!    the connect is unbounded and its refusal is the sentence. With material
 //!    below it the connect is bounded, because a NAT that drops the SYN would
 //!    otherwise cost minutes before the next rung is tried.
-//! 3. **A re-call from cached presence** — the engine's endpoints from the
+//! 3. **A re-call from cached presence** — the server's endpoints from the
 //!    last call that landed: write a fresh call and punch, one DHT walk and
-//!    not two (yog bl-278f). Never a client-only re-punch: an engine behind a
+//!    not two (yog bl-278f). Never a client-only re-punch: a server behind a
 //!    NAT holds no mapping once its served stream ends, so only a call opens
 //!    one, and the held line's pings are what keep one alive.
 //! 4. **The full rendezvous** — read presence off the commons, write a sealed
@@ -20,7 +20,7 @@
 //! What worked stays RAM for the run and never disk ([`crate::state`]): the
 //! cached presence, the punch port, the held lines. Whichever rung answered, the
 //! stream is handed back as a bare `TcpStream` and the caller runs the same
-//! inner mTLS over it, verifying the same engine name off the same address —
+//! inner mTLS over it, verifying the same server name off the same address —
 //! the ladder decides how a socket is obtained and nothing about what is
 //! trusted on it.
 //!
@@ -47,7 +47,7 @@ pub struct Roving {
     /// How long the direct rung waits for a SYN to be answered when a rung
     /// stands below it.
     pub direct: Duration,
-    /// How long a punch keeps sending SYNs: the engine's poll period plus
+    /// How long a punch keeps sending SYNs: the server's poll period plus
     /// its own punch window, so a call written at the worst moment is still
     /// answered inside it.
     pub window: Duration,

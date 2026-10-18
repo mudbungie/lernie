@@ -57,11 +57,11 @@ include = [
 # THE VERSION IS THE FENCE AND IT IS NOT A CHOICE.
 #
 # `lernie` on crates.io carries two eras. Through **0.0.x** it was the
-# agent-loop engine, which continues under the name `litany`. From **0.1.0** it
+# agent loop, which continues under the name `litany`. From **0.1.0** it
 # is this crate: the seat — the window and its wire client. That single rule is
 # the only thing separating the two eras in the published record, so the first
 # version this crate may ever bear is 0.1.0 and nothing below it. A 0.0.z
-# release from this tree would collide with the engine's own line and destroy
+# release from this tree would collide with litany's own line and destroy
 # the one disambiguation both READMEs promise.
 
 # PUBLISHABLE, and the flag restates cargo's default on purpose: this line is
@@ -86,7 +86,7 @@ include = [
 #
 # **This flag is necessary and it is not sufficient**, which bl-f468 learned by
 # being refused. The registry holds a second switch this manifest cannot see:
-# the crate `lernie` already exists — twelve 0.0.x releases of the engine era —
+# the crate `lernie` already exists — twelve 0.0.x releases of the litany era —
 # and it is configured to accept **Trusted Publishing only**, so a token
 # `cargo publish` is answered 403 no matter what this key says. That is a
 # registry-side setting and an owner's act; it is not a manifest problem and
@@ -130,9 +130,9 @@ publish = true
 #     pairing facts, ChaCha20-Poly1305 seals both items and SHA-1 names a
 #     target. It is the provider rustls already links, so naming it adds no
 #     crate, no licence and no advisory — the lockfile gains one edge. The
-#     same argument the engine made when it named it.
+#     same argument yog made when it named it.
 #   socket2 — THE ONE APPROVED NEW DEPENDENCY, by operator ruling 2026-09-23
-#     (§13.7 ruling 1), granted to this crate on the terms the engine got it:
+#     (§13.7 ruling 1), granted to this crate on the terms yog got it:
 #     `=0.6.5` exact, `default-features = false`, the `all` feature (where
 #     `set_reuse_port` lives), MIT OR Apache-2.0 so no new licence value. It
 #     sets `SO_REUSEADDR`/`SO_REUSEPORT` on the sockets a TCP simultaneous
@@ -178,7 +178,7 @@ publish = true
 # the approval's, not this ball's: `default-features = false` because rustls'
 # defaults select `aws-lc-rs`, whose sys crate builds C; `ring` because it is
 # the approved provider; `std` and `tls12` because the channel is synchronous
-# `std::net` and the engine's safe default protocol versions include TLS 1.2.
+# `std::net` and the server's safe default protocol versions include TLS 1.2.
 rustls = { version = "0.23", default-features = false, features = [
     "ring",
     "std",

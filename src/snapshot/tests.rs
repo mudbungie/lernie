@@ -79,7 +79,7 @@ fn the_matrix_renders_every_world_at_every_size_and_the_frame_holds() {
 /// **Assertion (a)**, at every size the matrix renders.
 ///
 /// The main screen is the seated one: an unprovisioned window is aimed at no
-/// wall, so it offers no enrollment to reach and says so in words instead.
+/// workspace, so it offers no enrollment to reach and says so in words instead.
 ///
 /// **The walk is the shape's** (bl-dfda): the narrow shape puts one column on
 /// the glass, so reaching a pane there costs the gesture that goes to its

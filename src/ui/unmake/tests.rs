@@ -7,7 +7,7 @@ use crate::test_support::window::{click, pane, seated};
 use crate::ui::{Model, Unmaking};
 use serde_json::json;
 
-/// The seated model with an unmaking standing on its wall.
+/// The seated model with an unmaking standing on its workspace.
 fn arming() -> Model {
     let mut model = seated();
     model.begin_unmaking();
@@ -43,7 +43,7 @@ fn it_paints_nothing_at_all_with_no_unmaking_open() {
 }
 
 /// **It names its subject and states the refusal before offering the act** —
-/// the wall, the channel, what the engine will decline it for, and the box that
+/// the workspace, the channel, what the server will decline it for, and the box that
 /// arms it.
 #[test]
 fn it_says_what_would_be_unmade_and_what_would_refuse_it() {
@@ -51,7 +51,7 @@ fn it_says_what_would_be_unmade_and_what_would_refuse_it() {
     let painted = pane(|ui| {
         assert!(render(ui, &mut model));
     });
-    for word in [HEADING, "home on (this box's own engine)", REFUSED_IF, ARM] {
+    for word in [HEADING, "home on (this box's own server)", REFUSED_IF, ARM] {
         assert!(
             painted.lines().any(|line| line == word),
             "{word:?}:\n{painted}"
@@ -63,7 +63,7 @@ fn it_says_what_would_be_unmade_and_what_would_refuse_it() {
 /// than looked for on a screen.
 #[test]
 fn the_pane_says_which_of_the_three_states_it_is_in() {
-    let aim = seated().aim.expect("the fixture is aimed at a wall");
+    let aim = seated().aim.expect("the fixture is aimed at a workspace");
     let mut held = Unmaking::at(aim);
     assert_eq!(said(&held), NOT_ARMED);
     held.typed = "home".to_owned();

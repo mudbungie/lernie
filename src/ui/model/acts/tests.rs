@@ -3,12 +3,12 @@
 use crate::test_support::window::{conv, seated};
 use crate::ui::{Model, Notice};
 
-/// **Aiming retires everything that was about the old wall** — the list, the
+/// **Aiming retires everything that was about the old workspace** — the list, the
 /// selection, the transcript and the tail — and touches nothing else. In
 /// particular not the draft: what an operator typed is theirs until they send
 /// it.
 #[test]
-fn aiming_at_another_wall_retires_what_was_about_the_last_one() {
+fn aiming_at_another_workspace_retires_what_was_about_the_last_one() {
     let mut model = Model {
         draft: "not sent yet".to_owned(),
         ..seated()
@@ -39,7 +39,7 @@ fn selecting_a_conversation_retires_only_what_belonged_to_the_last_one() {
     assert_eq!(
         model.convs.len(),
         1,
-        "the list is the wall's, not the row's"
+        "the list is the workspace's, not the row's"
     );
     assert!(model.aim.is_some());
 }
@@ -57,10 +57,10 @@ fn dismissing_puts_the_notice_down_and_changes_nothing_else() {
 }
 
 /// **Aiming where the window is already aimed retires nothing but the
-/// selection** (DESIGN §4.39). The one cursor crosses the aimed wall's own row
-/// on its way between the engine above it and the conversations beneath it, so
+/// selection** (DESIGN §4.39). The one cursor crosses the aimed workspace's own row
+/// on its way between the server above it and the conversations beneath it, so
 /// a walk over that row must not empty the list under the cursor and put
-/// *waiting to hear about this wall* where the rows had been.
+/// *waiting to hear about this workspace* where the rows had been.
 #[test]
 fn aiming_where_the_window_already_is_keeps_the_rows_and_drops_the_selection() {
     let mut model = seated();

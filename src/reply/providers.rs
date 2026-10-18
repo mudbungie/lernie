@@ -1,4 +1,4 @@
-//! **What a wall can sign in to** — the provider table, and what one row is
+//! **What a workspace can sign in to** — the provider table, and what one row is
 //! offering (yog's `docs/REMOTE.md` §8.3; PROTOCOL 13).
 //!
 //! Two kinds in one module because they are one subject read at two depths:
@@ -10,9 +10,9 @@
 //!
 //! It is a sentence when the row cannot take a sign-in and absent when it can,
 //! and the absence is the reading: nothing is wrong with this row. The seat
-//! never composes that sentence — the engine knows which auth model a row
+//! never composes that sentence — the server knows which auth model a row
 //! declares and this end does not — so a control is offered off the option's
-//! shape and the reason is painted in the engine's own words.
+//! shape and the reason is painted in the server's own words.
 //!
 //! # `effort` and `priority` are CAPABILITIES, not settings
 //!
@@ -28,7 +28,7 @@
 //! capability — and its rendered view does not, so the fact does not cross the
 //! wire (REMOTE §8.3, bl-7c9f). This seat therefore cannot tell a
 //! device-capable row from a browser-only one, and the pane says the loopback
-//! remedy for **every** row on a wall held elsewhere rather than guessing which
+//! remedy for **every** row on a workspace held elsewhere rather than guessing which
 //! rows need it. A stated remedy that is sometimes unnecessary beats a silence
 //! that is sometimes wrong.
 
@@ -41,12 +41,12 @@ pub(crate) const KIND: &str = "providers";
 /// The kind token one row's offering answers to.
 pub(crate) const MODELS: &str = "models";
 
-/// One provider row, as this workspace's wall resolves it.
+/// One provider row, as this workspace resolves it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProviderRow {
     /// The row's name, which is the address every act in this family takes.
     pub name: String,
-    /// What the engine says about this row's credential, in its own words.
+    /// What the server says about this row's credential, in its own words.
     pub fact: String,
     /// Why a sign-in cannot be started here, or `None` where one can.
     pub blocked: Option<String>,
@@ -65,7 +65,7 @@ impl ProviderRow {
     }
 
     /// **Whether this row holds no credential and needs one** (bl-7a77) —
-    /// read off the engine's own words for the row's credential fact, which
+    /// read off the server's own words for the row's credential fact, which
     /// end in one of [`BARE`] exactly where its credential model needs a
     /// secret and none is there (yog's `credential_words`). The wire carries
     /// that fact as words and no flag, so the words are the reading; a row
@@ -87,7 +87,7 @@ impl ProviderRow {
     }
 }
 
-/// The engine's endings for a row that needs a credential and holds none: a
+/// The server's endings for a row that needs a credential and holds none: a
 /// sign-in row's, then a keyed row's.
 pub const BARE: [&str; 2] = ["not signed in", "no credential stored"];
 

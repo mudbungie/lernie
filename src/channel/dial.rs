@@ -19,13 +19,13 @@ use super::{Channel, Reach, edition, frame, hello, ladder, line};
 
 impl Channel {
     /// Connect, handshake and send. The TLS handshake happens inside the first
-    /// write, and the one frame read here is the engine's version preface — so
+    /// write, and the one frame read here is the server's version preface — so
     /// what this hands back is a socket with a request on it and no *answer*
     /// yet read.
     ///
     /// **Both ends state a version before either reads** (REMOTE §3), and the
     /// request goes out in the same breath as this end's preface — so
-    /// confirming the engine's costs no round trip, and a mismatch refuses
+    /// confirming the server's costs no round trip, and a mismatch refuses
     /// before a frame of the answer is decoded.
     ///
     /// **It is also where the doubt begins** (REMOTE §3, bl-3969). Everything
@@ -35,7 +35,7 @@ impl Channel {
     /// decoded"*. The one exception is a preface this end could not READ, which
     /// [`hello::confirm`] classes for itself: the request went out in the same
     /// breath as this end's preface, so a connection that broke before the
-    /// engine's answer got back may have broken after it ran the gesture.
+    /// server's answer got back may have broken after it ran the gesture.
     ///
     /// **A held line owes no preface** (REMOTE §13.4): it was exchanged when
     /// the line was new, so the request alone goes down it. A held line that
@@ -91,7 +91,7 @@ impl Channel {
             return format!("send: {e}");
         };
         format!(
-            "the handshake with {} did not verify ({fault:?}): {} must hold the anchors of THAT engine's CA, and {} must be a leaf that CA issued. Both are carried here by hand; the seat mints nothing",
+            "the handshake with {} did not verify ({fault:?}): {} must hold the anchors of THAT server's CA, and {} must be a leaf that CA issued. Both are carried here by hand; the seat mints nothing",
             self.address,
             self.anchors.display(),
             self.chain.display()

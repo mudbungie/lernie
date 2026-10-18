@@ -1,4 +1,4 @@
-//! **The tuning pane**: what this wall's roles are set to, and the three
+//! **The tuning pane**: what this workspace's roles are set to, and the three
 //! controls that set them (yog's `docs/PARITY.md` §7; PROTOCOL 6 and 7).
 //!
 //! # The settings surface this seat did not have
@@ -7,8 +7,8 @@
 //! panel*, and recorded that this seat had none — the window was a notice bar,
 //! two lists, a conversation and a composer, with no preferences surface
 //! anywhere. This is it, and it is deliberately not *preferences*: nothing here
-//! is a fact about this box. Every row is a fact about the **wall**, held in
-//! that workspace's config on the engine, and every control is one gesture
+//! is a fact about this box. Every row is a fact about the **workspace**, held in
+//! that workspace's config on the server, and every control is one gesture
 //! across the §8.5 boundary. A seat that kept a copy would be a second
 //! authority for a file it does not own.
 //!
@@ -19,11 +19,11 @@
 //! showing what is in force instead of blank."* The read is **standing** while
 //! the pane is open (`crate::state::Standing`), so a write that lands is
 //! reflected by the next answer rather than by this end predicting one. That
-//! is what makes every control here a statement of the engine's fact: nothing
+//! is what makes every control here a statement of the server's fact: nothing
 //! on this pane is ever this seat's own guess about a file it wrote to.
 //!
 //! Until the first answer the pane says so, in the [`crate::ui::convs`]
-//! doctrine's own words: a wall nobody has been answered about is not a wall
+//! doctrine's own words: a workspace nobody has been answered about is not a workspace
 //! with no roles. The two sentences are [`NOT_ANSWERED`] and [`NO_ROLES`], and
 //! the second is a fact about the workspace — a fresh one really does declare
 //! none.
@@ -50,9 +50,9 @@ pub const WORD: &str = "roles";
 pub const MODEL: &str = "model";
 /// The pane's own heading.
 pub const HEADING: &str = "role tuning";
-/// What it says for a wall nobody has been answered about yet.
+/// What it says for a workspace nobody has been answered about yet.
 pub const NOT_ANSWERED: &str = "waiting to hear what this workspace's roles are";
-/// What it says for a wall that answered, and declares no role. A fact about
+/// What it says for a workspace that answered, and declares no role. A fact about
 /// the workspace, and the one empty state here that is not a wait.
 pub const NO_ROLES: &str = "this workspace's settings name no role — /config adds one";
 /// The word on the seat that asks for the priority lane.
@@ -92,8 +92,8 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         Some(rows) if rows.is_empty() => {
             ui.label(NO_ROLES);
         }
-        // The list scrolls, and the heading and the wall above it do not — the
-        // same shape the list pane keeps, and for the same reason: a wall
+        // The list scrolls, and the heading and the workspace above it do not — the
+        // same shape the list pane keeps, and for the same reason: a workspace
         // with a dozen roles is longer than a pane at any width this seat opens
         // at, and a pane cut off mid-row says nothing about having been cut.
         Some(rows) => {
@@ -142,7 +142,7 @@ fn role(ui: &mut egui::Ui, model: &mut Model, row: &RoleRow) {
         // upstream says what it is: *"a checkbox, not a choice of lanes …
         // asking for the standard lane outright is a different intent that no
         // setting expresses."* Two seats reading `on` and `off` would express
-        // exactly that intent. The bool is a **local mirroring the engine's
+        // exactly that intent. The bool is a **local mirroring the server's
         // row**, re-seeded every frame and never read back for anything but
         // the value to send — so nothing here holds an opinion about a lane
         // between one answer and the next.

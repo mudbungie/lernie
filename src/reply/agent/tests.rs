@@ -32,7 +32,7 @@ fn busy() -> serde_json::Value {
 /// **The busy row reads whole**, including the two shapes shared with other
 /// readings and the id spelling that is this encoder's own.
 #[test]
-fn a_busy_conversation_carries_every_fact_the_engine_holds() {
+fn a_busy_conversation_carries_every_fact_the_server_holds() {
     let read = agent(busy().as_object().expect("an object")).expect("a whole row reads");
     assert_eq!(read.state, AgentState::InFlight);
     assert_eq!(read.ancestors, ["r-0"]);
@@ -47,7 +47,7 @@ fn a_busy_conversation_carries_every_fact_the_engine_holds() {
             crate::reply::agent::Offer::Stop,
             crate::reply::agent::Offer::Children
         ],
-        "the gates read as the set they describe, in the engine's own order"
+        "the gates read as the set they describe, in the server's own order"
     );
     assert_eq!(read.strip.expect("a strip").facts, "Bash · 5s");
     assert_eq!(read.spend.tokens.total, 120);
@@ -60,7 +60,7 @@ fn a_busy_conversation_carries_every_fact_the_engine_holds() {
         Some("over 3 conversations")
     );
     let full = read.context.expect("a measured context");
-    assert_eq!(full.percent, 2, "the engine's own rounding, carried");
+    assert_eq!(full.percent, 2, "the server's own rounding, carried");
     assert_eq!(full.window, 200_000);
 }
 

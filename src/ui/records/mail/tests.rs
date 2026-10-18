@@ -44,7 +44,7 @@ fn the_two_empty_states_are_two_sentences() {
 }
 
 /// **A hand-edited deposit keeps a header**, each unstated fact said as itself
-/// — the engine's own rendering rule, kept so the row stays legible.
+/// — the server's own rendering rule, kept so the row stays legible.
 #[test]
 fn an_unstated_fact_is_said_rather_than_dropped() {
     let bare = Row {

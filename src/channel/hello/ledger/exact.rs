@@ -86,7 +86,7 @@
 //!
 //! **8 is a bump for a shape this seat does not speak either half of**
 //! (REMOTE §5.1, upstream bl-66d4; bl-2604 here). `reply/advertised` gained
-//! **`wrote`**, a required boolean saying whether the engine stored the
+//! **`wrote`**, a required boolean saying whether the server stored the
 //! presented tool set or found it identical to what it held and wrote nothing.
 //! It is required rather than optional-absent-reads-false on purpose:
 //! absent would decode as *"nothing was restored"* — the reassuring answer —
@@ -106,7 +106,7 @@
 //!
 //! **13 crosses five bumps at once, and only one of them is a break**
 //! (bl-249b here; yog's own `src/wire/hello.rs` carries the ledger and REMOTE
-//! §9.16-§9.18 the reasoning). The released engine moved five integers while
+//! §9.16-§9.18 the reasoning). The released server moved five integers while
 //! this build sat at 8, and the shape of the arrears is the point: four of the
 //! five *gained* something, and a gain reaches a decoder that reads named
 //! fields as nothing at all. What has to be paid is the one loss.
@@ -114,7 +114,7 @@
 //! - **9** — `reply/steps` **LOST** `auth_failed`, and `reply/transcript`
 //!   gained the `wounded` entry beside it. This is the break: the field was
 //!   read here with [`super::super::reply::fields::flag`], which is required,
-//!   so at 13 every steps reply refuses on a key the engine no longer writes.
+//!   so at 13 every steps reply refuses on a key the server no longer writes.
 //!   REMOTE §9.16 names the replacement outright — *"a seat that read
 //!   `auth_failed` reads `wound == \"refused\"` instead"* — and this build
 //!   already decodes `wound` and `auth_row`, so the affordance is re-pointed at
@@ -131,7 +131,7 @@
 //! - **14** — two additive fields on two shapes in use, landed at one version
 //!   because two bumps a minute apart would make every client re-pin twice for
 //!   one wave. `request/enroll` gained an optional `address` — what the DEVICE
-//!   will dial, which need not be the engine's own view of itself — and this
+//!   will dial, which need not be the server's own view of itself — and this
 //!   seat composes no door for it (`verbs::tests::corpus::emits`'s ledger,
 //!   bl-2f18). `reply/clients` gained an optional `last_seen`, and this seat
 //!   paints the half that decides something: **absent is a machine that has

@@ -13,9 +13,9 @@
 mod asked;
 
 use super::{
-    Aim, Asking, Authoring, Bindings, Chunk, Columns, Configuring, Diagnosis, Dropup, Engines,
-    Enrolling, Fill, Fleet, Forking, Hits, Listing, Login, Lookup, Notice, Pages, Posted, Pricing,
-    Records, Start, Trail, Tuning, Unmaking,
+    Aim, Asking, Authoring, Bindings, Chunk, Columns, Configuring, Diagnosis, Dropup, Enrolling,
+    Fill, Fleet, Forking, Hits, Listing, Login, Lookup, Notice, Pages, Posted, Pricing, Records,
+    Servers, Start, Trail, Tuning, Unmaking,
 };
 use crate::reply::{convs::ConvRow, stream::Stream, transcript::Transcript};
 
@@ -24,21 +24,21 @@ use crate::reply::{convs::ConvRow, stream::Stream, transcript::Transcript};
 pub struct Model {
     /// Every channel's workspaces, in the order the channels were asked.
     pub roster: Vec<Chunk>,
-    /// The aimed wall's conversations.
+    /// The aimed workspace's conversations.
     pub convs: Vec<ConvRow>,
-    /// **Which wall [`Self::convs`] is the ANSWER to**, or `None` while the aim
+    /// **Which workspace [`Self::convs`] is the ANSWER to**, or `None` while the aim
     /// has not been answered about at all (bl-f780).
     ///
     /// It rides beside the rows rather than being derived, because emptiness
-    /// cannot tell the two apart: a wall that answered zero conversations and a
-    /// wall nobody has asked about yet hold the same `Vec`, and painting *"no
-    /// conversations here"* over the second states a definite fact about a wall
+    /// cannot tell the two apart: a workspace that answered zero conversations and a
+    /// workspace nobody has asked about yet hold the same `Vec`, and painting *"no
+    /// conversations here"* over the second states a definite fact about a workspace
     /// nobody looked at — the same thing `crate::ui::convs::UNCERTAIN` refuses
     /// to do one level down, on a conversation nobody could take a reading of.
     ///
     /// It is set and cleared at the two places `convs` is, and nowhere else.
     pub answered: Option<Aim>,
-    /// **What the aimed wall's roles are set to**, or `None` while nobody has
+    /// **What the aimed workspace's roles are set to**, or `None` while nobody has
     /// been answered about them — one field where [`Self::convs`] needs a pair,
     /// because here the option carries the whole distinction (`tuning`).
     pub roles: Option<Vec<crate::reply::roles::RoleRow>>,
@@ -58,12 +58,12 @@ pub struct Model {
     /// state only the derivation order resolves — the reframe clippy's
     /// `struct_excessive_bools` names, taken rather than suppressed.
     pub listing: Option<Listing>,
-    /// **The machines registered in the aimed wall's workspace**, or `None`
+    /// **The machines registered in the aimed workspace**, or `None`
     /// while nobody has been answered about it — the one-option reading
     /// [`Self::roles`] gets, one noun over (`clients`).
     pub machines: Option<Vec<crate::reply::clients::ClientRow>>,
     /// **The config pane, while it is open** — the eleventh covering pane, and
-    /// the fourth whose subject is the aimed wall (`config`; DESIGN §4.30). A
+    /// the fourth whose subject is the aimed workspace (`config`; DESIGN §4.30). A
     /// struct rather than a flag because it holds one question of its own:
     /// which file it is pointed at.
     pub configuring: Option<Configuring>,
@@ -71,19 +71,19 @@ pub struct Model {
     /// `None` while nobody has been answered about the file the pane points at
     /// — the one-option reading [`Self::roles`] gets (`config`).
     pub config: Option<crate::reply::config::Config>,
-    /// **The aimed wall's config lineages**, on the same standing (`config`).
+    /// **The aimed workspace's config lineages**, on the same standing (`config`).
     pub lineages: Option<Vec<crate::reply::lineages::Lineage>>,
     /// **What a reviewer has staged for it**, on the same standing (bl-a1d6).
     pub proposals: Option<crate::reply::proposals::Proposals>,
     /// **The login pane, while it is open** — the eighth covering pane, and
-    /// the second whose subject is the aimed wall (`login`; DESIGN §4.24). A
+    /// the second whose subject is the aimed workspace (`login`; DESIGN §4.24). A
     /// struct rather than a flag because it holds two questions of its own:
     /// which row a sign-in is being followed on, and which was asked what it
     /// offers.
     pub login: Option<Login>,
-    /// **What the aimed wall can sign in to**, or `None` while nobody has been
+    /// **What the aimed workspace can sign in to**, or `None` while nobody has been
     /// answered about it — the one-option reading [`Self::roles`] gets, and
-    /// filed here rather than on the pane because the rows are the engine's.
+    /// filed here rather than on the pane because the rows are the server's.
     pub providers: Option<Vec<crate::reply::providers::ProviderRow>>,
     /// **What the last row asked answered with** — the posted read's answer,
     /// dropped by the act that asks another (`login`). Which row it is about
@@ -111,13 +111,13 @@ pub struct Model {
     pub lookup: Option<Lookup>,
     /// **An unmaking, while it stands** — the fifth covering pane, and the only
     /// one this window has whose act cannot be undone by doing the other thing
-    /// (`unmake`; DESIGN §4.20). It carries the wall it was opened on rather
+    /// (`unmake`; DESIGN §4.20). It carries the workspace it was opened on rather
     /// than following the aim, because the roster stays live under it.
     pub unmaking: Option<Unmaking>,
     /// **What each channel last said is asking for the operator**, one section
     /// per channel and the union across them. A `Vec` rather than an option
     /// because the emptiness that matters is per channel: nothing here at all
-    /// is nobody answered yet, and a section holding no row is an engine that
+    /// is nobody answered yet, and a section holding no row is a server that
     /// answered and holds nothing waiting (`queue`).
     pub waiting: Vec<Asking>,
     /// **What each channel last said has crossed its boundary** — the same
@@ -130,26 +130,26 @@ pub struct Model {
     /// **What each channel last said its ball⇄workspace bindings are**, on the
     /// same terms (`board`).
     pub bindings: Vec<Bindings>,
-    /// **What the aimed wall last said it holds**, or `None` while nobody has
+    /// **What the aimed workspace last said it holds**, or `None` while nobody has
     /// been answered about it — the one-option reading [`Self::roles`] gets,
     /// and retired with the aim for the same reason (`board`).
     pub holding: Option<Vec<crate::reply::balls::BoundBall>>,
-    /// **The branch the aimed wall tracks its tasks on**, on the same standing
+    /// **The branch the aimed workspace tracks its tasks on**, on the same standing
     /// (`board`).
     pub marks: Option<String>,
     /// **A ball's text being authored, while the block is open** (`board::
     /// acts`; DESIGN §4.35, bl-f7ae). A struct rather than a flag because it
-    /// holds the wall it was opened on and the name that wall's engine knows
+    /// holds the workspace it was opened on and the name that workspace's server knows
     /// it by, and because one block serves two subjects — a ball that does not
-    /// exist yet, and one this wall holds.
+    /// exist yet, and one this workspace holds.
     pub authoring: Option<Authoring>,
     /// **The fleet pane, while it is open** — the thirteenth covering pane,
-    /// and the fifth whose subject is the aimed wall (`fleet`; DESIGN §4.33).
+    /// and the fifth whose subject is the aimed workspace (`fleet`; DESIGN §4.33).
     /// A struct rather than a flag because three of its five acts carry a word
-    /// nothing on the glass can derive, and because it holds the wall it was
+    /// nothing on the glass can derive, and because it holds the workspace it was
     /// opened on rather than following the aim.
     pub fleet: Option<Fleet>,
-    /// **The aimed wall's delivery attempts**, or `None` while nobody has been
+    /// **The aimed workspace's delivery attempts**, or `None` while nobody has been
     /// answered — the one-option reading [`Self::roles`] gets (`fleet`).
     pub attempts: Option<Vec<crate::reply::science::Attempt>>,
     /// **What its agents changed**, on the same standing (`fleet`).
@@ -199,27 +199,27 @@ pub struct Model {
     pub live: Option<Stream>,
     /// What the seat last heard that was not content.
     pub notice: Option<Notice>,
-    /// Which wall the window is aimed at.
+    /// Which workspace the window is aimed at.
     pub aim: Option<Aim>,
-    /// **How the engines are arranged** (DESIGN §4.39, `engines`), one
+    /// **How the servers are arranged** (DESIGN §4.39, `servers`), one
     /// subject written down together ([`crate::place`]).
-    pub engines: Engines,
+    pub servers: Servers,
     /// **The bar's pin and its linger** (`crate::ui::bar`; DESIGN §4.44).
     pub bar: crate::ui::bar::Bar,
     /// **Which row the roster's walk is standing on without selecting it**
     /// ([`super::Stand`]), or `None` where the cursor is the aim or selection.
     ///
     /// It is the one place in this window where the cursor is NOT the
-    /// selection, and DESIGN §4.39 says why: opening an engine is an act, so a
-    /// walk that moved through a closed engine would open every engine it
+    /// selection, and DESIGN §4.39 says why: opening a server is an act, so a
+    /// walk that moved through a closed server would open every server it
     /// passed. So the walk stands on the row, the row takes the keyboard, and
     /// Enter or Space fires the same click a pointer fires. It rides here and
-    /// not on `Engines`, because it is a cursor and nothing durable.
+    /// not on `Servers`, because it is a cursor and nothing durable.
     pub standing: Option<super::Stand>,
     /// **Everything this seat is set to** (`crate::settings`; §4.46 item 4).
     pub settings: crate::settings::Settings,
     /// **Whether the switcher stands** (`crate::ui::switcher`; DESIGN §4.42):
-    /// the one list of engines, walls and conversations, asked for by Ctrl+X
+    /// the one list of servers, workspaces and conversations, asked for by Ctrl+X
     /// and put down by a choice or Esc. A navigation the operator performed,
     /// which is the one class of thing here no other fact can be asked for.
     pub switching: bool,
@@ -280,7 +280,7 @@ pub struct Model {
     /// across a round trip, because starting is two acts and the second is
     /// composed from the first's answer ([`Start`]).
     pub start: Option<Start>,
-    /// **The engine the box is naming a new workspace on** (bl-673e): the
+    /// **The server the box is naming a new workspace on** (bl-673e): the
     /// switcher's `+ new workspace` under it asked, and the next Enter reads
     /// the draft as `<name> <goal>` ([`Model::found`]). Put down by any aim
     /// or selection.

@@ -5,7 +5,7 @@
 //! earns a captured run, an advance earns a receipt that says only *it
 //! launched*. A start is not one gesture. `prepare` stages it and answers the
 //! body the fire must carry; `prompt` fires that body with the goal and answers
-//! the name the engine minted. So the second act is composed by the frame that
+//! the name the server minted. So the second act is composed by the frame that
 //! **absorbs the first's receipt**, which is the only shape that keeps the
 //! window's own rule: a frame composes into the outbox and never waits on a
 //! socket.
@@ -35,7 +35,7 @@ pub struct Start {
     pub address: String,
     /// What the operator typed. It is held here rather than left in the draft
     /// so that the text has a painted representation for the whole of the round
-    /// trip: a start that shows nothing between Enter and the engine's answer
+    /// trip: a start that shows nothing between Enter and the server's answer
     /// reads as a window that did nothing.
     pub goal: String,
     /// How far along it is.
@@ -59,9 +59,9 @@ pub enum Phase {
     Staging,
     /// The fire is out, carrying the staged body and the goal.
     Firing,
-    /// The engine minted this name for the conversation it started.
+    /// The server minted this name for the conversation it started.
     Started(String),
-    /// The engine refused one of the two acts, in its own words — and the goal
+    /// The server refused one of the two acts, in its own words — and the goal
     /// went back to the box, because a refused fire spends nothing (yog's
     /// `docs/DESIGN.md` §8.1: *sign in first* is the one this ball exists for,
     /// and a blank goal and the spend ceiling ride the same door).
@@ -144,7 +144,7 @@ impl Model {
         // **The role the composer's start-mode row asked for** (DESIGN §4.39;
         // REMOTE §9.21): plan mode is a choice made between the stage and the
         // fire, and this is the frame between them. Unstated is `None`, which
-        // leaves the body exactly as the engine answered it — byte-identical
+        // leaves the body exactly as the server answered it — byte-identical
         // to what this window fired before the field existed — so a seat that
         // was never asked still guesses no soul.
         self.outbox.push(super::Posted::act(crate::verbs::prompt(
@@ -170,7 +170,7 @@ impl Model {
             && self.start.as_ref().is_some_and(Start::outstanding)
     }
 
-    /// **The engine refused one of the two acts.** The sentence stands where
+    /// **The server refused one of the two acts.** The sentence stands where
     /// the start's own did, and the box comes back under it with the goal in
     /// it: a refused fire spends nothing, so what was typed is the operator's
     /// again. The refund goes to the draft only where the draft is empty — it
@@ -211,14 +211,14 @@ impl Model {
     /// **The minted name**, which is what the whole flow was for.
     ///
     /// A receipt for a start this window did not fire still paints its name,
-    /// against the wall the window is aimed at: it is the one fact the engine
+    /// against the workspace the window is aimed at: it is the one fact the server
     /// added, and a seat that dropped it would have started a conversation and
     /// said nothing about it.
     ///
     /// **And the name is selected** — *a start focuses what it started* — but
-    /// only where the window is still aimed at the wall it was started on. The
-    /// selection is painted in the aimed wall's list and nowhere else, so a
-    /// selection on another wall is one the operator can neither see nor leave;
+    /// only where the window is still aimed at the workspace it was started on. The
+    /// selection is painted in the aimed workspace's list and nowhere else, so a
+    /// selection on another workspace is one the operator can neither see nor leave;
     /// what the claim then amounts to, and what spends it, is
     /// [`super::claim`].
     pub(super) fn started(&mut self, conversation: String) {

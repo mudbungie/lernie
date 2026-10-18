@@ -81,13 +81,13 @@ fn a_settle_publishes_the_place_the_entry_point_writes_down() {
         "a link nobody has settled is aimed at nothing and arranged not at all"
     );
     let mut model = seated();
-    model.open_engine(&own().channel.name.clone());
+    model.open_server(&own().channel.name.clone());
     link.settle(&mut model);
     assert_eq!(link.place(), crate::place::Place::of(&model));
-    assert_eq!(link.place().engines.open, model.engines.open);
+    assert_eq!(link.place().servers.open, model.servers.open);
 }
 
-/// **A leg that never reached an engine reads as neither of the other two.**
+/// **A leg that never reached a server reads as neither of the other two.**
 /// The three remedies are three different acts: type something else, upgrade
 /// the seat, or look at this box's files.
 #[test]
@@ -98,7 +98,7 @@ fn an_unreachable_leg_is_its_own_sentence() {
         Said::Unreachable("connect 127.0.0.1:1: refused".to_owned()),
     );
     // **It lands on that channel's own section** (bl-e620), which is where a
-    // fact about a relationship belongs — the bar is for what an engine said.
+    // fact about a relationship belongs — the bar is for what a server said.
     let mut model = Model {
         roster: vec![own()],
         ..Model::default()

@@ -1,5 +1,5 @@
 //! Every rung taken, against a fake DHT on loopback UDP and a stand-in
-//! engine on a held line. The bench every file under here stands on is
+//! server on a held line. The bench every file under here stands on is
 //! this one's; `held` is what happens to a line between asks, `refusals`
 //! is every rung falling through, `call` is what the call carries and from
 //! which port, `recall` is rung 3 and its cache, and `said` is every line the
@@ -28,7 +28,7 @@ use crate::dht::tests::fake::{FakeNode, Mood};
 use crate::dht::tests::quick;
 use crate::dht::{Keypair, Mutable, NodeId};
 use crate::test_support::clock::FakeClock;
-use crate::test_support::roving::{Fate, Reply, Roving as Engine};
+use crate::test_support::roving::{Fate, Reply, Roving as Server};
 use crate::test_support::{Scratch, dead, mint};
 
 /// How long the bench lets a dial, a DHT query or a punch run before it is
@@ -129,7 +129,7 @@ impl Bench {
     }
 }
 
-/// Presence under the fixture engine's own seed, naming `at`.
+/// Presence under the fixture server's own seed, naming `at`.
 fn presence(at: SocketAddr) -> Mutable {
     let p = pairing();
     let sealed = Presence {
@@ -185,11 +185,11 @@ fn till(done: &dyn Fn() -> bool) {
 fn rung_two_the_direct_address_answers_and_is_not_held() {
     let (listener, at) = listener();
     let b = Bench::new(at, None);
-    let engine = Engine::listen(b.scratch.path(), listener, vec![Reply::yes(), Reply::yes()]);
+    let server = Server::listen(b.scratch.path(), listener, vec![Reply::yes(), Reply::yes()]);
     let channel = b.channel();
     assert!(channel.ask(&request(1)).is_ok());
     assert!(channel.ask(&request(2)).is_ok());
-    assert_eq!(engine.connections(), 2, "a direct line is one per ask");
+    assert_eq!(server.connections(), 2, "a direct line is one per ask");
     assert_eq!(b.node.queries(), 0, "the commons was never asked");
     assert_eq!(b.call(), None);
 }
@@ -198,7 +198,7 @@ fn rung_two_the_direct_address_answers_and_is_not_held() {
 fn rung_four_reads_presence_writes_a_call_punches_and_the_line_is_held() {
     let (listener, at) = listener();
     let b = Bench::new(dead(), Some(presence(at)));
-    let engine = Engine::listen(b.scratch.path(), listener, vec![Reply::yes(), Reply::yes()]);
+    let server = Server::listen(b.scratch.path(), listener, vec![Reply::yes(), Reply::yes()]);
     let channel = b.channel();
     assert_eq!(
         channel.ask(&request(1)),
@@ -215,13 +215,13 @@ fn rung_four_reads_presence_writes_a_call_punches_and_the_line_is_held() {
         "the call names this box at its punch port"
     );
     assert!(channel.ask(&request(2)).is_ok());
-    assert_eq!(engine.connections(), 1, "the second ask rode the held line");
+    assert_eq!(server.connections(), 1, "the second ask rode the held line");
     assert_eq!(
         b.node.queries(),
         asked,
         "and touched the commons not at all"
     );
-    let heard = engine.heard();
+    let heard = server.heard();
     assert_eq!(ops(&heard), vec![1, 2]);
     assert_eq!(
         heard.iter().filter(|v| v.get("protocol").is_some()).count(),
@@ -231,9 +231,9 @@ fn rung_four_reads_presence_writes_a_call_punches_and_the_line_is_held() {
 }
 
 #[test]
-fn the_engines_own_syn_lands_on_this_listener() {
+fn the_servers_own_syn_lands_on_this_listener() {
     let b = Bench::new(dead(), Some(presence(dead())));
-    let engine = Engine::call_back(
+    let server = Server::call_back(
         b.scratch.path(),
         b.node.store(),
         pairing(),
@@ -241,6 +241,6 @@ fn the_engines_own_syn_lands_on_this_listener() {
     );
     let channel = b.channel();
     assert!(channel.ask(&request(1)).is_ok());
-    assert_eq!(engine.connections(), 1);
-    assert_eq!(ops(&engine.heard()), vec![1]);
+    assert_eq!(server.connections(), 1);
+    assert_eq!(ops(&server.heard()), vec![1]);
 }

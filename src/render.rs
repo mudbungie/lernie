@@ -39,7 +39,7 @@ use crate::reply::stream::Stream;
 use crate::reply::{Read, Reply, read};
 
 pub(crate) use parts::counted;
-pub(crate) use walls::{at_rest, held_at, waiting_on_mail};
+pub(crate) use workspaces::{at_rest, held_at, waiting_on_mail};
 
 /// The receipts and the runs — what an ACT answers with.
 mod acts;
@@ -49,20 +49,20 @@ mod answer;
 mod chat;
 /// The vocabulary every rendering is built from.
 mod parts;
-/// What a wall's policy is written in: roles, lineages, config, clients.
+/// What a workspace's policy is written in: roles, lineages, config, clients.
 mod policy;
-/// The three reads whose subject is an engine: its words, a search, the trail.
+/// The three reads whose subject is a server: its words, a search, the trail.
 mod reads;
-/// The conversation's own records, and the files a wall's policy is in.
+/// The conversation's own records, and the files a workspace's policy is in.
 mod records;
 /// One step, drilled into — its records, its tool calls and its logs.
 mod step;
-/// The balls, the board, the fleet and what a wall's agents changed.
+/// The balls, the board, the fleet and what a workspace's agents changed.
 mod tasks;
-/// The roster, the conversation list, the queue, the transcript and the tail.
-mod walls;
-/// What a wall's agents changed, as a diff rather than a row of counters.
+/// What a workspace's agents changed, as a diff rather than a row of counters.
 mod work;
+/// The roster, the conversation list, the queue, the transcript and the tail.
+mod workspaces;
 
 /// **An act's receipt as the one line a window's state slot holds** (bl-9760)
 /// — this module's own rendering of the reply, its lines joined, so the window
@@ -139,9 +139,9 @@ fn rendered(frame: &Value) -> String {
 fn painted(answered: Read) -> String {
     match answered {
         Read::Answer(reply) => answer::answer(&reply),
-        // The engine's own sentence, unadorned. It is the answer to what was
+        // The server's own sentence, unadorned. It is the answer to what was
         // asked, so it is printed rather than interpreted — this seat has
-        // nothing to add to a wall saying no.
+        // nothing to add to a workspace saying no.
         Read::Refusal(why) => format!("refused: {why}"),
         // A statement about THIS SEAT, and the upgrade prompt (DESIGN §4.9's
         // rung 2). The frame is still on the wire and `--json` still prints it,

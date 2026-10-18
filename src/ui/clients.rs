@@ -1,9 +1,9 @@
-//! **The clients pane**: which machines may execute for this wall, and what
+//! **The clients pane**: which machines may execute for this workspace, and what
 //! each of them says it can do (yog's `docs/REMOTE.md` §5, §5.1; PROTOCOL 2).
 //!
 //! # Two lifetimes on one row, and the pane says both
 //!
-//! Presence is an **observation** — true at the instant the engine answered,
+//! Presence is an **observation** — true at the instant the server answered,
 //! and recorded nowhere on either end — while the advertised set is a
 //! **statement** the machine last made and which stands whether or not it is
 //! connected. So a row reads *not connected* beside a full set as the ordinary
@@ -39,9 +39,9 @@ use crate::ui::{Model, theme};
 pub const WORD: &str = "clients";
 /// The pane's own heading.
 pub const HEADING: &str = "machines";
-/// What it says for a wall nobody has been answered about yet.
+/// What it says for a workspace nobody has been answered about yet.
 pub const NOT_ANSWERED: &str = "waiting to hear which machines this workspace holds";
-/// What it says for a wall that answered and holds no registration at all — a
+/// What it says for a workspace that answered and holds no registration at all — a
 /// fact about the workspace, and the one empty state here that is not a wait.
 pub const NONE_REGISTERED: &str = "no machine is registered in this workspace yet — \
                                    /enroll lets one join";
@@ -86,7 +86,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     true
 }
 
-/// One machine: what it is called, whether it was connected when the engine
+/// One machine: what it is called, whether it was connected when the server
 /// answered, and what it offers.
 fn client(ui: &mut egui::Ui, row: &ClientRow) {
     ui.separator();

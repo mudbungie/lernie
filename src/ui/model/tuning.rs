@@ -17,17 +17,17 @@
 //!
 //! # What is NOT held here is the answer
 //!
-//! The rows come off the wire into [`Model::roles`] and are the engine's, not
+//! The rows come off the wire into [`Model::roles`] and are the server's, not
 //! the pane's. **That field is one option where the conversation list needs a
-//! pair**, and the difference is real: an empty `Vec` is a wall whose config
+//! pair**, and the difference is real: an empty `Vec` is a workspace whose config
 //! declares no role — a state a fresh workspace is really in — and `None` is a
-//! wall nobody has been answered about. The list next door needs `answered`
-//! beside it only because it also carries rows the engine never sent.
+//! workspace nobody has been answered about. The list next door needs `answered`
+//! beside it only because it also carries rows the server never sent.
 //!
 //! The read is standing while the pane is open
 //! (`crate::state::Standing`), so a tuning act that lands is reflected by the
 //! next answer rather than by this end predicting one. A seat that wrote its
-//! own row back would be painting a claim the engine had not made — and the
+//! own row back would be painting a claim the server had not made — and the
 //! three writes go through `litany config`, which can refuse.
 //!
 //! The one thing held is the **draft** of an assignment, because two words
@@ -80,7 +80,7 @@ impl Edit {
 }
 
 impl Model {
-    /// **Open the tuning pane on the wall the window is aimed at**, or do
+    /// **Open the tuning pane on the workspace the window is aimed at**, or do
     /// nothing where it is aimed at none.
     ///
     /// The aim is the gate rather than a separate check, exactly as it is for
@@ -93,7 +93,7 @@ impl Model {
     }
 
     /// **Close it**, dropping any draft with it. Nothing else is touched — the
-    /// rows stay, because the next open on the same wall is about the same
+    /// rows stay, because the next open on the same workspace is about the same
     /// rows and the standing read replaces them anyway.
     pub fn close_tuning(&mut self) {
         self.tuning = None;
@@ -167,7 +167,7 @@ impl Model {
         });
     }
 
-    /// **Compose one tuning gesture against the aimed wall**, or none at all.
+    /// **Compose one tuning gesture against the aimed workspace**, or none at all.
     ///
     /// The one door the three writes share, because all three carry the same
     /// address and the aim is the same gate for each: a pane open with nothing

@@ -21,9 +21,9 @@
 mod absorb;
 /// What a control does, whichever control did it.
 mod acts;
-/// Which wall the window is aimed at, and the two questions asked of a name.
+/// Which workspace the window is aimed at, and the two questions asked of a name.
 mod aim;
-/// The ball pane between frames: the boards, the bindings, and the wall's own.
+/// The ball pane between frames: the boards, the bindings, and the workspace's own.
 mod board;
 /// What a channel is, and what a gesture aimed down one must be addressed as.
 mod channel;
@@ -41,17 +41,15 @@ mod delete;
 mod doctor;
 /// A selector's dropup on the rule: which is open and whether it reloaded.
 mod dropup;
-/// **The accordion**: which engine is open, and how the rest are ordered.
-mod engines;
 /// An enrollment, between the control that opened it and the symbol it ends at.
 mod enroll;
 /// Which composer box a row menu's navigation asked for the cursor in.
 mod fill;
 /// The fleet pane between frames: three words, five acts and two reads.
 mod fleet;
-/// One engine, every name it is held under: the roster folded by address.
+/// One server, every name it is held under: the roster folded by address.
 mod fold;
-/// A selection the engine no longer knows, and what retires it.
+/// A selection the server no longer knows, and what retires it.
 mod gone;
 /// **What the window holds between frames** — the struct itself.
 mod held;
@@ -69,8 +67,10 @@ pub(crate) mod pricing;
 mod queue;
 /// The records pane between frames: open or not, and what its two reads filed.
 mod records;
-/// What this seat sent and has not yet seen come back as the engine's row.
+/// What this seat sent and has not yet seen come back as the server's row.
 mod sent;
+/// **The accordion**: which server is open, and how the rest are ordered.
+mod servers;
 /// The spine's own state: the draft a fork is composed from.
 mod spine;
 /// A start, between its two acts.
@@ -87,7 +87,7 @@ mod tuning;
 mod uncover;
 /// An unmaking between frames: its subject, its arming, and whether it is asked.
 mod unmake;
-/// The window's own two panes: the engines' verb table, and what a needle found.
+/// The window's own two panes: the servers' verb table, and what a needle found.
 mod window;
 
 pub use aim::{Aim, Stand};
@@ -98,11 +98,10 @@ pub use config::{Configuring, Proposing};
 pub use doctor::Diagnosis;
 pub(crate) use dropup::choices::lane;
 pub use dropup::{Choice, Dropup, Pick, Reload, Selector, WORKER};
-pub use engines::Engines;
 pub use enroll::{Enrolling, Grade, Shown};
 pub use fill::Fill;
 pub use fleet::{Armed, Fleet};
-pub use fold::Engine;
+pub use fold::Server;
 pub use held::Model;
 pub use listing::Listing;
 pub use login::Login;
@@ -112,6 +111,7 @@ pub use pricing::{Pricing, Table as PriceTable};
 pub use queue::{Asking, Section};
 pub use records::Records;
 pub use sent::Sent;
+pub use servers::Servers;
 pub use spine::Forking;
 pub use start::{Phase, Spread, Start};
 pub use tabs::Tab;

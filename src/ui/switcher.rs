@@ -1,8 +1,8 @@
 //! **The switcher**: the roster as an overlay (DESIGN §4.42, item 7). Ctrl+X
-//! or `/conversations` opens it; it lists every engine this seat reaches as
-//! a heading row, each wall under it, and each conversation under its wall —
-//! the accordion §4.39 built, with the `+` that begins a conversation on an
-//! engine's row — and it closes when a conversation is chosen.
+//! or `/conversations` opens it; it lists every server this seat reaches as
+//! a heading row, each workspace under it, and each conversation under its workspace —
+//! the accordion §4.39 built, with the `+` that begins a conversation on a
+//! server's row — and it closes when a conversation is chosen.
 //!
 //! **The list is the roster's own paint, unchanged.** What moved is where it
 //! stands: the one list used to be a column beside the conversation, and a

@@ -5,24 +5,24 @@
 //! class of fact, which no read can answer — so it is held, per run and never
 //! in the place file. It is filled by [`Model::select`] and by nothing else:
 //! every door that selects opens a tab by selecting, so there is no second act
-//! that opens one. It is emptied by the close, and by the engine: a tab whose
-//! conversation the aimed wall's listing no longer knows leaves with it, and a
-//! selection the engine put down (bl-6dfd) is a tab put down.
+//! that opens one. It is emptied by the close, and by the server: a tab whose
+//! conversation the aimed workspace's listing no longer knows leaves with it, and a
+//! selection the server put down (bl-6dfd) is a tab put down.
 
 use super::start::Phase;
 use super::{Aim, Model};
 
-/// **One open conversation**, under the wall it was selected on.
+/// **One open conversation**, under the workspace it was selected on.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Tab {
-    /// The wall it was opened under: the strip paints the aimed wall's.
+    /// The workspace it was opened under: the strip paints the aimed workspace's.
     pub aim: Aim,
     /// The id every gesture addresses it with.
     pub root_id: String,
 }
 
 impl Model {
-    /// **The aimed wall's open conversations**, by root id, in the order they
+    /// **The aimed workspace's open conversations**, by root id, in the order they
     /// were first selected — what the strip paints.
     pub fn strip(&self) -> Vec<String> {
         self.tabs
@@ -46,9 +46,9 @@ impl Model {
         }
     }
 
-    /// **Close one of the aimed wall's tabs.** Where it was the selected one,
+    /// **Close one of the aimed workspace's tabs.** Where it was the selected one,
     /// the neighbour to its left is selected — to its right at the left end —
-    /// and where it was the last, the selection is put down to the wall.
+    /// and where it was the last, the selection is put down to the workspace.
     pub fn close_tab(&mut self, root_id: &str) {
         let strip = self.strip();
         let Some(at) = strip.iter().position(|id| id == root_id) else {
@@ -67,14 +67,14 @@ impl Model {
         }
     }
 
-    /// **Drop the aimed wall's tab on `root_id`**, whatever is selected.
+    /// **Drop the aimed workspace's tab on `root_id`**, whatever is selected.
     pub(super) fn shut(&mut self, root_id: &str) {
         let aim = self.aim.clone();
         self.tabs
             .retain(|tab| !(Some(&tab.aim) == aim.as_ref() && tab.root_id == root_id));
     }
 
-    /// **A start's tab takes the root the engine minted** ([`Model::resolve`]):
+    /// **A start's tab takes the root the server minted** ([`Model::resolve`]):
     /// it was opened under the claimed name, and it is the same conversation.
     pub(super) fn rename_tab(&mut self, name: &str, root_id: &str) {
         let renamed: Vec<Tab> = self
@@ -97,7 +97,7 @@ impl Model {
     }
 
     /// **The listing answered: the tabs it no longer knows leave with it** —
-    /// only under the wall it answered ([`Model::answered`]), and never a
+    /// only under the workspace it answered ([`Model::answered`]), and never a
     /// start's claimed name, which no listing knows until it resolves.
     pub(super) fn prune_tabs(&mut self) {
         let Some(answered) = self.answered.clone() else {

@@ -1,5 +1,5 @@
 //! **A sent message between frames** (DESIGN §4.45 item 4; bl-ca3d): what
-//! this seat composed and has not yet seen come back as the engine's own row.
+//! this seat composed and has not yet seen come back as the server's own row.
 //!
 //! **The record is the ruling's own sentence** — *there should never be a
 //! half-second where your message is nowhere*. The box clears on firing and
@@ -21,7 +21,7 @@ use super::{Model, Posted};
 use crate::reply::transcript::{EntryKind, Transcript};
 use crate::reply::{Read, Reply};
 
-/// **One message this seat sent**, standing until the engine's row replaces
+/// **One message this seat sent**, standing until the server's row replaces
 /// it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Sent {
@@ -112,7 +112,7 @@ impl Model {
     /// **An act that never left this box** ([`Model::acted`]): the record goes
     /// with it, because no receipt and no read will ever retire it, and the
     /// words are `refund`'s. One that crossed and was never answered keeps
-    /// its row in the pending ink beside the in-doubt notice — the engine
+    /// its row in the pending ink beside the in-doubt notice — the server
     /// may have it, and a row that vanished would say it does not.
     pub(super) fn unsent(&mut self, op: &str, reach: &crate::channel::Reach) {
         if !DEPOSITS.contains(&op) || reach.crossed() {
@@ -126,7 +126,7 @@ impl Model {
     /// **The committed transcript landed** (`super::absorb`): every record
     /// addressed to the selected conversation whose words it now carries —
     /// an operator delivery past the recorded length saying exactly them —
-    /// is dropped the same frame, so the words are the engine's row and never
+    /// is dropped the same frame, so the words are the server's row and never
     /// two rows. Records for other conversations stand: the read is the
     /// selected one's.
     pub(super) fn carried(&mut self, transcript: Transcript) {

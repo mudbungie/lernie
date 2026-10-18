@@ -2,7 +2,7 @@
 //! two controls the box enables (bl-4855; DESIGN §4.30).
 //!
 //! Split from [`super`] at the design-time budget on a real seam: [`super`] is
-//! *which file*, [`super::settings`] is *what the engine reads in it*, and this
+//! *which file*, [`super::settings`] is *what the server reads in it*, and this
 //! is *what this operator would put in it instead*.
 //!
 //! # The box IS the arming
@@ -12,7 +12,7 @@
 //! is not that act: its subject is a file that still exists afterwards, and
 //! reaching the control means having authored the file's whole text, which no
 //! mis-aimed click does. So it takes §4.20's other half, the ENABLEMENT: the
-//! control is dark until the box differs from what the engine last answered,
+//! control is dark until the box differs from what the server last answered,
 //! and **the refusal is spelled beside it**, because a greyed control says a
 //! thing is not live and nothing about what would make it live.
 //!
@@ -20,7 +20,7 @@
 //! # working rather than a gap
 //!
 //! The control asks *is there anything to write*, which is a fact about the
-//! world — the box against the engine's own latest answer — and stays true and
+//! world — the box against the server's own latest answer — and stays true and
 //! correct while a write crosses. A flag saying *asked* would be this seat
 //! holding a second opinion about a question the standing read answers every
 //! beat, and the worst it prevents is writing the same bytes twice, which is
@@ -39,17 +39,17 @@ use crate::verbs::Where;
 
 /// The control that writes the box to the file.
 pub const WRITE: &str = "write";
-/// The control that puts the engine's answer back in the box.
+/// The control that puts the server's answer back in the box.
 pub const REVERT: &str = "revert";
 /// What the two do.
-pub const WRITE_HELP: &str = "writes the box's text over this file on the engine";
+pub const WRITE_HELP: &str = "writes the box's text over this file on the server";
 pub const REVERT_HELP: &str = "puts the file's own text back in the box";
 /// The refusal spelled beside the dark controls.
 pub const NOTHING_TO_WRITE: &str = "the box holds what the file holds";
 /// What it says when the file is neither what the box holds nor what the box
-/// and the engine last agreed on — which leaves one reading, another writer.
-pub const MOVED: &str = "this file has changed on the engine since the box last \
-                         agreed with it — reverting takes the engine's bytes";
+/// and the server last agreed on — which leaves one reading, another writer.
+pub const MOVED: &str = "this file has changed on the server since the box last \
+                         agreed with it — reverting takes the server's bytes";
 
 /// Paint the box and take the clicks on it.
 pub(super) fn render(ui: &mut egui::Ui, model: &mut Model, at: &Where, answered: &str) {

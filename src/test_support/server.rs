@@ -1,4 +1,4 @@
-//! **The stand-in engine**: the far end of the wire, so the suite can test a
+//! **The stand-in server**: the far end of the wire, so the suite can test a
 //! channel against something that speaks the protocol rather than against a
 //! mock of the seat's own beliefs about it.
 //!
@@ -9,7 +9,7 @@
 //! framed the way yog's `docs/REMOTE.md` §3 frames them.
 //!
 //! **It is scripted, one answer per connection**, because a seat dials per ask
-//! (REMOTE §3: *"the seat polls"*). So a test says what the engine answers the
+//! (REMOTE §3: *"the seat polls"*). So a test says what the server answers the
 //! first dial, the second, and so on.
 //!
 //! **One of the things it can be told to answer is nothing at all**
@@ -78,17 +78,17 @@ impl From<Vec<Value>> for Answer {
 /// It answers no address of its own: the address it bound is written into the
 /// scratch directory where [`material`](crate::channel::material) reads it, so
 /// a test opens a channel exactly the way an operator-provisioned box does.
-pub(crate) struct Engine {
+pub(crate) struct Server {
     seen: Arc<Mutex<Vec<Value>>>,
 }
 
-impl Engine {
+impl Server {
     /// Bind loopback, write the bound address into `dir` where
     /// [`material`](crate::channel::material) reads it, and serve one
     /// connection per entry in `script` — answering the n-th dial with the
     /// n-th entry's frames, then the terminator.
     ///
-    /// `protocol` is what the engine states as its version, so a test can make
+    /// `protocol` is what the server states as its version, so a test can make
     /// the two ends disagree without a second code path.
     pub(crate) fn start(dir: &Path, protocol: u32, script: Vec<impl Into<Answer>>) -> Self {
         let script: Vec<Answer> = script.into_iter().map(Into::into).collect();
@@ -158,7 +158,7 @@ fn serve(
     let _ = frame::write_end(&mut tls);
 }
 
-/// The engine's end of the mTLS: present the engine leaf, and require a client
+/// The server's end of the mTLS: present the server leaf, and require a client
 /// certificate the operator CA issued. Requiring one is the point — a stand-in
 /// that accepted an anonymous connection would prove nothing about the channel
 /// the seat actually opens.
@@ -170,18 +170,18 @@ pub(crate) fn server_config(dir: &Path) -> Arc<ServerConfig> {
             .build()
             .expect("a client verifier");
     let chain: Vec<CertificateDer<'static>> =
-        CertificateDer::pem_file_iter(dir.join(format!("{}.pem", super::mint::ENGINE)))
-            .expect("the engine chain")
+        CertificateDer::pem_file_iter(dir.join(format!("{}.pem", super::mint::SERVER)))
+            .expect("the server chain")
             .collect::<Result<_, _>>()
-            .expect("the engine chain");
-    let key = PrivateKeyDer::from_pem_file(dir.join(format!("{}.key", super::mint::ENGINE)))
-        .expect("the engine key");
+            .expect("the server chain");
+    let key = PrivateKeyDer::from_pem_file(dir.join(format!("{}.key", super::mint::SERVER)))
+        .expect("the server key");
     Arc::new(
         ServerConfig::builder_with_provider(provider)
             .with_safe_default_protocol_versions()
             .expect("tls versions")
             .with_client_cert_verifier(verifier)
             .with_single_cert(chain, key)
-            .expect("the engine identity"),
+            .expect("the server identity"),
     )
 }

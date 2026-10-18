@@ -3,7 +3,7 @@
 //!
 //! **The lost-reply contract is its own file** (`tests/doubt.rs`, REMOTE §3):
 //! it is one subject with five beats and it is the only part of this pass that
-//! needs an engine which hangs up, so it splits at the design-time budget on
+//! needs a server which hangs up, so it splits at the design-time budget on
 //! the seam the ball drew.
 
 use std::time::Duration;
@@ -46,7 +46,7 @@ pub(super) fn posting(aim: Option<Aim>, posted: crate::ui::Posted) -> (Link, Mod
 #[test]
 fn a_composed_gesture_is_sent_and_its_receipt_lands_as_a_frame() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![vec![json!({"ok": true, "kind": "outcome", "exit": 0,
@@ -62,12 +62,12 @@ fn a_composed_gesture_is_sent_and_its_receipt_lands_as_a_frame() {
     tick(&link, scratch.path());
     link.settle(&mut model);
     assert!(
-        engine
+        server
             .heard()
             .contains(&json!({"op": "message", "workspace": "home",
                               "agent": "a1b2", "content": "ship it"})),
         "{:?}",
-        engine.heard()
+        server.heard()
     );
     assert_eq!(model.notice, None, "a run that landed says nothing");
 }
@@ -108,7 +108,7 @@ fn a_run_that_failed_is_told_in_the_child_s_own_words() {
 #[test]
 fn a_gesture_with_no_aim_is_still_routed_by_the_address_it_carries() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![vec![json!({"ok": true, "kind": "nudged"})]],
@@ -120,11 +120,11 @@ fn a_gesture_with_no_aim_is_still_routed_by_the_address_it_carries() {
     tick(&link, scratch.path());
     link.settle(&mut model);
     assert!(
-        engine
+        server
             .heard()
             .contains(&json!({"op": "nudge", "workspace": "home", "agent": "a1b2"})),
         "{:?}",
-        engine.heard()
+        server.heard()
     );
     assert_eq!(model.roster.len(), 1, "no chunk was invented for the stamp");
 }
@@ -149,7 +149,7 @@ mod doubt;
 mod stamps;
 
 /// **An act's reply is stamped with the op it answers** (bl-b180), which is
-/// what lets the model retire a start on its own refusal: the engine refuses
+/// what lets the model retire a start on its own refusal: the server refuses
 /// the staging act, and the start on this end is refused rather than left
 /// outstanding forever with the bar saying something about nothing in
 /// particular.

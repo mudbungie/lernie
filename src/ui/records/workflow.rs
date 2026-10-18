@@ -7,10 +7,10 @@
 //! `workflow` takes a `config`, a lineage name, and §9.24 rules that what a
 //! conversation can be marked to *is* `request/lineages` — the listing the
 //! config pane already reads (bl-5c53). So the control is the fork's shape one
-//! half over (DESIGN §4.29): one button per lineage the wall holds, each
+//! half over (DESIGN §4.29): one button per lineage the workspace holds, each
 //! carrying its own name, rather than a box that would accept a string nothing
 //! on the glass vouched for. The listing stands on this pane for that reason
-//! (`crate::offframe::asker::wall`), and with none answered there is nothing
+//! (`crate::offframe::asker::workspace`), and with none answered there is nothing
 //! to offer and nothing is offered.
 //!
 //! # Neither act is an unmaking
@@ -26,7 +26,7 @@
 //! can READ that it would change nothing, and `workflow_mark: null` is that
 //! reading. A mark inherited from an ancestor is still offered the clear — the
 //! holder is a descent id this seat does not map to a conversation address, so
-//! the engine's own answer says whose mark it was.
+//! the server's own answer says whose mark it was.
 
 use serde_json::Value;
 

@@ -61,7 +61,7 @@ fn close(out: &mut Vec<Part>, held: &mut Vec<&str>, fenced: bool) {
 }
 
 /// **Paint what was said**, prose as prose and each block as code, in `ink`
-/// — the body's, or the pending ink for a message the engine has not yet
+/// — the body's, or the pending ink for a message the server has not yet
 /// acknowledged (DESIGN §4.45 item 4). `at` is the row's place in the
 /// transcript, which salts each block's scroll so two blocks never share one.
 pub fn paint(ui: &mut egui::Ui, at: usize, words: &str, ink: egui::Color32) {

@@ -3,7 +3,7 @@
 //! The seat's own sentence for an act that never left this box is *nothing
 //! happened — it is safe to do it again*, and the seat then threw away the one
 //! thing *again* needs. The beats here run the whole seam the operator does:
-//! the composer fires, the send leg fails the way a stopped engine fails it,
+//! the composer fires, the send leg fails the way a stopped server fails it,
 //! and the words are read back off the glass.
 
 use super::render;
@@ -59,7 +59,7 @@ fn an_act_that_never_left_this_box_gives_its_words_back() {
     );
 }
 
-/// **IN DOUBT is the opposite case and must not refund.** The engine had the
+/// **IN DOUBT is the opposite case and must not refund.** The server had the
 /// gesture and may have run it; words back under a live `send` would invite
 /// exactly the resend the contract forbids.
 #[test]

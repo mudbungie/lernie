@@ -3,7 +3,7 @@
 //!
 //! They are one module for [`super::tuning`]'s reason: one subject asked at two
 //! depths. `lineages` is the listing of policy branches and the paths each tip
-//! holds, and `config` reads one of those paths — or one of the engine's own
+//! holds, and `config` reads one of those paths — or one of the server's own
 //! three global files — as the typed thing it is.
 //!
 //! # `lineages` is a row and `config` cannot be one
@@ -24,17 +24,17 @@
 //! output with an `Option` rather than two builders that could disagree about
 //! a destination.
 //!
-//! # Two of the five destinations name a workspace and three name an ENGINE
+//! # Two of the five destinations name a workspace and three name a SERVER
 //!
-//! `brazen` is one workspace's own `config.toml` (§16.2's per-workspace wall)
+//! `brazen` is one workspace's own `config.toml` (§16.2's per-workspace directory)
 //! and `branch` is one file on one of that workspace's config lineages; both
 //! carry `workspace` inside `target`, which `crate::envelope` already reads as
 //! the gesture's address — so §8.2's routing and its rename apply to them
 //! untouched. The other three — litany's global models file, its workflows and
-//! yog's own `cadence.yaml` — belong to the ENGINE and name no workspace at
+//! yog's own `cadence.yaml` — belong to the SERVER and name no workspace at
 //! all, so what they address is a **channel**, and the pane asks them down the
 //! channel the window is aimed at (DESIGN §4.30) rather than letting a
-//! workspace-less gesture fall through to this box's own engine.
+//! workspace-less gesture fall through to this box's own server.
 
 use serde_json::{Map, Value};
 
@@ -79,7 +79,7 @@ const TEXT: &str = "text";
 pub enum Where {
     /// One workspace's own brazen `config.toml` (§9.1, §16.2).
     Brazen { workspace: String },
-    /// litany's global models file — the engine's, naming no workspace.
+    /// litany's global models file — the server's, naming no workspace.
     LitanyModels,
     /// One named litany workflow, on the same terms.
     LitanyWorkflow { name: String },
@@ -146,13 +146,13 @@ impl Where {
 
     /// **Whether this destination names a workspace** — and therefore whether
     /// §8.2 routes the gesture by it. The three that answer `false` name the
-    /// engine itself, so the pane addresses them down a channel instead.
+    /// server itself, so the pane addresses them down a channel instead.
     pub fn addresses_a_workspace(&self) -> bool {
         matches!(self, Self::Brazen { .. } | Self::Branch { .. })
     }
 }
 
-/// **This workspace's config lineages**, asked of the wall `workspace` names.
+/// **This workspace's config lineages**, asked of the workspace `workspace` names.
 pub fn lineages(workspace: String) -> Value {
     LINEAGES.built(vec![workspace], &[])
 }
@@ -169,7 +169,7 @@ pub fn config(at: &Where) -> Value {
 /// The WHOLE text and never a patch, because that is what upstream's pipeline
 /// takes: `stage → validate → hash-guard → atomic rename` over the bytes the
 /// gesture states (REMOTE §9.18, *"a typed edit is a seat composing that text
-/// and applying it"*). A seat that sent a fragment would be asking the engine
+/// and applying it"*). A seat that sent a fragment would be asking the server
 /// to hold a draft.
 pub fn write(at: &Where, text: String) -> Value {
     addressed(at, Some(text))

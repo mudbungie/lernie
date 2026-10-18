@@ -1,4 +1,4 @@
-//! **The enrollment pane, after the engine answers**: the picture and the
+//! **The enrollment pane, after the server answers**: the picture and the
 //! forgetting. Where a module goes is `super::super::symbol`'s own suite.
 //!
 //! **Nothing here asserts a pixel.** A QR symbol drawn at the wrong scale
@@ -59,7 +59,7 @@ fn closing_the_pane_drops_the_material() {
 }
 
 /// **Material that arrives for a closed pane is dropped and said so.** The
-/// enrollment did happen on the engine, and an operator who is not told would
+/// enrollment did happen on the server, and an operator who is not told would
 /// go looking for a box that has a registration and no material. A silent drop
 /// is the one thing this model's door does not do.
 #[test]

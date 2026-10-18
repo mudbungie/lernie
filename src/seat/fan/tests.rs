@@ -8,7 +8,7 @@ use crate::test_support::wire::{entry, flat, wired, yes};
 use crate::test_support::{Scratch, mint};
 use serde_json::json;
 
-/// **The union, stamped**: this box's own engine first, then the entries in
+/// **The union, stamped**: this box's own server first, then the entries in
 /// leaf order, each answer under the name of the channel it came from — the
 /// same composition the window's roster is, so the two surfaces agree on one
 /// box (bl-0d54).
@@ -28,7 +28,7 @@ fn every_channel_answers_under_its_own_name() {
     assert_eq!(
         verdict.text,
         format!(
-            "(this box's own engine)\n    {}\nalpha\n    {}",
+            "(this box's own server)\n    {}\nalpha\n    {}",
             yes(),
             json!({"ok": true, "n": 1})
         )
@@ -37,7 +37,7 @@ fn every_channel_answers_under_its_own_name() {
     assert!(alpha.heard().contains(&json!({"op": "workspaces"})));
 }
 
-/// **The sharp case**: a box that holds no engine of its own and is a client of
+/// **The sharp case**: a box that holds no server of its own and is a client of
 /// a server elsewhere. It has channels, it has workspaces — and the verb whose
 /// whole subject is "every workspace" used to tell the operator nothing was
 /// provisioned.
@@ -56,12 +56,12 @@ fn a_box_with_no_flat_channel_still_answers_from_its_entries() {
 
 /// **An unprovisioned flat root is an ABSENCE, and a box that holds channels
 /// hears nothing about it** (bl-b858). This is the previous test read the other
-/// way: a seat for an engine somewhere else got a paragraph of refusal above
-/// every working channel on every roster read, beginning *"if an engine runs on
+/// way: a seat for a server somewhere else got a paragraph of refusal above
+/// every working channel on every roster read, beginning *"if a server runs on
 /// this box"* on a box where none does and none is meant to — with the answer
 /// it asked for underneath.
 #[test]
-fn an_unprovisioned_own_engine_says_nothing_beside_the_channels_that_answered() {
+fn an_unprovisioned_own_server_says_nothing_beside_the_channels_that_answered() {
     let scratch = Scratch::new();
     wired(&scratch, &entry("alpha"), vec![vec![yes()]]);
     let verdict = fanned(scratch.path(), &json!({"op": "workspaces"}), Form::Json);
@@ -88,7 +88,7 @@ fn a_flat_root_that_holds_something_broken_still_says_so() {
         .expect("half the material");
     let verdict = fanned(scratch.path(), &json!({"op": "workspaces"}), Form::Json);
     let lines: Vec<&str> = verdict.text.lines().collect();
-    assert_eq!(lines[0], "(this box's own engine)");
+    assert_eq!(lines[0], "(this box's own server)");
     assert!(lines[1].contains("half-provisioned"), "{}", lines[1]);
     assert_eq!(lines[2], "alpha");
 }
@@ -152,7 +152,7 @@ fn a_box_no_channel_of_which_answers_fails() {
     );
 }
 
-/// An engine answering `ok: false` has ANSWERED, and its section is the
+/// A server answering `ok: false` has ANSWERED, and its section is the
 /// product — but it is not a channel this fan learned anything from, so it does
 /// not carry the verdict on its own.
 #[test]

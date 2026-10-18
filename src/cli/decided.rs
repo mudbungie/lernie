@@ -63,8 +63,8 @@ pub enum Decided {
     /// ordinary path — the seat writes nothing it was not asked to write.
     ///
     /// `at` is the route the ENROLLED box will dial (REMOTE §8.4 as amended,
-    /// yog bl-fec6), and it is `None` when the engine's own address is right —
-    /// which it is only for a device that shares this engine's view of itself.
+    /// yog bl-fec6), and it is `None` when the server's own address is right —
+    /// which it is only for a device that shares this server's view of itself.
     /// The two are independent: a foot behind an alias needs `at` whether or
     /// not it needs `into` (bl-971c).
     ///
@@ -90,12 +90,12 @@ pub enum Decided {
     /// function of what was typed — stays in this pure function where a test
     /// reads its refusal back as a value.
     /// **Watch one conversation until it rests** (bl-3dca, bl-f076) — the
-    /// §5.1 follow read, held across the engine's step boundaries.
+    /// §5.1 follow read, held across the server's step boundaries.
     ///
     /// It is a serialization and not a gesture, exactly as
     /// [`Start`](Self::Start) is: what crosses is `agent` and `follow`, the
     /// boundary's own envelopes, asked as many times as it takes. One word,
-    /// because the engine ends a read at the step and an operator's question
+    /// because the server ends a read at the step and an operator's question
     /// is about the TURN — and about the whole of the work after it.
     Follow {
         workspace: String,
@@ -131,7 +131,7 @@ pub enum Decided {
     /// **Ask this workspace-less ACT of one channel** (bl-1bb9): the one `on`
     /// names, or — where it names none — the one channel this box holds, and
     /// a refusal naming them all on a box holding more. A write a person types
-    /// once means one engine, where [`Fanned`](Self::Fanned) is a read whose
+    /// once means one server, where [`Fanned`](Self::Fanned) is a read whose
     /// subject is every one ([`crate::seat::aimed`]).
     Aimed {
         on: Option<String>,
@@ -140,7 +140,7 @@ pub enum Decided {
     },
 }
 
-/// **What an enrollment asks for**: the wall, the name the new box will wear,
+/// **What an enrollment asks for**: the workspace, the name the new box will wear,
 /// its grade, and — where the operator stated one — the route that box will
 /// dial (REMOTE §8.4 as amended, bl-971c).
 ///

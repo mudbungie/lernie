@@ -9,7 +9,7 @@
 use super::steered::steered;
 use super::*;
 
-/// The router as measured from yog's deployed engine box: its `find_node`
+/// The router as measured from yog's deployed server box: its `find_node`
 /// answer is one node repeated eight times.
 fn eightfold(node: &FakeNode) -> Vec<Node> {
     vec![node.node(); 8]

@@ -4,10 +4,10 @@
 use crate::test_support::window::seated;
 use crate::ui::Model;
 
-/// **The envelope is `/delete`'s**: `delete-agent` on the aimed wall, armed
+/// **The envelope is `/delete`'s**: `delete-agent` on the aimed workspace, armed
 /// by the listing's name for the row — the id where the listing has no row —
 /// and the confirmation is put down by either answer; nothing is composed
-/// with no wall aimed.
+/// with no workspace aimed.
 #[test]
 fn the_act_is_delete_agent_armed_by_the_name_and_either_answer_puts_the_question_down() {
     let mut model = seated();
@@ -35,7 +35,7 @@ fn the_act_is_delete_agent_armed_by_the_name_and_either_answer_puts_the_question
     unaimed.begin_deleting(id);
     unaimed.post_delete(id);
     assert_eq!(unaimed.deleting, None);
-    assert!(unaimed.outbox.is_empty(), "no wall, no envelope");
+    assert!(unaimed.outbox.is_empty(), "no workspace, no envelope");
 }
 
 /// **With the `confirm` knob off the door deletes at once** (DESIGN §4.46

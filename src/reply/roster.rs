@@ -1,5 +1,5 @@
 //! **The roster** — the window's altitude-0 chrome (yog's `docs/REMOTE.md`
-//! §8, §9.7): the workspaces an engine enumerates, each with its rollups, and
+//! §8, §9.7): the workspaces a server enumerates, each with its rollups, and
 //! how current the derivation behind the answer is.
 //!
 //! **A row names a workspace; it does not locate it** (REMOTE §8: *"paths
@@ -30,9 +30,9 @@ pub struct Workspaces {
     /// it is current — which is the ordinary case and paints nothing.
     ///
     /// It crosses as the **rendered line** rather than as an age and a
-    /// threshold, and that is the engine's ruling rather than this seat's: the
+    /// threshold, and that is the server's ruling rather than this seat's: the
     /// wording is one derivation's, with a bound the operator tunes in the
-    /// engine's own config, and a seat that rebuilt the sentence from parts
+    /// server's own config, and a seat that rebuilt the sentence from parts
     /// would be a second place deciding when a derivation is late.
     pub stale: Option<String>,
     /// **What grew since the previous derivation**, or `None` when nothing
@@ -48,7 +48,7 @@ pub struct WsRow {
     /// channel boundary and nowhere else ([`crate::seat::route`]), so a row
     /// arrives in the host's spelling and the roster is what maps it back.
     pub workspace: String,
-    /// How the engine classifies it.
+    /// How the server classifies it.
     pub kind: WorkspaceKind,
     /// Attention-bearing conversations in it.
     pub attention: u64,
@@ -62,23 +62,23 @@ pub struct WsRow {
     /// A rank rather than a flag, because the roster hoists pinned rows *in
     /// pin order*: a seat given only a boolean would have to read the pin list
     /// back to sort them, which is the seat joining an answer against a
-    /// document only the engine holds.
+    /// document only the server holds.
     pub pinned: Option<u64>,
     /// **What the workspace has cost, whole** — the ledger column (REMOTE
-    /// §9.23), `None` where the engine has no price table.
+    /// §9.23), `None` where the server has no price table.
     pub spend: Option<super::spend::Cost>,
 }
 
-/// How the engine classifies a workspace.
+/// How the server classifies a workspace.
 ///
 /// **Rung 3 lives on this enum.** A classification this build does not know
 /// keeps its word and paints it; it does not become one of the three below,
-/// because a replay painted as a wall is a lie about what may be written to.
+/// because a replay painted as a workspace is a lie about what may be written to.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WorkspaceKind {
-    /// The server's own — a wall an operator named.
+    /// The server's own — a workspace an operator named.
     Named,
-    /// The engine's, enumerated rather than named here.
+    /// The server's, enumerated rather than named here.
     Foreign,
     /// A read-only replay.
     Replay,
@@ -88,7 +88,7 @@ pub enum WorkspaceKind {
 
 impl WorkspaceKind {
     /// The word the roster paints — for [`Unknown`](Self::Unknown), the
-    /// engine's own, which is the whole point of keeping it.
+    /// server's own, which is the whole point of keeping it.
     pub fn label(&self) -> String {
         match self {
             Self::Named => NAMED.to_owned(),
@@ -104,7 +104,7 @@ const FOREIGN: &str = "foreign";
 const REPLAY: &str = "replay";
 
 /// Read the whole answer. The two notes are **absent** rather than null in the
-/// ordinary case, which is what makes "current" and "the engine declined to
+/// ordinary case, which is what makes "current" and "the server declined to
 /// say" one reading rather than two.
 pub(crate) fn workspaces(obj: &Map<String, Value>) -> Result<Workspaces, String> {
     Ok(Workspaces {

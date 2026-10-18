@@ -8,7 +8,7 @@
 //! naming an id answers the listing AND that proposal whole. So naming a row
 //! does not post a second read — it deepens the one that already stands, and
 //! [`Model::proposing`] is the depth. It is the named id **only while the
-//! engine's own last listing still carries it**: a proposal that was accepted
+//! server's own last listing still carries it**: a proposal that was accepted
 //! or rejected leaves the listing, and asking for it whole after that would
 //! earn a refusal on every beat for a row that is simply gone. Nothing records
 //! the departure; the listing is the record.
@@ -27,7 +27,7 @@
 //! move under this pane — the act that moves the aim retires the whole config
 //! pane (`Model::retire_configuring`). The arming is **not spent on firing**:
 //! a stale accept refuses in litany's own words, and clearing the box would
-//! charge a retype for the engine's *no*.
+//! charge a retype for the server's *no*.
 
 use crate::reply::proposals::Proposal;
 use crate::ui::Model;
@@ -88,7 +88,7 @@ impl Model {
         Some(&mut self.configuring.as_mut()?.proposal.as_mut()?.typed)
     }
 
-    /// **The row the engine's last listing holds under `id`**, or `None` where
+    /// **The row the server's last listing holds under `id`**, or `None` where
     /// it holds none — never answered, or since settled.
     pub fn staged_proposal(&self, id: &str) -> Option<Proposal> {
         self.proposals

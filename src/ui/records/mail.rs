@@ -7,7 +7,7 @@
 //! # A forgiving parse means a row can state almost nothing, and that is a
 //! reading rather than a failure
 //!
-//! The engine renders a half-written or hand-edited deposit with whatever
+//! The server renders a half-written or hand-edited deposit with whatever
 //! fields it actually stated. So a row whose sender and stamp are absent is
 //! not a malformed answer — and painting `?` where a fact was not stated is
 //! upstream's own rendering rule, kept here so a hand-edited deposit stays
@@ -30,7 +30,7 @@ pub const NOT_ANSWERED: &str = "waiting to hear what is in its inbox";
 /// What it says for a conversation whose inbox is empty — a fact about the
 /// conversation, and the one empty state here that is not a wait.
 pub const NO_MAIL: &str = "nothing is waiting in its inbox";
-/// What an unstated frontmatter fact reads as, in the engine's own rendering.
+/// What an unstated frontmatter fact reads as, in the server's own rendering.
 pub const UNSTATED: &str = "?";
 /// Said above a deposit whose body is empty.
 pub const SAID_NOTHING: &str = "it says nothing";

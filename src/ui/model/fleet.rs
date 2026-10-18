@@ -2,11 +2,11 @@
 //! are composed from, the last receipt in the op's own name, and the two reads
 //! that stand while it is open.
 //!
-//! # It is the tuning pane's shape, and every one of its seven ops names a wall
+//! # It is the tuning pane's shape, and every one of its seven ops names a workspace
 //!
 //! `fleet`, `disband`, `arm`, `disarm`, `scan`, `science` and `work-diff` all
-//! carry a workspace, so the pane's subject is the **aimed wall**: it opens on
-//! a row, its reads are asked of that wall while it stands, and it is retired
+//! carry a workspace, so the pane's subject is the **aimed workspace**: it opens on
+//! a row, its reads are asked of that workspace while it stands, and it is retired
 //! when the aim moves (`super::tuning`, and `Model::aim_at`). Nothing about it
 //! is the queue's shape, which is what tells it from the ball pane next door —
 //! that one is two widths and this one is one.
@@ -28,7 +28,7 @@
 //! `fleet`, `disband`, `arm` and `disarm` answer with the same `armed` kind,
 //! and the two families it spans are the fleet loop and the alignment monitor.
 //! So [`Armed`] carries the op the poster stamped the frame with
-//! (`crate::state::Said::Receipt`) and the flag the engine sent, and the pane
+//! (`crate::state::Said::Receipt`) and the flag the server sent, and the pane
 //! says both. A seat that read *which family* off the reply would be guessing
 //! between two settings on two carriers.
 //!
@@ -46,7 +46,7 @@ use crate::reply::science::Attempt;
 /// and the last thing an act answered.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Fleet {
-    /// **The wall it was opened on**, held rather than followed — the
+    /// **The workspace it was opened on**, held rather than followed — the
     /// unmaking's arrangement (§4.20), and for a sharper form of its reason:
     /// these acts start drones and spend money in one workspace, so a gesture
     /// composed against whatever the aim happens to be at the moment of the
@@ -78,7 +78,7 @@ pub struct Fleet {
 }
 
 /// **One receipt, in the op's own name.** The op is the poster's stamp and the
-/// flag is the engine's; this seat joins them and classifies neither.
+/// flag is the server's; this seat joins them and classifies neither.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Armed {
     pub op: String,
@@ -86,7 +86,7 @@ pub struct Armed {
 }
 
 impl Model {
-    /// **Open the fleet pane on the aimed wall**, or do nothing with nothing
+    /// **Open the fleet pane on the aimed workspace**, or do nothing with nothing
     /// aimed at: every one of its seven ops carries a workspace, so a pane
     /// opened unaimed would be a screen of controls with nowhere to fire.
     ///
@@ -110,13 +110,13 @@ impl Model {
     }
 
     /// **Close it.** The two reads' answers stay, for the reason the roles do:
-    /// the next open is about the same wall, and the standing read replaces
+    /// the next open is about the same workspace, and the standing read replaces
     /// them anyway.
     pub fn close_fleet(&mut self) {
         self.fleet = None;
     }
 
-    /// **The pane and its two answers go with the wall they are about** —
+    /// **The pane and its two answers go with the workspace they are about** —
     /// called by the act that moves the aim.
     pub(super) fn retire_fleet(&mut self) {
         self.fleet = None;
@@ -124,10 +124,10 @@ impl Model {
         self.work = None;
     }
 
-    /// **Spend one of the five acts**, composed against the aimed wall. It is
+    /// **Spend one of the five acts**, composed against the aimed workspace. It is
     /// one door because all five are the same gesture with a different verb:
     /// the caller names the envelope, and the aim is read here so no control
-    /// holds a second opinion about which wall it is firing at.
+    /// holds a second opinion about which workspace it is firing at.
     pub fn post_fleet(&mut self, envelope: serde_json::Value) {
         self.outbox.push(super::Posted::act(envelope));
     }
@@ -136,9 +136,9 @@ impl Model {
     /// pane stands on (§4.30's ruling, §4.36's first customer).
     ///
     /// `deliver` and `retire` name no workspace anywhere in their envelopes —
-    /// their subject is a ball in a project on one engine — so the poster
+    /// their subject is a ball in a project on one server — so the poster
     /// would otherwise fan them over every channel this box holds, accepting
-    /// one candidate on every engine the operator is a client of. A seat that
+    /// one candidate on every server the operator is a client of. A seat that
     /// no longer holds the channel composes nothing, which is the honest
     /// reading: there is nothing left to address.
     pub fn post_candidate(&mut self, envelope: serde_json::Value) {

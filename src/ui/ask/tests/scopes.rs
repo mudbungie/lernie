@@ -26,7 +26,7 @@ fn words(model: &Model) -> Vec<String> {
 }
 
 /// **A row that lists `call` alone offers no wider pass**: a secret or
-/// destructive call, which the engine answers for the call in front of the
+/// destructive call, which the server answers for the call in front of the
 /// operator and refuses at any other reach — so the rows are the four that
 /// go through, numbered as four, with the digits and the hint counting the
 /// same.
@@ -60,7 +60,7 @@ fn a_row_that_lists_call_alone_offers_no_wider_pass() {
 
 /// **A row that lists all three offers the five verdicts**, in the wire's
 /// order whatever order the row said them in; **a row that lists none is an
-/// older engine, and offers the same**; **a word this build cannot spell is
+/// older server, and offers the same**; **a word this build cannot spell is
 /// not offered**, and the ones it can are.
 #[test]
 fn the_listed_reaches_are_offered_in_the_wire_s_order_and_only_the_known_ones() {

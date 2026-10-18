@@ -76,7 +76,7 @@ pub fn attempt(row: &Attempt) -> Vec<String> {
     said
 }
 
-/// **How an attempt ended**, in the engine's own token plus whatever that
+/// **How an attempt ended**, in the server's own token plus whatever that
 /// token could say — and the seat adds no reading of its own to either.
 pub fn ending(row: &Attempt) -> String {
     let mut said = vec![row.outcome.state.clone()];

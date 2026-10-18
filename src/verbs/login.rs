@@ -1,10 +1,10 @@
 //! **The sign-in family** (yog's `docs/REMOTE.md` §8.3; PROTOCOL 13) — the
-//! table a wall can sign in to, what one row offers, the act that starts a
+//! table a workspace can sign in to, what one row offers, the act that starts a
 //! sign-in, and the lane that streams it.
 //!
 //! They are one module for [`super::tuning`]'s reason: one subject, read and
 //! written from both ends. `providers` is the table, `login` starts a run
-//! **inside that workspace's wall on the engine**, and `login-tail` is that
+//! **inside that workspace's directory on the server**, and `login-tail` is that
 //! same run held open. A seat that filed the read with the other reads and the
 //! act with the other acts would have split the one subject in four.
 //!
@@ -35,19 +35,19 @@ use serde_json::Value;
 
 use super::Verb;
 
-/// **The table**: every provider row this workspace's wall routes.
+/// **The table**: every provider row this workspace routes.
 pub const PROVIDERS: Verb = Verb {
     word: "providers",
     params: &["workspace"],
     flags: &[],
     summary: "the providers this workspace can sign in to",
-    detail: "One row per provider the wall routes, in the engine's own \
+    detail: "One row per provider the workspace routes, in the server's own \
              listing order — which is brazen's routing order, so the first \
              row that can answer is the one a turn goes down. Each says what \
-             the engine knows about its credential, why a sign-in cannot be \
+             the server knows about its credential, why a sign-in cannot be \
              started on it where one cannot, and whether it takes an effort \
-             level and the priority lane at all. It is read on the wall the \
-             workspace names, so a wall held elsewhere answers about the \
+             level and the priority lane at all. It is read on the workspace the \
+             workspace names, so a workspace held elsewhere answers about the \
              credentials its own agents read.",
 };
 
@@ -57,26 +57,26 @@ pub const MODELS: Verb = Verb {
     params: &["workspace", "provider"],
     flags: &[],
     summary: "the models one provider offers",
-    detail: "The ids that row answers to, as the engine has them — the \
+    detail: "The ids that row answers to, as the server has them — the \
              values `model` takes as its last argument. It is asked of one \
-             row rather than of the wall, because two rows offering the same \
+             row rather than of the workspace, because two rows offering the same \
              id are still two different routes to it.",
 };
 
-/// **The act**: start a sign-in on one row, inside that workspace's wall.
+/// **The act**: start a sign-in on one row, inside that workspace's directory.
 pub const LOGIN: Verb = Verb {
     word: "login",
     params: &["workspace", "provider"],
     flags: &[],
     summary: "sign this workspace in to one provider",
-    detail: "The run happens on the ENGINE, inside the named workspace's \
-             wall, so the credential lands where the agents that need it run \
+    detail: "The run happens on the SERVER, inside the named workspace's \
+             workspace, so the credential lands where the agents that need it run \
              — nothing credential-shaped ever crosses this wire. It answers \
              at once with the run's standing rather than waiting the flow \
              out, and the lines are read with `login-tail`. A second sign-in \
              on a live pair replaces the first, which is the operator's own \
              restart and the reason there is no cancel. A row whose flow \
-             needs a browser at the engine's own loopback can only be \
+             needs a browser at the server's own loopback can only be \
              completed from a browser on that box, or through a port-forward \
              the operator sets up.",
 };
@@ -95,7 +95,7 @@ pub const LOGIN_TAIL: Verb = Verb {
              reading, not a silence.",
 };
 
-/// **The provider table**, asked of the wall `address` names.
+/// **The provider table**, asked of the workspace `address` names.
 pub fn providers(workspace: String) -> Value {
     PROVIDERS.built(vec![workspace], &[])
 }
@@ -105,7 +105,7 @@ pub fn models(workspace: String, provider: String) -> Value {
     MODELS.built(vec![workspace, provider], &[])
 }
 
-/// **Start a sign-in** on one row of that wall.
+/// **Start a sign-in** on one row of that workspace.
 pub fn login(workspace: String, provider: String) -> Value {
     LOGIN.built(vec![workspace, provider], &[])
 }

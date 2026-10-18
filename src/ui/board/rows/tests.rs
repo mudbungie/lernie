@@ -85,10 +85,10 @@ fn a_figure_says_its_money_where_there_is_one_and_never_computes_it() {
     assert_eq!(cost(&figure(None, None)), "99 tokens  conversations");
 }
 
-/// **The loop's line is the engine's**, with the two facts it does not carry
+/// **The loop's line is the server's**, with the two facts it does not carry
 /// hung off it — and neither is said where it is not true.
 #[test]
-fn a_loop_says_the_engine_s_own_line_plus_the_room_and_the_ceiling() {
+fn a_loop_says_the_server_s_own_line_plus_the_room_and_the_ceiling() {
     let full = crate::reply::board::Fleet {
         workspace: "home".to_owned(),
         project: "lernie".to_owned(),

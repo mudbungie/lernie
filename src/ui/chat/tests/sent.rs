@@ -91,7 +91,7 @@ fn a_refusal_puts_the_words_back_in_the_box_and_takes_the_row_down() {
     model.receipt(
         &own().channel,
         crate::verbs::MESSAGE.word,
-        Read::Refusal("the engine said no".to_owned()),
+        Read::Refusal("the server said no".to_owned()),
     );
     assert_eq!(model.draft, WORDS);
     let shown = seen_of(&window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model)));
@@ -117,7 +117,7 @@ fn another_conversation_does_not_paint_this_one_s_row() {
 }
 
 /// **In doubt, the row stands in the pending ink** beside the notice: the
-/// engine may have it.
+/// server may have it.
 #[test]
 fn a_lost_reply_leaves_the_row_standing_in_the_pending_ink() {
     let mut model = seated();

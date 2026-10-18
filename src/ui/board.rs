@@ -8,8 +8,8 @@
 //! watch work happen and could not see the ball it was happening on. Four ops
 //! answer that and this pane is all four: `board` folds the store into
 //! columns, `balls` is the whole box's binding table under it, and
-//! `workspace-balls` and `marks` are the aimed wall's own half
-//! (`crate::ui::board::wall`).
+//! `workspace-balls` and `marks` are the aimed workspace's own half
+//! (`crate::ui::board::workspace`).
 //!
 //! # Two widths, one pane, and the wire is what decided that
 //!
@@ -17,14 +17,14 @@
 //! the union across channels — the decision queue's shape
 //! (`crate::ui::queue`). `workspace-balls` and `marks` name one, so they are
 //! the tuning pane's. Splitting them into two panes would put *the board* and
-//! *this wall's balls* on two screens, which is one question; keeping them
+//! *this workspace's balls* on two screens, which is one question; keeping them
 //! here costs one section that says what it is about.
 //!
 //! # Its five acts are the block's, and one of them is on a row here
 //!
 //! `create`, `update`, `release` and `close` hang in the authoring block the
-//! aimed wall's section opens (`crate::ui::board::acts`); `assign` hangs on a
-//! board row, because a ready ball IS a row of this section and the wall it
+//! aimed workspace's section opens (`crate::ui::board::acts`); `assign` hangs on a
+//! board row, because a ready ball IS a row of this section and the workspace it
 //! would be claimed for is the aim (bl-f7ae, DESIGN §4.35).
 //!
 //! # The loop's own facts are here because there is nowhere else
@@ -51,8 +51,8 @@ pub use rows::{binding, cost, gated, headline, held, placed, running, worked};
 pub mod acts;
 /// The words a row wears, each a pure function of it.
 mod rows;
-/// The aimed wall's half of the pane.
-pub mod wall;
+/// The aimed workspace's half of the pane.
+pub mod workspace;
 
 /// **The word typed after the slash** that opens it (`crate::ui::slash`).
 pub const WORD: &str = "board";
@@ -87,10 +87,10 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         .auto_shrink(false)
         .show(ui, |ui| {
             // **Each emptiness is its own sentence and none of them speaks for
-            // another** — the union's two here, and the aimed wall's four in
+            // another** — the union's two here, and the aimed workspace's four in
             // its own section. A pane that answered one sentence for both
             // widths would say *nothing is on any board* about a box whose
-            // channels have not answered and a wall it never asked.
+            // channels have not answered and a workspace it never asked.
             if columns.is_empty() && bindings.is_empty() {
                 crate::ui::theme::paint::empty(ui, NOT_ANSWERED);
             } else if empty(&columns, &bindings) {
@@ -114,7 +114,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
                     }
                 }
             }
-            wall::render(ui, model);
+            workspace::render(ui, model);
             acts::render(ui, model);
             for section in &bindings {
                 if section.rows.is_empty() {
@@ -137,9 +137,9 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
 }
 
 /// **Whether every channel that answered answered nothing** — the one state
-/// that is a fact about the box rather than a wait. The aimed wall is not in
+/// that is a fact about the box rather than a wait. The aimed workspace is not in
 /// it: that section keeps its own four sentences, and folding them together
-/// would let one wall's emptiness speak for every channel.
+/// would let one workspace's emptiness speak for every channel.
 fn empty(columns: &[crate::ui::Columns], bindings: &[crate::ui::Bindings]) -> bool {
     columns
         .iter()
@@ -151,7 +151,7 @@ fn empty(columns: &[crate::ui::Columns], bindings: &[crate::ui::Bindings]) -> bo
 /// cost, and — where nobody holds it and the window is aimed down this same
 /// channel — the control that claims it (bl-f7ae).
 ///
-/// **The claim hangs on the ROW because the row is its subject**, and the wall
+/// **The claim hangs on the ROW because the row is its subject**, and the workspace
 /// it claims FOR is the aim, which is the one thing on the glass that names a
 /// `--as` stamp. `Model::claiming` is where both refusals live; here the
 /// absence of a gesture is the absence of a control, because a ball somebody

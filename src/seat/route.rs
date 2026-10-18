@@ -28,7 +28,7 @@ use crate::envelope;
 /// The seat-side name is ANSWERED rather than discarded, because the caller
 /// filing a receipt has nowhere honest to get it (bl-c70d): a frame's aim is
 /// where a gesture was *composed*, and an operator may compose one aimed at a
-/// wall on one channel while a control fires at a row on another. §8.2's
+/// workspace on one channel while a control fires at a row on another. §8.2's
 /// mapping stays spent at [`route`] and only there — the name comes out of it
 /// and is never re-derived downstream.
 ///
@@ -86,7 +86,7 @@ fn seated(entry: crate::channel::entries::Entry, envelope: &Value) -> Routed {
     }
 }
 
-/// **The gesture this box's own engine answers** — the flat root's, which is
+/// **The gesture this box's own server answers** — the flat root's, which is
 /// where every gesture with no entry to resolve goes.
 fn own(data_root: &Path, envelope: &Value) -> Routed {
     let opened = flat(data_root);
@@ -115,7 +115,7 @@ fn stamp(
 /// refusal is about when it goes nowhere.
 ///
 /// §8.2's fallthrough stands — *"a name no entry holds … goes where it always
-/// went, the flat directory's client material"* — because the flat engine's own
+/// went, the flat directory's client material"* — because the flat server's own
 /// workspaces are named and held nowhere else, and a seat cannot know that
 /// namespace without asking. Two things around it are this seat's, and both
 /// were wrong (bl-d574):
@@ -157,7 +157,7 @@ fn unresolved(data_root: &Path, envelope: &Value, name: &str) -> Routed {
         sent: fell.sent.map_err(|refusal| {
             format!(
                 "no entry here holds {name:?}, so the gesture went to this box's \
-                 own engine (REMOTE §8.2), which answers: {refusal}. This box holds \
+                 own server (REMOTE §8.2), which answers: {refusal}. This box holds \
                  {}. {}",
                 holds::names(data_root),
                 holds::rename(data_root, name)
@@ -175,13 +175,13 @@ fn unresolved(data_root: &Path, envelope: &Value, name: &str) -> Routed {
 pub(super) fn flat(data_root: &Path) -> Result<Channel, String> {
     let dir = entries::flat(data_root);
     match material::read_dir(&dir, Whose::Own)? {
-        // A `:0` is a self-provisioning engine's request for a kernel-chosen
-        // port (REMOTE §8): only the engine that bound it knows what it became,
+        // A `:0` is a self-provisioning server's request for a kernel-chosen
+        // port (REMOTE §8): only the server that bound it knows what it became,
         // and it tells its own in-process window in RAM. So there is nothing
         // here to dial, and saying so beats the raw connect error port zero
         // earns.
         Some(held) if held.address.ends_with(":0") => Err(format!(
-            "{} names {} — a kernel-chosen port only that engine's own window is \
+            "{} names {} — a kernel-chosen port only that server's own window is \
              told; a seat wants a stated address. Re-issue with one stated \
              (`WIRE_HOST=<host> WIRE_PORT=<port> yog wire-certs` on that box) and \
              copy the {} here again",

@@ -142,7 +142,7 @@ fn aiming_and_selecting_leave_both_panes_standing() {
         lookup: Some(Lookup::Commands),
         ..seated()
     };
-    model.aim_at("(this box's own engine)", "home");
+    model.aim_at("(this box's own server)", "home");
     model.select("c-9");
     assert!(model.commanding(), "neither is about an aim or a selection");
 }

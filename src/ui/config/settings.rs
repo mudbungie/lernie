@@ -1,8 +1,8 @@
-//! **The typed view**: every setting the engine's schema found in the bytes
-//! below it, and the engine's own judgement of each (REMOTE §9.18).
+//! **The typed view**: every setting the server's schema found in the bytes
+//! below it, and the server's own judgement of each (REMOTE §9.18).
 //!
 //! Split from [`super`] at the design-time budget on the seam the pane already
-//! paints: [`super`] is *which file*, this is *what the engine reads in it*,
+//! paints: [`super`] is *which file*, this is *what the server reads in it*,
 //! and [`super::edit`] is *what this operator would put in it instead*.
 //!
 //! **Nothing here composes a judgement.** A setting's `fault` is the same call
@@ -29,7 +29,7 @@ pub(super) fn render(ui: &mut egui::Ui, held: &Config) {
     }
 }
 
-/// One setting: where it lives, what it says, what it takes, and the engine's
+/// One setting: where it lives, what it says, what it takes, and the server's
 /// judgement of it where there is one.
 fn setting(ui: &mut egui::Ui, row: &Setting) {
     let weak = theme::tone_ink(&crate::reply::convs::Tone::Weak);

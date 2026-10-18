@@ -11,16 +11,16 @@
 //! conversations that are **not** the one the control names. This pane is
 //! where those conversations are stated: the header's descent line says what
 //! it hangs under, the spine's cards say what was dispatched off it, and the
-//! offers line beside this control is the engine's own sentence about whether
+//! offers line beside this control is the server's own sentence about whether
 //! the cascade is available at all.
 //!
 //! # The arming is an ENABLEMENT, because the wire has no field for it
 //!
 //! §4.20 draws its arming rule off the wire's own grammar: where an act
 //! carries a `typed` parameter the seat leaves it a parameter
-//! (`delete-agent`), and where the engine refuses without a name the seat
+//! (`delete-agent`), and where the server refuses without a name the seat
 //! makes the control an **enablement** (`delete-workspace`). `stop` carries
-//! neither — the cascade is a boolean flag the engine takes on trust — so the
+//! neither — the cascade is a boolean flag the server takes on trust — so the
 //! arming here is this seat's own, and §4.20 is amended to say what earns one:
 //! the test is **scope**, not destruction. yog's §3.6 doctrine is already
 //! written that way (*"typed-name confirm iff the verb … destroys objects
@@ -29,9 +29,9 @@
 //!
 //! **It is never spent on firing**, for §4.20's reason: the refusal is the
 //! common answer on this control's own surface, and clearing the box would
-//! charge a retype for the engine's *no*.
+//! charge a retype for the server's *no*.
 //!
-//! # The word is the ENGINE's word, read once
+//! # The word is the SERVER's word, read once
 //!
 //! The button's label is [`crate::ui::records::header::word`] of
 //! [`Offer::Children`] — the same string the offers sentence one label to its
@@ -41,7 +41,7 @@
 //!
 //! # Retiring the boundary field deletes ONE line
 //!
-//! litany bl-3114 made every engine stop take its children, so yog will retire
+//! litany bl-3114 made every litany stop take its children, so yog will retire
 //! the `children` field at its next PROTOCOL bump (yog bl-6efc). The field has
 //! exactly one site in this window that means *yes* —
 //! `crate::ui::model::Model::post_cascade`'s `true` — and that literal is what
@@ -75,15 +75,15 @@ pub const FIRE_HELP: &str =
 const ARM_WIDTH: f32 = 160.0;
 
 /// **Whether the typed box arms the cascade** — the display name back, with
-/// surrounding whitespace forgiven and nothing else, which is the engine's own
+/// surrounding whitespace forgiven and nothing else, which is the server's own
 /// rule for the arming `delete-agent` takes (yog's `src/delete/agent.rs`).
 pub fn armed(row: &Agent, typed: &str) -> bool {
     typed.trim() == row.display
 }
 
-/// Paint the cascade beside the offers line, where the engine offers it.
+/// Paint the cascade beside the offers line, where the server offers it.
 ///
-/// A row the engine offers no cascade on carries no control at all, which is
+/// A row the server offers no cascade on carries no control at all, which is
 /// the same reading `crate::ui::records::spine`'s fork control takes off an
 /// unanchored notch: the control is absent where its subject is, and disabled
 /// only where a parameter is.

@@ -4,7 +4,7 @@
 //!
 //! One row per check: what was checked, the fact found, whether it holds, and —
 //! where it does not and there is something to do — the remedy, in the
-//! engine's own words. Naming a workspace adds that workspace's checks; the
+//! server's own words. Naming a workspace adds that workspace's checks; the
 //! bare form is the box's alone, because the box it is for may hold none.
 //!
 //! # No tally, on either end
@@ -18,7 +18,7 @@
 //! # The remedy is verbatim and its absence is the answer
 //!
 //! A diagnostic with its own opinion is a second authority for a settled
-//! decision (the passage above), so the sentence the engine wrote is the
+//! decision (the passage above), so the sentence the server wrote is the
 //! sentence painted. A row with no remedy states none, and nothing here
 //! composes one.
 
@@ -29,16 +29,16 @@ use super::fields;
 /// The kind token this reading answers to.
 pub(crate) const KIND: &str = "doctor";
 
-/// One check the engine ran.
+/// One check the server ran.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Check {
     /// What was checked — `listener`, `address`, … — carried as the word sent.
     pub check: String,
-    /// What was found, in the engine's words.
+    /// What was found, in the server's words.
     pub fact: String,
     /// Whether it holds.
     pub ok: bool,
-    /// **What to do about it**, verbatim, where the engine named something.
+    /// **What to do about it**, verbatim, where the server named something.
     pub remedy: Option<String>,
 }
 

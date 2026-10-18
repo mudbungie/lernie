@@ -60,7 +60,7 @@ pub fn entry(row: &crate::reply::files::FileRow) -> String {
     }
 }
 
-/// A bounded preview as text — the engine's three classes, and the rung-3
+/// A bounded preview as text — the server's three classes, and the rung-3
 /// word painted as itself. Shared with the drill-in's two capture logs
 /// ([`super::drill`]), which are the same bounded reading.
 pub fn previewed(preview: &Preview) -> String {

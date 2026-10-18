@@ -57,7 +57,7 @@ fn the_trail_defaults_its_depth_to_the_one_the_window_asks_with() {
 
 /// **The doctor fans bare and routes named** (bl-9bbb): bare it names no
 /// workspace and its subject is every channel's wiring; naming one asks that
-/// wall's engine alone. A third word earns the door's own usage.
+/// workspace's server alone. A third word earns the door's own usage.
 #[test]
 fn the_doctor_fans_bare_and_routes_when_a_workspace_is_named() {
     assert_eq!(fanned(&["doctor"]), json!({"op": "doctor"}));
@@ -188,7 +188,7 @@ fn the_roster_word_fans_while_the_hand_written_envelope_does_not() {
 }
 
 /// **One help, three spellings**, because the subject is one — this binary's
-/// interface. It answers with no engine up and no channel provisioned, which is
+/// interface. It answers with no server up and no channel provisioned, which is
 /// the property that makes it answerable here at all.
 #[test]
 fn every_help_spelling_prints_the_one_usage() {

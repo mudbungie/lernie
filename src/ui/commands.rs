@@ -1,10 +1,10 @@
 //! **Help**: what this window takes — its slash words and its keys — and then
-//! what these engines answer, every op each one has a word for and what each
+//! what these servers answer, every op each one has a word for and what each
 //! is for (bl-40ec; DESIGN §4.21; the window's half, bl-55ed).
 //!
 //! # The window's own words come first
 //!
-//! The operator who types `/help` asked THIS window. The engines' tables are
+//! The operator who types `/help` asked THIS window. The servers' tables are
 //! spelled in their own slash grammar (`/scan`, `/workflow <lineage>`), most
 //! of which this box does not take, so a pane that led with them taught words
 //! the menu answers *nothing here answers to that*. The window's half is read
@@ -20,7 +20,7 @@
 //!
 //! # It is sectioned per channel and deliberately not merged
 //!
-//! Two engines on one box may be at two protocol versions, so their tables are
+//! Two servers on one box may be at two protocol versions, so their tables are
 //! two answers and a union would say they are one thing. The section header is
 //! the roster's own (`crate::ui::roster::header`), which carries the address
 //! the entry dials — so two entries terminating at one listener are visible as
@@ -40,7 +40,7 @@
 //! # And it is not `lernie help`
 //!
 //! That answers what this BINARY takes, from a table compiled into it, with
-//! nothing provisioned (`crate::verbs::help`). This answers what the ENGINE
+//! nothing provisioned (`crate::verbs::help`). This answers what the SERVER
 //! offers. Two subjects; the wire op is the second, and `crate::verbs::window`
 //! states why only one of them has an argv row.
 
@@ -55,15 +55,15 @@ pub const HEADING: &str = "what this window takes";
 pub const WORDS: &str = "the words, typed after / in the box — the menu's own rows";
 /// The window's keys, said above the table.
 pub const KEYS_SAID: &str = "the keys";
-/// **The engines' section heading**: their op tables are a second subject —
-/// what each engine answers, in the engine's own spelling — and saying so is
+/// **The servers' section heading**: their op tables are a second subject —
+/// what each server answers, in the server's own spelling — and saying so is
 /// what keeps an operator from typing `/scan` into a box that does not take it.
-pub const ENGINES: &str = "what each engine answers to — its own commands, for the lernie command line; the words above are what this window takes";
+pub const SERVERS: &str = "what each server answers to — its own commands, for the lernie command line; the words above are what this window takes";
 /// What it says before any channel has answered.
-pub const NOT_ANSWERED: &str = "waiting to hear what these engines answer to";
-/// What a section says for an engine that answered and named no op at all — a
-/// fact about that engine, and the one empty state here that is not a wait.
-pub const NO_OPS: &str = "this engine lists no commands";
+pub const NOT_ANSWERED: &str = "waiting to hear what these servers answer to";
+/// What a section says for a server that answered and named no op at all — a
+/// fact about that server, and the one empty state here that is not a wait.
+pub const NO_OPS: &str = "this server lists no commands";
 
 /// Paint the pane and take the clicks on it. Answers whether there was one to
 /// paint, so the shell knows whether the conversation still stands.
@@ -74,7 +74,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     crate::ui::overlay::name(ui, HEADING);
     window(ui, model);
     ui.separator();
-    ui.label(egui::RichText::new(ENGINES).color(theme::INK_WEAK));
+    ui.label(egui::RichText::new(SERVERS).color(theme::INK_WEAK));
     let pages = model.pages.clone();
     if pages.is_empty() {
         ui.label(NOT_ANSWERED);

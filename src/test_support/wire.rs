@@ -1,4 +1,4 @@
-//! **A data root with an engine behind one of its channels** — the one fixture
+//! **A data root with a server behind one of its channels** — the one fixture
 //! for standing a real wire up, shared by the seat's suite and the off-frame
 //! threads'.
 //!
@@ -13,10 +13,10 @@ use serde_json::{Value, json};
 
 use crate::channel::entries::{ENTRIES, WIRE};
 use crate::channel::hello::PROTOCOL;
-use crate::test_support::engine::Engine;
+use crate::test_support::server::Server;
 use crate::test_support::{Scratch, mint};
 
-/// A data root, with an engine standing behind one channel of it.
+/// A data root, with a server standing behind one channel of it.
 ///
 /// `at` is the directory under the root the material goes in — the flat root
 /// (`wire`) or one entry (`wire/workspaces/<leaf>`) — so one helper stands both
@@ -24,12 +24,12 @@ use crate::test_support::{Scratch, mint};
 pub(crate) fn wired(
     scratch: &Scratch,
     at: &Path,
-    script: Vec<impl Into<crate::test_support::engine::Answer>>,
-) -> Engine {
+    script: Vec<impl Into<crate::test_support::server::Answer>>,
+) -> Server {
     let dir = scratch.path().join(at);
     std::fs::create_dir_all(&dir).expect("mkdir");
     mint::material(&dir);
-    Engine::start(&dir, PROTOCOL, script)
+    Server::start(&dir, PROTOCOL, script)
 }
 
 /// The flat root's path under a data root.

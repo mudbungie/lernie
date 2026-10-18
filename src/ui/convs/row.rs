@@ -5,7 +5,7 @@
 //! Split out of [`super`] at the design-time budget on the seam the list
 //! already has: there is the LIST — the two emptinesses, the rail question and
 //! the pure functions a row's words are made of — and here is what one row
-//! puts on the glass. The first changes when a wall answers differently; the
+//! puts on the glass. The first changes when a workspace answers differently; the
 //! second when the visual language does.
 //!
 //! **Nothing here draws its own row.** `theme::paint::row` is the anatomy and
@@ -111,7 +111,7 @@ pub(super) fn conversation(
 /// It names the act and how much of it there is — the pin pair's rule (§4.25)
 /// and the tool fold's (§4.11): two words rather than one that toggles, so a
 /// reader never has to work out which way it will go. The count is the
-/// engine's `members` less this row itself.
+/// server's `members` less this row itself.
 ///
 /// **It is a row and it stands UNDER the name**, one step deeper — it is a
 /// thing that hangs under the conversation, so it reads where the things that
@@ -176,7 +176,7 @@ fn at_level(left: f32, level: u64) -> f32 {
 }
 
 /// How far a row stands from the pane's left edge, in points: one [`STEP`]
-/// under the wall it hangs from (DESIGN §4.39 — a conversation is a level
+/// under the workspace it hangs from (DESIGN §4.39 — a conversation is a level
 /// below its workspace, and the fold is what made that a thing the glass can
 /// show), plus one more per level of descent inside the thread.
 ///

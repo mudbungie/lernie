@@ -13,9 +13,9 @@
 //! [`Model::aim`] when it fires, which is the opposite of what the tuning pane
 //! does and is the right answer for the opposite reason. The roster stays live
 //! and clickable under a covering pane, so an aim can move while an unmaking
-//! stands — and a destructive act that followed the aim would unmake a wall the
+//! stands — and a destructive act that followed the aim would unmake a workspace the
 //! operator armed a different one for. A tuning write that lands on the wrong
-//! wall is undone by writing the old value back; this is not.
+//! workspace is undone by writing the old value back; this is not.
 //!
 //! # The arming is an enablement, and it is never spent
 //!
@@ -23,8 +23,8 @@
 //! rather than a policy invented here: `delete-workspace` is refused unless the
 //! typed name matches the workspace exactly (`crate::verbs::DELETE_WORKSPACE`).
 //! Firing does not clear it, because a refusal is the COMMON case for this act —
-//! the engine declines while anything in the workspace is live — and clearing
-//! the box would charge a retype for the engine's *no*, which is a toll on the
+//! the server declines while anything in the workspace is live — and clearing
+//! the box would charge a retype for the server's *no*, which is a toll on the
 //! safe path. `crate::ui::composer::acts` draws the same distinction one noun
 //! over, where the same field is a parameter instead.
 
@@ -36,7 +36,7 @@ use super::{Aim, Model};
 /// control that closes it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Unmaking {
-    /// The wall this is about, held rather than re-read (see the module doc).
+    /// The workspace this is about, held rather than re-read (see the module doc).
     pub aim: Aim,
     /// The arming: the workspace's own name, typed back.
     pub typed: String,
@@ -47,7 +47,7 @@ pub struct Unmaking {
 }
 
 impl Unmaking {
-    /// Open one on a wall, unarmed.
+    /// Open one on a workspace, unarmed.
     pub fn at(aim: Aim) -> Self {
         Self {
             aim,
@@ -57,7 +57,7 @@ impl Unmaking {
     }
 
     /// **Whether the typed name arms it** — the workspace's own name and
-    /// nothing else, which is what the engine compares against.
+    /// nothing else, which is what the server compares against.
     pub fn armed(&self) -> bool {
         self.typed == self.aim.address
     }
@@ -70,7 +70,7 @@ impl Unmaking {
 }
 
 impl Model {
-    /// **Open an unmaking on the wall the window is aimed at**, or do nothing
+    /// **Open an unmaking on the workspace the window is aimed at**, or do nothing
     /// where it is aimed at none — the aim is the gate exactly as it is for the
     /// enrollment and the tuning pane, because the gesture carries a workspace
     /// and a workspace is what an aim is.

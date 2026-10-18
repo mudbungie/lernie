@@ -1,5 +1,5 @@
 //! **The balls family's reads** — the whole box's binding table, the fleet
-//! board, one wall's own balls and the branch it tracks them on (yog's
+//! board, one workspace's own balls and the branch it tracks them on (yog's
 //! `docs/REMOTE.md` §9.7; bl-d2af).
 //!
 //! Four rows and no doors, because all four take named strings or nothing:
@@ -20,11 +20,11 @@
 //! outright — *"the `--as` stamp every `bl` verb carries (§3.2): the ball's
 //! bound workspace name, never the operator `$USER`"* — and its join binds a
 //! ball to a workspace on exactly that equality. So this seat needs no
-//! identity of its own to act: the stamp is the aimed wall's name as its
-//! engine spells it (`crate::ui::Model::stamp`), and a seat that invented an
+//! identity of its own to act: the stamp is the aimed workspace's name as its
+//! server spells it (`crate::ui::Model::stamp`), and a seat that invented an
 //! operator name would break the binding it was trying to make.
 //!
-//! **`marks` is here as its READ.** With a branch it amends the wall's
+//! **`marks` is here as its READ.** With a branch it amends the workspace's
 //! tracking space, and that second form is a write with a confirmation to
 //! design; the bare form reads, and the row below spells the bare form. The
 //! reply is the same either way — *the branch re-read afterwards, never an
@@ -55,7 +55,7 @@ pub const BALLS: Verb = Verb {
              state. It names no workspace, so its subject is EVERY channel this \
              box holds, and the pane is the union — the same fanned shape \
              `workspaces` and the decision queue keep. A ball nobody holds \
-             names no claimant and no wall, which is a reading rather than a \
+             names no claimant and no workspace, which is a reading rather than a \
              blank.",
 };
 
@@ -75,7 +75,7 @@ pub const BOARD: Verb = Verb {
              empty one.",
 };
 
-/// One wall's own balls.
+/// One workspace's own balls.
 pub const WORKSPACE_BALLS: Verb = Verb {
     word: "workspace-balls",
     params: &["workspace"],
@@ -84,10 +84,10 @@ pub const WORKSPACE_BALLS: Verb = Verb {
     detail: "Every ball bound to the named workspace: its id, its badge, the \
              project its `bl` verbs run in, the name they stamp `--as`, and \
              the tokens and money its conversations have spent on it. `balls` \
-             answers the whole box's binding table; this answers one wall.",
+             answers the whole box's binding table; this answers one workspace.",
 };
 
-/// The branch a wall tracks its tasks on.
+/// The branch a workspace tracks its tasks on.
 pub const MARKS: Verb = Verb {
     word: "marks",
     params: &["workspace"],
@@ -110,7 +110,7 @@ pub const ASSIGN: Verb = Verb {
     detail: "Claims a ready ball (`bl claim`), which is what BINDS it to a \
              workspace: a bound ball is one a workspace holds, and the join is \
              on the name stamped here. So `name` is the claiming workspace's \
-             own name as its engine spells it, never the operator's login. It \
+             own name as its server spells it, never the operator's login. It \
              names no workspace field, so nothing routes it — the control that \
              fires it names the channel its row came down (DESIGN §4.35).",
 };
@@ -151,12 +151,12 @@ pub fn board() -> Value {
     BOARD.built(Vec::new(), &[])
 }
 
-/// One wall's balls, typed.
+/// One workspace's balls, typed.
 pub fn workspace_balls(workspace: String) -> Value {
     WORKSPACE_BALLS.built(vec![workspace], &[])
 }
 
-/// One wall's tracking branch, typed.
+/// One workspace's tracking branch, typed.
 pub fn marks(workspace: String) -> Value {
     MARKS.built(vec![workspace], &[])
 }

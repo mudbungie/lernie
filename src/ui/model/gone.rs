@@ -1,12 +1,12 @@
-//! **A selection the engine no longer knows** (bl-6dfd).
+//! **A selection the server no longer knows** (bl-6dfd).
 //!
 //! The selected conversation's own row is asked every beat
-//! (`crate::offframe::asker::wall::selected`). When the engine refuses that
+//! (`crate::offframe::asker::workspace::selected`). When the server refuses that
 //! read — the conversation was deleted from another seat, or a row was aimed
-//! at the wrong engine — it is the engine saying the subject is gone, and a
+//! at the wrong server — it is the server saying the subject is gone, and a
 //! selection held past that is one whose refusal re-posts every beat faster
 //! than Esc can put it down. So the refusal drops the selection back to the
-//! wall, where the box begins a conversation, and is posted once: with
+//! workspace, where the box begins a conversation, and is posted once: with
 //! nothing selected nothing asks again.
 
 use super::{Channel, Model};
@@ -19,7 +19,7 @@ impl Model {
     /// [`Model::absorb`]'s.
     pub fn about(&mut self, channel: &Channel, op: &str, read: Read) {
         if op == crate::verbs::AGENT.word && matches!(read, Read::Refusal(_)) {
-            // A selection the engine put down is a tab put down (§4.44).
+            // A selection the server put down is a tab put down (§4.44).
             if let Some(id) = self.conversation.clone() {
                 self.shut(&id);
             }
@@ -28,7 +28,7 @@ impl Model {
         self.absorb(channel, read);
     }
 
-    /// **Nothing selected**, the wall still aimed: the transcript, its tail
+    /// **Nothing selected**, the workspace still aimed: the transcript, its tail
     /// and the records pane go with the conversation they were about.
     pub(super) fn deselect(&mut self) {
         self.conversation = None;

@@ -20,7 +20,7 @@
 //!
 //! # `fault` is absent, never null, and the seat never composes one
 //!
-//! It is the engine's judgement of that value in words — the same call §9.4's
+//! It is the server's judgement of that value in words — the same call §9.4's
 //! pick gate makes — so a seat that derived its own would be a second authority
 //! on the far side of a boundary. Absent is *nothing is wrong with this value*;
 //! it is not *nobody looked*, because an unanswerable table faults nothing.
@@ -63,9 +63,9 @@ pub struct Setting {
     pub name: String,
     /// What the file currently says, as a string whatever the control is.
     pub value: String,
-    /// What it is for, in the engine's words.
+    /// What it is for, in the server's words.
     pub help: String,
-    /// **The engine's judgement of this value**, where it has one. Absent is
+    /// **The server's judgement of this value**, where it has one. Absent is
     /// *nothing is wrong with it*.
     pub fault: Option<String>,
     /// What kind of control the value takes, and the range it is legal in.

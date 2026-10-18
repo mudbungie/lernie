@@ -1,4 +1,4 @@
-//! **The trail** — what an engine has DONE, and the two acts on that record
+//! **The trail** — what a server has DONE, and the two acts on that record
 //! (yog's `docs/REMOTE.md` §9.17; bl-4c48, bl-b8f7).
 //!
 //! # It is a door and not a row, and the reason is one field

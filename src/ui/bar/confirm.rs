@@ -27,7 +27,7 @@ pub const DELETE: &str = "delete";
 pub const HINT: &str = "Enter deletes · Esc keeps";
 /// What the two answers do.
 pub const KEEP_HELP: &str = "keeps the conversation; nothing is sent";
-pub const DELETE_HELP: &str = "deletes the conversation on the engine; nothing brings it back";
+pub const DELETE_HELP: &str = "deletes the conversation on the server; nothing brings it back";
 
 /// **Paint the box** for `id`, the conversation whose deletion is being
 /// asked about (the shell lays the panel only while one is), and take the

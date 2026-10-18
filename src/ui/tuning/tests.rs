@@ -21,11 +21,11 @@ fn a_shut_pane_paints_nothing_and_reports_it() {
     assert!(!painted.contains(HEADING), "{painted}");
 }
 
-/// **Three states, and the first two are different sentences.** A wall nobody
-/// has been answered about is not a wall with no roles — the same doctrine the
+/// **Three states, and the first two are different sentences.** A workspace nobody
+/// has been answered about is not a workspace with no roles — the same doctrine the
 /// conversation list keeps one noun over.
 #[test]
-fn an_unanswered_wall_and_a_wall_with_no_roles_say_different_things() {
+fn an_unanswered_workspace_and_a_workspace_with_no_roles_say_different_things() {
     for (roles, expected) in [
         (None, NOT_ANSWERED),
         (Some(Vec::new()), NO_ROLES),

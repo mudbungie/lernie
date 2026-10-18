@@ -86,7 +86,7 @@ one, and Esc puts it down; a notice longer than the line stands whole,
 wrapped, just above the rule. The name at the right end is the switcher's
 door. A selector or the name that holds the keyboard wears the brand ring,
 and Enter or Space opens it. Nothing seat-wide stands on the rule: how many conversations wait and
-how many engines answer are the seat panel's, the switcher's and
+how many servers answer are the seat panel's, the switcher's and
 `/attention`'s. What runs out of width drops from the right — diagnostics,
 then priority, then effort; provider and model never drop and are cut with
 `…` inside their share instead. What you talk to is changed where
@@ -99,8 +99,8 @@ sends · /help for commands · Ctrl+X for a conversation · Ctrl+O for the model
 one by one where the line has no room — one line, never wrapped, never a part
 cut in half; *what this conversation is for — Enter begins it* and the same
 ways in, in start mode; *nothing is aimed · / for a verb · Ctrl+X for a
-conversation or a new workspace* with no wall aimed; *no provider yet —
-/login or /config, then pick one on the rule* on a wall whose worker's
+conversation or a new workspace* with no workspace aimed; *no provider yet —
+/login or /config, then pick one on the rule* on a workspace whose worker's
 provider holds no credential (bl-7a77), where prose goes nowhere and the verbs that
 need no aim still fire; *it is asking — 1–6 answers, or say it — Enter sends* while it asks, the caret
 staying in the box (bl-1252). There is no send control and no row of controls under
@@ -113,16 +113,16 @@ the verb's word, exactly as the control it replaced read: `/records`,
 `/login`, `/enroll`, `/doctor`, `/find`, `/attention`, `/help`, `/unmake`,
 `/refresh`, `/pin`, `/stop`, `/nudge`, `/flag`, `/delete`, and `/model`
 (Ctrl+O) for the role tuning by the word you reach for. Ctrl+X opens
-the switcher, the one list of engines, walls and conversations, with `+ new`
-under every wall. A control that opens a pane does not exist; the word does.
+the switcher, the one list of servers, workspaces and conversations, with `+ new`
+under every workspace. A control that opens a pane does not exist; the word does.
 
 **A conversation's facts are a card, then a rule.** At the head of its
-transcript, the conversation panel: a framed card with its name, engine and
-wall, model, spend and where it hangs, one line each, the long ones behind
-`▸` folds. With nothing selected the seat panel stands there: the engines this
-seat reaches, one row each with its dial state and counts — an engine that
+transcript, the conversation panel: a framed card with its name, server and
+workspace, model, spend and where it hangs, one line each, the long ones behind
+`▸` folds. With nothing selected the seat panel stands there: the servers this
+seat reaches, one row each with its dial state and counts — a server that
 will not dial says why in red in place of its counts, and while it is the
-aimed engine the rule's state slot says the same in red — the queue's door
+aimed server the rule's state slot says the same in red — the queue's door
 `N waiting` in green while anything asks, the version, and
 the ways in: *the verbs, a conversation, the model, a provider*. Under the
 transcript, the prompt; under the prompt, the rule.
@@ -132,7 +132,7 @@ a tree of stems the working — `+ worked · 2 calls · 1 note` at rest, open
 `├─ ✓ Bash("…")` over one elided line of its output, `└─ ✗` in the error
 accent, a step in flight whole — and `───` parts the turns. No block wears a side rule and
 every block stands on a faint bubble that says its role (§5), and a
-message this seat sent stands at the end in `INK_WEAK` until the engine's
+message this seat sent stands at the end in `INK_WEAK` until the server's
 row replaces it.
 
 ## 3. Ground, elevation, ink, accents — adopted verbatim
@@ -304,8 +304,8 @@ one turn from the next; `S` of air parts everything else.
 **The panel at the head** (`chat::panel`): a `SURFACE` card with a
 `HAIRLINE` frame and `RADIUS` corners, `M` across and `S` down inside, one
 fact a line — the name in `INK`, the rest in `INK_WEAK` — and the seat's
-card the same with each engine's line in the attention accent while any of
-its walls asks.
+card the same with each server's line in the attention accent while any of
+its workspaces asks.
 
 **The composer** (`theme::paint::composer`): a `SURFACE` field
 `COMPOSER_ROWS` lines tall, no stroke at rest, the brand ring when focused,
@@ -318,7 +318,7 @@ glass; the attention accent on an armed irreversible act. **A compact
 control** is a glyph and a word in one run — `theme::worded` — and the glyph
 is a token of the theme, asserted to have a glyph in the body font. **Every control carries its help** (DESIGN §4.46 item 2): one sentence in the operator's terms, shown as a tooltip — the overlay's `SURFACE` box, its `HAIRLINE` frame, `BODY` in `INK` — after the pointer has rested `help_delay` on it, ending ` · <chord>` where a key fires the same act. **A slider** (`theme::paint::slider`, the settings pane): `RAISED` as its trough with the selection's tint up to the handle, the handle a `RAISED` disc ringed in the brand, its number after it, arrows moving it while it holds the keyboard, and the brand ring around the whole run while it does. **A toggle** (`theme::paint::toggle`): a check box in the control's fill, the brand check.
 
-**A strip** (the window's acts, the aimed wall's acts): compact controls in
+**A strip** (the window's acts, the aimed workspace's acts): compact controls in
 one wrapped row, a short verb each — `refresh`, `verbs…`, `roles…`,
 `unmake…` — never a sentence, so that at the roster's own width the six
 stand on two lines and the eight on three. A verb that opens a pane carries

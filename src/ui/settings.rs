@@ -5,7 +5,7 @@
 //! per-seat UI state — so the pane posts nothing and has no standing read:
 //! a change lands in `Model::settings` on the frame it is made, every reader
 //! reads it on the next, and the place file writes it at exit
-//! (`crate::place`). The tuning pane (§4.17) is the wall's settings and this
+//! (`crate::place`). The tuning pane (§4.17) is the workspace's settings and this
 //! is the box's, and the two never meet.
 //!
 //! **The table is the pane**: a knob added to `crate::settings::KNOBS` is a

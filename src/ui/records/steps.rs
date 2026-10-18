@@ -77,7 +77,7 @@ fn step(ui: &mut egui::Ui, model: &mut Model, row: &StepRow) {
     drill::records(ui, model, &row.seq);
 }
 
-/// The orphan banner, or none: [`crate::reply::steps::NONE`] is the engine's
+/// The orphan banner, or none: [`crate::reply::steps::NONE`] is the server's
 /// own *nothing is orphaned* and paints as silence rather than as a badge.
 pub fn orphaned(listing: &Steps) -> Option<String> {
     if listing.orphan == crate::reply::steps::NONE {
@@ -90,7 +90,7 @@ pub fn orphaned(listing: &Steps) -> Option<String> {
 }
 
 /// **The one line a step always gets**: its address, how it ended, what it
-/// cost — the money beside the count where the engine priced it (REMOTE
+/// cost — the money beside the count where the server priced it (REMOTE
 /// §9.23) — and the retries, where there were any.
 pub fn headline(row: &StepRow) -> String {
     let said = crate::reply::spend::priced(

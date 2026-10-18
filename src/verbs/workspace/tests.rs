@@ -1,4 +1,4 @@
-//! The wall's three acts as rows, and the pin pair that are assertions rather
+//! The workspace's three acts as rows, and the pin pair that are assertions rather
 //! than a toggle.
 
 use super::{PIN, UNPIN, pin, unpin};

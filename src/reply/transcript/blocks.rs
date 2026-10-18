@@ -8,7 +8,7 @@
 //!
 //! **No provider vocabulary is pinned in either half.** A block kind this
 //! build does not know keeps its word ([`Block::Unknown`], rung 3), and a
-//! counter name is whatever the provider called it — so a counter the engine's
+//! counter name is whatever the provider called it — so a counter the server's
 //! adapter starts reporting rides through with no edit here at all. The
 //! alternative is a table this seat would have to be upgraded to keep, for a
 //! surface whose whole content is somebody else's names.
@@ -35,7 +35,7 @@ pub enum Block {
     /// tell a model thinking hard from a driver that has hung, so this becomes
     /// a row of its own rather than a spinner.
     Thinking(String),
-    /// A tool call, painted as a chip. `input` is the summary the engine
+    /// A tool call, painted as a chip. `input` is the summary the server
     /// already made — never a second parse of the call's arguments, which
     /// would be this seat deciding what a tool call means.
     ToolUse {
@@ -68,7 +68,7 @@ const THINKING: &str = "thinking";
 const TOOL_USE: &str = "tool-use";
 
 /// Read one block. The two text arms share a field name, which is the
-/// engine's spelling and not a convenience: they are one thing said two ways,
+/// server's spelling and not a convenience: they are one thing said two ways,
 /// and the kind is what says which.
 pub(crate) fn block(v: &Value) -> Result<Block, String> {
     let o = v.as_object().ok_or("block: not an object")?;

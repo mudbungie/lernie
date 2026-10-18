@@ -12,11 +12,11 @@
 //!
 //! # What is NOT held here is either answer
 //!
-//! [`Model::lineages`] and [`Model::config`] are the engine's, filed on the
+//! [`Model::lineages`] and [`Model::config`] are the server's, filed on the
 //! model beside the roles and the provider table for their reason verbatim: a
-//! pane that wrote its own bytes back would be painting a file the engine had
+//! pane that wrote its own bytes back would be painting a file the server had
 //! not written. That matters more here than anywhere else on this surface,
-//! because the answer carries the engine's own JUDGEMENT of the values
+//! because the answer carries the server's own JUDGEMENT of the values
 //! (`crate::reply::config::Setting::fault`) and a seat that re-derived one
 //! would be a second authority across a boundary.
 //!
@@ -37,7 +37,7 @@
 //! types for minutes while a standing read replaces the answer underneath
 //! them. [`Draft::seed`] is that guard restated as a READING rather than as a
 //! refusal, which is this seat's whole division of labour: the pane says the
-//! file went somewhere else, and the engine remains the only thing that
+//! file went somewhere else, and the server remains the only thing that
 //! judges.
 //!
 //! # Both reads STAND, and the second only once a file is picked
@@ -87,7 +87,7 @@ pub struct Configuring {
 }
 
 impl Model {
-    /// **Open the config pane on the wall the window is aimed at**, or do
+    /// **Open the config pane on the workspace the window is aimed at**, or do
     /// nothing where it is aimed at none — the aim being the gate for
     /// [`Model::begin_tuning`]'s reason: the lineage read carries a workspace,
     /// and a workspace is what an aim is.
@@ -98,7 +98,7 @@ impl Model {
     }
 
     /// **Close it.** The answers stay, for the reason the roles do: the next
-    /// open on the same wall is about the same files, and the standing reads
+    /// open on the same workspace is about the same files, and the standing reads
     /// replace them anyway.
     pub fn close_configuring(&mut self) {
         self.configuring = None;
@@ -129,7 +129,7 @@ impl Model {
 
     /// **The box, seeded from the file the first time it answers and settled
     /// against every answer after.** Called by the frame that paints it, which
-    /// is the one place that holds the engine's answer and the box at once.
+    /// is the one place that holds the server's answer and the box at once.
     pub fn draft_config(&mut self, answered: &str) {
         let Some(pane) = self.configuring.as_mut() else {
             return;
@@ -168,7 +168,7 @@ impl Model {
         self.configuring.as_ref()?.draft.clone()
     }
 
-    /// **Put the engine's answer back in the box** — the way out of an edit,
+    /// **Put the server's answer back in the box** — the way out of an edit,
     /// and the way to take another writer's file over your own draft. It is
     /// one gesture for both because it is one act: the box becomes the file.
     pub fn revert_config(&mut self, answered: &str) {
@@ -182,9 +182,9 @@ impl Model {
     ///
     /// The address is the read half's, spelled once more rather than derived a
     /// second way (DESIGN §4.30): a destination naming a workspace is routed by
-    /// it, and one naming the ENGINE is addressed down the channel the window
+    /// it, and one naming the SERVER is addressed down the channel the window
     /// is aimed at — never fanned, which is what would put the operator's text
-    /// on every engine this box is a client of (bl-4855).
+    /// on every server this box is a client of (bl-4855).
     pub fn write_config(&mut self, at: &Where, text: String) {
         let posted = super::Posted::act(crate::verbs::write(at, text));
         let posted = if at.addresses_a_workspace() {
@@ -198,7 +198,7 @@ impl Model {
         self.outbox.push(posted);
     }
 
-    /// **The pane and both answers go with the wall they are about** — called
+    /// **The pane and both answers go with the workspace they are about** — called
     /// by the act that moves the aim, so nothing on it outlives its subject.
     /// It is `super::login::Model::retire_login`'s rule one noun over, and
     /// sharper: a destination carries the aim's own workspace inside it.

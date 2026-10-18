@@ -61,11 +61,11 @@ fn the_edge_read_is_the_rule_applied_to_this_process() {
     );
 }
 
-/// **The fence has a third surface and this is it.** A box that ran the
-/// pre-fence engine may hold a `$XDG_DATA_HOME/lernie` from that era, and this
+/// **The fence has a third surface and this is it.** A box that ran
+/// litany under this name may hold a `$XDG_DATA_HOME/lernie` from that era, and this
 /// crate takes the same directory rather than conceding the name it was given.
 /// What makes that benign is that the seat reads exactly two paths under its
-/// root and the engine's home held neither shape — so the assertion worth
+/// root and the server's home held neither shape — so the assertion worth
 /// holding is that the root is the plain crate name and the reading is narrow.
 #[test]
 fn the_data_root_is_the_crate_s_own_name_under_the_convention() {

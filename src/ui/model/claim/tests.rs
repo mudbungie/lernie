@@ -1,4 +1,4 @@
-//! The claim: taken on the wall it was made on, asked nothing about, painted as
+//! The claim: taken on the workspace it was made on, asked nothing about, painted as
 //! a row nothing observed, and spent exactly once and only where it was made.
 
 use crate::reply::convs::{AgentState, Tone};
@@ -9,7 +9,7 @@ use crate::ui::model::{Phase, Start};
 use crate::ui::{Aim, Model};
 use serde_json::json;
 
-/// A minted-name receipt as an engine answers one.
+/// A minted-name receipt as a server answers one.
 fn minted(name: &str) -> crate::reply::Read {
     read(&json!({"ok": true, "kind": "started", "conversation": name}))
 }
@@ -22,7 +22,7 @@ fn listing(root: &str, name: &str) -> crate::reply::Read {
          "members": 1, "depth": 0, "tone": "plain"}]}))
 }
 
-/// A model whose start is out on the aimed wall, with the operator's goal held.
+/// A model whose start is out on the aimed workspace, with the operator's goal held.
 fn firing() -> Model {
     Model {
         conversation: None,
@@ -37,7 +37,7 @@ fn firing() -> Model {
 }
 
 /// **A start focuses what it started**, and the load-bearing half is what
-/// follows: the standing set publishes no question against a name the engine
+/// follows: the standing set publishes no question against a name the server
 /// resolves nowhere. A claim that painted a row while the asker kept refusing
 /// against it would be worse than no claim at all.
 #[test]
@@ -50,12 +50,12 @@ fn the_minted_name_is_selected_and_nothing_is_asked_about_it() {
     assert_eq!(
         Standing::of(&model).aim,
         model.aim.clone(),
-        "the wall it was started on is still asked for its conversations"
+        "the workspace it was started on is still asked for its conversations"
     );
 }
 
 /// **The row is what nothing observed**: no lock, no completed step, flagged
-/// uncertain — which is what the engine's own classifier answers for a
+/// uncertain — which is what the server's own classifier answers for a
 /// conversation it cannot probe. It must not read `live`, which would claim a
 /// driver this seat has never seen, and it carries the operator's own text so
 /// the goal has a painted representation for the whole round trip.
@@ -69,14 +69,14 @@ fn the_pending_row_is_uncertain_faded_and_carries_the_goal() {
     assert!(row.uncertain);
     assert_eq!(row.tone, Tone::Weak);
     assert_eq!(row.preview, "port the paint probe");
-    assert_eq!(row.name, None, "nothing the engine will answer to yet");
+    assert_eq!(row.name, None, "nothing the server will answer to yet");
     assert_eq!(row.root_id, "brisk-otter");
     let rows = model.rows();
     assert_eq!(rows.first(), Some(&row));
     assert_eq!(rows.len(), model.convs.len() + 1);
 }
 
-/// **Spent by the answer that makes the conversation addressable**: the engine
+/// **Spent by the answer that makes the conversation addressable**: the server
 /// hands a row its `name` exactly when a stored fact backs it, and the
 /// selection moves from the minted name to the id every gesture addresses.
 #[test]
@@ -123,15 +123,15 @@ fn an_operator_who_read_something_else_is_not_yarded_back() {
     assert_eq!(model.start, None);
 }
 
-/// **A receipt for a wall the window is no longer looking at claims nothing.**
-/// The selection is painted in the aimed wall's list and nowhere else, so a
-/// selection on another wall is one the operator can neither see nor leave —
-/// the name is still painted, which is the fact the engine added.
+/// **A receipt for a workspace the window is no longer looking at claims nothing.**
+/// The selection is painted in the aimed workspace's list and nowhere else, so a
+/// selection on another workspace is one the operator can neither see nor leave —
+/// the name is still painted, which is the fact the server added.
 #[test]
-fn a_receipt_from_a_wall_the_window_left_paints_its_name_and_takes_no_selection() {
+fn a_receipt_from_a_workspace_the_window_left_paints_its_name_and_takes_no_selection() {
     let mut model = firing();
     model.aim = Some(Aim {
-        channel: "(this box's own engine)".to_owned(),
+        channel: "(this box's own server)".to_owned(),
         address: "elsewhere".to_owned(),
     });
     model.absorb(&own().channel, minted("brisk-otter"));

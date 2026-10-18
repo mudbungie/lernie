@@ -1,10 +1,10 @@
-//! **The live dock**: what is running under the aimed wall, folded to one
+//! **The live dock**: what is running under the aimed workspace, folded to one
 //! line above the rule and unfolded with Ctrl+T (DESIGN §4.42, item 9).
 //!
 //! The baseline keeps a dock of its subagents and background processes over
 //! its status line, one line while folded. This seat's running things are
-//! the aimed wall's conversations whose drivers are at work — live or in
-//! flight, by the engine's own word (`AgentState`) — which the roster's rows
+//! the aimed workspace's conversations whose drivers are at work — live or in
+//! flight, by the server's own word (`AgentState`) — which the roster's rows
 //! already carry; so the dock is a reading of those rows and asks nothing of
 //! its own. **The fleet's runs join it when their read stands outside the
 //! fleet pane** (§4.33); until then they are the pane's.
@@ -22,7 +22,7 @@ use crate::reply::convs::{AgentState, ConvRow};
 use crate::settings::Toggle;
 use crate::ui::{Model, theme};
 
-/// **The conversations running under the aimed wall**, in the list's order.
+/// **The conversations running under the aimed workspace**, in the list's order.
 pub fn running(model: &Model) -> Vec<ConvRow> {
     model
         .rows()

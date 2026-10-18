@@ -55,7 +55,7 @@ fn a_hit_carries_what_it_is_in_where_in_it_and_the_words_around_it() {
 
 /// **The address fields are read as options, never branched on `at`.** A ball
 /// hit names a project and an id, a workspace hit names a workspace, and a
-/// subject a newer engine grew would fall off any closed set this end kept.
+/// subject a newer server grew would fall off any closed set this end kept.
 #[test]
 fn each_shape_of_hit_reads_and_the_subject_is_whatever_it_named() {
     for (frame, subject) in [

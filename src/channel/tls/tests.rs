@@ -15,7 +15,7 @@ fn armoured(body: &str) -> String {
 #[test]
 fn provisioned_material_builds_a_client_configuration() {
     let scratch = Scratch::new();
-    let held = mint::provisioned(scratch.path(), "engine.example:9000");
+    let held = mint::provisioned(scratch.path(), "server.example:9000");
     assert!(client_config(&held).is_ok());
 }
 
@@ -29,7 +29,7 @@ fn anchors_that_are_not_there_refuse_by_name() {
 
 /// A file holding no certificate is not an empty trust store — it is a
 /// misconfiguration, and a trust store that silently trusted nothing would
-/// refuse every engine with a handshake error instead of a sentence.
+/// refuse every server with a handshake error instead of a sentence.
 #[test]
 fn an_anchor_file_with_no_certificate_in_it_refuses() {
     let scratch = Scratch::new();
@@ -106,22 +106,22 @@ fn an_identity_that_cannot_be_read_refuses_by_file() {
 
 /// A chain and a key that are not each other's refuse at the configuration
 /// rather than at the handshake: a seat must learn it cannot authenticate
-/// before it dials, not from an engine.
+/// before it dials, not from a server.
 #[test]
 fn a_chain_and_a_key_that_do_not_match_refuse_before_anything_is_dialled() {
     let scratch = Scratch::new();
-    let mut held = mint::provisioned(scratch.path(), "engine.example:9000");
-    held.key = scratch.join(&format!("{}.key", mint::ENGINE));
+    let mut held = mint::provisioned(scratch.path(), "server.example:9000");
+    held.key = scratch.join(&format!("{}.key", mint::SERVER));
     let refusal = client_config(&held).expect_err("refused");
     assert!(refusal.contains("client identity"), "{refusal}");
 }
 
 /// Anchors that will not read refuse the whole configuration, and say which
-/// file — an engine nobody can verify is not an engine to try dialling.
+/// file — a server nobody can verify is not a server to try dialling.
 #[test]
 fn a_configuration_with_unreadable_anchors_refuses() {
     let scratch = Scratch::new();
-    let mut held = mint::provisioned(scratch.path(), "engine.example:9000");
+    let mut held = mint::provisioned(scratch.path(), "server.example:9000");
     held.anchors = scratch.join("nowhere.pem");
     let refusal = client_config(&held).expect_err("refused");
     assert!(refusal.contains("nowhere.pem"), "{refusal}");
@@ -132,13 +132,13 @@ fn a_configuration_with_unreadable_anchors_refuses() {
 }
 
 /// **The grade is read before anything is dialled** (`super::super::leaf`).
-/// Enforcement is the engine's and this changes none of it — what it changes is
+/// Enforcement is the server's and this changes none of it — what it changes is
 /// that the operator is told about a file on this disk instead of receiving an
 /// authorization sentence from the far end about their own configuration.
 #[test]
 fn a_foot_grade_leaf_refuses_here_rather_than_at_the_far_end() {
     let scratch = Scratch::new();
-    let held = mint::provisioned(scratch.path(), "engine.example:9000");
+    let held = mint::provisioned(scratch.path(), "server.example:9000");
     mint::foot(scratch.path(), true);
     let refusal = client_config(&held).expect_err("refused");
     assert!(refusal.contains("foot grade"), "{refusal}");

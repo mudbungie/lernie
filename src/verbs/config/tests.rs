@@ -56,7 +56,7 @@ fn every_destination_is_the_target_the_wire_spells_and_carries_no_text() {
     }
 }
 
-/// **Two destinations name a workspace and three name an engine**, which is
+/// **Two destinations name a workspace and three name a server**, which is
 /// what decides whether §8.2 routes the gesture by an address or the pane
 /// addresses a channel outright.
 #[test]

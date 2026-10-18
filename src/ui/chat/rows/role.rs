@@ -20,7 +20,7 @@ use crate::ui::theme::{Bubble, Speaker};
 pub(crate) const OPERATOR: [&str; 2] = ["user", "op"];
 
 /// **Who a delivered message is, by weight**: the operator's own deposit is
-/// their act and wears the brand, a sender the engine buried has ended, and
+/// their act and wears the brand, a sender the server buried has ended, and
 /// anything else that speaks here is a peer.
 pub(super) fn delivered(sender: &str, epitaph: Option<&String>) -> Speaker {
     if OPERATOR.contains(&sender) {

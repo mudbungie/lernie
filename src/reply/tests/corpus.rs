@@ -46,7 +46,7 @@ fn the_answers_are_answers() {
     replay("answers", |answered| matches!(answered, Read::Answer(_)));
 }
 
-/// Every frame the engine refused. The two seat-authored members here read the
+/// Every frame the server refused. The two seat-authored members here read the
 /// same, which is the protocol's own rule: a workspace out of scope is
 /// *absent*, not forbidden, so a seat must not be able to tell it from one
 /// that does not exist.

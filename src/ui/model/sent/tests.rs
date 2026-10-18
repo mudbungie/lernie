@@ -205,7 +205,7 @@ fn an_unsent_act_drops_its_record_and_an_unanswered_one_keeps_it() {
         &Reach::Unanswered("read: timed out".to_owned()),
         Some("ship it".to_owned()),
     );
-    assert_eq!(model.sent.len(), 1, "the engine may have it");
+    assert_eq!(model.sent.len(), 1, "the server may have it");
     model.acted(
         crate::verbs::MESSAGE.word,
         &Reach::Unsent("connect: connection refused".to_owned()),

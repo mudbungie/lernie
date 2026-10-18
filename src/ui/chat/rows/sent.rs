@@ -16,8 +16,8 @@ use crate::ui::theme::Speaker;
 
 impl Row {
     /// **A message this seat sent**: the operator's own row, headed as the
-    /// engine's will be (`super::OPERATOR`'s first word is the sender litany
-    /// writes a deposit from the seat with), so the row the engine's replaces
+    /// server's will be (`super::OPERATOR`'s first word is the sender litany
+    /// writes a deposit from the seat with), so the row the server's replaces
     /// it with reads the same — and pending until the receipt lands.
     fn sent(sent: &crate::ui::Sent) -> Self {
         Self {

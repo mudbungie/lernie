@@ -11,7 +11,7 @@ use crate::verbs::Where;
 /// **The box is seeded from the file's own bytes**, which is what makes the
 /// pane an editor rather than a viewer with a blank beside it.
 #[test]
-fn the_box_opens_holding_the_bytes_the_engine_answered() {
+fn the_box_opens_holding_the_bytes_the_server_answered() {
     let mut model = configured();
     let painted = pane(|ui| {
         super::super::render(ui, &mut model);
@@ -40,7 +40,7 @@ fn a_box_that_holds_the_file_says_why_the_controls_are_dark() {
     assert!(!painted.contains(MOVED), "nothing has moved: {painted}");
 }
 
-/// **A file that moved on the engine says so**, which is upstream's hash guard
+/// **A file that moved on the server says so**, which is upstream's hash guard
 /// restated as a reading: the guard does not cross the wire, and the operator
 /// typing for minutes is exactly the long-lived draft it protects.
 #[test]
@@ -88,7 +88,7 @@ fn the_write_control_composes_the_act_and_keeps_the_box() {
 
 /// **Reverting puts the file back in the box** and composes nothing.
 #[test]
-fn the_revert_control_takes_the_engine_s_bytes_and_composes_nothing() {
+fn the_revert_control_takes_the_server_s_bytes_and_composes_nothing() {
     let window = Window::new();
     let mut model = configured();
     model.draft_config("roles:\n  worker:\n    provider: gone\n");

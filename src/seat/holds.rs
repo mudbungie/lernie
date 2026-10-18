@@ -2,7 +2,7 @@
 //! any of them.
 //!
 //! Split from [`super`] at the design-time budget on the seam the suite is
-//! already split along: [`super`] is which engine a gesture reaches and what it
+//! already split along: [`super`] is which server a gesture reaches and what it
 //! carries there, and this is what the box says it has before any gesture is
 //! typed. Both read the same entries; only one of them opens a socket.
 
@@ -12,9 +12,9 @@ use super::route::flat;
 use crate::channel::{Channel, entries, material};
 use crate::cli::Verdict;
 
-/// What this box calls its own engine — the flat root's label, which is not a
+/// What this box calls its own server — the flat root's label, which is not a
 /// name an operator chose and so is not one a gesture may carry.
-pub const OWN: &str = "(this box's own engine)";
+pub const OWN: &str = "(this box's own server)";
 
 /// **What this box holds** — every channel it can reach, said without dialling
 /// any of them.
@@ -63,16 +63,16 @@ pub fn dial(data_root: &Path, name: &str) -> Result<Channel, String> {
 /// **Every channel this box holds, as the window stamps its rows** (§8.2).
 ///
 /// The same enumeration [`listing`] prints, typed instead of rendered — this
-/// box's own engine first, then one per entry in leaf order. It reads the disk
+/// box's own server first, then one per entry in leaf order. It reads the disk
 /// and **dials nothing**: what a box holds is a fact about its own files, so
-/// the window can paint its channels before any engine is up.
+/// the window can paint its channels before any server is up.
 ///
 /// Each carries the name the workspace bears on its host, which is the fact
 /// that decides what a gesture aimed at one of its rows must be addressed as
 /// ([`crate::ui::Channel::address`]). The flat root carries `None`, because it
 /// rewrites nothing.
 ///
-/// **And each carries why it has no walls yet** ([`crate::ui::Held`],
+/// **And each carries why it has no workspaces yet** ([`crate::ui::Held`],
 /// bl-08b6): a channel this box cannot dial arrives already carrying the
 /// sentence [`listing`] prints for it, so the window's first run says what it
 /// is waiting for instead of painting a section header over a blank.
@@ -107,7 +107,7 @@ pub fn channels(data_root: &Path) -> Vec<crate::ui::Chunk> {
     held
 }
 
-/// One seated section: the channel, and the reason it has no walls where this
+/// One seated section: the channel, and the reason it has no workspaces where this
 /// box already knows one.
 fn chunk(channel: crate::ui::Channel, unheld: Option<String>) -> crate::ui::Chunk {
     crate::ui::Chunk {

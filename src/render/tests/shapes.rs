@@ -127,7 +127,7 @@ fn every_transcript_entry_and_every_block_has_a_reading() {
 }
 
 /// **The receipts that carry a boolean**, both ways round. Each says what the
-/// engine said rather than what was asked — a restore of a conversation whose
+/// server said rather than what was asked — a restore of a conversation whose
 /// ancestor is floored leaves it floored, and the receipt is what says so.
 #[test]
 fn every_boolean_receipt_says_both_of_its_answers() {
@@ -182,9 +182,9 @@ fn every_boolean_receipt_says_both_of_its_answers() {
 }
 
 /// **The two wordings of how a policy is settled**, and neither is composed
-/// here: `reply::governing` holds the engine's own sentence.
+/// here: `reply::governing` holds the server's own sentence.
 #[test]
-fn a_governing_commit_carries_the_engines_own_sentence_either_way() {
+fn a_governing_commit_carries_the_servers_own_sentence_either_way() {
     says(
         &json!({"ok": true, "kind": "governing", "oid": "abc123", "short_oid": "abc123",
                 "follows": "main", "files": ["souls/worker.md"]}),
@@ -225,7 +225,7 @@ fn the_start_family_renders_and_an_enrollment_prints_no_secret() {
 /// word for each has to be reachable — and the fixture upstream ships is a
 /// conversation nothing may be nudged onto.
 #[test]
-fn every_gate_the_engine_can_offer_has_a_word() {
+fn every_gate_the_server_can_offer_has_a_word() {
     let path = crate::test_support::corpus::root()
         .join("answers")
         .join("agent.json");
@@ -272,7 +272,7 @@ fn a_client_that_has_never_dialled_is_the_row_that_says_it() {
     assert!(!dialled.contains("never dialled"), "{dialled}");
 }
 
-/// **The doctor's two other heads** — every check holding, and an engine that
+/// **The doctor's two other heads** — every check holding, and a server that
 /// ran none — beside the corpus's own frame, which fails one and carries its
 /// remedy under it.
 #[test]
@@ -284,7 +284,7 @@ fn a_doctor_says_how_many_checks_fail_and_the_remedy_under_each() {
     );
     says(
         &json!({"ok": true, "kind": "doctor", "rows": []}),
-        &["the engine ran no check"],
+        &["the server ran no check"],
     );
     says(
         &json!({"ok": true, "kind": "doctor", "rows": [

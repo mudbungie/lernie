@@ -4,7 +4,7 @@ use super::{prepare, prompt};
 use crate::reply::start::Prepared;
 use serde_json::json;
 
-/// A staged body as an engine answers one, with a field this build does not
+/// A staged body as a server answers one, with a field this build does not
 /// read in it.
 fn staged(workspace: &str) -> Prepared {
     let body = json!({"workspace": workspace, "goal": "",
@@ -46,11 +46,11 @@ fn the_fire_hands_the_body_back_whole_and_re_addressed() {
     );
 }
 
-/// **The re-addressing is what makes the second act reach the first's engine.**
+/// **The re-addressing is what makes the second act reach the first's server.**
 /// The body comes back in the host's spelling; §8.2's mapping runs client→host
 /// at the channel boundary and nowhere else, so a body handed back unrewritten
 /// names a workspace no entry claims and the fire falls through to this box's
-/// own engine.
+/// own server.
 #[test]
 fn the_fire_is_addressed_where_the_seat_can_route_it() {
     let fired = prompt(
@@ -110,7 +110,7 @@ fn a_rung_with_a_prefill_fires_it_ahead_of_what_was_typed() {
 /// before the field existed, and one that names a role states it on the body
 /// that was going anyway rather than in a second gesture.
 #[test]
-fn a_role_is_written_onto_the_body_and_unstated_leaves_what_the_engine_said() {
+fn a_role_is_written_onto_the_body_and_unstated_leaves_what_the_server_said() {
     let bare = prompt(
         &staged("personal"),
         "home".to_owned(),

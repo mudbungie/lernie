@@ -15,7 +15,7 @@ use serde_json::{Value, json};
 #[test]
 fn the_questions_nest_and_each_one_waits_for_the_last_to_have_an_answer() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![
@@ -52,7 +52,7 @@ fn the_questions_nest_and_each_one_waits_for_the_last_to_have_an_answer() {
     model.conversation = Some("20260830T051200Z-a1b2".to_owned());
     link.settle(&mut model);
     tick(&link, scratch.path());
-    let ops: Vec<String> = engine
+    let ops: Vec<String> = server
         .heard()
         .iter()
         .filter_map(|said| said.get("op").and_then(Value::as_str))
@@ -77,13 +77,13 @@ fn the_questions_nest_and_each_one_waits_for_the_last_to_have_an_answer() {
 }
 
 /// **The fourth question is the aim's** (bl-d74b): the rule's selectors paint
-/// the worker role's row on every aimed window, so a wall is asked its roles
+/// the worker role's row on every aimed window, so a workspace is asked its roles
 /// on every pass whether or not the tuning pane is open — and opening the pane
-/// asks nothing more of a wall whose rows name no provider.
+/// asks nothing more of a workspace whose rows name no provider.
 #[test]
 fn the_roles_read_stands_on_the_aim() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![
@@ -115,7 +115,7 @@ fn the_roles_read_stands_on_the_aim() {
     model.begin_tuning();
     link.settle(&mut model);
     tick(&link, scratch.path());
-    let ops: Vec<String> = engine
+    let ops: Vec<String> = server
         .heard()
         .iter()
         .filter_map(|said| said.get("op").and_then(Value::as_str))
@@ -145,7 +145,7 @@ fn the_roles_read_stands_on_the_aim() {
 #[test]
 fn the_queue_read_stands_only_while_its_pane_is_open_and_goes_down_every_channel() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![
@@ -172,7 +172,7 @@ fn the_queue_read_stands_only_while_its_pane_is_open_and_goes_down_every_channel
     link.settle(&mut model);
     tick(&link, scratch.path());
     crate::offframe::queue::tick(&link, scratch.path());
-    let ops: Vec<String> = engine
+    let ops: Vec<String> = server
         .heard()
         .iter()
         .filter_map(|said| said.get("op").and_then(Value::as_str))
@@ -190,7 +190,7 @@ fn the_queue_read_stands_only_while_its_pane_is_open_and_goes_down_every_channel
 #[test]
 fn the_records_reads_stand_only_while_the_records_pane_is_open() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![
@@ -225,7 +225,7 @@ fn the_records_reads_stand_only_while_the_records_pane_is_open() {
     model.begin_records();
     link.settle(&mut model);
     tick(&link, scratch.path());
-    let ops: Vec<String> = engine
+    let ops: Vec<String> = server
         .heard()
         .iter()
         .filter_map(|said| said.get("op").and_then(Value::as_str))

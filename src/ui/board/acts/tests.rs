@@ -9,7 +9,7 @@ use crate::paint_probe::frame::Window;
 use crate::test_support::window::{boarded, click, painted};
 use crate::ui::Model;
 
-/// The pane with the block open on the wall's one held ball.
+/// The pane with the block open on the workspace's one held ball.
 fn amending() -> Model {
     let mut model = boarded();
     let ball = model
@@ -21,10 +21,10 @@ fn amending() -> Model {
     model
 }
 
-/// **The wall section's control opens the block on a new ball**, and the block
+/// **The workspace section's control opens the block on a new ball**, and the block
 /// says what it is about before it offers anything (§4.20).
 #[test]
-fn the_wall_s_control_opens_a_block_on_a_ball_that_does_not_exist_yet() {
+fn the_workspace_s_control_opens_a_block_on_a_ball_that_does_not_exist_yet() {
     let mut model = boarded();
     let window = Window::new();
     click(&window, FILE, |ctx| crate::ui::render(ctx, &mut model));
@@ -100,7 +100,7 @@ fn each_refusal_is_spelled_beside_its_dark_control() {
     assert!(glass.contains(RELEASE), "{glass}");
 }
 
-/// **A filled block files a ball down the channel the wall is on**, which is
+/// **A filled block files a ball down the channel the workspace is on**, which is
 /// the fan the whole surface was arranged to avoid.
 #[test]
 fn filing_composes_a_create_down_one_channel() {

@@ -14,7 +14,7 @@ fn bound() -> serde_json::Value {
 }
 
 /// **One channel, no name: that channel is the subject** — the ordinary box,
-/// which has one engine to write and needs no word for it.
+/// which has one server to write and needs no word for it.
 #[test]
 fn a_box_holding_one_channel_writes_it_unnamed() {
     let scratch = Scratch::new();
@@ -39,7 +39,7 @@ fn a_box_holding_two_channels_refuses_an_unnamed_write_naming_both() {
         "2 channels",
         "`ceiling`",
         "--on <channel>",
-        "(this box's own engine)",
+        "(this box's own server)",
         "alpha",
     ] {
         assert!(verdict.text.contains(named), "{named}: {}", verdict.text);

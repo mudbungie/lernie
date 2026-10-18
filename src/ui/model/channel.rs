@@ -17,7 +17,7 @@ pub struct Channel {
     /// wears. It is the roster's section header.
     pub name: String,
     /// The name that workspace bears **on its host**, or `None` for this box's
-    /// own engine.
+    /// own server.
     ///
     /// It is what makes [`Self::address`] exact rather than a guess, and the
     /// fact is §8.2's: an entry resolves by its leaf and by nothing else.
@@ -28,8 +28,8 @@ pub struct Channel {
     ///
     /// Two entries naming one address are two trust relationships that happen
     /// to terminate at one listener (§8.2), which is lawful; an entry naming
-    /// the address this box's own engine listens on is the same thing by
-    /// accident, and it paints every workspace of that engine twice. The seat
+    /// the address this box's own server listens on is the same thing by
+    /// accident, and it paints every workspace of that server twice. The seat
     /// is the only thing that can see that, and it can see it for free — so
     /// the address goes on the section header and a duplicate is self-evident.
     pub dials: Option<String>,
@@ -39,16 +39,16 @@ impl Channel {
     /// **The name a gesture must carry to reach `row` down this channel**, or
     /// `None` where this seat holds no name for it.
     ///
-    /// Three cases and the third is a real one. This box's own engine rewrites
+    /// Three cases and the third is a real one. This box's own server rewrites
     /// nothing, so a row is addressed by its own name. An entry rewrites its
     /// leaf to the host's name at the channel boundary
     /// ([`crate::seat::route`]), so the leaf is the address of the one
-    /// workspace that entry names. And an entry's engine may answer a row the
+    /// workspace that entry names. And an entry's server may answer a row the
     /// entry does **not** name — a workspace this client is registered in and
     /// holds no entry for — which is reachable by no envelope this seat can
     /// write. It is painted, and painted as unreachable: dropping it would hide
     /// a workspace the operator has, and addressing it by the leaf would aim a
-    /// gesture at a different wall.
+    /// gesture at a different workspace.
     pub fn address(&self, row: &WsRow) -> Option<String> {
         match &self.named_there {
             None => Some(row.workspace.clone()),
@@ -58,15 +58,15 @@ impl Channel {
     }
 }
 
-/// **What a section has instead of walls, when it has none** (bl-08b6).
+/// **What a section has instead of workspaces, when it has none** (bl-08b6).
 ///
 /// Four states and they are four different facts, which is why an empty
 /// section cannot be one blank: a channel nobody has heard from yet, a channel
-/// this box cannot dial and knows why off its own files, an engine that
-/// answered its roster with a refusal (bl-693d), and an engine that answered
+/// this box cannot dial and knows why off its own files, a server that
+/// answered its roster with a refusal (bl-693d), and a server that answered
 /// and holds no workspace. The roster used to have a sentence for the
 /// empty ROSTER and none for an empty section — and an empty roster is
-/// unreachable, because every box holds its own engine's slot whether or not
+/// unreachable, because every box holds its own server's slot whether or not
 /// anything is provisioned in it.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub enum Held {
@@ -78,11 +78,11 @@ pub enum Held {
     /// **This box cannot dial it, and here is why** — the sentence
     /// `crate::channel` already computes and `lernie entries` already prints:
     /// unprovisioned, half-provisioned and naming the missing file, hollow, or
-    /// a port only the engine that bound it knows.
+    /// a port only the server that bound it knows.
     Unheld(String),
     /// **It answered, and refused the roster** (bl-693d) — in its own words,
     /// which today are *this client is registered in no workspace here*. The
-    /// engine is up and dialled, so this is neither of the two above: it is
+    /// server is up and dialled, so this is neither of the two above: it is
     /// not *waiting to hear* and not *down*, and the remedy it names — found
     /// a workspace, or be enrolled in one — is a gesture on this section. The
     /// next roster answer spends it, as it spends every other state.
@@ -94,11 +94,11 @@ pub enum Held {
 /// **What leads the wire's own sentence for a channel that will not dial**
 /// (bl-8a4b): that sentence is `lernie entries`' too, and names files and
 /// transports — the lead says what it means for the window first.
-pub const UNHELD: &str = "cannot reach this engine: ";
+pub const UNHELD: &str = "cannot reach this server: ";
 
 impl Held {
-    /// **The sentence a section stands on instead of walls**, where it has
-    /// one: why it will not dial, or what the engine refused — the latter in
+    /// **The sentence a section stands on instead of workspaces**, where it has
+    /// one: why it will not dial, or what the server refused — the latter in
     /// [`super::Notice`]'s own words for a refusal, so it reads the same on
     /// the section as it did in the bar.
     pub fn said(&self) -> Option<String> {
@@ -111,18 +111,18 @@ impl Held {
 }
 
 /// One channel's answer, as the roster shows it: the section, what it has
-/// instead of walls when it has none, its currency, and its walls.
+/// instead of workspaces when it has none, its currency, and its workspaces.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Chunk {
     pub channel: Channel,
-    /// What this section has instead of walls — read at boot off this box's own
+    /// What this section has instead of workspaces — read at boot off this box's own
     /// files, and spent by the first answer that comes down the channel.
     pub held: Held,
-    /// How stale the derivation behind these rows is, when the engine said.
+    /// How stale the derivation behind these rows is, when the server said.
     pub stale: Option<String>,
     /// What grew since the previous one, when anything did.
     pub growth: Option<String>,
-    pub walls: Vec<WsRow>,
+    pub workspaces: Vec<WsRow>,
 }
 
 impl Chunk {

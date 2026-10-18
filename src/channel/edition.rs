@@ -1,16 +1,16 @@
 //! **The edition ledger, vendored** — what this build can spell, what the
-//! engine can, and the field paths where the two are allowed to differ
+//! server can, and the field paths where the two are allowed to differ
 //! (yog's `docs/REMOTE.md` §3.2; DESIGN §4.9).
 //!
 //! `PROTOCOL` is a **major**: it moves only on a break — a field removed or
-//! re-typed, a meaning changed under a spelling in use, a field the engine
+//! re-typed, a meaning changed under a spelling in use, a field the server
 //! newly requires — and the preface stays strict equality with no negotiation.
 //! Every *addition* ships at the same major and is stamped an **edition**
 //! instead: the old integer line, continued. So the two numbers answer two
 //! different questions, and only one of them can refuse a connection.
 //!
 //! - [`FLOOR`] is the edition the current major was cut at. Every field path
-//!   stamped at or below it is **required** on every engine of this major, so
+//!   stamped at or below it is **required** on every server of this major, so
 //!   nothing at or below the floor can be missing and nothing about it has to
 //!   be discovered.
 //! - [`EDITION`] is what this build can spell — the newest stamp in the
@@ -33,8 +33,8 @@
 /// The edition the current major was cut at.
 ///
 /// **Nothing at or below this can be absent**, which is why the ledger below
-/// only ever holds what is above it: an engine speaking this major and an
-/// engine speaking it two additions later agree about every one of these paths.
+/// only ever holds what is above it: a server speaking this major and a
+/// server speaking it two additions later agree about every one of these paths.
 pub(crate) const FLOOR: u32 = 18;
 
 /// What this build can spell — the newest stamp in its vendored corpus.
@@ -158,20 +158,20 @@ pub(crate) fn stamp(stamps: &[(&str, &str, u32)], shape: &str, key: &str) -> u32
         .map_or(FLOOR, |(_, _, edition)| *edition)
 }
 
-/// **Whether an engine of `engine` edition can spell one field path**, off a
+/// **Whether a server of `server` edition can spell one field path**, off a
 /// ledger. [`stamp`]'s reading, compared.
-pub(crate) fn spells_at(stamps: &[(&str, &str, u32)], engine: u32, shape: &str, key: &str) -> bool {
-    stamp(stamps, shape, key) <= engine
+pub(crate) fn spells_at(stamps: &[(&str, &str, u32)], server: u32, shape: &str, key: &str) -> bool {
+    stamp(stamps, shape, key) <= server
 }
 
 /// The same question against the ledger this build vendors.
 ///
-/// **What a `false` means is not "the field is absent"** — it is *this engine
+/// **What a `false` means is not "the field is absent"** — it is *this server
 /// cannot say*, which is a different sentence from the field's default and the
 /// only reason to ask. A control whose fact is stamped above the far end's
 /// edition greys rather than painting the reassuring answer.
-pub(crate) fn spells(engine: u32, shape: &str, key: &str) -> bool {
-    spells_at(STAMPS, engine, shape, key)
+pub(crate) fn spells(server: u32, shape: &str, key: &str) -> bool {
+    spells_at(STAMPS, server, shape, key)
 }
 
 #[cfg(test)]

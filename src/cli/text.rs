@@ -3,7 +3,7 @@
 //! Split from [`super`] at the design-time budget, on the seam the file
 //! already has: [`super`] is what an invocation *decides*, and this is the
 //! prose it says when the decision is to say something about lernie rather than
-//! to ask an engine anything. The two change for different reasons — a verb
+//! to ask a server anything. The two change for different reasons — a verb
 //! added moves the roster below, a refusal added moves the match above — which
 //! is the test that a seam is real.
 //!
@@ -18,7 +18,7 @@
 /// The crate's name and version, as the `--version` line.
 ///
 /// **The version is the fence** (yog's `docs/REMOTE.md` §12): `lernie` through
-/// 0.0.x was the agent-loop engine, which continues as `litany`; `lernie` at
+/// 0.0.x was the agent loop, which continues as `litany`; `lernie` at
 /// 0.1.0 and above is this seat. So the number printed here is not decoration —
 /// it is the one rule that says which program the caller is holding.
 pub fn version() -> String {
@@ -36,7 +36,7 @@ lernie is the seat: the operator's face on a yog server. It dials in over
 mTLS, asks and acts, and paints what comes back. It holds no world, runs no
 agent and executes nothing.
 
-THE NAME HAS TWO ERAS. lernie through 0.0.x was the agent-loop engine, which
+THE NAME HAS TWO ERAS. lernie through 0.0.x was the agent loop, which
 continues under the name litany. lernie 0.1.0 and above is this seat. The
 version is the only rule that separates them.
 
@@ -49,7 +49,7 @@ usage: lernie                      open the window on this box's channels
        lernie [--version | --help]
 
 WITH NO ARGUMENTS AT ALL lernie opens its window: a roster of every workspace
-across every channel this box holds, the aimed wall's conversations, the
+across every channel this box holds, the aimed workspace's conversations, the
 selected conversation and a composer under it. That is what a seat is; every
 verb below is a way of reaching one gesture without one.
 
@@ -66,7 +66,7 @@ dash.
 
 {}
 
-And the four words this binary answers itself, with no channel and no engine
+And the four words this binary answers itself, with no channel and no server
 up. Each has its own page too: `lernie help <word>` reaches every entry in
 both lists.
 

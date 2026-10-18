@@ -10,7 +10,7 @@ use serde_json::json;
 /// workspace, and a workspace is what an aim is — so a seat aimed at nothing
 /// cannot open it at all.
 #[test]
-fn the_pane_opens_only_where_the_window_is_aimed_at_a_wall() {
+fn the_pane_opens_only_where_the_window_is_aimed_at_a_workspace() {
     let mut nowhere = Model::default();
     nowhere.begin_login();
     assert_eq!(nowhere.login, None);
@@ -71,7 +71,7 @@ fn neither_act_composes_anything_with_the_pane_shut() {
 }
 
 /// **The aim is the gate at composition too**, not only at opening — the
-/// reading that makes a pane open over no wall unreachable rather than merely
+/// reading that makes a pane open over no workspace unreachable rather than merely
 /// unlikely.
 #[test]
 fn an_aimless_pane_composes_nothing_even_when_it_is_open() {
@@ -85,12 +85,12 @@ fn an_aimless_pane_composes_nothing_even_when_it_is_open() {
     assert_eq!(model.following().as_deref(), Some("housevendor"));
 }
 
-/// **The pane and its three answers go with the wall.** Aiming elsewhere
-/// retires all four, because the act signs a credential into one wall's store.
+/// **The pane and its three answers go with the workspace.** Aiming elsewhere
+/// retires all four, because the act signs a credential into one workspace's store.
 #[test]
-fn aiming_at_another_wall_retires_the_pane_and_every_answer_on_it() {
+fn aiming_at_another_workspace_retires_the_pane_and_every_answer_on_it() {
     let mut model = signing();
-    model.aim_at("(this box's own engine)", "elsewhere");
+    model.aim_at("(this box's own server)", "elsewhere");
     assert_eq!(model.login, None);
     assert_eq!(model.providers, None);
     assert_eq!(model.offered, None);
@@ -107,13 +107,13 @@ fn escape_puts_the_pane_down() {
     assert!(model.outbox.is_empty());
 }
 
-/// **Where the engine is, is read off the channel stamp and never an address.**
-/// This box's own engine carries no name on a host; an entry does; and a
+/// **Where the server is, is read off the channel stamp and never an address.**
+/// This box's own server carries no name on a host; an entry does; and a
 /// channel this seat no longer holds says nothing at all.
 #[test]
-fn a_wall_held_elsewhere_is_read_off_the_channel_and_not_off_an_address() {
+fn a_workspace_held_elsewhere_is_read_off_the_channel_and_not_off_an_address() {
     let mut model = seated();
-    assert!(!model.elsewhere(), "this box's own engine is not elsewhere");
+    assert!(!model.elsewhere(), "this box's own server is not elsewhere");
     model.roster[0].channel.named_there = Some("theirs".to_owned());
     assert!(model.elsewhere());
     model.roster.clear();

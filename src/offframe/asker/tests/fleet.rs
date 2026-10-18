@@ -16,12 +16,12 @@ use crate::ui::{Aim, Channel, Chunk, Model};
 use serde_json::{Value, json};
 
 /// **Nothing is asked about the agents until the pane is open, and then both
-/// are** — of the aimed wall, because every one of the pane's seven ops names
+/// are** — of the aimed workspace, because every one of the pane's seven ops names
 /// a workspace.
 #[test]
 fn the_fleet_pane_s_two_reads_stand_only_while_it_is_open() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![
@@ -55,7 +55,7 @@ fn the_fleet_pane_s_two_reads_stand_only_while_it_is_open() {
     model.begin_fleet();
     link.settle(&mut model);
     tick(&link, scratch.path());
-    let ops: Vec<String> = engine
+    let ops: Vec<String> = server
         .heard()
         .iter()
         .filter_map(|said| said.get("op").and_then(Value::as_str))

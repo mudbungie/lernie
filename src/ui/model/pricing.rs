@@ -20,17 +20,17 @@
 //! # The acts are addressed down ONE channel, never fanned
 //!
 //! Neither act names a workspace, so the poster would fan either over every
-//! engine this box is a client of (§4.30's hazard). Each is fired from one
+//! server this box is a client of (§4.30's hazard). Each is fired from one
 //! channel's section and addressed down that channel, which is what the
 //! operator was looking at.
 //!
 //! # The provider is checked against the roster this seat already holds
 //!
-//! Where the window is aimed at a wall on the section's channel and that wall
+//! Where the window is aimed at a workspace on the section's channel and that workspace
 //! has answered `providers`, a provider it does not name disables the control
-//! with the reason beside it — the engine would refuse it in band, and the
-//! seat already holds the roster that says so. Anywhere else the engine's own
-//! refusal names it. Opening the pane asks the aimed wall's roster for this.
+//! with the reason beside it — the server would refuse it in band, and the
+//! seat already holds the roster that says so. Anywhere else the server's own
+//! refusal names it. Opening the pane asks the aimed workspace's roster for this.
 
 use super::{Lookup, Model, Posted};
 use crate::reply::prices::Prices;
@@ -66,7 +66,7 @@ pub const NEEDS_BOUND: &str = "type a ceiling in USD, or off, to set one";
 
 impl Model {
     /// **Open the pane and ask for every channel's table** — and the aimed
-    /// wall's provider roster, which is what the price control checks against.
+    /// workspace's provider roster, which is what the price control checks against.
     pub fn begin_prices(&mut self) {
         self.lookup = Some(Lookup::Pricing);
         self.outbox
@@ -118,7 +118,7 @@ impl Model {
         let provider = draft.provider.trim();
         (!roster.iter().any(|row| row.name == provider)).then(|| {
             format!(
-                "{} has no provider row {provider:?} — the engine would refuse it",
+                "{} has no provider row {provider:?} — the server would refuse it",
                 aim.address
             )
         })

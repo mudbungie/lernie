@@ -35,7 +35,7 @@
 //! instant and the sentence it produced was false: something more was going to
 //! arrive, and nothing further was going to be asked of the operator.
 //!
-//! The engine has no field for *about to start* and inventing one here would
+//! The server has no field for *about to start* and inventing one here would
 //! be a guess. What it does have is the deposit itself: **an inbox with mail in
 //! it is a turn that has not begun**, so the state read alone was never enough
 //! and the second read is what makes the answer true. So a rest with mail
@@ -74,13 +74,13 @@ use crate::reply::{Read, Reply, read};
 pub(super) enum Rest {
     /// A driver is on it, or it is streaming. Hold the line.
     Working,
-    /// It has come to rest, in the engine's own word for how.
+    /// It has come to rest, in the server's own word for how.
     At(String),
     /// It is at rest **because a tool call is parked at the capability
     /// boundary**, which is a rest that waits on the operator rather than on
     /// nothing (bl-3a1f). Read off the same row the state is.
     Parked(crate::reply::queue::Held),
-    /// The engine answered something no state can be read out of.
+    /// The server answered something no state can be read out of.
     Unreadable,
 }
 
@@ -93,7 +93,7 @@ pub(super) fn resting(standing: &[Value]) -> Rest {
     // readings are three arms and none of them is unreachable: a driver on the
     // lease is working whatever else is true of the row, a settled row with a
     // hold mark is PARKED, and a settled row without one is at rest in the
-    // engine's own word for how. Reading the state first is what keeps a
+    // server's own word for how. Reading the state first is what keeps a
     // working conversation working — a driver holding the lease with a call
     // parked under it is still advancing, and the line that names the park is
     // the one the watch prints when it settles.

@@ -18,7 +18,7 @@ fn own() -> Channel {
     }
 }
 
-/// A model looking at one conversation on this box's own engine.
+/// A model looking at one conversation on this box's own server.
 fn watching() -> Model {
     Model {
         roster: vec![Chunk::of(own())],
@@ -46,7 +46,7 @@ fn linked(model: &Model) -> Link {
 #[test]
 fn every_frame_of_the_held_read_is_absorbed_onto_an_empty_fold() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![vec![
@@ -76,24 +76,24 @@ fn every_frame_of_the_held_read_is_absorbed_onto_an_empty_fold() {
         "the newer delta kind wins"
     );
     assert!(
-        engine
+        server
             .heard()
             .contains(&json!({"op": "follow", "workspace": "home",
                                         "agent": "20260830T051200Z-a1b2"})),
         "{:?}",
-        engine.heard()
+        server.heard()
     );
 }
 
 /// **A read starts holding nothing**, so two reads of one conversation do not
-/// accrete into each other. The engine's reader is minted per held connection
+/// accrete into each other. The server's reader is minted per held connection
 /// and opens the response at byte zero (REMOTE §5.5), which is why the fold's
 /// whole lifetime is one read: a seat that dropped a connection mid-answer
 /// re-asks and is whole on its first frame, with nothing to reconcile.
 #[test]
 fn a_second_read_replaces_rather_than_appending() {
     let scratch = Scratch::new();
-    let _engine = wired(
+    let _server = wired(
         &scratch,
         &flat(),
         vec![
@@ -117,10 +117,10 @@ fn a_second_read_replaces_rather_than_appending() {
 }
 
 /// **Both halves of the subject can move**, and either ends the read: an
-/// operator who aims at another wall has left this conversation as surely as
-/// one who picks another conversation on the same wall.
+/// operator who aims at another workspace has left this conversation as surely as
+/// one who picks another conversation on the same workspace.
 #[test]
-fn the_read_is_about_a_wall_and_a_conversation_together() {
+fn the_read_is_about_a_workspace_and_a_conversation_together() {
     let model = watching();
     let link = linked(&model);
     let aim = model.aim.clone().expect("an aim");
@@ -202,14 +202,14 @@ fn a_lane_that_cannot_be_opened_says_so_as_unreachable() {
 }
 
 /// **Only the tail is absorbed.** A held read can answer something that is not
-/// a tail at all — the engine refusing mid-stream, or bytes this build cannot
+/// a tail at all — the server refusing mid-stream, or bytes this build cannot
 /// read — and those have nothing to accumulate onto, so they cross the lane
 /// untouched and reach the operator as themselves. A lane that folded
 /// everything would have to invent a reading for a refusal.
 #[test]
 fn a_held_read_that_answers_something_other_than_a_tail_crosses_untouched() {
     let scratch = Scratch::new();
-    let _engine = wired(
+    let _server = wired(
         &scratch,
         &flat(),
         vec![vec![
@@ -224,7 +224,7 @@ fn a_held_read_that_answers_something_other_than_a_tail_crosses_untouched() {
     assert_eq!(
         model.notice,
         Some(crate::ui::Notice::Refused("the driver is gone".to_owned())),
-        "the engine's own words, not a fold"
+        "the server's own words, not a fold"
     );
     assert_eq!(
         model.live.and_then(|s| s.text).as_deref(),

@@ -5,15 +5,18 @@ use crate::test_support::window::seated;
 use crate::ui::{Aim, Model, Unmaking};
 use serde_json::json;
 
-/// The wall the [`seated`] fixture is aimed at, spelled once.
+/// The workspace the [`seated`] fixture is aimed at, spelled once.
 fn subject(model: &Model) -> Aim {
-    model.aim.clone().expect("the fixture is aimed at a wall")
+    model
+        .aim
+        .clone()
+        .expect("the fixture is aimed at a workspace")
 }
 
 /// **The aim is the gate**, exactly as it is for the enrollment and the tuning
 /// pane: the gesture carries a workspace, and a workspace is what an aim is.
 #[test]
-fn it_opens_on_the_aimed_wall_and_not_at_all_without_one() {
+fn it_opens_on_the_aimed_workspace_and_not_at_all_without_one() {
     let mut nowhere = Model::default();
     nowhere.begin_unmaking();
     assert_eq!(nowhere.unmaking, None);
@@ -24,7 +27,7 @@ fn it_opens_on_the_aimed_wall_and_not_at_all_without_one() {
 }
 
 /// **It opens unarmed**, and only the workspace's own name arms it — which is
-/// the engine's own comparison and not a policy this end invented.
+/// the server's own comparison and not a policy this end invented.
 #[test]
 fn only_the_workspaces_own_name_arms_it() {
     let aim = subject(&seated());
@@ -70,7 +73,7 @@ fn an_unarmed_pane_composes_nothing_however_it_is_reached() {
 }
 
 /// **The arming survives the firing**, because a refusal is the common case for
-/// this act and clearing the box would charge a retype for the engine's *no*.
+/// this act and clearing the box would charge a retype for the server's *no*.
 #[test]
 fn firing_says_so_and_keeps_the_arming() {
     let mut model = seated();
@@ -91,12 +94,12 @@ fn firing_says_so_and_keeps_the_arming() {
 
 /// **It holds its own subject.** The roster stays live and clickable under a
 /// covering pane, so an aim that moved while an unmaking stood would otherwise
-/// re-point an armed destructive act at a wall nobody armed.
+/// re-point an armed destructive act at a workspace nobody armed.
 #[test]
 fn the_aim_moving_underneath_does_not_move_what_would_be_unmade() {
     let mut model = seated();
     model.begin_unmaking();
-    model.aim_at("(this box's own engine)", "elsewhere");
+    model.aim_at("(this box's own server)", "elsewhere");
     assert_eq!(
         model.unmaking.map(|held| held.aim.address),
         Some("home".to_owned())
@@ -117,7 +120,7 @@ fn both_ways_out_leave_it_holding_nothing() {
 }
 
 /// **It covers the conversation**, which is the one question the shell, the
-/// roster's per-wall controls and the keyboard gate all share.
+/// roster's per-workspace controls and the keyboard gate all share.
 #[test]
 fn it_is_a_covering_pane() {
     let mut model = seated();

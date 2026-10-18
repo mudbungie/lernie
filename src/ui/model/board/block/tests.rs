@@ -7,7 +7,7 @@ use super::Authoring;
 use crate::test_support::window::boarded;
 use crate::ui::Model;
 
-/// The block the fixture's wall opens on its one held ball.
+/// The block the fixture's workspace opens on its one held ball.
 fn amending() -> Model {
     let mut model = boarded();
     model.begin_amending(&crate::test_support::window::panes::board::bound("bl-1"));

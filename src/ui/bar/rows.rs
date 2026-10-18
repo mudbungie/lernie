@@ -1,5 +1,5 @@
 //! **The bar's rows** (DESIGN §4.44 item 1): one per conversation of the
-//! aimed wall, in the listing's order, with the subtree's indent.
+//! aimed workspace, in the listing's order, with the subtree's indent.
 //!
 //! Expanded, a row is the state glyph in its state's ink, the name in body
 //! ink (the selected one's in the brand), the age at the right end and the
@@ -19,7 +19,7 @@
 use crate::reply::convs::ConvRow;
 use crate::ui::{Model, convs, theme};
 
-/// What an aimed wall with no conversation says, open. **It names the next
+/// What an aimed workspace with no conversation says, open. **It names the next
 /// act**, the `+ new` at the bar's head.
 pub const EMPTY: &str = "no conversations here yet — + new begins one";
 /// What the bar says, open, with nothing aimed: the foot is where one is.

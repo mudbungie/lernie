@@ -10,7 +10,7 @@ use crate::ui::{Model, Notice, theme};
 fn long() -> Notice {
     Notice::InDoubt {
         op: "message".to_owned(),
-        why: "the connection closed before the reply, after the engine had read the \
+        why: "the connection closed before the reply, after the server had read the \
               whole request and could have begun to act on every part of it"
             .to_owned(),
     }
@@ -106,7 +106,7 @@ fn a_short_notice_stays_in_the_slot() {
         .expect("the notice is on the glass");
     let name = seen
         .iter()
-        .find(|run| run.text == super::super::ENGINES)
+        .find(|run| run.text == super::super::SERVERS)
         .expect("the rule's name is on the glass");
     assert!((note.laid.center().y - name.laid.center().y).abs() < 2.0);
     assert!(!seen.iter().any(|run| run.text == READY));

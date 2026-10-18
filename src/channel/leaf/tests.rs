@@ -70,7 +70,7 @@ fn an_operator_grade_leaf_says_nothing() {
 
 /// **It identifies one fault; it never validates.** Everything this walk cannot
 /// read is silence, because a walk that refused it would be a second, weaker
-/// certificate parser standing in front of rustls — refusing leaves the engine
+/// certificate parser standing in front of rustls — refusing leaves the server
 /// would have accepted, over a check that was never a security property.
 #[test]
 fn nothing_this_walk_cannot_read_is_ever_refused() {

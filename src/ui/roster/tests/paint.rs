@@ -12,7 +12,7 @@
 use super::super::{NO_NAME_HERE, line, render};
 use crate::paint_probe::{fills_of, frame::Window};
 use crate::reply::roster::WsRow;
-use crate::test_support::window::{click, own, seated, seen, wall};
+use crate::test_support::window::{click, own, seated, seen, workspace};
 use crate::ui::theme::{BRAND, INK_FAINT, RAISED, RULE, State, accent};
 use crate::ui::{Channel, Chunk, Model};
 
@@ -35,21 +35,21 @@ fn ruled(fills: &[(egui::Rect, egui::Color32)], ink: egui::Color32) -> bool {
         .any(|(rect, fill)| *fill == ink && rect.width() <= RULE + 0.5)
 }
 
-/// **The eye lands on green** (§2): a wall that is asking wears the attention
+/// **The eye lands on green** (§2): a workspace that is asking wears the attention
 /// rule at its left edge and one that is merely working wears the working
-/// one, so a roster of five asking walls is five green rules in a column.
+/// one, so a roster of five asking workspaces is five green rules in a column.
 #[test]
-fn an_asking_wall_wears_the_attention_rule_and_a_running_one_the_working_rule() {
+fn an_asking_workspace_wears_the_attention_rule_and_a_running_one_the_working_rule() {
     let mut model = Model {
         roster: vec![Chunk {
-            walls: vec![
+            workspaces: vec![
                 WsRow {
                     attention: 3,
-                    ..wall("asking")
+                    ..workspace("asking")
                 },
                 WsRow {
                     running: true,
-                    ..wall("busy")
+                    ..workspace("busy")
                 },
             ],
             ..own()
@@ -89,12 +89,12 @@ fn a_row_no_entry_names_is_faint_and_takes_no_click() {
                 named_there: Some("personal".to_owned()),
                 dials: None,
             },
-            walls: vec![wall("somebody-elses")],
+            workspaces: vec![workspace("somebody-elses")],
             ..Chunk::default()
         }],
         ..Model::default()
     };
-    let label = format!("{}  — {NO_NAME_HERE}", line(&wall("somebody-elses")));
+    let label = format!("{}  — {NO_NAME_HERE}", line(&workspace("somebody-elses")));
     let window = Window::new();
     let ink = seen(&window, |ctx| {
         egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
@@ -111,18 +111,18 @@ fn a_row_no_entry_names_is_faint_and_takes_no_click() {
 
 /// **The state survives the column's own width** (bl-cecd). A row is one run
 /// elided at the roster's width, so what stands last is what a narrow roster
-/// cuts — and a busy wall at 280 points used to lose `running` to the `…`
+/// cuts — and a busy workspace at 280 points used to lose `running` to the `…`
 /// while the rule at its edge was the only place it was said. Read off the
 /// glyphs, because the string that went in is whole whatever the glass shows.
 #[test]
-fn a_busy_wall_at_280_points_still_says_its_state() {
+fn a_busy_workspace_at_280_points_still_says_its_state() {
     let mut model = Model {
         roster: vec![Chunk {
-            walls: vec![WsRow {
+            workspaces: vec![WsRow {
                 attention: 5,
                 agents: 6,
                 running: true,
-                ..wall("home")
+                ..workspace("home")
             }],
             ..own()
         }],
@@ -140,7 +140,7 @@ fn a_busy_wall_at_280_points_still_says_its_state() {
     let row = glyphs
         .iter()
         .find(|text| text.starts_with("home  "))
-        .unwrap_or_else(|| panic!("the wall's row is on the glass: {glyphs:?}"));
+        .unwrap_or_else(|| panic!("the workspace's row is on the glass: {glyphs:?}"));
     assert!(
         row.contains("5 waiting  running"),
         "the state is cut: {row:?}"
@@ -160,7 +160,7 @@ fn the_founding_row_tells_its_own_sentence() {
     let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
     let at = seen(&window, &mut body)
         .into_iter()
-        .find(|run| run.text == super::super::engine::FOUND)
+        .find(|run| run.text == super::super::server::FOUND)
         .expect("the founding row stands")
         .shown
         .center();
@@ -174,11 +174,13 @@ fn the_founding_row_tells_its_own_sentence() {
         .collect();
     assert!(
         said.iter()
-            .any(|run| run == super::super::engine::FOUND_HELP),
+            .any(|run| run == super::super::server::FOUND_HELP),
         "{said:?}"
     );
     assert!(
-        !said.iter().any(|run| run == super::super::wall::NEW_HELP),
+        !said
+            .iter()
+            .any(|run| run == super::super::workspace::NEW_HELP),
         "{said:?}"
     );
 }

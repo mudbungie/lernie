@@ -12,7 +12,7 @@
 //! elsewhere**, in the files that own their subjects — the list below is the
 //! one census of which and how many, and no count is written here, two having
 //! rotted already (bl-971c). The balls family's
-//! seven — the box-wide binding table, the fleet board, one wall's own balls,
+//! seven — the box-wide binding table, the fleet board, one workspace's own balls,
 //! the branch it tracks them on, and the three acts that claim, release and
 //! deliver a ball — are [`super::balls`]'s, beside the two authoring doors
 //! that share their subject and cannot be rows because their text may be
@@ -28,7 +28,7 @@
 //! `providers.yaml` assignment seen from both ends, and splitting them across
 //! two files to keep this one tidy would have split the fact. The sign-in
 //! family's four are [`super::login`]'s, on the same terms: the table, one
-//! row's offering, the act that starts a run in the wall and the lane that
+//! row's offering, the act that starts a run in the workspace and the lane that
 //! streams it are one subject, and three of the four are reads while one is an
 //! act. And the **enrollment** is [`super::enroll`]'s (bl-971c), on the
 //! strongest form of the same terms: its reply is the only one this seat
@@ -70,13 +70,13 @@ pub const WORKSPACES: Verb = Verb {
     word: "workspaces",
     params: &[],
     flags: &[],
-    summary: "every workspace this engine holds, with its rollups",
+    summary: "every workspace this server holds, with its rollups",
     detail: "The roster, and the whole of what a window's first pane is. It \
                  names each workspace, how it is classified, how many \
                  conversations it holds, how many want attention, whether \
                  anything is running, and where the operator pinned it. It takes \
                  no address, so its subject is EVERY channel this box holds: it \
-                 asks each in turn — this box's own engine first, then the \
+                 asks each in turn — this box's own server first, then the \
                  entries in leaf order — and prints the union under the name of \
                  the channel each answer came from, which is the roster the \
                  window paints. A channel that will not answer says so in its \
@@ -121,8 +121,8 @@ pub const FOLLOW: Verb = Verb {
     params: &["workspace", "agent"],
     flags: &[],
     summary: "watch one conversation until it comes to rest",
-    detail: "It holds the line and prints the tail as the engine writes it, \
-             and it keeps holding across the engine's own step boundaries — a \
+    detail: "It holds the line and prints the tail as the server writes it, \
+             and it keeps holding across the server's own step boundaries — a \
              single held read ends when a STEP commits (yog's REMOTE §5.1), \
              which is not the end of anything you asked about. It ends when \
              the conversation comes to REST: it prints a line saying so and \
@@ -196,7 +196,7 @@ pub const NUDGE: Verb = Verb {
 /// subject is one conversation; then the one act whose subject is a box.
 ///
 /// The conversation's four live in [`super::conversation`], its records' two in
-/// [`super::records`], the queue's three in [`super::queue`], the wall's one in
+/// [`super::records`], the queue's three in [`super::queue`], the workspace's one in
 /// [`super::workspace`] and the enrollment in [`super::enroll`], named here
 /// rather than defined here — one table, many files, on the seams those files'
 /// own docs draw. [`super::window`]'s

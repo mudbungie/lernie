@@ -5,7 +5,7 @@
 //! Every reader **names the field it refused on**. That is not politeness: a
 //! seat's reader is the only party that can say which key of which answer was
 //! wrong, and a bare "malformed reply" would send an operator to read the
-//! engine's source.
+//! server's source.
 //!
 //! They are `pub(crate)`, not `pub`. Two take a reader function, which is a
 //! trait bound, and a bound on a `pub` item forces monomorphisation onto every
@@ -63,7 +63,7 @@ pub(crate) fn count(obj: &Map<String, Value>, key: &str) -> Result<u64, String> 
 
 /// The captured run's exit status, narrowed the same way. Its own reader
 /// rather than a call to [`secs`], because the narrowing is the strictness: a
-/// status no `i32` holds is an engine saying something this seat has no way to
+/// status no `i32` holds is a server saying something this seat has no way to
 /// paint.
 pub(crate) fn exit(obj: &Map<String, Value>) -> Result<i32, String> {
     let n = secs(obj, "exit")?;
@@ -161,7 +161,7 @@ pub(crate) fn opt_flag(obj: &Map<String, Value>, key: &str) -> Result<Option<boo
 /// state that has one to write, and the state rides beside it verbatim — so
 /// *this row's state has no such list* and *this row's list is empty* are the
 /// same claim about the same row. The held row's `scopes` reads on the same
-/// terms (`super::queue::Held`): an engine that wrote none said nothing.
+/// terms (`super::queue::Held`): a server that wrote none said nothing.
 pub(crate) fn strings(obj: &Map<String, Value>, key: &str) -> Result<Vec<String>, String> {
     match obj.get(key) {
         None => Ok(Vec::new()),

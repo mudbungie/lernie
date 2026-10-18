@@ -27,7 +27,7 @@ pub(super) const UNEMITTED: &[(&str, usize, &str)] = &[
         "marks",
         2,
         "the amending form: this seat composes the bare READ only, and pointing \
-         a wall's task space at another branch is a write with a confirmation \
+         a workspace's task space at another branch is a write with a confirmation \
          to design — the ball pane's five acts landed in bl-f7ae and this one \
          did not, because a tracking branch is not a ball",
     ),
@@ -81,7 +81,7 @@ pub(super) const UNEMITTED: &[(&str, usize, &str)] = &[
     (
         "fan",
         1,
-        "the ball-less form: upstream reads it as the ENGINE's own focused \
+        "the ball-less form: upstream reads it as the SERVER's own focused \
          ball, and a seat has no focus at the far end — every gesture this \
          window composes names the ball off the work-diff row it fired from \
          (`crate::verbs::candidates`)",
@@ -102,7 +102,7 @@ pub(super) const UNEMITTED: &[(&str, usize, &str)] = &[
         "prompt",
         6,
         "a predicted conversation seed: this seat spells `seed` null, because \
-         the mint is the engine's and a seat that predicted one would have to \
+         the mint is the server's and a seat that predicted one would have to \
          fire the name it painted",
     ),
 ];

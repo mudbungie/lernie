@@ -11,7 +11,7 @@
 /// It is stored rather than derived from the code, and the exception is the
 /// reason. For everything this binary says about *itself* the code does say the
 /// stream — a refusal is stderr, a `--version` is stdout. But the seat's one
-/// product is the engine's **reply stream**, and an engine answering `ok:
+/// product is the server's **reply stream**, and a server answering `ok:
 /// false` has answered: that is the product, it goes to stdout with the rest of
 /// the frames, and only the exit code says no. Deriving the stream from the
 /// code would put an answer on stderr because it was a negative one.
@@ -48,7 +48,7 @@ pub(super) const POINTER: &str =
 pub(super) const REFUSED: u8 = 2;
 
 /// The exit code for a run that was understood and did not finish: no channel,
-/// a channel that would not open, an engine that would not answer, or an engine
+/// a channel that would not open, a server that would not answer, or a server
 /// that answered no. One code for the same reason.
 pub(super) const FAILED: u8 = 1;
 
@@ -62,7 +62,7 @@ impl Verdict {
         }
     }
 
-    /// **The engine's answer**, whichever way it went: the reply stream is this
+    /// **The server's answer**, whichever way it went: the reply stream is this
     /// seat's product, so it goes to stdout, and `ok` is the exit code alone.
     pub fn answered(text: String, ok: bool) -> Self {
         Self {

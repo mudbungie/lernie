@@ -35,7 +35,7 @@ pub(crate) fn dropped(words: &str) -> String {
 }
 
 /// One workspace row, named and otherwise quiet.
-pub(crate) fn wall(name: &str) -> WsRow {
+pub(crate) fn workspace(name: &str) -> WsRow {
     WsRow {
         workspace: name.to_owned(),
         kind: WorkspaceKind::Named,
@@ -103,22 +103,22 @@ pub(crate) fn said(sender: &str, body: &str) -> Entry {
     }
 }
 
-/// This box's own engine, holding one wall.
+/// This box's own server, holding one workspace.
 pub(crate) fn own() -> Chunk {
     Chunk {
         channel: Channel {
-            name: "(this box's own engine)".to_owned(),
+            name: "(this box's own server)".to_owned(),
             named_there: None,
             dials: None,
         },
         held: crate::ui::Held::Heard,
         stale: None,
         growth: None,
-        walls: vec![wall("home")],
+        workspaces: vec![workspace("home")],
     }
 }
 
-/// **A model with something in every pane**: one channel, one wall aimed at,
+/// **A model with something in every pane**: one channel, one workspace aimed at,
 /// one conversation selected, and one thing said in it.
 ///
 /// **It is standing on the conversation column** (bl-dfda), which the broad
@@ -133,7 +133,7 @@ pub(crate) fn seated() -> Model {
             entries: vec![said("op", "port it")],
         },
         aim: Some(Aim {
-            channel: "(this box's own engine)".to_owned(),
+            channel: "(this box's own server)".to_owned(),
             address: "home".to_owned(),
         }),
         conversation: Some("20260830T051200Z-a1b2".to_owned()),

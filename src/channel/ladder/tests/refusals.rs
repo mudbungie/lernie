@@ -96,11 +96,11 @@ fn the_defaults_are_the_stated_ones() {
 fn a_stand_in_asked_past_its_script_hangs_up() {
     let (listener, at) = listener();
     let b = Bench::new(at, None);
-    let engine = Engine::listen(b.scratch.path(), listener, Vec::new());
+    let server = Server::listen(b.scratch.path(), listener, Vec::new());
     assert!(b.channel().ask(&request(1)).is_err());
-    assert_eq!(engine.connections(), 1);
+    assert_eq!(server.connections(), 1);
     assert_eq!(
-        ops(&engine.heard()),
+        ops(&server.heard()),
         vec![1],
         "the ask was heard, not answered"
     );

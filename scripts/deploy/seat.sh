@@ -28,7 +28,7 @@
 # **It seats a timer; it does not deploy a build.** Nothing is compiled here and
 # nothing is carried over the channel but three small text files. The box
 # installs from crates.io on its own schedule from then on — which is the
-# difference between this and an engine's deployment, where the image is the
+# difference between this and a server's deployment, where the image is the
 # unit of install and a human carries it. A seat's unit of install is a
 # published version, and the registry already serves it.
 #
@@ -36,7 +36,7 @@
 # window somebody launched. An install replaces the binary by rename, so an open
 # window finishes its session on the build it started under and the next launch
 # is the new one. Read `lernie-update`'s header for the protocol-skew
-# consequence of that — a seat may run ahead of its engine for up to an hour,
+# consequence of that — a seat may run ahead of its server for up to an hour,
 # and the hello's refusal is the designed behavior.
 #
 # Idempotent, and the upgrade path: re-run it to move a box to this checkout's

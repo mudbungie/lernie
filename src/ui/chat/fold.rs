@@ -65,7 +65,7 @@ fn head(content: &str) -> String {
 
 /// **What the same control says once the row is open** — the act it fires,
 /// which is the other one. Two words rather than one that toggles, on the
-/// pin's own rule (`crate::ui::roster::wall`): a control names the act it
+/// pin's own rule (`crate::ui::roster::workspace`): a control names the act it
 /// fires, so an operator never has to work out which way it will go.
 pub const UNFOLD: &str = "fold";
 /// What the control does, each way (DESIGN §4.46 item 2).

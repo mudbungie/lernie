@@ -31,7 +31,7 @@ fn armed() -> Model {
     model
 }
 
-/// **The diff is painted verbatim** — every line of the engine's text is a
+/// **The diff is painted verbatim** — every line of the server's text is a
 /// painted line exactly as it was sent, its leading markers and indentation
 /// kept and its long line unwrapped. A diff a seat reflowed is a diff nobody
 /// can apply.
@@ -48,10 +48,10 @@ fn the_whole_is_painted_byte_for_byte_and_never_reflowed() {
 }
 
 /// **The listing's three readings each say their own sentence**: nobody has
-/// answered, nothing is staged, and a row — whose standing is the engine's
+/// answered, nothing is staged, and a row — whose standing is the server's
 /// word, including the stale one that moves nothing.
 #[test]
-fn the_listing_says_what_the_engine_answered_and_nothing_more() {
+fn the_listing_says_what_the_server_answered_and_nothing_more() {
     let mut model = configured();
     model.proposals = None;
     assert!(painted(&mut model).contains(NOT_ANSWERED));

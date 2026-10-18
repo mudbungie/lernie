@@ -4,21 +4,21 @@
 use super::{Place, at, read, write};
 use crate::settings::Settings;
 use crate::test_support::Scratch;
-use crate::ui::{Aim, Engines};
+use crate::ui::{Aim, Servers};
 
-/// The wall a window was aimed at.
+/// The workspace a window was aimed at.
 fn aimed() -> Aim {
     Aim {
-        channel: "(this box's own engine)".to_owned(),
+        channel: "(this box's own server)".to_owned(),
         address: "home".to_owned(),
     }
 }
 
-/// A place aimed at that wall and nothing else remembered.
+/// A place aimed at that workspace and nothing else remembered.
 fn pointed() -> Place {
     Place {
         aim: Some(aimed()),
-        engines: Engines::default(),
+        servers: Servers::default(),
         pinned: false,
         settings: Settings::default(),
     }
@@ -36,15 +36,15 @@ fn where_the_window_was_pointed_comes_back_and_so_does_nowhere() {
     assert_eq!(read(scratch.path()), Place::default());
 }
 
-/// **The accordion round-trips with the aim** (DESIGN §4.39): which engine is
-/// open, what each engine's last opening ranks as, and the wall last aimed
+/// **The accordion round-trips with the aim** (DESIGN §4.39): which server is
+/// open, what each server's last opening ranks as, and the workspace last aimed
 /// under each — so a seat comes back to the arrangement it was left in.
 #[test]
 fn the_accordion_comes_back_with_the_aim() {
     let scratch = Scratch::new();
     let arranged = Place {
         aim: Some(aimed()),
-        engines: Engines {
+        servers: Servers {
             open: Some("lab".to_owned()),
             opened: [("lab".to_owned(), 7), ("home".to_owned(), 3)]
                 .into_iter()
@@ -105,7 +105,7 @@ fn a_file_that_names_no_edge_reads_back_as_no_drag_at_all() {
     let scratch = Scratch::new();
     std::fs::write(
         at(scratch.path()),
-        r#"{"aim": {"channel": "(this box's own engine)", "address": "home"}}"#,
+        r#"{"aim": {"channel": "(this box's own server)", "address": "home"}}"#,
     )
     .expect("write");
     assert_eq!(read(scratch.path()), pointed());
@@ -172,11 +172,11 @@ fn a_row_this_build_cannot_read_costs_one_row_and_not_the_table() {
     .expect("write");
     let held = read(scratch.path());
     assert_eq!(
-        held.engines.opened,
+        held.servers.opened,
         [("lab".to_owned(), 7)].into_iter().collect()
     );
     assert_eq!(
-        held.engines.aimed,
+        held.servers.aimed,
         [("lab".to_owned(), "bench".to_owned())]
             .into_iter()
             .collect()
@@ -193,7 +193,7 @@ fn an_unknown_key_is_ignored_so_the_next_fact_is_a_key_and_not_a_format() {
     let scratch = Scratch::new();
     std::fs::write(
         at(scratch.path()),
-        r#"{"aim": {"channel": "(this box's own engine)", "address": "home",
+        r#"{"aim": {"channel": "(this box's own server)", "address": "home",
                     "scrolled_to": 42}, "draft": "not read yet"}"#,
     )
     .expect("write");
@@ -205,10 +205,10 @@ fn an_unknown_key_is_ignored_so_the_next_fact_is_a_key_and_not_a_format() {
 #[test]
 fn the_place_is_a_projection_of_the_model_and_not_a_stored_copy() {
     let mut model = crate::test_support::window::seated();
-    model.engines.open = Some("(this box's own engine)".to_owned());
+    model.servers.open = Some("(this box's own server)".to_owned());
     let held = Place::of(&model);
     assert_eq!(held.aim, model.aim);
-    assert_eq!(held.engines, model.engines);
+    assert_eq!(held.servers, model.servers);
     model.settings.bar_open = Some(420.0);
     assert_eq!(Place::of(&model).settings, model.settings);
 }

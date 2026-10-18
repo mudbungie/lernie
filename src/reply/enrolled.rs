@@ -1,12 +1,12 @@
 //! **A new box's material** (yog's `docs/REMOTE.md` §8.4) — the six fields the
-//! `enroll` act answers, the rendezvous pair beside them when the engine holds
+//! `enroll` act answers, the rendezvous pair beside them when the server holds
 //! one, and the one envelope a camera carries them in.
 //!
 //! # The reply this seat must not keep
 //!
 //! Every other kind in this vocabulary is something the window draws and may
 //! redraw. This one carries a **private key that is not this box's** — minted
-//! on the engine's CA for a device that does not exist yet — and the seat's
+//! on the server's CA for a device that does not exist yet — and the seat's
 //! whole job with it is to put it on a screen and forget it. Nothing here
 //! writes, caches or logs; [`Enrolled`] is a value the window holds while a
 //! symbol is on screen and drops with the pane. See DESIGN §3.
@@ -28,12 +28,12 @@
 //!   yog bl-9043) when the reply carried it, and neither key when it did not
 //!   — the phone reads its roving material (REMOTE §13.3) from exactly this
 //!   envelope, so a seat that re-said only the six drew a symbol whose device
-//!   could never find a moved engine (bl-5378);
+//!   could never find a moved server (bl-5378);
 //! - and **without `ok` and `kind`**, which say what a *wire answer* is. A
 //!   photograph is not one.
 //!
 //! Key order is `serde_json`'s own, which is sorted, and that is the same order
-//! the engine's encoder writes — one less thing for two ends to disagree about.
+//! the server's encoder writes — one less thing for two ends to disagree about.
 //! It is not semantic either way: a scanner parses the object.
 
 use serde_json::{Map, Value};
@@ -61,13 +61,13 @@ const KEY: &str = "key";
 const PUBLIC: &str = "rendezvous_pub";
 const SALT: &str = "pairing_salt";
 
-/// **What a new box needs to dial this engine, and nothing more.**
+/// **What a new box needs to dial this server, and nothing more.**
 ///
-/// `address` is the engine's own wire address *as clients dial it*, not the
-/// port a `:0` request became — REMOTE §8.4 makes the engine refuse the second,
+/// `address` is the server's own wire address *as clients dial it*, not the
+/// port a `:0` request became — REMOTE §8.4 makes the server refuse the second,
 /// because a symbol carrying a runtime port would be stale before it was
 /// scanned. So a seat has nothing to check here: an address that arrived is an
-/// address the engine already stood behind.
+/// address the server already stood behind.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Enrolled {
     /// `operator` or `foot` (REMOTE §4.2), minted into the subject.
@@ -84,12 +84,12 @@ pub struct Enrolled {
     /// secret**, and the reason this reply is never written down.
     pub key: String,
     /// **The rendezvous hand-off** (REMOTE §8.4, §13.2): how the new box finds
-    /// this engine off its stated address. `None` from a loopback-only engine,
+    /// this server off its stated address. `None` from a loopback-only server,
     /// which has nothing to rendezvous for.
     pub rendezvous: Option<Handoff>,
 }
 
-/// **The engine's rendezvous public key and the pairing salt**, 32 bytes of
+/// **The server's rendezvous public key and the pairing salt**, 32 bytes of
 /// lowercase hex each, exactly as the files `rendezvous.pub` and
 /// `pairing.salt` hold them. One type because they travel together: half a
 /// pairing derives nothing a device could use.
@@ -97,7 +97,7 @@ pub struct Enrolled {
 pub struct Handoff {
     /// `rendezvous_pub`.
     pub public: String,
-    /// `pairing_salt` — shared with the engine, and so material, never said
+    /// `pairing_salt` — shared with the server, and so material, never said
     /// out loud.
     pub salt: String,
 }

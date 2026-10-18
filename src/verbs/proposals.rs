@@ -14,7 +14,7 @@
 //! litany's reviewer stages what it learned as a real config commit, and the
 //! whole loop turns on a person reading it and vetoing it. Until PROTOCOL 18
 //! nothing on this wire could: the veto lived at `litany proposal` on the
-//! engine's own box, which on a server install is an `ssh` and a container
+//! server's own box, which on a containerised install is an `ssh` and a container
 //! exec — the thing the §8.5 boundary exists to make unnecessary.
 //!
 //! # The read's id is optional and the settle's is not

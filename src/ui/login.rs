@@ -1,22 +1,22 @@
-//! **The login pane**: what this wall can sign in to, and the act that signs it
+//! **The login pane**: what this workspace can sign in to, and the act that signs it
 //! in (yog's `docs/REMOTE.md` §8.3; PROTOCOL 13).
 //!
-//! # The act is the ENGINE'S and this pane only asks for it
+//! # The act is the SERVER'S and this pane only asks for it
 //!
-//! `bz --login` runs on the engine, inside the named workspace's wall, so the
+//! `bz --login` runs on the server, inside the named workspace's directory, so the
 //! credential lands where the agents that read it run and **nothing
 //! credential-shaped crosses this wire** (REMOTE §8.3). This crate spawns no
 //! sign-in, holds no run and has no `exec` at all. What it does is post one
 //! gesture and paint the lines that come back — which is the whole of why the
 //! surface is portable.
 //!
-//! **Closing the pane terminates nothing.** The run is engine RAM, one per
+//! **Closing the pane terminates nothing.** The run is server RAM, one per
 //! workspace × provider, replaced by the operator's own next sign-in and swept
 //! at an hour. This side gets that for free and must not re-implement it.
 //!
 //! # Which sphere the sign-in is for, said in the surface
 //!
-//! The wall's name and the channel it came down, and — for a wall held
+//! The workspace's name and the channel it came down, and — for a workspace held
 //! elsewhere — that it is held elsewhere, off the roster's own client-side
 //! channel stamp (`crate::ui::Channel`). **Never a host address**: two entries
 //! naming one listener are still two trust relationships, and an address in
@@ -25,12 +25,12 @@
 //!
 //! # The loopback remedy is stated, never built
 //!
-//! A row whose flow needs a browser at the ENGINE's own loopback can only be
+//! A row whose flow needs a browser at the SERVER's own loopback can only be
 //! completed from a browser on that box, or through a port-forward the operator
 //! sets up — *an operator act on boxes the operator administers*, and REMOTE
 //! §8.3 rules it is stated as a remedy and never made a channel feature.
 //!
-//! **It is said for every row on a wall held elsewhere, not for the browser-only
+//! **It is said for every row on a workspace held elsewhere, not for the browser-only
 //! ones**, and that is a limit rather than a choice: the `device` column is on
 //! yog's own provider row and not on the view that crosses the wire
 //! (`crate::reply::providers`), so this seat cannot tell the two apart. A
@@ -44,12 +44,12 @@
 //! that tagged only the act would be claiming `login-tail` is reachable
 //! nowhere. It is the start control's shape exactly (§4.16).
 //!
-//! # The run-by-hand fallback is the engine's sentence, with one of ours
+//! # The run-by-hand fallback is the server's sentence, with one of ours
 //!
-//! `fallback` is composed by the end that knows the wall and arrives only on a
-//! non-zero exit. The original surface spelled a local wall's fallback as an
+//! `fallback` is composed by the end that knows the workspace and arrives only on a
+//! non-zero exit. The original surface spelled a local workspace's fallback as an
 //! `exec` on this box and an entry's as something else; both are the same case
-//! now — **an act the operator runs on the box that HOLDS the wall** — so what
+//! now — **an act the operator runs on the box that HOLDS the workspace** — so what
 //! this pane adds is one sentence saying so, naming the channel and no address.
 
 use crate::reply::providers::ProviderRow;
@@ -63,16 +63,16 @@ pub mod run;
 pub const WORD: &str = "login";
 /// The pane's own heading.
 pub const HEADING: &str = "sign in";
-/// What it says for a wall nobody has been answered about yet.
+/// What it says for a workspace nobody has been answered about yet.
 pub const NOT_ANSWERED: &str = "waiting to hear what this workspace can sign in to";
-/// What it says for a wall that answered and routes no provider at all. A fact
+/// What it says for a workspace that answered and routes no provider at all. A fact
 /// about the workspace, and the one empty state here that is not a wait.
 pub const NO_PROVIDERS: &str = "this workspace uses no provider — /config names one";
 /// The word on the control that starts a sign-in on a row.
 pub const SIGN_IN: &str = "sign in to this provider";
 /// What the sign-in does.
 pub const SIGN_IN_HELP: &str =
-    "starts this provider's sign-in on the engine; its progress stands below";
+    "starts this provider's sign-in on the server; its progress stands below";
 /// The word on the control that asks a row what it offers.
 pub const OFFERS: &str = "what it offers…";
 /// What `what it offers…` does.
@@ -85,10 +85,10 @@ pub const OFFERS_NOTHING: &str = "this provider offers no model";
 pub const ELSEWHERE: &str = "this workspace lives on another box, and the sign-in \
                              runs there — the credential is kept there, not \
                              on this one";
-/// The §8.3 remedy for a row whose flow wants a browser at the engine's own
-/// loopback, said wherever the engine is not this box.
+/// The §8.3 remedy for a row whose flow wants a browser at the server's own
+/// loopback, said wherever the server is not this box.
 pub const LOOPBACK: &str = "if the sign-in opens a web page, that page expects \
-                            a browser on the engine's box: finish it there, or \
+                            a browser on the server's box: finish it there, or \
                             forward the port by hand";
 
 /// Paint the pane and take the clicks on it. Answers whether there was one to
@@ -102,7 +102,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         ui.label(format!("on {} — {}", aim.address, aim.channel));
     }
     // **Both sentences hang off one fact and are said once**, above the rows
-    // rather than on each: where the engine is, is a property of the wall.
+    // rather than on each: where the server is, is a property of the workspace.
     if model.elsewhere() {
         ui.colored_label(theme::tone_ink(&crate::reply::convs::Tone::Weak), ELSEWHERE);
         ui.colored_label(theme::tone_ink(&crate::reply::convs::Tone::Weak), LOOPBACK);
@@ -130,7 +130,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     true
 }
 
-/// One provider row: what it is, what the engine knows about its credential,
+/// One provider row: what it is, what the server knows about its credential,
 /// and the two controls on it.
 fn provider(ui: &mut egui::Ui, model: &mut Model, row: &ProviderRow) {
     ui.separator();
@@ -140,7 +140,7 @@ fn provider(ui: &mut egui::Ui, model: &mut Model, row: &ProviderRow) {
     if let Some(takes) = row.takes() {
         ui.colored_label(weak, takes);
     }
-    // **A blocked row states the engine's own reason and offers no sign-in.**
+    // **A blocked row states the server's own reason and offers no sign-in.**
     // A control that fired an act the far end has already said it will refuse
     // is a control that only looks actionable, which is the one thing every
     // pane in this window is written not to be.

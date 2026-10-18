@@ -27,12 +27,11 @@ pub(super) fn reported(link: &Link) -> Vec<(String, Said)> {
             .notice
             .map(|n| (String::new(), Said::Unreachable(n.line()))),
     );
-    out.extend(
-        model
-            .roster
-            .into_iter()
-            .map(|c| (c.channel.name, Said::Unreachable(c.walls.len().to_string()))),
-    );
+    let held = model
+        .roster
+        .into_iter()
+        .map(|c| (c.channel.name, c.workspaces.len()));
+    out.extend(held.map(|(name, n)| (name, Said::Unreachable(n.to_string()))));
     out
 }
 
@@ -40,7 +39,7 @@ pub(super) fn reported(link: &Link) -> Vec<(String, Said)> {
 mod board;
 /// The machines, which stand on the clients pane and nest under nothing.
 mod clients;
-/// The config pane's two, one of which addresses a channel rather than a wall.
+/// The config pane's two, one of which addresses a channel rather than a workspace.
 mod config;
 /// The fleet pane's two, which stand because their answers go stale.
 mod fleet;

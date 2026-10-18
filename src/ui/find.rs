@@ -1,4 +1,4 @@
-//! **Find text**, across the balls, workspaces and conversations every engine
+//! **Find text**, across the balls, workspaces and conversations every server
 //! this box holds can see (bl-40ec; DESIGN §4.21).
 //!
 //! # The seventh covering pane, and the third about no focus
@@ -18,7 +18,7 @@
 //! # A hit is READ and not actionable, and the pane says why
 //!
 //! yog bl-ef16: a search row addresses its workspace and its project by the
-//! ENGINE'S OWN ABSOLUTE PATH while every gesture this box composes carries a
+//! SERVER'S OWN ABSOLUTE PATH while every gesture this box composes carries a
 //! name, so the keys a row spells are the keys the acts take and the values
 //! are not — feed one back and it earns `unknown workspace`. So there is no
 //! *go to it* here, and the reason is on the glass rather than in a comment:
@@ -39,16 +39,16 @@ pub const HEADING: &str = "find text";
 /// The word on the control that spends the needle.
 pub const FIND: &str = "find";
 /// What `find` does.
-pub const FIND_HELP: &str = "asks the engine for every place the words above appear";
+pub const FIND_HELP: &str = "asks the server for every place the words above appear";
 /// What stands beside the control while there is nothing to search for.
 pub const NEEDS_WORDS: &str = "type what to look for and this becomes live";
 /// What the pane says before anything has been asked.
 pub const NOT_ASKED: &str = "nothing has been looked for yet";
-/// What a section says for an engine that answered and found nothing.
-pub const NOTHING: &str = "this engine found none of it — try fewer words";
+/// What a section says for a server that answered and found nothing.
+pub const NOTHING: &str = "this server found none of it — try fewer words";
 /// **Why a hit cannot be acted on** — the standing sentence, said once above
 /// the list rather than on every row (yog bl-ef16).
-pub const NOT_ADDRESSABLE: &str = "a hit says where it is as the engine names it, which this window cannot \
+pub const NOT_ADDRESSABLE: &str = "a hit says where it is as the server names it, which this window cannot \
      open — Ctrl+X goes to the conversation by hand";
 
 /// Paint the pane and take the clicks on it. Answers whether there was one to
@@ -115,7 +115,7 @@ fn asking(ui: &mut egui::Ui, model: &mut Model) {
 /// One channel's answer: what it read the needle as, what it could not read,
 /// and the hits.
 fn answered(ui: &mut egui::Ui, found: &crate::reply::search::Found) {
-    // **The engine's own echo of the needle**, never the box's current
+    // **The server's own echo of the needle**, never the box's current
     // contents: these rows are an answer to what was asked, and an operator
     // mid-edit must not be told the old rows are about the new words.
     broken(ui, &looked_for(found), theme::INK);
@@ -143,7 +143,7 @@ fn hit(ui: &mut egui::Ui, row: &crate::reply::search::Hit) {
 }
 
 /// **A line that breaks anywhere** (bl-4f8d). What these rows carry is the
-/// operator's needle and the engine's words around it, and a needle with no
+/// operator's needle and the server's words around it, and a needle with no
 /// space in it — a path, a hash, a pasted line — is one word that egui's wrap
 /// will not break: it laid the run past the box's edge, and the box grew with
 /// it off the window. Breaking mid-word keeps every glyph inside the box.
@@ -154,12 +154,12 @@ fn broken(ui: &mut egui::Ui, text: &str, ink: egui::Color32) {
     ui.label(job);
 }
 
-/// **What this section is an answer to**, in the engine's own words.
+/// **What this section is an answer to**, in the server's own words.
 pub fn looked_for(found: &crate::reply::search::Found) -> String {
     format!("looked for {:?}", found.needle)
 }
 
-/// **What the engine could not read**, which is a different claim from finding
+/// **What the server could not read**, which is a different claim from finding
 /// nothing there — so it is said as its own sentence rather than folded into
 /// an empty result.
 pub fn unread(why: &str) -> String {

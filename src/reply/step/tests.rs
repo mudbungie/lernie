@@ -23,7 +23,7 @@ fn drill() -> serde_json::Value {
 }
 
 /// **The whole drill-in reads**, and the record vocabulary is the three the
-/// engine writes.
+/// server writes.
 #[test]
 fn the_drill_in_carries_the_four_records_the_stream_and_the_tool_calls() {
     let read = step(drill().as_object().expect("an object")).expect("the drill-in reads");

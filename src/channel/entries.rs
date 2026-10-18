@@ -3,7 +3,7 @@
 //! another box.
 //!
 //! An **entry** is a directory carrying the channel facts that reach one
-//! workspace: the host engine's anchors, this box's leaf and key for it, the
+//! workspace: the host server's anchors, this box's leaf and key for it, the
 //! host's address, and optionally the name that workspace bears *there*. It is
 //! the client's half of the pair a server-side registration is the other half
 //! of — **possession, where registration is permission** — exactly as a channel
@@ -11,10 +11,10 @@
 //!
 //! ```text
 //! <data root>/wire/workspaces/<leaf>/
-//!     ca.pem      the HOST engine's anchors — that operator's trust root
+//!     ca.pem      the HOST server's anchors — that operator's trust root
 //!     client.pem  this box's leaf for this workspace
 //!     client.key  this box's private key for it
-//!     address     the host engine, host:port — "the server", entire
+//!     address     the host server, host:port — "the server", entire
 //!     workspace   OPTIONAL: the name the workspace bears on its host, when it
 //!                 differs from <leaf>; absent, the leaf is the name
 //! ```
@@ -48,7 +48,7 @@
 //! entry stands: a box holding three workspaces does not lose the two that are
 //! fine. That is also why an entry that exists is the answer to its own name
 //! even when it cannot be dialled — falling through to the flat root would send
-//! a gesture to the wrong engine on the strength of a missing file.
+//! a gesture to the wrong server on the strength of a missing file.
 //!
 //! **Nothing here writes anything.** Material reaches an entry by the
 //! operator's hand, out of channel, forever (REMOTE §1.4).

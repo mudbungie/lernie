@@ -8,7 +8,7 @@ use crate::verbs::Where;
 /// **The aim is the gate.** The lineage read carries a workspace, and a
 /// workspace is what an aim is — so a seat aimed at nothing cannot open it.
 #[test]
-fn the_pane_opens_only_where_the_window_is_aimed_at_a_wall() {
+fn the_pane_opens_only_where_the_window_is_aimed_at_a_workspace() {
     let mut nowhere = Model::default();
     nowhere.begin_configuring();
     assert_eq!(nowhere.configuring, None);
@@ -55,9 +55,9 @@ fn escape_puts_it_down_and_a_new_aim_retires_it() {
     let mut model = configured();
     model.escape();
     assert_eq!(model.configuring, None);
-    assert!(model.config.is_some(), "the answers are the engine's");
+    assert!(model.config.is_some(), "the answers are the server's");
     let mut moved = configured();
-    moved.aim_at("(this box's own engine)", "elsewhere");
+    moved.aim_at("(this box's own server)", "elsewhere");
     assert_eq!(moved.configuring, None);
     assert_eq!(moved.config, None);
     assert_eq!(moved.lineages, None);
@@ -78,10 +78,10 @@ fn the_box_is_seeded_from_the_file_and_goes_with_the_destination() {
     assert_eq!(model.drafted(), None, "a new file is a new box");
 }
 
-/// **Reverting puts the engine's answer back in the box**, which is the way
+/// **Reverting puts the server's answer back in the box**, which is the way
 /// out of an edit and the way to take another writer's bytes — one act.
 #[test]
-fn reverting_puts_the_engine_s_answer_back_in_the_box() {
+fn reverting_puts_the_server_s_answer_back_in_the_box() {
     let mut model = configured();
     model.draft_config("beat: 1\n");
     if let Some(text) = model.draft_box() {
@@ -100,7 +100,7 @@ fn reverting_puts_the_engine_s_answer_back_in_the_box() {
 /// the address and `crate::seat::route` resolves it, so naming a channel here
 /// would bypass the rename an entry performs.
 #[test]
-fn a_write_to_a_wall_s_own_file_names_no_channel() {
+fn a_write_to_a_workspace_s_own_file_names_no_channel() {
     let mut model = configured();
     model.write_config(
         &Where::Brazen {
@@ -114,11 +114,11 @@ fn a_write_to_a_wall_s_own_file_names_no_channel() {
     assert_eq!(posted.envelope["text"], "[models]\n");
 }
 
-/// **A destination naming the ENGINE is addressed down the aimed channel**,
-/// which is what stops the poster fanning it onto every engine this box is a
+/// **A destination naming the SERVER is addressed down the aimed channel**,
+/// which is what stops the poster fanning it onto every server this box is a
 /// client of (bl-4855).
 #[test]
-fn a_write_to_an_engine_s_own_file_names_the_aimed_channel() {
+fn a_write_to_an_server_s_own_file_names_the_aimed_channel() {
     let mut model = configured();
     model.write_config(&Where::Cadence, "beat: 1\n".to_owned());
     let posted = model.outbox.first().expect("one act");

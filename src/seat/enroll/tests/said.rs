@@ -77,7 +77,7 @@ fn the_symbol_and_the_line_it_encodes_are_both_said() {
 #[test]
 fn a_named_destination_gets_the_four_files_and_the_material_is_not_said() {
     let scratch = Scratch::new();
-    let _engine = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
+    let _server = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
     let into = scratch.path().join("carry");
     let (verdict, _) = acted(
         scratch.path(),
@@ -141,12 +141,12 @@ fn the_act_writes_no_file_at_all() {
     assert_eq!(before, after, "the enrollment left something on the disk");
 }
 
-/// The gesture that crossed is the row's own envelope, addressed at the wall —
+/// The gesture that crossed is the row's own envelope, addressed at the workspace —
 /// so the window and the command line spend one serialization.
 #[test]
 fn the_gesture_that_crossed_is_the_verb_table_s_own() {
     let scratch = Scratch::new();
-    let engine = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
+    let server = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
     let _ = acted(
         scratch.path(),
         "phone-1",
@@ -155,8 +155,8 @@ fn the_gesture_that_crossed_is_the_verb_table_s_own() {
         None,
         Form::Rendered,
     );
-    let heard = engine.heard();
-    let request = heard.last().expect("the engine was handed a request");
+    let heard = server.heard();
+    let request = heard.last().expect("the server was handed a request");
     assert_eq!(
         request,
         &crate::verbs::enroll(
@@ -169,14 +169,14 @@ fn the_gesture_that_crossed_is_the_verb_table_s_own() {
 }
 
 /// **A stated route crosses** (bl-971c). It is the field that produces no error
-/// message anywhere when it is wrong — a foot handed the engine's own LAN
-/// address dials nothing, prints nothing and waits, while the engine holds the
+/// message anywhere when it is wrong — a foot handed the server's own LAN
+/// address dials nothing, prints nothing and waits, while the server holds the
 /// registration and the roster shows it absent — so what is asserted is that
 /// the word an operator typed reaches the wire under §8.4's own name.
 #[test]
 fn a_stated_route_crosses_as_the_enrollment_s_address() {
     let scratch = Scratch::new();
-    let engine = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
+    let server = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
     let (verdict, _) = acted(
         scratch.path(),
         "phone-1",
@@ -186,8 +186,8 @@ fn a_stated_route_crosses_as_the_enrollment_s_address() {
         Form::Rendered,
     );
     assert_eq!(verdict.code, 0, "{}", verdict.text);
-    let heard = engine.heard();
-    let request = heard.last().expect("the engine was handed a request");
+    let heard = server.heard();
+    let request = heard.last().expect("the server was handed a request");
     assert_eq!(
         request.get(crate::verbs::ADDRESS),
         Some(&serde_json::Value::String(
@@ -201,7 +201,7 @@ fn a_stated_route_crosses_as_the_enrollment_s_address() {
 /// it parses: the whole product of a run a script can capture with `head`, a
 /// `read`, or a pipe into a formatter. It printed the human rendering under
 /// the flag — an ANSI-coloured symbol ahead of the line — so the first lines a
-/// script kept were a picture of material the engine had already shredded, and
+/// script kept were a picture of material the server had already shredded, and
 /// the name was spent.
 #[test]
 fn the_machine_form_is_the_envelope_alone() {
@@ -235,7 +235,7 @@ fn the_machine_form_is_the_envelope_alone() {
 #[test]
 fn a_machine_form_that_filed_says_nothing_on_stdout() {
     let scratch = Scratch::new();
-    let _engine = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
+    let _server = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
     let into = scratch.path().join("carry");
     let (verdict, warned) = acted(
         scratch.path(),
@@ -264,7 +264,7 @@ fn a_machine_form_that_filed_says_nothing_on_stdout() {
 #[test]
 fn a_refused_destination_leaves_the_machine_form_intact() {
     let scratch = Scratch::new();
-    let _engine = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
+    let _server = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
     let blocked = scratch.path().join("occupied");
     std::fs::write(&blocked, "notreal").expect("the blocker was written");
     let (verdict, warned) = acted(

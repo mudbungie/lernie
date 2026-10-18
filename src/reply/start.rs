@@ -1,11 +1,11 @@
 //! **The start family's two receipts** (yog's `docs/REMOTE.md` §8.1, §9.8;
 //! yog's `docs/DESIGN.md` §3.4, §8.1) — the staged body, and the name the
-//! engine minted for what it started.
+//! server minted for what it started.
 //!
 //! Starting a conversation is **two acts, not one**. `prepare` stages the
 //! start — the seed, the workspace if it has to be founded, the ball rung's
 //! `bl` steps — and answers a [`Prepared`] body: the fire-time parameters, as
-//! the engine settled them. `prompt` hands that body straight back with a goal
+//! the server settled them. `prompt` hands that body straight back with a goal
 //! and fires the detached driver, answering the minted conversation name. So a
 //! seat has to hold a reply between two gestures, which is the one shape
 //! nothing else on this surface has.
@@ -47,7 +47,7 @@ const CONVERSATION: &str = "conversation";
 const WORKSPACE: &str = "workspace";
 const GOAL: &str = "goal";
 
-/// **A staged start**: what the fire will carry, as the engine settled it.
+/// **A staged start**: what the fire will carry, as the server settled it.
 ///
 /// It is deliberately *not* `Eq` — [`body`](Self::body) is arbitrary JSON, and
 /// the reply vocabulary gives up an equality nothing in this crate spends to
@@ -55,7 +55,7 @@ const GOAL: &str = "goal";
 #[derive(Debug, Clone, PartialEq)]
 pub struct Prepared {
     /// The workspace the start was staged in, **in the host's spelling** — it
-    /// came off an engine, and §8.2's mapping runs client→host at
+    /// came off a server, and §8.2's mapping runs client→host at
     /// [`crate::seat::route`] and nowhere else. So the fire is composed with
     /// this box's own name for that workspace, not with this one.
     pub workspace: String,

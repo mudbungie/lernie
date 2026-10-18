@@ -14,7 +14,7 @@ fn the_conversation_s_card_carries_its_facts() {
     let text = painted(&mut model);
     for word in [
         "port the paint probe",
-        "on home — (this box's own engine)",
+        "on home — (this box's own server)",
         "under 20260830T050000Z-root",
     ] {
         assert!(text.contains(word), "{word:?}:\n{text}");
@@ -23,7 +23,7 @@ fn the_conversation_s_card_carries_its_facts() {
 }
 
 /// **The seat's card** stands where nothing is selected: the version, each
-/// engine with what it holds, and the ways in — the conversation, the
+/// server with what it holds, and the ways in — the conversation, the
 /// model and the provider among them (bl-4e55).
 #[test]
 fn the_seat_s_card_stands_where_nothing_is_selected() {
@@ -31,11 +31,11 @@ fn the_seat_s_card_stands_where_nothing_is_selected() {
         conversation: None,
         ..seated()
     };
-    model.roster[0].walls[0].attention = 2;
+    model.roster[0].workspaces[0].attention = 2;
     let text = painted(&mut model);
     for word in [
         version().as_str(),
-        "(this box's own engine) — 1 workspace, 2 conversations, 2 waiting",
+        "(this box's own server) — 1 workspace, 2 conversations, 2 waiting",
         "Ctrl+X for a conversation",
         "Ctrl+O for the model",
         "/login for a provider",
@@ -51,7 +51,7 @@ fn the_seat_s_card_stands_where_nothing_is_selected() {
         conversation: None,
         ..seated()
     };
-    one.roster[0].walls[0].agents = 1;
+    one.roster[0].workspaces[0].agents = 1;
     let text = painted(&mut one);
     assert!(text.contains("1 workspace, 1 conversation"), "{text}");
 }

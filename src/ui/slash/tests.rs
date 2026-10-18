@@ -45,8 +45,8 @@ fn a_row_says_what_lernie_help_says() {
 }
 
 /// **What is offered follows what is on the glass**: the window's own verbs
-/// always, the wall's once aimed, the conversation's once selected, `plan`
-/// only in the start's mode, and the pin by the wall's rank.
+/// always, the workspace's once aimed, the conversation's once selected, `plan`
+/// only in the start's mode, and the pin by the workspace's rank.
 #[test]
 fn what_is_offered_follows_the_aim_and_the_selection() {
     let bare = words(&Model::default());
@@ -77,11 +77,11 @@ fn what_is_offered_follows_the_aim_and_the_selection() {
     assert!(words(&pinned()).contains(&crate::verbs::UNPIN.word));
 }
 
-/// **Only what the engine offers on the turn is listed** — `stop` and
+/// **Only what the server offers on the turn is listed** — `stop` and
 /// `interrupt` while it runs, `nudge` while it rests — and everything until
-/// the engine has answered.
+/// the server has answered.
 #[test]
-fn the_turn_s_verbs_follow_the_engine_s_offers() {
+fn the_turn_s_verbs_follow_the_server_s_offers() {
     let mut model = seated();
     let mut row = crate::test_support::window::panes::records::own_row();
     row.offers = vec![Offer::Nudge];
@@ -199,7 +199,7 @@ fn a_missing_or_wrong_word_fires_nothing_and_says_why() {
     model.conversation = Some("ghost".to_owned());
     assert!(
         wanting(&model, DELETE, "").is_some_and(|why| why.ends_with(" ghost")),
-        "a conversation the list does not carry is named by its id, as the engine names it"
+        "a conversation the list does not carry is named by its id, as the server names it"
     );
     model.conversation = None;
     assert_eq!(

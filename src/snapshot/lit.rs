@@ -34,7 +34,7 @@
 //! out differently with a pointer in it: the bar opens, a scrolling pane
 //! makes room for its bar, and a wrapped strip breaks on a different word.
 //! And the linger and the ease run on egui's clock,
-//! which is the wall's unless the input says otherwise — so every frame
+//! which is the workspace's unless the input says otherwise — so every frame
 //! here says otherwise, stepping the clock by more than the linger, and the
 //! frame the fills are read off is the settled one whatever the machine was
 //! doing.

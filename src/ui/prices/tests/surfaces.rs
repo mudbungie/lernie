@@ -5,9 +5,9 @@
 //! did not, and `at least` where some tokens no rate priced.
 
 use crate::reply::spend::Cost;
-use crate::test_support::window::{attempt, figure, notch, step, wall};
+use crate::test_support::window::{attempt, figure, notch, step, workspace};
 
-/// The engine's money, exact or a floor.
+/// The server's money, exact or a floor.
 fn cost(usd: &str, unpriced_tokens: u64) -> Cost {
     Cost {
         usd: usd.to_owned(),
@@ -59,11 +59,11 @@ fn a_candidate_s_attempt_says_its_money() {
     assert!(crate::ui::fleet::attempt(&row).contains(&format!("{counts} — at least $7.50")));
 }
 
-/// **The roster's ledger column** (§4.41): each wall's whole spend, after
+/// **The roster's ledger column** (§4.41): each workspace's whole spend, after
 /// its state and before the weak facts — and nothing where it is unpriced.
 #[test]
 fn the_roster_is_a_ledger() {
-    let mut row = wall("home");
+    let mut row = workspace("home");
     assert_eq!(
         crate::ui::roster::line(&row),
         "home  2 conversations  (named)"

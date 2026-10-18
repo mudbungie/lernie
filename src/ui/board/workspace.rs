@@ -1,35 +1,35 @@
-//! **The aimed wall's half of the ball pane** (bl-d2af): what this wall holds,
+//! **The aimed workspace's half of the ball pane** (bl-d2af): what this workspace holds,
 //! what each of them has cost, and the branch its `bl` verbs track on.
 //!
 //! Two ops, both naming a workspace, so both are the tuning pane's shape
 //! rather than the board's: they stand while this pane is open and are retired
 //! when the aim moves (`crate::ui::model::board`). It is a section of the
-//! board rather than a pane of its own because *the board* and *what this wall
+//! board rather than a pane of its own because *the board* and *what this workspace
 //! holds* are one question asked at two widths, and two panes would put them
 //! on two screens.
 //!
 //! **Its rows are where three of the pane's five acts hang** (bl-f7ae): every
 //! field an act on an existing ball carries — the project its verbs run in,
-//! the id, and the wall whose name they stamp — is on this section's own row
-//! or on the wall it is about, so the block a row opens ([`acts`]) derives
+//! the id, and the workspace whose name they stamp — is on this section's own row
+//! or on the workspace it is about, so the block a row opens ([`acts`]) derives
 //! nothing.
 //!
 //! **Every emptiness gets its own sentence**, which is the rule the records
-//! pane states and this section has four of: no wall aimed at, a wall not yet
-//! answered about, a wall that answered and holds nothing, and a wall whose
+//! pane states and this section has four of: no workspace aimed at, a workspace not yet
+//! answered about, a workspace that answered and holds nothing, and a workspace whose
 //! branch is the only thing that came back. Painting one sentence over all
-//! four would say *this wall holds nothing* about a wall nobody has asked.
+//! four would say *this workspace holds nothing* about a workspace nobody has asked.
 
 use crate::reply::balls::BoundBall;
 use crate::ui::{Model, theme};
 
 use super::acts;
 
-/// What it says with no wall aimed at.
+/// What it says with no workspace aimed at.
 pub const UNAIMED: &str = "aim at a workspace to see the balls it holds";
-/// What it says about a wall nobody has been answered about yet.
+/// What it says about a workspace nobody has been answered about yet.
 pub const NOT_ANSWERED: &str = "waiting to hear what this workspace holds";
-/// What it says about a wall that answered and holds none.
+/// What it says about a workspace that answered and holds none.
 pub const NOTHING: &str = "this workspace holds no balls";
 
 /// Paint the section, and take the clicks that open the authoring block on
@@ -51,8 +51,8 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
             tracking(branch),
         );
     }
-    // **Filing is offered whether or not the wall holds anything**, because a
-    // ball that does not exist yet is not one of this wall's rows: the wall is
+    // **Filing is offered whether or not the workspace holds anything**, because a
+    // ball that does not exist yet is not one of this workspace's rows: the workspace is
     // only what supplies the name it is stamped with.
     if theme::paint::button(ui, acts::FILE, true, acts::FILE_HELP).clicked() {
         model.begin_filing();
@@ -77,7 +77,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     }
 }
 
-/// **The branch this wall tracks its tasks on.** Every agent tracks in a task
+/// **The branch this workspace tracks its tasks on.** Every agent tracks in a task
 /// space of its own so two agents' churn never collides, and `balls/tasks` is
 /// the project's shared board — which is why the branch is worth a line: it is
 /// how an operator tells the one from the other.
@@ -85,8 +85,8 @@ pub fn tracking(branch: &str) -> String {
     format!("tracking tasks on {branch}")
 }
 
-/// **One ball this wall holds**: what it is, where its verbs run, and the name
-/// they stamp. The badge rides where the engine wrote one and is absent —
+/// **One ball this workspace holds**: what it is, where its verbs run, and the name
+/// they stamp. The badge rides where the server wrote one and is absent —
 /// never blank — where the state needs none.
 pub fn bound(row: &BoundBall) -> String {
     let mut said = vec![row.id.clone(), format!("[{}]", row.state)];

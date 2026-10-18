@@ -4,7 +4,7 @@
 //!
 //! # Two entries per call, and both are transitions
 //!
-//! The engine appends one entry as a call is dispatched (its name and its
+//! The server appends one entry as a call is dispatched (its name and its
 //! bounded input) and another when the capture lands (its exit code), because
 //! litany writes `input.json` and `output.json` at exactly those two moments —
 //! the pair of file existences *is* the window opening and closing. So the
@@ -25,7 +25,7 @@
 //! capability control's reason for parking the call. It is not a third file:
 //! a held invocation is stopped *before* the executor is entered, so litany
 //! lands neither `input.json` nor `output.json` and the two entries above say
-//! nothing at all — the engine reads the park off the conversation's own hold
+//! nothing at all — the server reads the park off the conversation's own hold
 //! mark instead. Its presence is the status, `exit_code`'s own discipline on
 //! the same entry, so a held call is never also an opening. The park is not
 //! terminal: when the operator answers it, the call runs and its opening and
@@ -36,7 +36,7 @@
 //!
 //! REMOTE §5.1 presents a loaded remote tool as `<client>_<tool>`, always and
 //! never only when ambiguous, so `box2_Bash` says the box as well as the tool.
-//! The engine does not split that composition back apart and neither does
+//! The server does not split that composition back apart and neither does
 //! this: the registry answers *where a call would route now*, which is a
 //! different question from where this one ran.
 
@@ -64,7 +64,7 @@ pub struct Window {
     /// opening landed in an earlier frame of the same read.
     pub tool: Option<String>,
     /// The call's input, already bounded and flattened to one line by the
-    /// engine (REMOTE §5.5) — this lane exists to be read *while* it streams,
+    /// server (REMOTE §5.5) — this lane exists to be read *while* it streams,
     /// and a whole file body is an ordinary write argument.
     pub input: Option<String>,
     /// **The status, by its presence.** Absent is a call still in flight.

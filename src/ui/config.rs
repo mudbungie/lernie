@@ -1,5 +1,5 @@
-//! **The config pane**: the files a wall's policy is written in, and the
-//! settings the engine reads out of them (yog's `docs/REMOTE.md` §9, §9.18;
+//! **The config pane**: the files a workspace's policy is written in, and the
+//! settings the server reads out of them (yog's `docs/REMOTE.md` §9, §9.18;
 //! PROTOCOL 13).
 //!
 //! # Two views of one read, never two reads
@@ -8,9 +8,9 @@
 //! bytes* (REMOTE §9.18), so the settings above the text and the text below it
 //! are one moment. A pane that asked twice would be painting two.
 //!
-//! # The judgement is the engine's and this pane never composes one
+//! # The judgement is the server's and this pane never composes one
 //!
-//! A setting's `fault` is the engine's own words about that value — the same
+//! A setting's `fault` is the server's own words about that value — the same
 //! call its pick gate makes — so what is painted red here is what the far end
 //! says is wrong, never what this end guessed. A file with no schema answers no
 //! settings at all, which is not an error: it is the raw-text destination doing
@@ -22,11 +22,11 @@
 //! `text` at all, so the editor is one field away — and the field was never the
 //! problem. Three of the five destinations name no workspace, and this seat's
 //! poster used to read *no workspace* as *every channel this box holds*, which
-//! would have written one operator's `cadence.yaml` onto every engine they are
+//! would have written one operator's `cadence.yaml` onto every server they are
 //! a client of. The fix was not a flag telling the poster not to fan: it was
 //! that the fan is what *addressed to no channel in particular* means, and a
-//! gesture about ONE engine says which — the way this pane's read already did
-//! (`crate::offframe::asker::wall`, DESIGN §4.30, bl-4855).
+//! gesture about ONE server says which — the way this pane's read already did
+//! (`crate::offframe::asker::workspace`, DESIGN §4.30, bl-4855).
 //!
 //! # The workflow destination is a box, because the box is the listing
 //!
@@ -39,9 +39,9 @@
 
 /// The box the new bytes are typed into, and the two controls it enables.
 mod edit;
-/// What a reviewer has staged for this wall's config, and the two verdicts.
+/// What a reviewer has staged for this workspace's config, and the two verdicts.
 pub mod proposals;
-/// The typed view of what the engine reads in those bytes.
+/// The typed view of what the server reads in those bytes.
 mod settings;
 
 use crate::reply::lineages::Lineage;
@@ -60,10 +60,10 @@ const NAME_WIDTH: f32 = 220.0;
 /// What it says before a file has been picked.
 pub const NOTHING_PICKED: &str = "pick a file to read";
 /// What picking a file does.
-pub const PICK_HELP: &str = "reads this settings file off the engine into the editor below";
-/// What it says for a wall nobody has been answered about yet.
+pub const PICK_HELP: &str = "reads this settings file off the server into the editor below";
+/// What it says for a workspace nobody has been answered about yet.
 pub const NOT_ANSWERED: &str = "waiting to hear which settings this workspace holds";
-/// What it says for a wall that answered and holds no lineage — a fact about
+/// What it says for a workspace that answered and holds no lineage — a fact about
 /// the workspace, and the one empty state here that is not a wait.
 pub const NO_LINEAGES: &str = "this workspace has no settings yet";
 /// What it says under a file that was asked for and has not answered.
@@ -77,9 +77,9 @@ pub const NO_SETTINGS: &str = "this file has no fields to edit one by one — ed
 /// Paint the pane and take the clicks on it. Answers whether there was one to
 /// paint, so the shell knows whether the conversation still stands.
 ///
-/// **The pane is about the aimed wall**, so it stands only where there is
+/// **The pane is about the aimed workspace**, so it stands only where there is
 /// one: it opens only on an aim and the aim is never withdrawn, and taking
-/// both here hands every reader below the wall rather than a second question.
+/// both here hands every reader below the workspace rather than a second question.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     let (Some(_), Some(aim)) = (&model.configuring, model.aim.clone()) else {
         return false;
@@ -99,8 +99,8 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     true
 }
 
-/// **What can be read**, in the order an operator meets them: the wall's own
-/// brazen file, the engine's two globals, then every path on every lineage.
+/// **What can be read**, in the order an operator meets them: the workspace's own
+/// brazen file, the server's two globals, then every path on every lineage.
 fn destinations(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
     ui.horizontal_wrapped(|ui| {
         for at in [
@@ -184,7 +184,7 @@ fn lineage(ui: &mut egui::Ui, model: &mut Model, row: &Lineage, workspace: &str)
 
 /// One control that points the pane at a file. **The one this seat is already
 /// reading shows as chosen** rather than being dropped from the row: the set
-/// of destinations is a fact about the wall, and hiding the one in force would
+/// of destinations is a fact about the workspace, and hiding the one in force would
 /// make the picker change shape under a click.
 fn pick(ui: &mut egui::Ui, model: &mut Model, at: &Where) {
     let chosen = model.configured().as_ref() == Some(at);

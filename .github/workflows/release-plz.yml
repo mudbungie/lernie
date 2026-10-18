@@ -17,8 +17,8 @@ name: Release-plz
 # none should be; release-plz performs the exchange itself, so
 # `rust-lang/crates-io-auth-action` must NOT also be added.
 #
-# The publisher was already registered, from the engine era, naming this
-# repository and this filename (bl-f468) — the engine's repository was renamed
+# The publisher was already registered, from the litany era, naming this
+# repository and this filename (bl-f468) — litany's repository was renamed
 # and this one took the name, so the repository half still matches. That is why
 # there is no registration step below and why this file arrived where it did:
 # the crate is set to accept trusted publishing ONLY, so a token `cargo publish`
@@ -69,7 +69,7 @@ name: Release-plz
 #     cannot stand in for it, and why it runs on a dispatch as well as a push.
 #
 # ---------------------------------------------------------------------------
-# THE PROTOCOL GATE — A SEAT DOES NOT PUBLISH AHEAD OF THE ENGINE (bl-52b5)
+# THE PROTOCOL GATE — A SEAT DOES NOT PUBLISH AHEAD OF THE SERVER (bl-52b5)
 #
 # yog mints the wire protocol version; this crate, the foot (`thrall`) and the
 # phone (`yog-android`) each VENDOR a copy of the constant, and the wire is
@@ -81,25 +81,25 @@ name: Release-plz
 #   1. yog publishing a bump ahead of its consumers — held at yog's own release
 #      pull request until this repository's `main`, thrall's and yog-android's
 #      carry the number. That is yog bl-bca2.
-#   2. THIS repository publishing a bump ahead of the engine — held by guard 3
+#   2. THIS repository publishing a bump ahead of the server — held by guard 3
 #      in `merge-release-pr`. thrall took that road first: 0.0.15 published
 #      PROTOCOL 16 while the newest published yog, 0.0.49, spoke 15, a
-#      component ahead of every engine a user can install.
+#      component ahead of every server a user can install.
 #
 # **The ordering the two gates produce**: the consumers' mains carry the number
 # first, then yog publishes, then the consumers publish. Landing the constant
 # on `main` is held by neither — it is what gate 1 waits for.
 #
-# **Strictly greater, not different.** A seat BEHIND the published engine is
+# **Strictly greater, not different.** A seat BEHIND the published server is
 # direction 1's defect and its release is the fix; holding that would hold the
-# remedy shut. The published engine is yog's newest `v<x.y.z>` tag, cut in the
+# remedy shut. The published server is yog's newest `v<x.y.z>` tag, cut in the
 # same act as the crates.io upload. The decision is
 # `scripts/protocol-gate.sh` — pure logic, no network — because this workflow
 # cannot run locally; `make protocol-gate` proves it both ways in `lint`.
 #
 # **A HELD RELEASE IS RE-JUDGED BY A DISPATCH OF THIS WORKFLOW** (bl-614a).
 # Guard 3 is the only guard whose answer can change with nothing in this
-# repository changing — it clears when the ENGINE publishes, an event this
+# repository changing — it clears when the SERVER publishes, an event this
 # repository never sees — so a hand needs a way to ask again, and
 # `workflow_dispatch` is it. It was nailed shut: measured 2026-09-06, yog
 # published v0.0.53 at PROTOCOL 18, this repository's release pull request for
@@ -388,7 +388,7 @@ jobs:
     # is skipped, because `release-plz-pr` is push-only. That closed the one
     # door a release held by guard 3 has (see A HELD RELEASE IS RE-JUDGED BY A
     # DISPATCH OF THIS WORKFLOW in the file header): the hold clears when the
-    # ENGINE publishes, which this repository never sees, so a hand must be able
+    # SERVER publishes, which this repository never sees, so a hand must be able
     # to ask again — and the step below already promises exactly that, "a later
     # push to main, or a re-run of this workflow, re-judges."
     #
@@ -440,10 +440,10 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GH_REPO: ${{ github.repository }}
-      # The engine whose published PROTOCOL a release here may not exceed
+      # The server whose published PROTOCOL a release here may not exceed
       # (guard 3, below). The one fact about GitHub in the whole check, so it is
       # named here and not in the script.
-      ENGINE_REPO: mudbungie/yog
+      SERVER_REPO: mudbungie/yog
     steps:
       # The ONE thing this job needs on disk: `scripts/protocol-gate.sh`, from
       # THIS repository's default branch — never from the pull request, whose
@@ -507,9 +507,9 @@ jobs:
           fi
 
           # GUARD 3: a release here may not speak a wire PROTOCOL that no
-          # PUBLISHED engine speaks (bl-52b5). yog's release job cuts the
+          # PUBLISHED server speaks (bl-52b5). yog's release job cuts the
           # `v<x.y.z>` tag in the same act as the crates.io upload, so that tag
-          # IS the published engine. Both fetches truncate first and are
+          # IS the published server. Both fetches truncate first and are
           # `|| true`: a missing tag, a tree that states no number or a network
           # fault reads as unreadable and HOLDS rather than merging. The verdict
           # is one line, printed whether it merges or holds.
@@ -523,16 +523,16 @@ jobs:
           # one home (bl-55b1): this used to name yog's Rust path here, and yog
           # moved it in a module split — so the fetch went on succeeding while
           # the read found nothing, and the hold would have become permanent at
-          # the next engine publish.
+          # the next server publish.
           gate="$(mktemp -d)"
           file="$(scripts/protocol-gate.sh file)"
           raw() {
             gh api "repos/$1/contents/$3?ref=$2" \
               -H "Accept: application/vnd.github.raw" >"$4" || true
           }
-          engine_tag="$(gh api "repos/$ENGINE_REPO/releases/latest" -q .tag_name || true)"
-          [ -z "$engine_tag" ] || \
-            raw "$ENGINE_REPO" "$engine_tag" "$file" "$gate/published"
+          server_tag="$(gh api "repos/$SERVER_REPO/releases/latest" -q .tag_name || true)"
+          [ -z "$server_tag" ] || \
+            raw "$SERVER_REPO" "$server_tag" "$file" "$gate/published"
           raw "$GH_REPO" main "$file" "$gate/candidate"
           gate_rc=0
           gate_says="$(scripts/protocol-gate.sh judge \

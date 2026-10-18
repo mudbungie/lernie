@@ -1,6 +1,6 @@
 //! **A call and its result, met on one row** (DESIGN §4.42, item 4; bl-eb4e).
 //!
-//! The engine writes a call and its result as two entries, and the live lane
+//! The server writes a call and its result as two entries, and the live lane
 //! carries them as two transitions; the operator reads them as one act —
 //! `bash("cargo test") ✔`, with what came back folded beneath it. So the
 //! pairing is a pass over the projection, keyed on the tool-use id both

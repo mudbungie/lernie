@@ -15,7 +15,7 @@ use crate::ui::composer;
 use crate::ui::theme::glyph;
 use serde_json::json;
 
-/// A model aimed at a wall with nothing selected on it — the start's own case.
+/// A model aimed at a workspace with nothing selected on it — the start's own case.
 fn unselected() -> Model {
     Model {
         conversation: None,
@@ -96,7 +96,7 @@ fn the_start_control_still_carries_both_of_its_acts() {
 
 /// **The seat is what states the born-on role** (REMOTE §9.21): pressed, the
 /// fire this window composes from the staging receipt carries `planner`;
-/// unpressed, the body is byte-identical to what the engine answered.
+/// unpressed, the body is byte-identical to what the server answered.
 #[test]
 fn the_plan_verb_writes_the_born_on_role_onto_the_fire_and_nothing_else_does() {
     for (planning, born) in [(false, None), (true, Some(json!("planner")))] {

@@ -1,15 +1,15 @@
 //! **The two items the rendezvous writes to the commons** (yog's
 //! `docs/REMOTE.md` §13.2), and the seal that makes them opaque bytes there
-//! — mirrored byte for byte from the engine's `rendezvous::item`, which is
+//! — mirrored byte for byte from the server's `rendezvous::item`, which is
 //! the reference, and pinned to bytes it produced (`tests`).
 //!
-//! **Presence** is the engine's: the endpoints it punches from. The seat
+//! **Presence** is the server's: the endpoints it punches from. The seat
 //! reads it. **The call** is the seat's inbox item: the endpoints it punches
-//! from, and a nonce the engine remembers so one call draws one punch. The
+//! from, and a nonce the server remembers so one call draws one punch. The
 //! seat writes it. Both are sealed under the pairing's AEAD key before they
 //! are signed and filed, so a DHT node — or anyone walking the keyspace —
-//! learns neither that this is an engine nor where either end lives; and an
-//! item the engine cannot open never draws a SYN.
+//! learns neither that this is a server nor where either end lives; and an
+//! item the server cannot open never draws a SYN.
 //!
 //! **The wire format is bytes, not JSON.** A sealed item is `nonce(12) ‖
 //! ChaCha20-Poly1305(plain) ‖ tag(16)`. The presence plaintext is one
@@ -22,7 +22,7 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 
 use ring::aead::{Aad, CHACHA20_POLY1305, LessSafeKey, Nonce, UnboundKey};
 
-/// The engine's published half: where it can be punched.
+/// The server's published half: where it can be punched.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Presence {
     pub endpoints: Vec<SocketAddr>,
@@ -36,13 +36,13 @@ pub struct Call {
 }
 
 impl Presence {
-    /// The seat's half: open what the engine published, or nothing.
+    /// The seat's half: open what the server published, or nothing.
     pub fn open(key: &[u8; 32], sealed: &[u8]) -> Option<Presence> {
         let (endpoints, rest) = decode(&open(key, sealed)?)?;
         rest.is_empty().then_some(Presence { endpoints })
     }
 
-    /// The engine's half — kept as the suite's stand-in engine.
+    /// The server's half — kept as the suite's stand-in server.
     #[cfg(test)]
     pub(crate) fn seal(&self, key: &[u8; 32]) -> Result<Vec<u8>, String> {
         seal(key, &encode(&self.endpoints))
@@ -57,7 +57,7 @@ impl Call {
         seal(key, &plain)
     }
 
-    /// The engine's half — kept as the suite's stand-in engine.
+    /// The server's half — kept as the suite's stand-in server.
     #[cfg(test)]
     pub(crate) fn open(key: &[u8; 32], sealed: &[u8]) -> Option<Call> {
         let plain = open(key, sealed)?;

@@ -23,7 +23,7 @@ pub const ENROLL: Verb = Verb {
     params: &["workspace", "name", "grade"],
     flags: &[],
     summary: "let a new box connect: its credentials as a code to scan, a line to paste or, if asked, four files",
-    detail: "The engine mints a leaf on its own CA, seats the client in that \
+    detail: "The server mints a leaf on its own CA, seats the client in that \
              workspace, answers the material and shreds the key. What comes \
              back is REMOTE §8.4's envelope — one line of compact JSON under \
              `{\"yog-enroll\":1,…}` — and there are three ways to take those \
@@ -33,7 +33,7 @@ pub const ENROLL: Verb = Verb {
              `client.pem`, `client.key`, `address`) into that directory for \
              you to carry to the machine they are for. `--at <host>:<port>` \
              states the route THAT box will dial, which is a fact about it and \
-             not about this engine: unstated is the engine's own address, \
+             not about this server: unstated is the server's own address, \
              which is right only for a device that shares this box's view of \
              it. YOU PICK ONE: with no \
              `--into` the symbol and the line are both printed and this seat \
@@ -58,12 +58,12 @@ pub const ADDRESS: &str = "address";
 /// The enrollment, on the same terms — from a name and a grade the operator
 /// chose, and, where they stated one, the route the new box will dial.
 ///
-/// **`address` is a fact about the DEVICE, not about this engine** (REMOTE
+/// **`address` is a fact about the DEVICE, not about this server** (REMOTE
 /// §8.4 as amended, yog bl-fec6): the box being enrolled is not the box the
-/// engine runs on, so the route it reaches that engine by need not be the one
-/// the engine wrote for itself — an emulator reaches its host through the
+/// server runs on, so the route it reaches that server by need not be the one
+/// the server wrote for itself — an emulator reaches its host through the
 /// emulator's alias, a phone over the LAN, an overlay peer by name. `None` is
-/// the engine's own `wire/address`.
+/// the server's own `wire/address`.
 pub fn enroll(workspace: String, name: String, grade: String, address: Option<String>) -> Value {
     ENROLL.stating(vec![workspace, name, grade], ADDRESS, address)
 }

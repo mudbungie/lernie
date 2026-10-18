@@ -7,15 +7,15 @@
 //! and until this shape existed nothing on this wire could: `lineages`
 //! enumerates `config/*` only and `governing` answers the commit a
 //! conversation resolves, never a candidate. So the veto lived at `litany
-//! proposal` on the engine's own box — an `ssh` and a container exec on a
-//! server install, which is the thing the §8.5 boundary exists to make
+//! proposal` on the server's own box — an `ssh` and a container exec on a
+//! containerised install, which is the thing the §8.5 boundary exists to make
 //! unnecessary.
 //!
 //! # `fresh` crosses rather than being inferred
 //!
 //! A seat could read freshness off an empty `lineages` and would be right,
 //! but that is a RULE, and REMOTE §9.4's discipline is that the wire states a
-//! derivation so no seat has to own one. Only the engine can be sure the two
+//! derivation so no seat has to own one. Only the server can be sure the two
 //! were read in one pass, which is what makes the pair honest — so `fresh` is
 //! carried as answered and this end holds no second opinion about it.
 //!
@@ -45,7 +45,7 @@ pub struct Proposal {
     pub lineages: Vec<String>,
     /// The commit the reviewer read and staged against.
     pub parent: String,
-    /// **Whether that parent is still a lineage head**, answered by the engine
+    /// **Whether that parent is still a lineage head**, answered by the server
     /// in the pass that read the lineages.
     pub fresh: bool,
     /// git's own `--shortstat` for the patch: how much it changes.
@@ -73,7 +73,7 @@ pub(crate) fn proposals(obj: &Map<String, Value>) -> Result<Proposals, String> {
 
 /// One lineage name off a row. The list is read STRICTLY — required, empty
 /// included — because empty is the stale case and therefore a fact, where an
-/// absent key is an engine that did not answer the question: collapsing the
+/// absent key is a server that did not answer the question: collapsing the
 /// two would read *"nobody has advanced this lineage"* as *"this patch is
 /// stale"*, which are opposite readings of one proposal.
 fn lineage(value: &Value) -> Result<String, String> {
@@ -97,7 +97,7 @@ fn row(value: &Value) -> Result<Proposal, String> {
 }
 
 impl Proposal {
-    /// **The word the row is in**, and it is the engine's own reading rather
+    /// **The word the row is in**, and it is the server's own reading rather
     /// than this seat's: `fresh` means the lineage still stands where the
     /// reviewer read it, so the patch can be taken as it is, and `stale` means
     /// somebody advanced it since — a patch written against a config that no
@@ -118,7 +118,7 @@ impl Proposal {
     }
 }
 
-/// The two words the engine's own help spells a proposal's standing in.
+/// The two words the server's own help spells a proposal's standing in.
 const FRESH: &str = "fresh";
 const STALE: &str = "stale";
 

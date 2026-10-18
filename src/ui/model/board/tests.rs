@@ -1,5 +1,5 @@
 //! The ball pane between frames: the door, the two unions it files into, and
-//! the wall half that goes with the wall.
+//! the workspace half that goes with the workspace.
 
 use crate::reply::{Read, Reply};
 use crate::test_support::window::{boarded, column, figure, own, seated};
@@ -42,12 +42,12 @@ fn opening_another_channel_wide_pane_stands_the_board_down() {
     assert!(model.trailing());
 }
 
-/// **The pane survives an aim and a selection and its WALL HALF does not.**
+/// **The pane survives an aim and a selection and its WORKSPACE HALF does not.**
 /// Two of its reads are about every channel, so nothing on the glass is their
-/// subject; two are about the wall, and the old wall's answer is not the new
-/// wall's.
+/// subject; two are about the workspace, and the old workspace's answer is not the new
+/// workspace's.
 #[test]
-fn an_aim_retires_the_wall_s_answers_and_leaves_the_pane_standing() {
+fn an_aim_retires_the_workspace_s_answers_and_leaves_the_pane_standing() {
     let mut model = boarded();
     model.select("c-2");
     assert!(
@@ -56,21 +56,21 @@ fn an_aim_retires_the_wall_s_answers_and_leaves_the_pane_standing() {
     );
     assert!(
         model.holding.is_some(),
-        "a selection retired the wall's balls"
+        "a selection retired the workspace's balls"
     );
     let aim = model.aim.clone().expect("the fixture is aimed");
-    // **Another wall**, because an aim that did not move retires nothing
-    // (`crate::ui::model::acts`): the one cursor crosses the aimed wall's own
+    // **Another workspace**, because an aim that did not move retires nothing
+    // (`crate::ui::model::acts`): the one cursor crosses the aimed workspace's own
     // row on its way to the conversations under it.
-    model.aim_at(&aim.channel, "another wall entirely");
+    model.aim_at(&aim.channel, "another workspace entirely");
     assert!(model.boarding(), "an aim retired a pane it is not about");
     assert!(
         model.holding.is_none(),
-        "the old wall's balls outlived the aim"
+        "the old workspace's balls outlived the aim"
     );
     assert!(
         model.marks.is_none(),
-        "the old wall's branch outlived the aim"
+        "the old workspace's branch outlived the aim"
     );
 }
 
@@ -144,11 +144,11 @@ fn a_binding_answer_replaces_its_own_channel_and_leaves_the_others_standing() {
     );
 }
 
-/// **The wall's two answers are filed whether or not the pane is open**, on
+/// **The workspace's two answers are filed whether or not the pane is open**, on
 /// the roles' terms: a frame arriving after it closed is the last one in
 /// flight rather than a thing to drop.
 #[test]
-fn the_wall_s_two_answers_are_filed_off_the_pane() {
+fn the_workspace_s_two_answers_are_filed_off_the_pane() {
     let mut model = seated();
     model.absorb(
         &own().channel,
@@ -170,7 +170,11 @@ fn the_wall_s_two_answers_are_filed_off_the_pane() {
         }),
     );
     assert_eq!(
-        model.holding.as_deref().expect("the wall answered").len(),
+        model
+            .holding
+            .as_deref()
+            .expect("the workspace answered")
+            .len(),
         1
     );
     assert_eq!(model.marks.as_deref(), Some("balls/tasks"));

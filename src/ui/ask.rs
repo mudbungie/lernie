@@ -22,13 +22,13 @@
 //! count on the rule is its door.
 //!
 //! **Which reaches `pass` is offered at is the held row's to say** (yog
-//! bl-0da6; bl-da16). The engine refuses every reach but the call for a call
+//! bl-0da6; bl-da16). The server refuses every reach but the call for a call
 //! it classified secret or destructive, and the seat used to offer all three
 //! regardless, so an operator who picked a wider one was refused and the call
 //! stayed parked. The classification and the reaches it permits ride the wire
 //! on the row (`Held::scopes`), because REMOTE's rule is that a seat never
 //! re-derives either from the reason's prose; a row that lists none is an
-//! older engine, and offers all three as before — the refusal still lands on
+//! older server, and offers all three as before — the refusal still lands on
 //! the rule, and the call-scoped rows always go through.
 //!
 //! **The read stands while the conversation asks.** The queue's read used to
@@ -106,7 +106,7 @@ impl Choice {
 /// **The choices a row offers**, in the order they are numbered: `seen`;
 /// where a call is parked, `pass` at each reach the row lists — in
 /// `SCOPES`' order, which is the wire's, and only the reaches this build can
-/// spell, so a word a newer engine adds is not offered rather than offered
+/// spell, so a word a newer server adds is not offered rather than offered
 /// unsaid — and all three where it lists none; then `refuse` and `hold` for
 /// the one call (bl-da16, the module's own doc).
 pub fn choices(row: &QueueRow) -> Vec<Choice> {
@@ -131,10 +131,10 @@ pub fn choices(row: &QueueRow) -> Vec<Choice> {
 /// queue has answered one — with the channel its section came down, which
 /// every answer is resolved within.
 ///
-/// Matched on the conversation's id **and on its wall resolving to the aim**
-/// (bl-666f): ids and wall names are each only unique within one engine, so
+/// Matched on the conversation's id **and on its workspace resolving to the aim**
+/// (bl-666f): ids and workspace names are each only unique within one server, so
 /// a row is the selected conversation's only where it is that id on the very
-/// wall, on the very channel, the operator is standing on.
+/// workspace, on the very channel, the operator is standing on.
 pub fn row(model: &Model) -> Option<(Channel, QueueRow)> {
     let id = model.conversation.as_ref()?;
     let aim = model.aim.as_ref()?;
@@ -144,7 +144,7 @@ pub fn row(model: &Model) -> Option<(Channel, QueueRow)> {
             .iter()
             .find(|row| {
                 row.agent == *id
-                    && model.wall(&section.channel, &row.workspace).as_ref() == Some(aim)
+                    && model.workspace(&section.channel, &row.workspace).as_ref() == Some(aim)
             })
             .map(|row| (section.channel.clone(), row.clone()))
     })
@@ -203,7 +203,7 @@ pub fn pick(model: &mut Model, n: usize) -> bool {
     true
 }
 
-/// **Why the engine this conversation is on will not dial**, where it will
+/// **Why the server this conversation is on will not dial**, where it will
 /// not (bl-8d6d; `crate::ui::status::diagnostics::down`): nothing can be
 /// answered meanwhile, so the box's choices go faint and take no click or
 /// key, and the field's hint is this sentence instead of the keys.

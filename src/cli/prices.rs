@@ -6,9 +6,9 @@
 //! not one is the typist's mistake, it earns the door's usage, and it costs no
 //! connection.
 //!
-//! **Both name the ONE engine they write** (bl-1bb9). A price row and a bound
-//! are world facts, one world per engine, so an operator typing one number
-//! means one engine — `lernie ack`'s fan was the wrong precedent, and it wrote
+//! **Both name the ONE server they write** (bl-1bb9). A price row and a bound
+//! are world facts, one world per server, so an operator typing one number
+//! means one server — `lernie ack`'s fan was the wrong precedent, and it wrote
 //! the same ceiling into every world this box is a client of. The channel is
 //! named by a trailing [`ON`], written rather than positional because the
 //! rates' own count already varies; where it is left off, the seat writes the

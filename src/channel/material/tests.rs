@@ -35,11 +35,11 @@ fn a_directory_that_is_not_there_reads_as_nothing_provisioned() {
 #[test]
 fn a_provisioned_directory_answers_its_material() {
     let tmp = Scratch::new();
-    provision(tmp.path(), "  engine.example:9000\n");
+    provision(tmp.path(), "  server.example:9000\n");
     let held = read_dir(tmp.path(), Whose::Elsewhere)
         .expect("readable")
         .expect("provisioned");
-    assert_eq!(held.address, "engine.example:9000");
+    assert_eq!(held.address, "server.example:9000");
     assert_eq!(held.anchors, tmp.path().join(ANCHORS));
     assert_eq!(held.chain, tmp.path().join(CHAIN));
     assert_eq!(held.key, tmp.path().join(KEY));
@@ -50,7 +50,7 @@ fn a_provisioned_directory_answers_its_material() {
 #[test]
 fn a_half_provisioned_directory_names_every_gap_at_once() {
     let tmp = Scratch::new();
-    provision(tmp.path(), "engine.example:9000");
+    provision(tmp.path(), "server.example:9000");
     std::fs::remove_file(tmp.path().join(KEY)).expect("rm");
     std::fs::remove_file(tmp.path().join(ADDRESS)).expect("rm");
     let refusal = read_dir(tmp.path(), Whose::Elsewhere).expect_err("refused");
@@ -64,7 +64,7 @@ fn a_half_provisioned_directory_names_every_gap_at_once() {
 #[test]
 fn every_refusal_says_the_material_arrives_by_hand() {
     let tmp = Scratch::new();
-    provision(tmp.path(), "engine.example:9000");
+    provision(tmp.path(), "server.example:9000");
     std::fs::remove_file(tmp.path().join(ANCHORS)).expect("rm");
     let refusal = read_dir(tmp.path(), Whose::Elsewhere).expect_err("refused");
     assert!(refusal.contains("the seat mints nothing"), "{refusal}");
@@ -96,7 +96,7 @@ fn an_address_that_says_nothing_refuses_however_it_says_it() {
     }
     // Unreadable takes the same branch: a directory where the file goes.
     let tmp = Scratch::new();
-    provision(tmp.path(), "engine.example:9000");
+    provision(tmp.path(), "server.example:9000");
     std::fs::remove_file(tmp.path().join(ADDRESS)).expect("rm");
     std::fs::create_dir(tmp.path().join(ADDRESS)).expect("mkdir");
     let refusal = read_dir(tmp.path(), Whose::Elsewhere).expect_err("refused");

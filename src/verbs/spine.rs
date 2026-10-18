@@ -70,7 +70,7 @@ pub const GOVERNING: Verb = Verb {
 /// The word an act's control names, which has no row to read it off.
 pub const FORK: &str = "fork";
 
-/// The fields the door carries beyond the wall and the parent.
+/// The fields the door carries beyond the workspace and the parent.
 const PARENT: &str = "parent";
 const FROM: &str = "from";
 const ROLE: &str = "role";

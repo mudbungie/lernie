@@ -2,14 +2,14 @@
 //! DESIGN §4.41).
 //!
 //! `price` and `ceiling` name no workspace — the table and the bound are world
-//! facts, one world per engine (yog DESIGN §4.1) — so there is nothing for
+//! facts, one world per server (yog DESIGN §4.1) — so there is nothing for
 //! §8.2's mapping to resolve, and the channel is named outright, exactly as
 //! the window's control names the section it fired from
 //! ([`crate::offframe::down`]). The name is read by [`super::dial`], the one
 //! place a channel's name opens it; this module adds no resolver of its own.
 //!
 //! **A write is not a read, and only a read fans.** An operator typing one
-//! number means one engine, so a box holding several channels refuses an act
+//! number means one server, so a box holding several channels refuses an act
 //! that names none, naming what it holds — and a box holding exactly one has
 //! one channel to write, which is the ordinary case and needs no name.
 
@@ -42,7 +42,7 @@ fn sole(data_root: &Path, envelope: &Value) -> Result<Channel, String> {
     match <[_; 1]>::try_from(fan::held(data_root)) {
         Ok([(_, channel)]) => channel,
         Err(held) => Err(format!(
-            "this box holds {} channels and `{}` writes one engine's world, so \
+            "this box holds {} channels and `{}` writes one server's world, so \
              name the one with `{ON} <channel>`: {}",
             held.len(),
             envelope::op(envelope),

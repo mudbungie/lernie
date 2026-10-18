@@ -42,7 +42,7 @@ fn a_work_diff_says_its_two_ends_its_totals_and_where_it_was_cut() {
             "src/a.rs  +3 -1",
             "assets/x.png  binary",
             // The cut, which was decoded and dropped before this ball.
-            "… the engine stopped listing here",
+            "… the server stopped listing here",
             // A `diff` row with no files is the attempt having written
             // nothing, and not a row with no listing.
             "nothing changed on this branch yet",
@@ -73,7 +73,7 @@ fn one_end_alone_names_no_comparison_and_a_binary_only_row_totals_nothing() {
 
 /// An empty listing is the fact, and the empty arm is this listing's own.
 #[test]
-fn a_wall_whose_agents_changed_nothing_says_so() {
+fn a_workspace_whose_agents_changed_nothing_says_so() {
     says(
         &json!({"ok": true, "kind": "work-diff", "rows": []}),
         &["nothing has changed"],

@@ -1,9 +1,9 @@
-//! **The box, and the two readings it takes against the engine's answer**
+//! **The box, and the two readings it takes against the server's answer**
 //! (bl-4855; DESIGN §4.30).
 //!
 //! Split from [`super`] at the design-time budget on the seam the two already
 //! have: [`super`] is which file the pane is pointed at and what it composes,
-//! and this is the one value that has to hold a conversation with the engine's
+//! and this is the one value that has to hold a conversation with the server's
 //! answer — seeded from it, settled against it, and answering the two
 //! questions the controls are enabled and worded by.
 //!
@@ -14,10 +14,10 @@
 //! that guard restated as a reading rather than as a refusal.
 
 /// **A config file being edited**: the bytes in the box, and the bytes the box
-/// last agreed with the engine about.
+/// last agreed with the server about.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Draft {
-    /// **What the box and the engine last agreed on.** Not a copy of either —
+    /// **What the box and the server last agreed on.** Not a copy of either —
     /// it is the anchor the two readings below are taken against, and it is
     /// the only way to tell *the operator has unsent edits* from *somebody
     /// else wrote this file*.
@@ -41,7 +41,7 @@ impl Draft {
     /// Called on every frame that paints the box. It moves nothing an operator
     /// typed — the branch is *the text already equals the answer* — and it is
     /// what makes a write the seat itself sent stop reading as a file that
-    /// moved: the engine answers the bytes we asserted, the box already holds
+    /// moved: the server answers the bytes we asserted, the box already holds
     /// them, and the anchor catches up in the same frame.
     pub fn settle(&mut self, answered: &str) {
         if self.text == answered {
@@ -50,7 +50,7 @@ impl Draft {
     }
 
     /// **Whether there is anything to write** — the enablement on the control,
-    /// and it is against the ENGINE's answer rather than the anchor: writing
+    /// and it is against the SERVER's answer rather than the anchor: writing
     /// the bytes the file already holds is a round trip that changes nothing.
     pub fn unwritten(&self, answered: &str) -> bool {
         self.text != answered

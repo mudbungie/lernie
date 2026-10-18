@@ -6,7 +6,7 @@ Description=hourly check for a new lernie release
 Documentation=https://github.com/mudbungie/lernie
 
 [Timer]
-# **A user timer on a seat, and deliberately no lingering.** The engine's
+# **A user timer on a seat, and deliberately no lingering.** The server's
 # deployment enables `loginctl enable-linger` because a server's unit must
 # outlive a logout; a seat is a window somebody launches while they are logged
 # in, so the user manager already exists exactly when the seat is used, and

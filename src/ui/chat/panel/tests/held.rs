@@ -1,6 +1,6 @@
 //! **The dial state on the glass** (bl-4cac): a channel that will not dial
 //! says why on the seat's card, and one not heard from yet says that. The
-//! rule counts no engines (§4.42, item 11): the dead one is the card's.
+//! rule counts no servers (§4.42, item 11): the dead one is the card's.
 
 use crate::paint_probe::{Seen, frame::Window};
 use crate::test_support::window::seated;
@@ -32,9 +32,9 @@ fn said_in(seen: &[Seen], ink: egui::Color32) -> String {
 
 /// **First run, nothing provisioned**: the card says the sentence
 /// `lernie entries` prints, whole at the desk and at the phone, instead of
-/// `0 walls, 0 conversations` — and the rule does not claim an engine.
+/// `0 workspaces, 0 conversations` — and the rule does not claim a server.
 #[test]
-fn an_unprovisioned_seat_says_why_and_claims_no_engine() {
+fn an_unprovisioned_seat_says_why_and_claims_no_server() {
     let scratch = crate::test_support::Scratch::new();
     let roster = crate::seat::channels(scratch.path());
     let Some(Held::Unheld(why)) = roster.first().map(|chunk| chunk.held.clone()) else {
@@ -53,22 +53,22 @@ fn an_unprovisioned_seat_says_why_and_claims_no_engine() {
             assert_eq!(run.shown, run.laid, "at {w}: {:?} is cut", run.text);
         }
         let all = said_in(&seen, theme::INK_WEAK);
-        assert!(!all.contains("0 walls"), "at {w}: {all:?}");
-        assert!(!seen.iter().any(|run| run.text == "1 engine"), "at {w}");
+        assert!(!all.contains("0 workspaces"), "at {w}: {all:?}");
+        assert!(!seen.iter().any(|run| run.text == "1 server"), "at {w}");
     }
 }
 
-/// **An engine that went down**: the card carries the wire's sentence, the
+/// **A server that went down**: the card carries the wire's sentence, the
 /// rule counts it unreached in red, and its stale asking is not a green
 /// count.
 #[test]
-fn a_dead_engine_is_red_on_the_card_and_the_rule_and_its_count_is_not_green() {
+fn a_dead_server_is_red_on_the_card_and_the_rule_and_its_count_is_not_green() {
     let mut model = Model {
         conversation: None,
         aim: None,
         ..seated()
     };
-    model.roster[0].walls[0].attention = 2;
+    model.roster[0].workspaces[0].attention = 2;
     model.unreachable(
         &model.roster[0].channel.clone(),
         "connection refused".to_owned(),
@@ -76,29 +76,29 @@ fn a_dead_engine_is_red_on_the_card_and_the_rule_and_its_count_is_not_green() {
     let seen = glass(&mut model, 1400.0, 900.0);
     let read = said_in(&seen, theme::accent(theme::State::Error));
     assert!(
-        read.contains("(this box's own engine) — cannot reach this engine: connection refused"),
+        read.contains("(this box's own server) — cannot reach this server: connection refused"),
         "{read:?}"
     );
     assert!(!seen.iter().any(|run| run.text.contains("waiting")));
 }
 
-/// **An engine not heard from yet** says so on the card in weak ink, and
+/// **A server not heard from yet** says so on the card in weak ink, and
 /// the rule counts it unreached without calling it broken.
 #[test]
-fn an_unheard_engine_says_it_is_not_answered_yet() {
+fn an_unheard_server_says_it_is_not_answered_yet() {
     let mut model = Model {
         conversation: None,
         aim: None,
         ..seated()
     };
     model.roster[0].held = Held::Unheard;
-    model.roster[0].walls.clear();
+    model.roster[0].workspaces.clear();
     let seen = glass(&mut model, 1400.0, 900.0);
     let weak = said_in(&seen, theme::INK_WEAK);
     let expected = format!(
-        "(this box's own engine) — {}",
+        "(this box's own server) — {}",
         crate::ui::roster::NOT_ANSWERED
     );
     assert!(weak.contains(&expected), "{weak:?}");
-    assert!(!seen.iter().any(|run| run.text.contains("of 1 engine")));
+    assert!(!seen.iter().any(|run| run.text.contains("of 1 server")));
 }

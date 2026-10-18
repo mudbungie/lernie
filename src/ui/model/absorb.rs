@@ -10,10 +10,10 @@
 //! unreadable frame becomes the [`Notice`](super::Notice) the shell paints
 //! *where that content would have been* — `crate::reply`'s rung 2 honoured on
 //! the glass rather than only in the type. The two read differently on purpose:
-//! a refusal is the engine's sentence and an unreadable frame is a statement
+//! a refusal is the server's sentence and an unreadable frame is a statement
 //! about this seat, of which only the second is fixed by an upgrade.
 //!
-//! **And a leg that reached no engine is neither** — [`unanswered`], split off
+//! **And a leg that reached no server is neither** — [`unanswered`], split off
 //! at the 300-line cap on exactly the seam this doc's own third paragraph
 //! already draws. What arrives is a frame; what does not arrive is a fact
 //! about a relationship or about an exchange, and the two halves change for
@@ -48,7 +48,7 @@ impl Model {
     /// An answer goes through [`absorb`](Self::absorb) like any frame. What
     /// differs is the two readings that are *not* an answer, and only for the
     /// start's own two acts, which are the one gesture this window holds
-    /// across a round trip: the engine's refusal retires the start into its
+    /// across a round trip: the server's refusal retires the start into its
     /// own sentence with the goal back in the box, and a frame this seat cannot
     /// read retires it into the bar's sentence the same way — because a start
     /// nothing will ever answer is a composer with no box. Every other op's
@@ -94,7 +94,7 @@ impl Model {
     /// File one answer. A roster answer replaces its **own channel's** chunk
     /// and leaves every other one standing, which is REMOTE §8.2's *"a refusal
     /// is one entry's, never the set's"* read from the other side: a box
-    /// serving three engines does not lose the two that are fine.
+    /// serving three servers does not lose the two that are fine.
     fn file(&mut self, channel: &Channel, reply: Reply) {
         match reply {
             Reply::Workspaces(view) => self.seat(channel, view),
@@ -155,7 +155,7 @@ impl Model {
             // replacing that channel's section (`doctor`; bl-9bbb).
             Reply::Doctor(rows) => self.diagnosed(channel, rows),
             // The trail, on the same terms — every action that crossed ONE
-            // engine's boundary, replacing that channel's section (`trail`).
+            // server's boundary, replacing that channel's section (`trail`).
             Reply::Ops(rows) => self.crossed(channel, rows),
             // The price table, on the same terms — and the receipt both money
             // acts answer with, so an act replaces the section it fired from.
@@ -170,7 +170,7 @@ impl Model {
             // closed is the last one in flight rather than a thing to drop.
             Reply::WorkspaceBalls(rows) => self.holding = Some(rows),
             // **The fleet pane's two reads**, on the roles' terms again — the
-            // aimed wall's attempts and what its agents changed (`fleet`;
+            // aimed workspace's attempts and what its agents changed (`fleet`;
             // bl-a43a).
             Reply::Science(rows) => self.scienced(rows),
             Reply::Work(rows) => self.worked(rows),
@@ -219,7 +219,7 @@ impl Model {
             Reply::Started { conversation } => self.started(conversation),
             // **The receipts that carry no fact of their own, and a captured
             // run that succeeded** (bl-9760, bl-7ec8). None is content, but
-            // each is the engine's answer to a gesture, and a window that
+            // each is the server's answer to a gesture, and a window that
             // cleared the slot on it could not tell an act that did nothing
             // from one that never fired. So each stands in the state slot as
             // the CLI's own sentence ([`crate::render::receipt`]) — one source
@@ -262,13 +262,13 @@ impl Model {
         let seated = Chunk {
             channel: channel.clone(),
             // **The answer spends whatever the section was standing on**: a
-            // channel that has answered is neither unheard nor unheld, and an
-            // engine that answered zero workspaces holds zero — which is a
+            // channel that has answered is neither unheard nor unheld, and a
+            // server that answered zero workspaces holds zero — which is a
             // different sentence from either (bl-08b6).
             held: Held::Heard,
             stale: view.stale,
             growth: view.growth,
-            walls: view.rows,
+            workspaces: view.rows,
         };
         match self
             .roster

@@ -106,7 +106,7 @@ fn a_destination_that_is_not_a_directory_says_so() {
     assert!(refused.contains("under"), "{refused}");
 }
 
-/// [`minted`] from an engine holding rendezvous material (REMOTE §8.4,
+/// [`minted`] from a server holding rendezvous material (REMOTE §8.4,
 /// edition 20).
 fn roving() -> Enrolled {
     Enrolled {
@@ -149,7 +149,7 @@ fn the_pair_lands_as_the_two_files_the_rendezvous_reader_reads() {
     let pairing = rendezvous::read_dir(&dir)
         .expect("it reads")
         .expect("it holds a pairing");
-    assert_eq!(pairing.engine, [0xab; 32]);
+    assert_eq!(pairing.server, [0xab; 32]);
     assert_eq!(pairing.salt, [0xcd; 32]);
     assert_eq!(
         std::fs::read_to_string(dir.join(PUBLIC)).expect(PUBLIC),
@@ -157,8 +157,8 @@ fn the_pair_lands_as_the_two_files_the_rendezvous_reader_reads() {
     );
 }
 
-/// **The modes the engine mints**: the public key is readable, the salt is
-/// not — it is shared with the engine and is material.
+/// **The modes the server mints**: the public key is readable, the salt is
+/// not — it is shared with the server and is material.
 #[cfg(unix)]
 #[test]
 fn the_public_key_is_open_and_the_salt_is_narrow() {

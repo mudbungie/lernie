@@ -14,7 +14,7 @@
 //! # The read stands, because the trail is what is happening
 //!
 //! The window's other two channel-wide panes post their reads once
-//! (`super::window`): a verb table is fixed for the life of an engine build
+//! (`super::window`): a verb table is fixed for the life of a server build
 //! and a search answers a needle somebody typed. A trail is neither. Every act
 //! this seat spends appends a row to it, and an alarm goes up and comes down
 //! under an operator who is looking at it — so it stands while the pane is

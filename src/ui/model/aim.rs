@@ -1,4 +1,4 @@
-//! **Which wall the window is aimed at**, and the two questions the window
+//! **Which workspace the window is aimed at**, and the two questions the window
 //! asks about a channel's name.
 //!
 //! Split from [`super`] at the design-time budget on the seam that module's
@@ -15,13 +15,13 @@
 //!
 //! **`Model::aimed_at` went with the middle column** (DESIGN §4.39, bl-b9a3).
 //! It asked whether a row was the aimed one, for a pane that painted rows
-//! about a wall it was not standing under; a wall's row now builds the [`Aim`]
+//! about a workspace it was not standing under; a workspace's row now builds the [`Aim`]
 //! it would compose and compares that, which is the same question asked with
 //! the value the click already needs.
 
 use super::Model;
 
-/// Which wall the window is aimed at: the channel it came down, and the address
+/// Which workspace the window is aimed at: the channel it came down, and the address
 /// a gesture must carry. **The address rather than the row's name**, because
 /// the two differ exactly where an entry renames — and this is the value every
 /// composed gesture is built from.
@@ -61,18 +61,18 @@ impl Model {
 }
 
 /// **A row the switcher's walk stands on without selecting** (DESIGN §4.39,
-/// §4.42 item 7): an engine's row, whose opening is an act, and the two begins
-/// — `+ new` under a wall and `+ new workspace` at the foot (bl-f991) — whose
+/// §4.42 item 7): a server's row, whose opening is an act, and the two begins
+/// — `+ new` under a workspace and `+ new workspace` at the foot (bl-f991) — whose
 /// firing is one too. Enter or Space fires each as its click does; the cursor
-/// on a wall or a conversation is the aim or the selection itself, so it has
+/// on a workspace or a conversation is the aim or the selection itself, so it has
 /// no arm here.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Stand {
-    /// An engine's row, by the name this box calls it.
-    Engine(String),
-    /// `+ new` under this wall.
+    /// A server's row, by the name this box calls it.
+    Server(String),
+    /// `+ new` under this workspace.
     Begin(Aim),
-    /// `+ new workspace`, under the engine this channel names.
+    /// `+ new workspace`, under the server this channel names.
     Found(String),
 }
 

@@ -32,49 +32,49 @@
 pub mod act;
 /// The ask: the selected conversation's decision above the prompt (§4.42).
 pub mod ask;
-/// The bar: the aimed wall's conversations down the left edge (§4.44).
+/// The bar: the aimed workspace's conversations down the left edge (§4.44).
 pub mod bar;
-/// The ball pane: the board, the bindings, and what the aimed wall holds.
+/// The ball pane: the board, the bindings, and what the aimed workspace holds.
 pub mod board;
 /// The chat pane: one conversation, entry by entry.
 pub mod chat;
 /// The place a trail is cut in — the second destructive act's own pane.
 pub mod clear;
-/// The clients pane: which machines may execute for a wall, and what they offer.
+/// The clients pane: which machines may execute for a workspace, and what they offer.
 pub mod clients;
-/// The commands pane: every op each engine has a word for, and what each does.
+/// The commands pane: every op each server has a word for, and what each does.
 pub mod commands;
 /// The composer: what an operator types, and the gesture it becomes.
 pub mod composer;
-/// The config pane: the files a wall's policy is written in, and their settings.
+/// The config pane: the files a workspace's policy is written in, and their settings.
 pub mod config;
-/// A conversation's row under its wall, and the words a row is made of.
+/// A conversation's row under its workspace, and the words a row is made of.
 pub mod convs;
-/// The live dock: what runs under the aimed wall, folded above the rule (§4.42).
+/// The live dock: what runs under the aimed workspace, folded above the rule (§4.42).
 pub mod dock;
 /// The doctor pane: whether this box is wired, one row per check.
 pub mod doctor;
 /// The enrollment pane: a name, a grade, and the symbol that comes back.
 pub mod enroll;
-/// The find pane: text found across everything these engines can see.
+/// The find pane: text found across everything these servers can see.
 pub mod find;
-/// The fleet pane: running a wall's balls, watching them, and what they did.
+/// The fleet pane: running a workspace's balls, watching them, and what they did.
 pub mod fleet;
 /// The keyboard: every act this window affords, without a pointer.
 pub mod keys;
-/// The login pane: what a wall can sign in to, and the act that signs it in.
+/// The login pane: what a workspace can sign in to, and the act that signs it in.
 pub mod login;
 /// What the window holds between frames, and how a reply becomes part of it.
 pub mod model;
 /// The overlay: the one frame every pane floats in (§4.42).
 pub mod overlay;
-/// The prices pane: each engine's price table, its ceiling, and the two acts.
+/// The prices pane: each server's price table, its ceiling, and the two acts.
 pub mod prices;
 /// The decision queue: everything waiting on the operator, anywhere.
 pub mod queue;
 /// The records pane: what a conversation's loop did, and what it touched.
 pub mod records;
-/// The window's one list: the engines, their walls, and the aimed wall's
+/// The window's one list: the servers, their workspaces, and the aimed workspace's
 /// conversations.
 pub mod roster;
 /// The settings pane: the knob table painted (§4.46 item 4).
@@ -87,13 +87,13 @@ pub mod slash;
 pub mod status;
 /// The switcher: the roster as an overlay (§4.42).
 pub mod switcher;
-/// The tab strip: the aimed wall's open conversations, over the transcript.
+/// The tab strip: the aimed workspace's open conversations, over the transcript.
 pub mod tabs;
 /// The ink a row is painted in.
 pub mod theme;
-/// The trail pane: every action that crossed an engine's boundary.
+/// The trail pane: every action that crossed a server's boundary.
 pub mod trail;
-/// The tuning pane: what a wall's roles are set to, and what sets them.
+/// The tuning pane: what a workspace's roles are set to, and what sets them.
 pub mod tuning;
 /// The unmaking pane: the seat's one destructive act, and the idiom it sets.
 pub mod unmake;
@@ -101,8 +101,8 @@ pub mod unmake;
 pub(crate) use model::lane;
 pub use model::{
     Aim, Armed, Asking, Authoring, Bindings, Channel, Choice, Chunk, Columns, Configuring,
-    Diagnosis, Dropup, Edit, Engines, Enrolling, Fill, Fleet, Forking, Grade, Held, Hits, Listing,
-    Login, Lookup, Model, Notice, Pages, Pick, Posted, PriceTable, Pricing, Proposing, Records,
-    Reload, Selector, Sent, Shown, Stand, Tab, Trail, Tuning, Unmaking, WORKER,
+    Diagnosis, Dropup, Edit, Enrolling, Fill, Fleet, Forking, Grade, Held, Hits, Listing, Login,
+    Lookup, Model, Notice, Pages, Pick, Posted, PriceTable, Pricing, Proposing, Records, Reload,
+    Selector, Sent, Servers, Shown, Stand, Tab, Trail, Tuning, Unmaking, WORKER,
 };
 pub use shell::render;

@@ -17,11 +17,11 @@ fn a_shut_pane_paints_nothing_and_reports_it() {
     assert!(!painted.contains(HEADING), "{painted}");
 }
 
-/// **Three states, and the first two are different sentences.** A wall nobody
-/// has been answered about is not a wall that holds no registration — and the
+/// **Three states, and the first two are different sentences.** A workspace nobody
+/// has been answered about is not a workspace that holds no registration — and the
 /// second says whose act would change it, because it is not one from here.
 #[test]
-fn an_unanswered_wall_and_a_wall_with_no_machine_say_different_things() {
+fn an_unanswered_workspace_and_a_workspace_with_no_machine_say_different_things() {
     for (rows, expected) in [
         (None, NOT_ANSWERED.to_owned()),
         (Some(Vec::new()), NONE_REGISTERED.to_owned()),
@@ -40,7 +40,7 @@ fn an_unanswered_wall_and_a_wall_with_no_machine_say_different_things() {
 }
 
 /// **Both lifetimes are on the row, and both are said.** Presence is true only
-/// at the moment the engine answered; the advertised set stands whether or not
+/// at the moment the server answered; the advertised set stands whether or not
 /// the machine is connected — so a row reads *not connected* beside a full set
 /// as the ordinary thing.
 #[test]

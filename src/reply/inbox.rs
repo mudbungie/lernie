@@ -9,7 +9,7 @@
 //! Upstream: *"a file without a well-formed `---` frontmatter block renders as
 //! a raw body with every field absent, so a half-written or hand-edited
 //! deposit never becomes an error."* So a [`Deposit`] with nothing but a body
-//! is not a malformed answer — it is the engine reporting what the file
+//! is not a malformed answer — it is the server reporting what the file
 //! actually stated. And [`Row::raw`] rides beside it because *"the parsed view
 //! drops the envelope"*: without the bytes, a hand-edited deposit would be
 //! unreachable rather than merely unrendered.
@@ -44,7 +44,7 @@ pub struct Row {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Deposit {
     /// Who sent it — the framing sender, which is the origin token the
-    /// engine's own inbox scan addresses by.
+    /// server's own inbox scan addresses by.
     pub from: Option<String>,
     /// **That sender's display name**, present exactly when the sender is an
     /// agent wearing one (REMOTE §9.21, PROTOCOL 17) — the transcript's
@@ -54,7 +54,7 @@ pub struct Deposit {
     /// When it was deposited.
     pub deposited_at: Option<String>,
     /// **How the sending agent ended**, on a result message — its epitaph,
-    /// carried verbatim ([`super`]'s rung 3), because the engine passes a word
+    /// carried verbatim ([`super`]'s rung 3), because the server passes a word
     /// it does not know through rather than refusing one.
     pub epitaph: Option<String>,
     /// The commit it ended at, beside that epitaph.

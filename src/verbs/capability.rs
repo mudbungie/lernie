@@ -32,7 +32,7 @@
 //! conversation parked at a held call is released by answering that call"*.
 //!
 //! **Neither of the two can be refused, and that is why both are always
-//! offered.** A floor is a row appended to the engine's trail and the reply is
+//! offered.** A floor is a row appended to the server's trail and the reply is
 //! re-derived from that trail afterwards, so `restore` on a conversation that
 //! was never floored is not an error and `restore` under a still-floored
 //! ancestor leaves the floor standing and SAYS so. There is no rank to read

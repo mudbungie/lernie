@@ -39,12 +39,12 @@ fn selecting_another_conversation_retires_the_pane_and_its_answers() {
     assert!(model.records.steps.is_some(), "a close keeps the answers");
 }
 
-/// Aiming at another wall retires everything under the old one, the records
-/// included — they hang off a conversation the new wall does not hold.
+/// Aiming at another workspace retires everything under the old one, the records
+/// included — they hang off a conversation the new workspace does not hold.
 #[test]
 fn aiming_elsewhere_retires_the_records_too() {
     let mut model = recorded();
-    model.aim_at("(this box's own engine)", "elsewhere");
+    model.aim_at("(this box's own server)", "elsewhere");
     assert!(!model.showing(crate::ui::Listing::Records));
     assert_eq!(model.records.steps, None);
     assert_eq!(model.records.files, None);

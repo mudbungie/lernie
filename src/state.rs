@@ -22,7 +22,7 @@
 //! # The standing set is a QUERY, never stored
 //!
 //! [`Standing::of`] derives what to ask from the model: every channel's roster,
-//! the aimed wall's conversations, the selected conversation's transcript. So
+//! the aimed workspace's conversations, the selected conversation's transcript. So
 //! there is nothing to invalidate and nothing that can disagree with the focus
 //! — a click changes the model, and what is asked next follows from it.
 
@@ -208,10 +208,10 @@ impl Link {
 /// tenant of this file, and the runtime half of yog's `docs/REMOTE.md` §8's
 /// `:0` discipline: never disk. A punched line is held between asks, the
 /// presence a landed call answered to is re-called without reading it again
-/// (yog bl-278f), the punch port is bound once so the engine's peer sees one
+/// (yog bl-278f), the punch port is bound once so the server's peer sees one
 /// port, and the inbox sequence rises across calls. Keyed by the entry's
 /// directory, because entries share nothing (§4.6): what worked for one
-/// engine says nothing about another.
+/// server says nothing about another.
 ///
 /// It is here rather than in the channel because a channel is opened per
 /// gesture and the four off-frame threads each open their own — the fact
@@ -222,7 +222,7 @@ impl Link {
 pub(crate) struct Worked {
     /// Punched lines kept between asks, newest last.
     pub(crate) held: Vec<Held>,
-    /// The cached presence: the engine's endpoints at its punch port, as the
+    /// The cached presence: the server's endpoints at its punch port, as the
     /// last call that LANDED found them. A call that expires clears it.
     pub(crate) endpoints: Vec<SocketAddr>,
     /// Where the commons last saw this end, for a re-call that writes first.

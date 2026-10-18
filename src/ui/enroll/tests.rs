@@ -1,4 +1,4 @@
-//! **The enrollment pane, before the engine answers**: the control that opens
+//! **The enrollment pane, before the server answers**: the control that opens
 //! it, the form, and the gesture it composes.
 //!
 //! Split from [`shown`] on the seam the pane itself has — the form and the
@@ -23,7 +23,7 @@ use crate::ui::{Enrolling, Grade, Model, theme};
 /// mints the pair `(client, workspace)`, and the workspace is exactly what an
 /// aim is.
 #[test]
-fn the_roster_offers_the_control_only_on_the_aimed_wall() {
+fn the_roster_offers_the_control_only_on_the_aimed_workspace() {
     let offered = |model: &Model| {
         crate::ui::slash::rows(model)
             .iter()
@@ -56,9 +56,9 @@ fn an_enrollment_cannot_be_opened_with_nothing_aimed_at() {
 }
 
 /// **The form asks for the two things only an operator can supply**, and names
-/// the wall it is enrolling into so the act is never aimed by memory.
+/// the workspace it is enrolling into so the act is never aimed by memory.
 #[test]
-fn the_form_asks_for_a_name_and_a_grade_and_names_the_wall() {
+fn the_form_asks_for_a_name_and_a_grade_and_names_the_workspace() {
     let mut model = opened();
     let glass = painted(&mut model);
     for word in [HEADING, NAME_HINT, SEND, CLOSE, "home"] {
@@ -107,7 +107,7 @@ fn an_unnamed_enrollment_composes_no_gesture() {
 }
 
 /// **The gesture is the verb table's own row**, trimmed and addressed at the
-/// aimed wall — so a click and `lernie enroll` compose one object.
+/// aimed workspace — so a click and `lernie enroll` compose one object.
 #[test]
 fn the_composed_gesture_is_the_row_the_command_line_spends() {
     let mut model = opened();
@@ -249,5 +249,5 @@ fn the_grades_stand_one_row_per_line_and_a_click_on_one_chooses_it() {
 mod fixtures;
 /// What makes it a modal: Escape closes it, and nothing live paints under it.
 mod modal;
-/// The half after the engine answers: the picture, the forgetting, the geometry.
+/// The half after the server answers: the picture, the forgetting, the geometry.
 mod shown;

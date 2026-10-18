@@ -1,5 +1,5 @@
 //! **The place a trail is cut in** (bl-b8f7; DESIGN §4.20's idiom, §4.35's
-//! reading of it): the engines it would cut, the way out, and the act.
+//! reading of it): the servers it would cut, the way out, and the act.
 //!
 //! # It is an unmaking, so it is a PLACE
 //!
@@ -21,7 +21,7 @@
 //! the envelope is `{"op": "clear-trail"}` and nothing else — and that same
 //! section rules that *"the seat reads which of the two a `typed` is off the
 //! wire's own grammar and invents no policy"*. A box this seat invented would
-//! be an arming the engine does not have, on a act it does not gate.
+//! be an arming the server does not have, on a act it does not gate.
 //!
 //! So what the arming was FOR is bought a different way, and the pane is the
 //! purchase: the subject is stated before the act is offered — every channel
@@ -31,11 +31,11 @@
 //! # The fan is the right reading, said in words
 //!
 //! `clear-trail` names no workspace, so the poster fans it and one gesture
-//! cuts the trail of every engine. That is not a shape to work around: the
+//! cuts the trail of every server. That is not a shape to work around: the
 //! pane above it *is* the union across channels, and there is no seam in
 //! `crate::ui::Posted` for a channel because the envelope's own workspace
 //! field is this seat's one addressing table (`crate::envelope`). What the
-//! seat owes is saying so, which is why this pane lists the engines by name
+//! seat owes is saying so, which is why this pane lists the servers by name
 //! rather than counting them.
 
 use crate::ui::{Model, theme};
@@ -50,14 +50,14 @@ pub const CLOSE: &str = "keep them";
 pub const CONFIRM: &str = "cut them now";
 /// What the confirm does.
 pub const CONFIRM_HELP: &str =
-    "cuts the trail on every engine this box reaches; nothing brings it back";
+    "cuts the trail on every server this box reaches; nothing brings it back";
 /// The pane's own heading.
 pub const HEADING: &str = "cutting every trail";
 /// What it says about what it would do, before it offers to do it.
 pub const WHAT: &str =
     "every row before the cut is gone; the cut itself is logged as the new trail's first row";
-/// What it says about how far the cut reaches. The engines are named under it.
-pub const REACH: &str = "this clears the trail on every engine this box reaches:";
+/// What it says about how far the cut reaches. The servers are named under it.
+pub const REACH: &str = "this clears the trail on every server this box reaches:";
 
 /// Paint the pane and take the clicks on it. Answers whether there was one to
 /// paint, so the shell knows whether the conversation still stands.

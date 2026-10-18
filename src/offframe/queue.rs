@@ -3,7 +3,7 @@
 //!
 //! `attention` is asked of every channel while the queue's pane is open, and
 //! while the selected conversation is asking, because the ask above the
-//! prompt is the queue's row for it (DESIGN §4.42, item 8). An engine can take
+//! prompt is the queue's row for it (DESIGN §4.42, item 8). A server can take
 //! half a minute to answer it. In the asker's serial pass that half minute was
 //! paid by every read queued behind it — the trail, the board, the records
 //! and the selected conversation's transcript all said *waiting to hear* for

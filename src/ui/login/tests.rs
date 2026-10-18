@@ -20,10 +20,10 @@ fn a_shut_pane_paints_nothing_and_reports_it() {
     assert!(!painted.contains(HEADING), "{painted}");
 }
 
-/// **Three states, and the first two are different sentences.** A wall nobody
-/// has been answered about is not a wall that routes no provider.
+/// **Three states, and the first two are different sentences.** A workspace nobody
+/// has been answered about is not a workspace that routes no provider.
 #[test]
-fn an_unanswered_wall_and_a_wall_with_no_provider_say_different_things() {
+fn an_unanswered_workspace_and_a_workspace_with_no_provider_say_different_things() {
     for (providers, expected) in [
         (None, NOT_ANSWERED),
         (Some(Vec::new()), NO_PROVIDERS),
@@ -44,7 +44,7 @@ fn an_unanswered_wall_and_a_wall_with_no_provider_say_different_things() {
     }
 }
 
-/// One row states what the engine knows about its credential and what it takes,
+/// One row states what the server knows about its credential and what it takes,
 /// and offers both of the pane's controls.
 #[test]
 fn a_row_paints_its_credential_fact_and_offers_both_controls() {
@@ -63,7 +63,7 @@ fn a_row_paints_its_credential_fact_and_offers_both_controls() {
     }
 }
 
-/// **A blocked row says the engine's own reason and is not offered a sign-in.**
+/// **A blocked row says the server's own reason and is not offered a sign-in.**
 /// A control that fired an act the far end has already refused is a control
 /// that only looks actionable.
 #[test]
@@ -121,10 +121,10 @@ fn an_offering_is_painted_under_the_row_that_asked_for_it() {
     );
 }
 
-/// **A wall held elsewhere says so and states the loopback remedy**, off the
+/// **A workspace held elsewhere says so and states the loopback remedy**, off the
 /// channel stamp and with no address in either sentence.
 #[test]
-fn a_wall_held_elsewhere_says_where_the_sign_in_runs_and_states_the_remedy() {
+fn a_workspace_held_elsewhere_says_where_the_sign_in_runs_and_states_the_remedy() {
     let mut here = signing();
     let painted = pane(|ui| {
         render(ui, &mut here);

@@ -3,7 +3,7 @@
 //!
 //! Split from [`super`] at the 300-line cap on the seam that module's own doc
 //! draws: [`super`] is *the window in the shapes it takes* — nothing dialled,
-//! seated, at a wall with nothing selected, a wall pinned — and this is *the
+//! seated, at a workspace with nothing selected, a workspace pinned — and this is *the
 //! window with a pane covering it*. The first is closed; the second grows once
 //! per pane, which is why it is the half that had to move.
 //!
@@ -80,7 +80,7 @@ pub(super) fn trail() -> World {
 
 /// **The window with the ball pane open and answered** (bl-d2af) — the only
 /// screen a board row's sentences, a loop's line, a binding row and the aimed
-/// wall's own balls are on.
+/// workspace's own balls are on.
 ///
 /// It is answered, and answered on BOTH its widths, for the reason every other
 /// pane's world is: what a world exists to photograph is every sentence the
@@ -108,7 +108,7 @@ pub(super) fn ball_filing() -> World {
     }
 }
 
-/// **The window with that block open on a ball the wall holds** — the only
+/// **The window with that block open on a ball the workspace holds** — the only
 /// screen `update`, `release` and `close` are on.
 ///
 /// It is photographed **armed**, which is the opposite of the unmaking world's

@@ -27,10 +27,10 @@ fn a_binding_row_says_which_ball_is_held_by_whom_and_where() {
 }
 
 /// **Three absences, three readings.** A ball nobody holds has no claimant and
-/// no wall, and a ball whose title the store could not read has none — each a
+/// no workspace, and a ball whose title the store could not read has none — each a
 /// different claim from an empty string.
 #[test]
-fn an_unheld_binding_names_no_claimant_no_wall_and_may_name_no_title() {
+fn an_unheld_binding_names_no_claimant_no_workspace_and_may_name_no_title() {
     let read = row(&json!({ "ball_id": "bl-2", "project": "p", "state": "ready" }))
         .expect("a bare row reads");
     assert!(read.title.is_none());

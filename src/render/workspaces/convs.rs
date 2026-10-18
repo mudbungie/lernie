@@ -2,7 +2,7 @@
 //! listing has a RULE and not just a row shape (bl-96cd, bl-00f5).
 //!
 //! Split from [`super`] at the 300-line cap on the seam that module's own doc
-//! draws: it is *what a wall holds*, four reads of it, and this is the one
+//! draws: it is *what a workspace holds*, four reads of it, and this is the one
 //! that folds. They change for different reasons — a field added moves a row,
 //! and the fold moves only when what hangs under a conversation changes.
 
@@ -12,7 +12,7 @@ use super::super::parts::{
     age, brief, clause, line, line_over, listing, quoted, tally, things, when,
 };
 
-/// **One wall's conversations, folded to their roots** (bl-96cd, bl-00f5).
+/// **One workspace's conversations, folded to their roots** (bl-96cd, bl-00f5).
 ///
 /// # An index whose majority is machinery is an index people stop reading
 ///
@@ -74,7 +74,7 @@ pub(crate) fn conversations(rows: &[ConvRow]) -> String {
 
 /// **The roots, each with what hangs under it.**
 ///
-/// The order is the engine's — a root, then its descendants, deepest last
+/// The order is the server's — a root, then its descendants, deepest last
 /// (REMOTE §9.7's descent forest) — so one pass with no recursion and no
 /// second index is the whole of it.
 ///

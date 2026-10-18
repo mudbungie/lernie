@@ -105,7 +105,7 @@ fn rooted(act: impl FnOnce(&std::path::Path) -> Verdict) -> Verdict {
 /// **Open the window.**
 ///
 /// The seat's face, on the channels this box holds. It seeds the roster off the
-/// disk — which dials nothing, so a box with no engine up still paints what it
+/// disk — which dials nothing, so a box with no server up still paints what it
 /// has — and then runs the frame loop over `lernie::ui::render`.
 ///
 /// The three off-frame threads are started around it and stopped when it
@@ -127,7 +127,7 @@ fn window(root: &std::path::Path) -> Verdict {
     let mut model = Model {
         roster: lernie::seat::channels(root),
         aim: place.aim,
-        engines: place.engines,
+        servers: place.servers,
         bar: lernie::ui::bar::Bar {
             pinned: place.pinned,
             ..Default::default()

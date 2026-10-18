@@ -34,10 +34,10 @@ fn a_row_carries_its_name_its_credential_fact_and_what_it_takes() {
 }
 
 /// **A block is a sentence, and its absence is the whole of *this row is
-/// signable*.** The seat never composes either — the engine knows which auth
+/// signable*.** The seat never composes either — the server knows which auth
 /// model a row declares and this end does not.
 #[test]
-fn a_blocked_row_carries_the_engines_own_reason_and_is_not_signable() {
+fn a_blocked_row_carries_the_servers_own_reason_and_is_not_signable() {
     let mut frame = open();
     frame["blocked"] = json!("no login flow");
     let read = row(&frame).expect("a blocked row");
@@ -124,11 +124,11 @@ fn the_frames_read_as_their_listings_and_one_bad_row_fails_it_all() {
     assert!(matches!(read(&frame), Read::Unreadable(_)), "one bad row");
 }
 
-/// **A row is bare where the engine's words say it needs a credential and
+/// **A row is bare where the server's words say it needs a credential and
 /// holds none** (bl-7a77): both endings, and never a stored, signed-in or
 /// keyless row, nor words this build cannot read.
 #[test]
-fn a_row_is_bare_only_where_the_engine_says_it_holds_no_credential() {
+fn a_row_is_bare_only_where_the_server_says_it_holds_no_credential() {
     let said = |fact: &str| ProviderRow {
         fact: fact.to_owned(),
         ..row(&open()).expect("a provider row")

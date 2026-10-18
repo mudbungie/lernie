@@ -38,7 +38,7 @@ mod exact;
 ///
 /// **It moves only on a BREAK** (yog's `docs/REMOTE.md` §3.2, yog bl-e598; here
 /// bl-aa01) — a field removed or re-typed, a frame's meaning changed under an
-/// unchanged spelling, a field the engine newly requires. Everything else is an
+/// unchanged spelling, a field the server newly requires. Everything else is an
 /// ADDITION and ships under the same major, stamped with an edition in
 /// `corpus/shapes.json` and carried by [`super::super::edition`]: a new field, a
 /// new word in a vocabulary, a new op, a new reply kind. A peer that has not
@@ -48,7 +48,7 @@ mod exact;
 /// **19 is the last bump of the old kind and the first of the new** (yog
 /// bl-e598; bl-aa01 here). Nothing on the wire changed shape at it — it is the
 /// discipline's own cut, and the floor it sets is 18: every field path stamped
-/// at or below 18 is required on every engine of this major, and everything
+/// at or below 18 is required on every server of this major, and everything
 /// stamped later is optional to read. What this seat paid for it is the whole
 /// grows-only contract rather than a field: the reader's four clauses stated
 /// where each lives (DESIGN §4.9), the projection and word-mutation replays
@@ -57,7 +57,7 @@ mod exact;
 /// moves rarely, *this build does not paint that kind* stops being a temporary
 /// state and becomes the ordinary one.
 ///
-/// **The transition's safety is the bump itself.** No engine speaking 19
+/// **The transition's safety is the bump itself.** No server speaking 19
 /// publishes until every consumer's `main` carries 19, which is gate 1 of the
 /// four-repository act (`AGENTS.md`), and the consumers land the number with
 /// their grows-only decoders in the same commit. After it, the two release

@@ -3,7 +3,7 @@
 //! ends derive from them.
 //!
 //! **Carried here by hand, like the four files beside it** (REMOTE §1.4). The
-//! engine's mint grows `rendezvous.key` — a seed it never shares — and
+//! server's mint grows `rendezvous.key` — a seed it never shares — and
 //! `pairing.salt`; what crosses into a client's entry is the seed's PUBLIC
 //! half and the salt, exactly as `ca.pem` crosses. The seat reads them and
 //! writes nothing. An entry holding neither is today's entry — an address and
@@ -12,13 +12,13 @@
 //!
 //! **One salt, four derivations, all HKDF-SHA256** over the pairing salt
 //! under the salt `yog rendezvous`, one info label each, 32 bytes out — and
-//! every byte here must equal the engine's, because the commons stores what
-//! the engine sealed and reads what this end seals. The DHT salt each item is
+//! every byte here must equal the server's, because the commons stores what
+//! the server sealed and reads what this end seals. The DHT salt each item is
 //! filed under (`presence salt`, `inbox salt`), the AEAD key both are sealed
 //! with (`seal key`), and an ed25519 SEED (`inbox key`) the inbox is signed
 //! under: a keypair *derived from the pairing salt*, so the seat mints no
-//! keypair of its own to write it and the engine holds no client key to poll
-//! it. The suite pins every derivation to bytes the engine's own code
+//! keypair of its own to write it and the server holds no client key to poll
+//! it. The suite pins every derivation to bytes the server's own code
 //! produced.
 
 use std::path::Path;
@@ -27,11 +27,11 @@ use ring::hkdf::{HKDF_SHA256, Salt};
 
 use crate::dht::Keypair;
 
-/// The engine's rendezvous PUBLIC key, 32 bytes of hex — presence is signed
+/// The server's rendezvous PUBLIC key, 32 bytes of hex — presence is signed
 /// under it, and it is what names the item on the commons.
 pub const PUBLIC: &str = "rendezvous.pub";
 /// The pairing salt, 32 bytes of hex — the secret this entry shares with
-/// that one engine. The engine's own file bears the same name.
+/// that one server. The server's own file bears the same name.
 pub const SALT: &str = "pairing.salt";
 
 /// The two sealed items, and the two halves the seat speaks.
@@ -42,8 +42,8 @@ pub mod punch;
 /// What the two files hold, decoded.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Pairing {
-    /// The engine's rendezvous public key.
-    pub engine: [u8; 32],
+    /// The server's rendezvous public key.
+    pub server: [u8; 32],
     /// The pairing salt.
     pub salt: [u8; 32],
 }
@@ -89,10 +89,10 @@ impl Pairing {
 pub fn read_dir(dir: &Path) -> Result<Option<Pairing>, String> {
     match (hex_file(&dir.join(PUBLIC)), hex_file(&dir.join(SALT))) {
         (None, None) => Ok(None),
-        (Some(engine), Some(salt)) => Ok(Some(Pairing { engine, salt })),
+        (Some(server), Some(salt)) => Ok(Some(Pairing { server, salt })),
         _ => Err(format!(
             "{} holds half its rendezvous material: {PUBLIC} and {SALT} are carried together \
-             — each 32 bytes of hex, the engine's public rendezvous key and the pairing salt \
+             — each 32 bytes of hex, the server's public rendezvous key and the pairing salt \
              its wire directory holds beside ca.pem",
             dir.display()
         )),

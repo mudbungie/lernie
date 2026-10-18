@@ -49,7 +49,7 @@
 //! nothing, which asks upstream to blank a field nobody touched. Same rule as
 //! the two above, third application.
 //!
-//! # Positional and context-free, unlike the engine's own line
+//! # Positional and context-free, unlike the server's own line
 //!
 //! yog's line reader is terse and **context-bearing**: `/message ship it`
 //! carries no address because the seat's focus supplies one. A one-shot process
@@ -94,9 +94,9 @@ pub mod doctor;
 pub mod doors;
 /// The one act whose subject is a box that has never connected.
 pub mod enroll;
-/// The fleet loop, the alignment monitor, and what a wall's agents changed.
+/// The fleet loop, the alignment monitor, and what a workspace's agents changed.
 pub mod fleet;
-/// The roster and one word's page, answered here rather than by an engine.
+/// The roster and one word's page, answered here rather than by a server.
 pub mod help;
 /// The sign-in family: the provider table, the offering, the act and its lane.
 pub mod login;
@@ -122,7 +122,7 @@ pub mod tuning;
 mod verb;
 /// The window's own reads — the two ops whose subject is every channel.
 pub mod window;
-/// The wall's own act — the one row whose product is that its subject is gone.
+/// The workspace's own act — the one row whose product is that its subject is gone.
 pub mod workspace;
 
 pub use balls::edit::{CREATE, UPDATE, create, update};

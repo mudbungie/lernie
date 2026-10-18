@@ -54,7 +54,7 @@ pub(super) fn result(content: &str, is_error: bool) -> Entry {
     })
 }
 
-/// The turn still open: the engine's streaming entry riding the response,
+/// The turn still open: the server's streaming entry riding the response,
 /// with `text` said so far.
 pub(super) fn running(text: &str) -> Entry {
     entry(EntryKind::Streaming {

@@ -73,7 +73,7 @@ pub fn run(args: Vec<String>) -> Decided {
         // keep.
         ["start", address, goal, tail @ ..] => start::start(address, goal, tail, form),
         // Ahead of the typed table, because the word spends its row MORE THAN
-        // ONCE (bl-f076): a read ends at the engine's step boundary and the
+        // ONCE (bl-f076): a read ends at the server's step boundary and the
         // question an operator asked is about the whole of the work. `follow`
         // stays a row of the gesture table — the window's own lane spends it,
         // and the corpus round-trips it — so a wrong arity still earns the
@@ -104,7 +104,7 @@ pub fn run(args: Vec<String>) -> Decided {
         ["ops", depth] => trail(depth, form),
         // **The doctor, with its workspace optional** (bl-9bbb): bare it fans,
         // because its subject is every channel's wiring; named it is routed,
-        // because the wall's two checks are that wall's engine's to answer.
+        // because the workspace's two checks are that workspace's server's to answer.
         ["doctor"] => Decided::Fanned(crate::verbs::doctor(None), form),
         ["doctor", workspace] => {
             Decided::Ask(crate::verbs::doctor(Some((*workspace).to_owned())), form)

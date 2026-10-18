@@ -154,7 +154,7 @@ fn the_waiting_count_is_the_queue_s_door_off_the_rule() {
     let asking = || {
         let mut model = crate::test_support::window::seated();
         model.conversation = None;
-        model.roster[0].walls[0].attention = 2;
+        model.roster[0].workspaces[0].attention = 2;
         model
     };
     let mut model = asking();
@@ -182,7 +182,7 @@ fn the_waiting_count_is_the_queue_s_door_off_the_rule() {
     assert_eq!(
         super::super::waiting::waiting(&down),
         0,
-        "a dead engine counts nothing"
+        "a dead server counts nothing"
     );
 }
 

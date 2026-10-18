@@ -1,10 +1,10 @@
-//! **What a wall's policy is written in**: its roles, its config lineages,
+//! **What a workspace's policy is written in**: its roles, its config lineages,
 //! one config file read against its schema, and the machines registered to
 //! execute for it.
 //!
 //! Split from [`super::records`] at the design-time budget on the seam the two
 //! already have: a record is one CONVERSATION's own ledger, and this is the
-//! WALL's standing arrangement. The first changes every step; the second only
+//! WORKSPACE's standing arrangement. The first changes every step; the second only
 //! when somebody edits a file.
 
 use crate::reply::clients::ClientRow;
@@ -15,7 +15,7 @@ use crate::reply::roles::RoleRow;
 
 use super::parts::{clause, line, line_over, listing, quoted, things, when};
 
-/// **What a wall's roles are set to.**
+/// **What a workspace's roles are set to.**
 pub(super) fn roles(rows: &[RoleRow]) -> String {
     let painted = rows
         .iter()
@@ -28,7 +28,7 @@ pub(super) fn roles(rows: &[RoleRow]) -> String {
             ])
         })
         .collect();
-    listing("roles", painted, "this wall sets no role")
+    listing("roles", painted, "this workspace sets no role")
 }
 
 /// **One config file's bytes, and the settings its schema found in them.**
@@ -52,7 +52,7 @@ pub(super) fn config(config: &Config) -> String {
     )
 }
 
-/// **The config lineages one wall holds.**
+/// **The config lineages one workspace holds.**
 pub(super) fn lineages(rows: &[Lineage]) -> String {
     let painted = rows
         .iter()
@@ -64,13 +64,13 @@ pub(super) fn lineages(rows: &[Lineage]) -> String {
             ])
         })
         .collect();
-    listing("lineages", painted, "this wall holds no lineage")
+    listing("lineages", painted, "this workspace holds no lineage")
 }
 
-/// **What a reviewer has staged for this wall's config** (REMOTE §9.22), and —
+/// **What a reviewer has staged for this workspace's config** (REMOTE §9.22), and —
 /// where the read named one — that proposal whole under the listing.
 ///
-/// The standing is the engine's word and not this seat's arithmetic: `stale`
+/// The standing is the server's word and not this seat's arithmetic: `stale`
 /// means somebody advanced the lineage after the reviewer read it, so the
 /// patch was written against a config that no longer governs anything and the
 /// answer is to reject it. The whole is the reviewer's message and diff,
@@ -90,7 +90,7 @@ pub(super) fn proposals(staged: &Proposals) -> String {
         })
         .collect();
     line_over(
-        &listing("proposals", painted, "nothing is staged for this wall"),
+        &listing("proposals", painted, "nothing is staged for this workspace"),
         staged.whole.clone(),
     )
 }

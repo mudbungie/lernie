@@ -17,23 +17,23 @@
 //! breaks.
 //!
 //! # Every line is a pure function of the row, and three of them are the
-//! engine's own words
+//! server's own words
 //!
 //! The strip's characteristics, the money and the attribution sentence are
-//! prose the engine assembled (`crate::reply::agent`), so they are repeated
+//! prose the server assembled (`crate::reply::agent`), so they are repeated
 //! rather than reassembled — and the context percent is its own unclamped
 //! rounding, painted as it came. What this file composes is only the joining.
 //!
-//! # The four gates are painted as what the ENGINE offers, not as enablement
+//! # The four gates are painted as what the SERVER offers, not as enablement
 //!
-//! `nudgeable`, `stoppable`, `stop_children` and `present` are the engine's
+//! `nudgeable`, `stoppable`, `stop_children` and `present` are the server's
 //! answer to *what may be done to this conversation*. They are painted as a
 //! sentence here — the one place in this window that says what the far end
 //! thinks is available in words — and since bl-f251 the composer's row reads
 //! the same answer to decide which of its acts to offer
 //! (`crate::ui::composer::offers`): never greyed, which would predict a
-//! refusal, but withheld on the engine's own word and offered whole until
-//! the engine has said anything.
+//! refusal, but withheld on the server's own word and offered whole until
+//! the server has said anything.
 
 use crate::reply::agent::{Agent, Fullness, Offer};
 use crate::reply::spend::Figure;
@@ -45,10 +45,10 @@ pub const HEAD: &str = "the conversation";
 pub const NOT_ANSWERED: &str = "waiting to hear what this conversation is";
 /// Said of a name no stored fact backs, so no peer can address it.
 pub const DISPLAY_ONLY: &str = "a display name only — nothing can be addressed by it";
-/// Said of a conversation the engine's snapshot does not carry.
-pub const ABSENT: &str = "the engine did not say";
-/// Said when the engine offers nothing on it.
-pub const NOTHING_OFFERED: &str = "the engine offers nothing on it";
+/// Said of a conversation the server's snapshot does not carry.
+pub const ABSENT: &str = "the server did not say";
+/// Said when the server offers nothing on it.
+pub const NOTHING_OFFERED: &str = "the server offers nothing on it";
 
 /// Paint the header, or the sentence for a conversation nobody has answered
 /// about yet.
@@ -88,7 +88,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         ui.label(costing(row));
     });
     // **The offers line and the one control that answers it share a row**
-    // (bl-3686): the sentence says what the engine is offering, and the
+    // (bl-3686): the sentence says what the server is offering, and the
     // cascade is the half of that sentence no other surface in this window
     // can fire. The pane is dense and a control laid out past the frame is
     // unreachable (`crate::snapshot::clipped`), so it wraps rather than
@@ -100,7 +100,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
 }
 
 /// What joins two facts on one line. A separator rather than a sentence: the
-/// facts are the engine's and the joining is this seat's.
+/// facts are the server's and the joining is this seat's.
 const JOIN: &str = "  ·  ";
 
 /// **The line that joins where it hangs, what it wears and who is sitting in
@@ -125,7 +125,7 @@ pub fn costing(row: &Agent) -> String {
 }
 
 /// **The line that joins what is happening with what may be done about it** —
-/// the strip's own characteristics where the engine composed any, and the
+/// the strip's own characteristics where the server composed any, and the
 /// gates beside them.
 pub fn doing(row: &Agent) -> String {
     match flighted(row) {
@@ -140,7 +140,7 @@ pub fn named(row: &Agent) -> String {
     format!("{} — {} — at {}", row.display, resting(row), tipped(row))
 }
 
-/// The tip, or the engine's own emptiness said as a word: a conversation the
+/// The tip, or the server's own emptiness said as a word: a conversation the
 /// snapshot does not carry has no tip, and an empty string in a sentence reads
 /// as a sentence that lost its ending.
 fn tipped(row: &Agent) -> String {
@@ -160,7 +160,7 @@ pub fn resting(row: &Agent) -> String {
     said
 }
 
-/// What is in flight on it, with the engine's own characteristics where it
+/// What is in flight on it, with the server's own characteristics where it
 /// composed any.
 pub fn flighted(row: &Agent) -> Option<String> {
     match (&row.flight, &row.strip) {
@@ -170,7 +170,7 @@ pub fn flighted(row: &Agent) -> Option<String> {
     }
 }
 
-/// The invocation parked at its capability boundary, said in the engine's
+/// The invocation parked at its capability boundary, said in the server's
 /// own sentence about it.
 pub fn parked(row: &Agent) -> Option<String> {
     let held = row.held.as_ref()?;
@@ -220,7 +220,7 @@ pub fn spent(figure: &Figure) -> String {
     }
 }
 
-/// How full the context is, in the engine's own percent.
+/// How full the context is, in the server's own percent.
 pub fn contextual(full: &Fullness) -> String {
     format!(
         "context {}% — {} of {} for {}",
@@ -228,7 +228,7 @@ pub fn contextual(full: &Fullness) -> String {
     )
 }
 
-/// **What the engine says may be done to it.** A sentence here, and the
+/// **What the server says may be done to it.** A sentence here, and the
 /// composer's row reads the same list to decide what it offers
 /// (`crate::ui::composer::offers`); a refusal is still the far end's to make.
 pub fn offered(row: &Agent) -> String {
@@ -239,7 +239,7 @@ pub fn offered(row: &Agent) -> String {
         return NOTHING_OFFERED.to_owned();
     }
     let words: Vec<&str> = row.offers.iter().copied().map(word).collect();
-    format!("the engine offers {}", words.join(", "))
+    format!("the server offers {}", words.join(", "))
 }
 
 /// One offer's word. The set is closed, so this is a total function and not a

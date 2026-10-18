@@ -1,9 +1,9 @@
 //! **The fleet pane's fixtures** (bl-a43a) — the thirteenth covering pane, and
-//! the fifth whose subject is the aimed wall.
+//! the fifth whose subject is the aimed workspace.
 //!
 //! Its own file rather than [`super::board`]'s neighbour, on the seam DESIGN
 //! draws: that pane is two widths and this one is one. What they share is the
-//! wall they are aimed at, which is [`super::super::seated`]'s and is imported
+//! workspace they are aimed at, which is [`super::super::seated`]'s and is imported
 //! from there rather than rebuilt.
 
 use crate::ui::Model;
@@ -113,7 +113,7 @@ pub(crate) fn fleeting() -> Model {
     Model {
         fleet: Some(crate::ui::Fleet {
             at: crate::ui::Aim {
-                channel: "(this box's own engine)".to_owned(),
+                channel: "(this box's own server)".to_owned(),
                 address: "home".to_owned(),
             },
             project: "lernie".to_owned(),

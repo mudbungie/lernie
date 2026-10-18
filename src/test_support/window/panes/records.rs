@@ -169,7 +169,7 @@ pub(crate) fn mark(lineage: Option<&str>) -> crate::reply::governing::Mark {
 /// bl-b52c): a quiet step and a wounded one, a walked worktree with work
 /// landing elsewhere, a spine with one operable notch and one unreachable
 /// one, a child hanging off it, and the config commit governing the whole
-/// under a workflow mark, with the wall's lineages to re-mark it to — every
+/// under a workflow mark, with the workspace's lineages to re-mark it to — every
 /// sentence the pane can say, on one screen.
 pub(crate) fn recorded() -> Model {
     let wounded = crate::reply::steps::StepRow {

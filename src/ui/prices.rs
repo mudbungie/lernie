@@ -1,4 +1,4 @@
-//! **What the world is charged**: each engine's price table, its ceiling, the
+//! **What the world is charged**: each server's price table, its ceiling, the
 //! spend against it, and the two acts that write them (REMOTE §9.23; DESIGN
 //! §4.41; bl-9111).
 //!
@@ -6,7 +6,7 @@
 //!
 //! `prices` names no workspace, so its control hangs off the roster beside
 //! the trail's and the verb table's, and the pane is one section per channel
-//! under the roster's own header — two engines are two tables, and a union
+//! under the roster's own header — two servers are two tables, and a union
 //! would say they were one. What the model holds and why the acts go down one
 //! channel is `crate::ui::model::pricing`'s.
 //!
@@ -28,7 +28,7 @@ pub const WORD: &str = "prices";
 /// The pane's own heading.
 pub const HEADING: &str = "what the models cost";
 /// What it says before any channel has answered.
-pub const NOT_ANSWERED: &str = "waiting to hear what these engines charge";
+pub const NOT_ANSWERED: &str = "waiting to hear what these servers charge";
 /// What a section with no row says — every count it reports is unpriced.
 pub const NO_ROWS: &str = "no model has a price yet, so nothing shows a cost — price one below";
 /// The act that writes the drafted row down one channel.
@@ -43,7 +43,7 @@ pub const LIFT: &str = "lift ceiling";
 pub const PRICE_HELP: &str = "records what this model costs, so its conversations show a spend";
 pub const UNPRICE_HELP: &str = "forgets this model's price; its spend shows as unknown again";
 pub const SET_HELP: &str =
-    "caps what a conversation may spend; the engine stops one that reaches it";
+    "caps what a conversation may spend; the server stops one that reaches it";
 pub const LIFT_HELP: &str = "removes the ceiling";
 
 /// Paint the pane and take the clicks on it. Answers whether there was one to

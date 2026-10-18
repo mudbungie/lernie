@@ -1,9 +1,9 @@
-//! **The balls themselves** — the whole world's binding table, one wall's own
-//! balls with what each has cost, and the branch a wall tracks its tasks on
+//! **The balls themselves** — the whole world's binding table, one workspace's own
+//! balls with what each has cost, and the branch a workspace tracks its tasks on
 //! (yog's `docs/REMOTE.md` §9.7; bl-d2af).
 //!
 //! Three readings and one subject, so they share a file: what the task store
-//! holds, seen from the box, from one wall, and from the branch a wall's `bl`
+//! holds, seen from the box, from one workspace, and from the branch a workspace's `bl`
 //! verbs are pointed at. The board's own fold is [`super::board`]'s — the
 //! richer answer to the same question, and the two are separate ops upstream.
 //!
@@ -15,7 +15,7 @@
 //! absences that are readings rather than tolerances, and each is a different
 //! claim from an empty string.
 //!
-//! # One wall's balls carry a figure and the world's binding table does not
+//! # One workspace's balls carry a figure and the world's binding table does not
 //!
 //! That is upstream's division rather than this seat's: `/balls` is the join
 //! and `workspace-balls` is *"the balls the focused workspace holds, with what
@@ -25,7 +25,7 @@
 //!
 //! # The marks answer is one field, and it is the branch re-read
 //!
-//! `marks` reads, or amends, the branch a wall tracks its tasks on. The reply
+//! `marks` reads, or amends, the branch a workspace tracks its tasks on. The reply
 //! is *the branch re-read afterwards, never an echo of what was asked* — which
 //! is why the read and the write answer with the same kind and this seat needs
 //! only the one reading.
@@ -37,7 +37,7 @@ use super::{fields, spend};
 
 /// The kind token the world's binding table answers to.
 pub(crate) const KIND: &str = "balls";
-/// The kind token one wall's own balls answer to.
+/// The kind token one workspace's own balls answer to.
 pub(crate) const HELD: &str = "workspace-balls";
 /// The kind token the tracking branch answers to.
 pub(crate) const MARKS: &str = "marks";
@@ -53,11 +53,11 @@ pub struct BallRow {
     pub title: Option<String>,
     /// Who holds it, where anybody does.
     pub claimant: Option<String>,
-    /// The wall its verbs run in, where one holds it.
+    /// The workspace its verbs run in, where one holds it.
     pub workspace: Option<String>,
 }
 
-/// **One ball a wall holds**, with what its conversations have spent on it.
+/// **One ball a workspace holds**, with what its conversations have spent on it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BoundBall {
     pub id: String,

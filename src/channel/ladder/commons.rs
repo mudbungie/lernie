@@ -7,7 +7,7 @@
 //!    still cached, write a fresh call and punch: one walk, not two.
 //! 4. **The full rendezvous** — read presence, then the same call and punch.
 //!
-//! There is no client-only re-punch: an engine behind a NAT holds no mapping
+//! There is no client-only re-punch: a server behind a NAT holds no mapping
 //! once its served stream ends and sends no SYN outside a call's window, so a
 //! dropped line is always a call. The cache holds only what a call that
 //! LANDED answered to, and a call that expires unanswered clears it, so the
@@ -53,7 +53,7 @@ pub(super) fn rungs(
     {
         return Ok(tcp);
     }
-    let got = dht.get(pairing.engine, pairing.presence_salt());
+    let got = dht.get(pairing.server, pairing.presence_salt());
     let Some(item) = got.map_err(|e| withheld(said, "presence not read", e))? else {
         said.push(say::no_presence());
         return Err("no presence is published under this pairing".to_owned());
@@ -67,7 +67,7 @@ pub(super) fn rungs(
         .ok_or_else(|| "nothing answered the punch inside its window".to_owned())
 }
 
-/// Write a call naming this box and punch toward `targets`, the engine's
+/// Write a call naming this box and punch toward `targets`, the server's
 /// endpoints at its punch port: the stream, `None` when the window passed
 /// unanswered (and the cache with it), or why the call was never written.
 fn call(

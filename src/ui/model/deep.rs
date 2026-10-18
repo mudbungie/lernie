@@ -24,7 +24,7 @@
 use super::Model;
 
 impl Model {
-    /// **Ask for one step's records**, or do nothing where there is no wall or
+    /// **Ask for one step's records**, or do nothing where there is no workspace or
     /// no conversation to address the question to — the two states the pane
     /// cannot paint the control in.
     ///

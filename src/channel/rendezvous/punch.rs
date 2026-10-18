@@ -4,23 +4,23 @@
 //! **Listen and connect from one port.** A [`Punch`] binds its port twice
 //! over — a listener per address family — and a punch toward a peer binds a
 //! *third* socket to the same port per target and connects from it.
-//! Whichever SYN lands first is the connection: the engine's on this
-//! listener, this end's on the engine's, or both crossing in the middle,
+//! Whichever SYN lands first is the connection: the server's on this
+//! listener, this end's on the server's, or both crossing in the middle,
 //! which is the simultaneous open a NAT pair needs (§13.8: a "one side just
 //! listens" shortcut has no chance). That takes `SO_REUSEADDR` and, on
 //! Linux, `SO_REUSEPORT` — the calls `socket2` exists to make, and the reason
 //! it is a dependency (§13.7 ruling 1, granted to this crate on 2026-09-23 on
-//! the same terms as the engine's).
+//! the same terms as the server's).
 //!
-//! **The seat keeps the FIRST stream and the engine serves every one.** Two
+//! **The seat keeps the FIRST stream and the server serves every one.** Two
 //! hosts that can both reach each other's listener form two connections, and
-//! which one the peer keeps is the peer's choice — so the engine serves all
+//! which one the peer keeps is the peer's choice — so the server serves all
 //! that land and lets the ones nobody speaks on die in the handshake, and
 //! this end takes the first and stops. Negotiating which to keep would be a
 //! protocol nobody needs.
 //!
 //! **This is the one listener a seat has, and it listens for nobody but the
-//! engine it just called.** A seat dials and is never dialled (DESIGN §3);
+//! server it just called.** A seat dials and is never dialled (DESIGN §3);
 //! the punch's listener accepts only during a punch this end started, every
 //! stream it hands back is verified by the same inner mTLS a direct dial
 //! runs, and nothing it accepts is served — it is spoken TO, as a client.
@@ -174,7 +174,7 @@ fn reuse_port(_socket: &Socket) -> std::io::Result<()> {
 /// 3849) do that as well as any real host would. Loopback never appears — a
 /// box with no route has no address to publish, and says so with an empty
 /// list. The observed endpoint, which a cellular seat's carrier mints and
-/// only the peer can read (§13.8), is not here: it is the engine's bl-efae
+/// only the peer can read (§13.8), is not here: it is the server's bl-efae
 /// on both ends.
 pub(crate) fn local_ips() -> Vec<IpAddr> {
     ["[2001:db8::1]:53", "192.0.2.1:53"]

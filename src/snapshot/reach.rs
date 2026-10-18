@@ -17,7 +17,7 @@
 //!
 //! **The premise has since come true** (bl-4a2c). [`crate::ui::tuning`] is a
 //! settings panel by any reading: a place you go to, act in, and come back
-//! from, holding what a wall's roles are set to. So the walk covers every
+//! from, holding what a workspace's roles are set to. So the walk covers every
 //! covering pane rather than the one — eleven of them since bl-a43a — and it is
 //! still two gestures each, in and back out, because that bound is what the
 //! assertion is, and it is the same bound whether the seat has one such pane or
@@ -30,10 +30,10 @@
 //!
 //! **The accordion moved nothing here** (bl-cff1, DESIGN §4.39). The walk's
 //! counts were re-read against it and stand: all eleven controls hang off the
-//! roster's own acts strip or off the aimed wall's band, the aimed wall is
-//! always under the OPEN engine, and a seat is never open over nothing — so
+//! roster's own acts strip or off the aimed workspace's band, the aimed workspace is
+//! always under the OPEN server, and a seat is never open over nothing — so
 //! every control the walk spends is on the glass for the same two gestures it
-//! always was. An engine row is not a leg: it opens a section of the one list
+//! always was. A server row is not a leg: it opens a section of the one list
 //! rather than a pane to come back from.
 //!
 //! **And neither did the fold** (bl-b9a3). The middle column went, so the

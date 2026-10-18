@@ -1,13 +1,13 @@
 //! **What the rendezvous path says on the seat's stderr** (yog's
-//! `docs/REMOTE.md` §13.4 "The operator's view of the loop", the engine's
+//! `docs/REMOTE.md` §13.4 "The operator's view of the loop", the server's
 //! bl-355c; DESIGN §4.40): one line per rung, punch and held-line event, in
-//! the engine's `yog: rendezvous: …` shape under this binary's name. Before
-//! these a live dial could be watched only from socket state on the engine.
+//! the server's `yog: rendezvous: …` shape under this binary's name. Before
+//! these a live dial could be watched only from socket state on the server.
 //!
 //! Every line is built here and nowhere else, so the one rule they share is
 //! enforced by the only file that could break it: **counts, sequence numbers,
 //! nonces and address families — never an address, a key, a salt or a sealed
-//! byte.** A DHT failure is said without its reason for the engine's reason:
+//! byte.** A DHT failure is said without its reason for the server's reason:
 //! the walk's refusals name the nodes it asked. The sentence the dial hands
 //! back to its caller is unchanged; this is the diagnosis beside it.
 //!
@@ -116,13 +116,13 @@ pub(crate) fn presence(seq: i64, endpoints: &[SocketAddr]) -> String {
 }
 
 /// Said before the window is spent when every address the call would carry
-/// is in an overlay or carrier-NAT range: an engine outside that network has
+/// is in an overlay or carrier-NAT range: a server outside that network has
 /// nothing it can punch toward (yog bl-f612 decides the policy; this says
 /// the fact).
 pub(crate) fn overlay(ips: &[IpAddr]) -> Option<String> {
     (!ips.is_empty() && ips.iter().all(overlaid)).then(|| {
         format!(
-            "{P} every address the call carries ({}) is in an overlay or carrier-NAT range — an engine outside that network cannot reach it",
+            "{P} every address the call carries ({}) is in an overlay or carrier-NAT range — a server outside that network cannot reach it",
             families(ips)
         )
     })

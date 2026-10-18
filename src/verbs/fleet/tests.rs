@@ -58,7 +58,7 @@ fn all_seven_address_a_workspace() {
     assert_eq!(
         crate::envelope::workspace(&fleet("ws".to_owned(), "p".to_owned(), 1)).as_deref(),
         Some("ws"),
-        "the door's envelope names its wall too"
+        "the door's envelope names its workspace too"
     );
 }
 

@@ -63,7 +63,7 @@ pub struct Governing {
     /// The resolved commit, whole — what a `git show` outside yog takes.
     pub oid: String,
     /// The same commit clipped, which is what a label wears. Carried rather
-    /// than derived: unlike a rail notch's, this one is the engine's own
+    /// than derived: unlike a rail notch's, this one is the server's own
     /// clipping of a commit it resolved, and both keys ride the wire.
     pub short_oid: String,
     /// Which lineage governs, and how.
@@ -85,7 +85,7 @@ pub struct Mark {
     pub holder: String,
     /// The marked commit, whole.
     pub oid: String,
-    /// The same commit, as the engine clipped it.
+    /// The same commit, as the server clipped it.
     pub short_oid: String,
     /// The `config/*` lineage standing exactly on that commit, or `None` once
     /// the lineage has advanced past it — an older commit pinned, not an error.
@@ -121,7 +121,7 @@ pub enum Governance {
 }
 
 impl Governing {
-    /// **The engine's own sentence about it**, in its two wordings — never a
+    /// **The server's own sentence about it**, in its two wordings — never a
     /// third composed here (REMOTE §9.7).
     pub fn label(&self) -> String {
         match &self.governance {

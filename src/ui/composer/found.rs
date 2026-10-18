@@ -3,8 +3,8 @@
 //! first conversation is for.
 //!
 //! It is the start's own box with one more word in front, and nothing else:
-//! a fresh engine holds no wall this client is registered in, so there is no
-//! wall to aim and no `+ new` to pick, and the engine's own remedy is *a
+//! a fresh server holds no workspace this client is registered in, so there is no
+//! workspace to aim and no `+ new` to pick, and the server's own remedy is *a
 //! workspace this client founds itself registers it too* (REMOTE §4). One
 //! line rather than a two-step because the start already reads one line and
 //! a held name between two Enters would be a second state to put down.

@@ -19,10 +19,10 @@ mod walk;
 
 use super::{moved, walk};
 use crate::paint_probe::frame::{Window, press};
-use crate::test_support::window::{conv, own, seated, wall};
+use crate::test_support::window::{conv, own, seated, workspace};
 use crate::ui::{Channel, Chunk, Model, Notice, roster};
 
-/// A window on two channels holding three addressable walls and one that no
+/// A window on two channels holding three addressable workspaces and one that no
 /// envelope can reach, with two conversations under the aimed one.
 pub(super) fn stocked() -> Model {
     Model {
@@ -34,7 +34,7 @@ pub(super) fn stocked() -> Model {
                     named_there: Some("theirs".to_owned()),
                     dials: None,
                 },
-                walls: vec![wall("theirs"), wall("not-ours")],
+                workspaces: vec![workspace("theirs"), workspace("not-ours")],
                 ..Chunk::default()
             },
         ],
@@ -66,7 +66,7 @@ fn escape_puts_the_notice_down() {
     let painted = typed(&mut model, &[egui::Key::Escape]);
     assert_eq!(model.notice, None);
     assert!(
-        !painted.contains("the engine refused"),
+        !painted.contains("the server refused"),
         "the bar is off the glass:\n{painted}"
     );
 }

@@ -6,7 +6,7 @@ use crate::test_support::window::{own, seated};
 use crate::ui::{Aim, Model};
 use serde_json::json;
 
-/// A staging receipt as an engine answers one.
+/// A staging receipt as a server answers one.
 fn staged(workspace: &str, goal: &str) -> crate::reply::Read {
     read(&json!({"ok": true, "kind": "prepared",
                  "prepared": {"workspace": workspace, "goal": goal}}))
@@ -110,7 +110,7 @@ fn a_body_nothing_staged_fires_on_its_own_terms_or_not_at_all() {
 }
 
 /// A receipt for a start this window did not fire still paints its name: it is
-/// the one fact the engine added, and a seat that dropped it would have started
+/// the one fact the server added, and a seat that dropped it would have started
 /// a conversation and said nothing about it.
 #[test]
 fn a_receipt_with_nothing_held_still_carries_the_minted_name() {
@@ -151,7 +151,7 @@ fn a_start_in_flight_reads_the_same_whichever_act_is_out() {
     assert!(staging.outstanding() && firing.outstanding());
 }
 
-/// The engine's sentence, refusing a fire (yog's `docs/DESIGN.md` §8.1).
+/// The server's sentence, refusing a fire (yog's `docs/DESIGN.md` §8.1).
 fn refused() -> crate::reply::Read {
     read(&json!({"ok": false, "error": "sign in first: no provider holds a credential"}))
 }
@@ -171,7 +171,7 @@ fn out(op: &str) -> Model {
     model
 }
 
-/// **A refused fire spends nothing** (bl-b180): the engine's refusal of either
+/// **A refused fire spends nothing** (bl-b180): the server's refusal of either
 /// act retires the start into its own sentence and hands the goal back to the
 /// box, and the bar says nothing — the sentence stands where the start's did.
 #[test]
@@ -275,7 +275,7 @@ fn an_unreadable_receipt_or_none_at_all_takes_the_start_back() {
 }
 
 /// **The refund never overwrites a draft typed elsewhere.** The composer is one
-/// box with two subjects, so a deposit drafted on another wall while the start
+/// box with two subjects, so a deposit drafted on another workspace while the start
 /// was out is the operator's newer text and is kept.
 #[test]
 fn the_refund_never_overwrites_a_draft_typed_elsewhere() {

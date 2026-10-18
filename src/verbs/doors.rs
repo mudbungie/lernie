@@ -14,7 +14,7 @@
 //! <verb>` answered a page for seven, and the other four were refused with
 //! *"no verb named `ask`"* — a sentence that is false in the only sense the
 //! operator means it, byte for byte identical to what a typo earns, on the one
-//! surface whose whole job is to answer with no engine up.
+//! surface whose whole job is to answer with no server up.
 //!
 //! **A door is a word, a usage line and prose, with no envelope behind it.** It
 //! builds nothing and routes nothing, so it costs no second implementation of a
@@ -104,19 +104,19 @@ pub const START: Door = Door {
              it is a door here rather than a row of the gesture table. \
              NAME A DIRECTORY and the start is staged on the path rung \
              instead of the bare one: the conversation's driver runs THERE, \
-             and the engine's own target preamble is prepended to the goal. \
-             Without it the conversation is born wherever the engine puts a \
+             and the server's own target preamble is prepended to the goal. \
+             Without it the conversation is born wherever the server puts a \
              bare one, and a directory named in the goal's prose is a request \
-             the tools are free to ignore. The path is on the ENGINE's box and \
+             the tools are free to ignore. The path is on the SERVER's box and \
              this seat does not check it; a path that is not there is refused \
-             over the wire, in the engine's own words. \
+             over the wire, in the server's own words. \
              NAME A ROLE and the conversation is born on it (REMOTE §9.21) — \
              the soul, the provider assignment and the tool grant the \
              workspace's governing config declares under that name, which is \
              how a planning conversation is started rather than a working one. \
              It is stated on the FIRE and not on the stage, because which role \
              you want is the choice made between the two acts. Without it the \
-             conversation is born on the engine's default, and a role the \
+             conversation is born on the server's default, and a role the \
              governing config does not declare is refused there, before any \
              branch or worktree exists.",
 };
@@ -142,9 +142,9 @@ pub const ENTRIES: Door = Door {
     takes: "",
     arity: (0, 0),
     summary: "describe every channel this box holds, without dialling any",
-    detail: "This box's own engine first, then one row per workspace held \
+    detail: "This box's own server first, then one row per workspace held \
              elsewhere, each with its address or the reason it has none. It \
-             opens no socket, so it answers with every engine down — and a \
+             opens no socket, so it answers with every server down — and a \
              half-provisioned channel says which file is missing beside the \
              ones that are fine. Material reaches these directories by the \
              operator's hand, out of channel, always.",
@@ -164,8 +164,8 @@ pub const OPS: Door = Door {
     word: "ops",
     takes: "[<max>]",
     arity: (0, 1),
-    summary: "everything done on this engine, from any window or box, newest last",
-    detail: "The trail of what an engine has DONE — one row per act, with the \
+    summary: "everything done on this server, from any window or box, newest last",
+    detail: "The trail of what a server has DONE — one row per act, with the \
              command it ran and how it ended. It names no workspace, so its \
              subject is EVERY channel this box holds and the answer is their \
              union. The depth is how many rows to ask for and it is optional: \
@@ -183,11 +183,11 @@ pub const DOCTOR: Door = Door {
     arity: (0, 1),
     summary: "whether this box is wired, one row per check",
     detail: "One row per check — the wire material, the address it names, what \
-             the engine actually bound, the git identity it commits under — \
+             the server actually bound, the git identity it commits under — \
              each saying what it found and whether that holds, with the \
-             engine's own remedy under a row that does not. Bare, its subject \
+             server's own remedy under a row that does not. Bare, its subject \
              is EVERY channel this box holds, each answering for itself. \
-             Naming a workspace asks that wall's engine alone and adds two \
+             Naming a workspace asks that workspace's server alone and adds two \
              checks: whether a conversation there would reach a model, and who \
              is registered to reach it. It reads and never writes.",
 };
@@ -199,15 +199,15 @@ pub const PRICE: Door = Door {
     takes: "<provider> <model> <input> <output> [<cache_read> [<cache_write>]] | off [--on <channel>]",
     arity: (3, 8),
     summary: "price one provider's model, in USD per million tokens, or unprice it",
-    detail: "Writes the row the engine prices that (provider, model) by — a \
+    detail: "Writes the row the server prices that (provider, model) by — a \
              `*` model covers every model that provider serves and the table \
              does not name — and answers with the whole table as it now \
              stands. A rate left off is zero, so `0 0` is a subscription: \
              priced at nothing, which is a different fact from unpriced. \
              `off` in place of the rates deletes the row. The provider must \
-             be a row the wall's `providers` names, and the engine refuses \
+             be a row the workspace's `providers` names, and the server refuses \
              one it has no row for, in its own words. The table is one \
-             engine's, so the row is written down ONE channel: the one \
+             server's, so the row is written down ONE channel: the one \
              `--on` names (a name `lernie entries` lists), or the only one \
              this box holds — a box holding several refuses an unnamed write, \
              naming them.",
@@ -220,12 +220,12 @@ pub const CEILING: Door = Door {
     takes: "<usd> | off [--on <channel>]",
     arity: (1, 3),
     summary: "bound the world's priced spend, or lift the bound",
-    detail: "Sets the ceiling the engine parks every conversation at once \
+    detail: "Sets the ceiling the server parks every conversation at once \
              the world's priced spend reaches it, and answers with the price \
              table, the bound and the spend as they now stand. Moving the \
              bound back over the spend — raising it, or `off` — wakes every \
              conversation it had parked, and the answer says how many. The \
-             bound is one engine's, so it is set down ONE channel, chosen as \
+             bound is one server's, so it is set down ONE channel, chosen as \
              `price` chooses it.",
 };
 
@@ -239,12 +239,12 @@ pub const HELP: Door = Door {
              With one, that word's own page — a gesture verb or one of the \
              four doors alike, because a page an operator is offered has to be \
              reachable for every word the list names. Its subject is this \
-             binary rather than a world, so it answers with no engine up and \
+             binary rather than a world, so it answers with no server up and \
              no channel provisioned. `--help` and `-h` are the same word.",
 };
 
 /// Every door, in the order the usage prints them: the six that cross a
-/// wire, then the two that answer with no engine up.
+/// wire, then the two that answer with no server up.
 const TABLE: &[Door] = &[START, ASK, OPS, DOCTOR, PRICE, CEILING, ENTRIES, HELP];
 
 #[cfg(test)]

@@ -15,7 +15,7 @@ use crate::ui::{Aim, Channel, Chunk, Model};
 use serde_json::{Value, json};
 use std::time::Duration;
 
-/// A link whose roster holds this box's own engine **and one entry beside
+/// A link whose roster holds this box's own server **and one entry beside
 /// it** — the two-channel arrangement a stamp taken off the aim is only
 /// visible on.
 fn beside(aim: Option<Aim>, posted: crate::ui::Posted) -> (Link, Model) {
@@ -64,7 +64,7 @@ fn acked() -> Value {
 #[test]
 fn a_gesture_naming_no_workspace_is_asked_of_every_channel() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![vec![json!({"ok": true, "kind": "help", "rows": [
@@ -75,9 +75,9 @@ fn a_gesture_naming_no_workspace_is_asked_of_every_channel() {
     tick(&link, scratch.path());
     link.settle(&mut model);
     assert!(
-        engine.heard().contains(&json!({"op": "help"})),
+        server.heard().contains(&json!({"op": "help"})),
         "{:?}",
-        engine.heard()
+        server.heard()
     );
     assert_eq!(
         model.pages.len(),
@@ -109,7 +109,7 @@ fn a_fanned_leg_that_reached_nothing_is_that_channels_own_sentence() {
 /// with the one it was aimed from** (bl-c70d).
 ///
 /// An aim is where a gesture was *composed*. An operator may compose one aimed
-/// at a wall on one channel while a control fires at a row on another — the
+/// at a workspace on one channel while a control fires at a row on another — the
 /// decision queue is the pane where that is ordinary, since its rows come from
 /// every channel at once — and `seen` answers with the queue that REMAINS,
 /// which is filed per channel. Stamped with the aim, one channel's slice
@@ -173,13 +173,13 @@ fn a_routed_leg_that_reached_nothing_is_that_channels_own_sentence() {
 /// alone** (bl-4855) — the fan is what *addressed to no channel in particular*
 /// means, and it was never what every workspace-less gesture means.
 ///
-/// `config` on one engine's own `cadence.yaml` names no workspace and is not
-/// about every engine. Fanned, it would have written this operator's text onto
-/// every engine this box is a client of.
+/// `config` on one server's own `cadence.yaml` names no workspace and is not
+/// about every server. Fanned, it would have written this operator's text onto
+/// every server this box is a client of.
 #[test]
 fn an_addressed_gesture_goes_down_the_one_channel_and_no_other() {
     let scratch = Scratch::new();
-    let own_engine = wired(&scratch, &flat(), vec![vec![yes()]]);
+    let own_server = wired(&scratch, &flat(), vec![vec![yes()]]);
     let other = wired(&scratch, &entry("b"), vec![vec![yes()]]);
     let addressed = Channel {
         name: "b".to_owned(),
@@ -208,11 +208,11 @@ fn an_addressed_gesture_goes_down_the_one_channel_and_no_other() {
         other.heard()
     );
     assert!(
-        !own_engine
+        !own_server
             .heard()
             .iter()
             .any(|said| said.get("op").is_some()),
-        "and no other engine was told anything at all: {:?}",
-        own_engine.heard()
+        "and no other server was told anything at all: {:?}",
+        own_server.heard()
     );
 }

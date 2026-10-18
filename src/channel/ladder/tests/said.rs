@@ -21,7 +21,7 @@ fn a_rendezvous_says_every_step_then_the_held_line_is_said_once() {
     let (listener, at) = listener();
     let b = Bench::new(dead(), Some(presence(at)));
     let script = vec![Reply::yes(), Reply::yes(), Reply::yes()];
-    let _engine = Engine::listen(b.scratch.path(), listener, script);
+    let _server = Server::listen(b.scratch.path(), listener, script);
     let channel = b.channel();
     assert!(channel.ask(&request(1)).is_ok());
     let (nonce, seq) = written(&b);
@@ -50,7 +50,7 @@ fn a_rendezvous_says_every_step_then_the_held_line_is_said_once() {
 fn a_direct_answer_is_said_once_and_an_entry_without_material_says_nothing() {
     let (listener, at) = listener();
     let b = Bench::new(at, None);
-    let _engine = Engine::listen(b.scratch.path(), listener, vec![Reply::yes(); 2]);
+    let _server = Server::listen(b.scratch.path(), listener, vec![Reply::yes(); 2]);
     let channel = b.channel();
     assert!(channel.ask(&request(1)).is_ok());
     assert!(channel.ask(&request(2)).is_ok());
@@ -71,7 +71,7 @@ fn a_direct_answer_is_said_once_and_an_entry_without_material_says_nothing() {
 fn pings_discarded_are_said_with_the_answer() {
     let (listener, at) = listener();
     let b = Bench::new(dead(), Some(presence(at)));
-    let _engine = Engine::listen(b.scratch.path(), listener, vec![Reply::yes().pinged(2)]);
+    let _server = Server::listen(b.scratch.path(), listener, vec![Reply::yes().pinged(2)]);
     assert!(b.channel().ask(&request(1)).is_ok());
     assert_eq!(
         b.said().get(5..).unwrap(),
@@ -191,7 +191,7 @@ fn a_call_no_node_stored_and_a_punch_nothing_answered_are_said() {
 fn a_call_carrying_only_overlay_addresses_is_said_before_the_window() {
     let (listener, at) = listener();
     let b = Bench::new(dead(), Some(presence(at)));
-    let _engine = Engine::listen(b.scratch.path(), listener, vec![Reply::yes()]);
+    let _server = Server::listen(b.scratch.path(), listener, vec![Reply::yes()]);
     let overlay = IpAddr::V4(Ipv4Addr::new(100, 64, 0, 1));
     let channel = b.channel().tuned(
         Roving {
@@ -204,7 +204,7 @@ fn a_call_carrying_only_overlay_addresses_is_said_before_the_window() {
     assert_eq!(
         b.said().get(2).unwrap(),
         &format!(
-            "{P} every address the call carries (1 v4) is in an overlay or carrier-NAT range — an engine outside that network cannot reach it"
+            "{P} every address the call carries (1 v4) is in an overlay or carrier-NAT range — a server outside that network cannot reach it"
         )
     );
 }

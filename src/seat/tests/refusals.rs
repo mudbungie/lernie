@@ -1,8 +1,8 @@
-//! **What a box that cannot reach an engine says**, and what an engine's own
+//! **What a box that cannot reach a server says**, and what a server's own
 //! answer is worth.
 //!
 //! Split from [`super::routing`] at the line cap on the seam that module's own
-//! doc already draws: [`super::routing`] is which engine a gesture reaches and
+//! doc already draws: [`super::routing`] is which server a gesture reaches and
 //! what it carries there, and this is what comes back — a channel that will not
 //! open, one that will not answer, and the reply stream that is this seat's
 //! product however it went.
@@ -28,7 +28,7 @@ fn a_box_with_no_wire_names_the_directory_and_the_operator_s_act() {
         verdict.text
     );
     // **The flat root's remedy is a COPY, not a mint** (bl-ad7f). On a
-    // single-box install the leaf already exists — the engine's own boot made
+    // single-box install the leaf already exists — the server's own boot made
     // it — and the four files are named, because "carried here by hand" said
     // what to do and never what to carry.
     for named in ["the act is a COPY", "ca.pem", "client.key", "address"] {
@@ -48,7 +48,7 @@ fn a_box_with_no_wire_names_the_directory_and_the_operator_s_act() {
 fn a_half_provisioned_flat_root_says_which_file_is_missing() {
     let scratch = Scratch::new();
     let dir = scratch.dir(WIRE);
-    mint::provisioned(&dir, "engine.example:9000");
+    mint::provisioned(&dir, "server.example:9000");
     std::fs::remove_file(dir.join(ADDRESS)).expect("rm");
     let verdict = ask(scratch.path(), &json!({"op": "workspaces"}), Form::Json);
     assert_eq!(verdict.code, 1);
@@ -59,7 +59,7 @@ fn a_half_provisioned_flat_root_says_which_file_is_missing() {
     );
 }
 
-/// **Port zero is a request, not an address** (REMOTE §8): only the engine that
+/// **Port zero is a request, not an address** (REMOTE §8): only the server that
 /// bound it knows what it became, and it tells its own in-process window in
 /// RAM. A separately installed seat wants a stated address, and saying so beats
 /// the raw connect error port zero earns.
@@ -83,7 +83,7 @@ fn a_self_provisioned_loopback_root_says_a_seat_wants_a_stated_address() {
 
 /// A channel that will not answer is a failure about the far end, said alone.
 #[test]
-fn an_engine_that_is_not_there_fails_with_the_transport_s_sentence() {
+fn an_server_that_is_not_there_fails_with_the_transport_s_sentence() {
     let scratch = Scratch::new();
     mint::provisioned(&scratch.dir(WIRE), "127.0.0.1:1");
     let verdict = ask(scratch.path(), &json!({"op": "workspaces"}), Form::Json);
@@ -96,7 +96,7 @@ fn an_engine_that_is_not_there_fails_with_the_transport_s_sentence() {
     );
 }
 
-/// **An engine answering no has ANSWERED.** The reply stream is the seat's
+/// **A server answering no has ANSWERED.** The reply stream is the seat's
 /// product, so it goes to stdout with every frame in order, and only the exit
 /// code says no.
 #[test]
@@ -118,9 +118,9 @@ fn a_refusing_reply_is_still_the_product_and_only_the_code_says_no() {
     );
 }
 
-/// An engine that terminates without answering is not ok, and prints nothing.
+/// A server that terminates without answering is not ok, and prints nothing.
 #[test]
-fn an_engine_that_answers_nothing_is_not_ok() {
+fn an_server_that_answers_nothing_is_not_ok() {
     let scratch = Scratch::new();
     wired(&scratch, &flat(), vec![vec![]]);
     let verdict = ask(scratch.path(), &json!({"op": "workspaces"}), Form::Json);

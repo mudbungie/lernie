@@ -15,7 +15,7 @@ use serde_json::{Value, json};
 #[test]
 fn each_provider_row_the_roles_name_is_asked_and_its_answer_filed_under_it() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![
@@ -26,14 +26,14 @@ fn each_provider_row_the_roles_name_is_asked_and_its_answer_filed_under_it() {
             vec![json!({"ok": true, "kind": "models", "rows": ["house-model-2"]})],
         ],
     );
-    // No conversation selected, so the pass asks the wall's questions alone.
+    // No conversation selected, so the pass asks the workspace's questions alone.
     let mut model = Model {
         conversation: None,
         ..tuned()
     };
     let link = asking(&model);
     tick(&link, scratch.path());
-    let heard = engine.heard();
+    let heard = server.heard();
     let ops: Vec<&str> = heard
         .iter()
         .filter_map(|said| said.get("op").and_then(Value::as_str))

@@ -6,7 +6,7 @@ mTLS, asks and acts, and paints what comes back. It holds no world, runs no
 agent and executes nothing.
 
 **READ `docs/DESIGN.md` §0 BEFORE ANYTHING ELSE.** The name `lernie` carries two
-eras: through 0.0.x it was the agent-loop engine, which continues as `litany`;
+eras: through 0.0.x it was the agent loop, which continues as `litany`;
 from 0.1.0 it is this seat. The version is the only rule separating them, and
 three consequences of it are enforced in this tree.
 
@@ -74,12 +74,12 @@ direction is gated where it can be decided:
 1. **yog does not publish a bump ahead of its consumers** — its release pull
    request is held until this repository's `main`, thrall's and yog-android's
    carry the new number.
-2. **This repository does not publish a bump ahead of the engine** —
+2. **This repository does not publish a bump ahead of the server** —
    `merge-release-pr` holds every release while this repository's `PROTOCOL`
    **exceeds** the newest published yog's (its newest `v<x.y.z>` tag, cut in
    the same act as the crates.io upload). thrall took that road first: 0.0.15
-   shipped 16 while the published engine spoke 15, which composes with nothing.
-   Strictly greater, not different: a seat *behind* the engine is defect 1 and
+   shipped 16 while the published server spoke 15, which composes with nothing.
+   Strictly greater, not different: a seat *behind* the server is defect 1 and
    its release is the fix.
 
 **The ordering this produces, and the whole of what to remember: the
@@ -91,7 +91,7 @@ network, because the workflow that spends it cannot run locally) and
 
 **A held release is re-judged by a `workflow_dispatch` of Release-plz**
 (bl-614a). Gate 2 is the one gate whose answer changes with nothing in this
-repository changing — it clears when the ENGINE publishes, an event this
+repository changing — it clears when the SERVER publishes, an event this
 repository never sees — so without a hand-wakeable door a held release waits
 for an unrelated landing on `main`. `merge-release-pr` therefore runs on a
 dispatch as well as on a push, re-judging the open release pull request against
@@ -100,10 +100,10 @@ the newest published yog tag.
 **Bump it by editing `PROTOCOL`, and nothing else.** Both gates read that path
 at the root of whatever tree, tag or main they judge, and **no gate, workflow
 or roster in any of the four repositories names a Rust path for the number**
-(bl-55b1). It used to: this repository fetched the engine's constant from
+(bl-55b1). It used to: this repository fetched the server's constant from
 `src/wire/hello.rs`, yog split that file, and the fetch went on succeeding
 while the read found nothing — so this gate held on an input it could not
-read, and the engine's next publish would have made that hold permanent
+read, and the server's next publish would have made that hold permanent
 instead of clearing it.
 
 **And CI is that same target, run by a machine rather than by whoever
@@ -424,18 +424,18 @@ it can say.
 
    **The name is not new, and that is what stopped bl-f468's publish — and how
    it was answered.** The registry crate `lernie` already exists, carrying the
-   engine era's 0.0.x line, and it is set to accept **Trusted Publishing
+   litany era's 0.0.x line, and it is set to accept **Trusted Publishing
    only**: a token `cargo publish` is answered `403 Forbidden` however the
    manifest is written, from any box, forever. Nothing in this tree can satisfy
    that with a credential, and the setting was NOT relaxed. What satisfied it
    is `.github/workflows/release-plz.yml` (bl-459d), whose filename is the one
-   the crate's engine-era trusted publisher already names — so the only route
+   the crate's litany-era trusted publisher already names — so the only route
    to the registry runs through a green CI gate on `main`, and there is no
    hand-run alternative to fall back to. Read the crate's own record before
    assuming a token will do — `crates.io/api/v1/crates/lernie` answers
    `trustpub_only` without authentication.
 7. **The fence.** 0.1.0 is the first version this crate may ever bear. A
-   `0.0.z` from this tree would collide with the agent-loop engine's own
+   `0.0.z` from this tree would collide with the agent loop's own
    published line and destroy the one rule that disambiguates the two eras
    (DESIGN §0). `src/cli/tests.rs` fails the suite if the number is edited down.
 
@@ -456,7 +456,7 @@ it can say.
   filename literally against the OIDC claim, so renaming it breaks publishing
   until the registry entry is updated to match — silently, at the next release.
 - **Never lower the version below 0.1.0.** That is the fence; a `0.0.z` from
-  this tree collides with the engine's own published line. `src/cli/tests.rs`
+  this tree collides with litany's own published line. `src/cli/tests.rs`
   fails the suite if it happens.
 - Never add a dependency that is not on the approved set. **`Cargo.toml`'s
   `[dependencies]` comment is that set**: rustls with `ring` and no default

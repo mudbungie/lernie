@@ -1,11 +1,11 @@
 //! **Projecting and mutating a corpus frame** — the two edits the grows-only
 //! contract is judged by (yog's `docs/REMOTE.md` §3.2).
 //!
-//! A vendored frame is what the NEWEST engine writes. The two things a client
-//! must survive are an OLDER engine, which writes the same frame without the
+//! A vendored frame is what the NEWEST server writes. The two things a client
+//! must survive are an OLDER server, which writes the same frame without the
 //! fields stamped after its edition, and a NEWER one, which writes a word in a
 //! vocabulary this build has never heard of. Neither can be captured, because
-//! neither engine exists on the box running the suite — so both are made here,
+//! neither server exists on the box running the suite — so both are made here,
 //! out of the frame that does exist and the stamps beside it.
 //!
 //! The walkers are pure functions of a frame and a path, kept apart from the
@@ -46,7 +46,7 @@ pub(crate) fn words(signature: &Signature) -> Vec<String> {
         .collect()
 }
 
-/// **The frame an engine of edition `at` would have written**: every key
+/// **The frame a server of edition `at` would have written**: every key
 /// stamped later than `at` deleted, wherever it occurs.
 pub(crate) fn project(frame: &Value, signature: &Signature, at: u32) -> Value {
     let mut projected = frame.clone();
@@ -67,7 +67,7 @@ fn remove(value: &mut Value, segments: &[&str]) {
     };
     walk(value, above, &mut |held| {
         if *leaf == EVERY {
-            // The element spelling of a container: an engine that cannot write
+            // The element spelling of a container: a server that cannot write
             // the elements writes the empty array, which is the container's own
             // path saying the same thing one level down.
             if let Some(array) = held.as_array_mut() {

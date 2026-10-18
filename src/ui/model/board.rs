@@ -1,5 +1,5 @@
 //! **The ball pane between frames** (bl-d2af): open or not, what each channel
-//! last said its board and its bindings are, and what the aimed wall last said
+//! last said its board and its bindings are, and what the aimed workspace last said
 //! it holds.
 //!
 //! # It is the queue's shape and the tuning pane's, at once
@@ -8,14 +8,14 @@
 //! subject is every channel this box holds and each answer replaces its own
 //! channel's section (`super::queue`'s rule, and the roster's before it). Two
 //! name one — `workspace-balls` and `marks` — so their subject is the aimed
-//! wall, and they are retired when the aim moves exactly as the roles are
+//! workspace, and they are retired when the aim moves exactly as the roles are
 //! (`super::tuning`).
 //!
-//! **The PANE is the channel-wide one, and only its wall half is retired.** A
+//! **The PANE is the channel-wide one, and only its workspace half is retired.** A
 //! pane about every channel's board does not stop being about them because the
-//! operator aimed somewhere else; what would be wrong is painting one wall's
-//! balls under another wall's name, and that is the answers, not the pane. So
-//! [`Model::aim_at`](super::Model) drops the two wall answers and leaves the
+//! operator aimed somewhere else; what would be wrong is painting one workspace's
+//! balls under another workspace's name, and that is the answers, not the pane. So
+//! [`Model::aim_at`](super::Model) drops the two workspace answers and leaves the
 //! pane standing — which is the same rule the tuning pane keeps, read on a
 //! pane whose subject is wider than its aimed section.
 //!
@@ -62,7 +62,7 @@ impl Model {
     /// **Open the ball pane.** It takes no subject: two of its four reads name
     /// no workspace, so *what is on the board* is answerable from an unaimed
     /// seat — and that is the seat most likely to be asking it. An aim only
-    /// adds the wall's own half.
+    /// adds the workspace's own half.
     pub fn begin_board(&mut self) {
         self.lookup = Some(Lookup::Board);
     }
@@ -105,14 +105,14 @@ impl Model {
         }
     }
 
-    /// **The aimed wall's two answers go with the wall they are about**, and
-    /// the authoring block with them (bl-f7ae) — it is opened on one wall's
-    /// ball and stamps that wall's own name, so a block left standing over a
+    /// **The aimed workspace's two answers go with the workspace they are about**, and
+    /// the authoring block with them (bl-f7ae) — it is opened on one workspace's
+    /// ball and stamps that workspace's own name, so a block left standing over a
     /// new aim would offer to amend a ball under a claimant nobody is.
-    /// called by the act that moves the aim. `None` is a wall nobody has asked
-    /// yet, and the old wall's answer is not this wall's — the reading
+    /// called by the act that moves the aim. `None` is a workspace nobody has asked
+    /// yet, and the old workspace's answer is not this workspace's — the reading
     /// `Model::roles` gets, for the same reason.
-    pub(super) fn retire_wall_balls(&mut self) {
+    pub(super) fn retire_workspace_balls(&mut self) {
         self.holding = None;
         self.marks = None;
         self.authoring = None;

@@ -1,16 +1,16 @@
 //! **The far end of a punched wire**, so the ladder can be tested against
-//! something that speaks the protocol on a HELD line: an engine that serves
+//! something that speaks the protocol on a HELD line: a server that serves
 //! every request that lands on one connection, pings its silence, and ends
 //! the connection every way a real one can end (DESIGN §4.40).
 //!
 //! It stands in two ways. [`Roving::listen`] serves what lands on a listener
 //! the test bound — the endpoint a presence item names, where the seat's
-//! SYN lands. [`Roving::call_back`] is the engine's inbox loop in miniature:
+//! SYN lands. [`Roving::call_back`] is the server's inbox loop in miniature:
 //! it watches a fake DHT node's store for a call under the pairing, opens
-//! it, and connects TO the seat's endpoints — the case where the engine's
+//! it, and connects TO the seat's endpoints — the case where the server's
 //! SYN lands on the seat's own punch listener.
 //!
-//! Like [`engine`](super::engine) it listens, which a seat never does, and
+//! Like [`server`](super::server) it listens, which a seat never does, and
 //! that is why it lives here.
 
 use std::collections::VecDeque;
@@ -33,15 +33,15 @@ use crate::dht::Mutable;
 /// What the connection does once an answer is written.
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum Fate {
-    /// Hold the line, as a real engine does.
+    /// Hold the line, as a real server does.
     Stay,
-    /// Hold the line and ping its silence this many times, as a real engine
+    /// Hold the line and ping its silence this many times, as a real server
     /// does at 25-second intervals — here at once, so the pings sit in the
     /// seat's socket before its next ask.
     Pinged(usize),
     /// Close without a word: a FIN and nothing else.
     Fin,
-    /// Say `close_notify`, then close — the engine's own hang-up.
+    /// Say `close_notify`, then close — the server's own hang-up.
     Farewell,
     /// Reset: linger zero, so the peer reads a connection reset — once the
     /// test says the answer was taken ([`Roving::taken`]).
@@ -99,7 +99,7 @@ impl Roving {
     /// Serve every connection that lands on `listener`, one [`Reply`] per
     /// request across all of them, in order.
     pub(crate) fn listen(dir: &Path, listener: TcpListener, script: Vec<Reply>) -> Roving {
-        let config = super::engine::server_config(dir);
+        let config = super::server::server_config(dir);
         let roving = Roving::new(script);
         let shared = Arc::clone(&roving.shared);
         std::thread::spawn(move || {
@@ -113,14 +113,14 @@ impl Roving {
     }
 
     /// Watch `store` for a call under `pairing`, connect to what it names,
-    /// and serve. One call, one connection: the engine remembers the nonce.
+    /// and serve. One call, one connection: the server remembers the nonce.
     pub(crate) fn call_back(
         dir: &Path,
         store: Arc<Mutex<Vec<Mutable>>>,
         pairing: Pairing,
         script: Vec<Reply>,
     ) -> Roving {
-        let config = super::engine::server_config(dir);
+        let config = super::server::server_config(dir);
         let roving = Roving::new(script);
         let shared = Arc::clone(&roving.shared);
         std::thread::spawn(move || {

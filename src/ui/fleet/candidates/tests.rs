@@ -68,7 +68,7 @@ fn an_acceptance_with_no_subject_composes_nothing() {
 
 /// **Releasing a worktree needs no word and is not armed**: it changes no
 /// delivery target, and whether the source ref went with it is the project's
-/// own declared retention, which the engine answers and this seat paints.
+/// own declared retention, which the server answers and this seat paints.
 #[test]
 fn releasing_a_worktree_composes_the_retirement() {
     let window = Window::new();

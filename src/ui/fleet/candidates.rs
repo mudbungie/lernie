@@ -3,7 +3,7 @@
 //! names every value it needs.
 //!
 //! Split from [`super`] at the design-time budget on a seam the pane already
-//! had: [`super`] is *the wall's own loop and watch*, and this is *one
+//! had: [`super`] is *the workspace's own loop and watch*, and this is *one
 //! obligation's attempts*.
 //!
 //! # The row says which act it earns, and there is no fourth state
@@ -34,7 +34,7 @@
 //! is armed: DESIGN §4.20 is for an act whose product is that its subject is
 //! gone, and a retired candidate's source ref stays addressable unless this
 //! project's own declared retention says otherwise. Which it did is the
-//! engine's answer and the bar paints it (`crate::ui::model::Notice::retired`)
+//! server's answer and the bar paints it (`crate::ui::model::Notice::retired`)
 //! rather than this end predicting a policy it has not read.
 
 use serde_json::Value;
@@ -77,9 +77,9 @@ const LEAST: u64 = 2;
 pub(super) fn render(ui: &mut egui::Ui, model: &mut Model, rows: &[Diff]) {
     let mut act: Option<Value> = None;
     let mut spread: Option<(Spread, String)> = None;
-    let mut wall = String::new();
+    let mut workspace = String::new();
     if let Some(fleet) = model.fleet.as_mut() {
-        wall.clone_from(&fleet.at.address);
+        workspace.clone_from(&fleet.at.address);
         ui.horizontal_wrapped(|ui| {
             if theme::paint::button(ui, FEWER, true, FEWER_HELP).clicked() {
                 fleet.spread = fleet.spread.saturating_sub(1).max(LEAST);
@@ -128,7 +128,7 @@ pub(super) fn render(ui: &mut egui::Ui, model: &mut Model, rows: &[Diff]) {
         model.post_candidate(envelope);
     }
     if let Some((over, goal)) = spread {
-        model.stage_spread(&wall, over, &goal);
+        model.stage_spread(&workspace, over, &goal);
     }
 }
 

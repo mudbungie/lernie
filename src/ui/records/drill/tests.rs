@@ -27,7 +27,7 @@ fn the_control_asks_for_the_row_it_hangs_on_and_then_shows_it() {
 }
 
 /// **The answered drill-in paints every class of record**, each with the
-/// engine's own framing where it wrote one.
+/// server's own framing where it wrote one.
 #[test]
 fn the_answered_drill_in_paints_the_records_the_stream_and_the_tool_call() {
     let mut model = Model {

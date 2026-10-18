@@ -3,7 +3,7 @@
 //!
 //! # The fourth covering pane, and the first that is about no focus
 //!
-//! `crate::ui::tuning` is about the aimed wall and `crate::ui::records` about
+//! `crate::ui::tuning` is about the aimed workspace and `crate::ui::records` about
 //! the selected conversation, so both open on a subject and close when it
 //! moves. This one has no subject to move: `attention` names no workspace, so
 //! the read fans over every channel and the pane is the union. That is why its
@@ -18,7 +18,7 @@
 //! and painted it nowhere, so the one place the ask could go was the one place
 //! it went to die. It leads the row's detail for that reason, above the failure
 //! and the parked invocation: it is the only line on a row that somebody
-//! *wrote* rather than something the engine observed.
+//! *wrote* rather than something the server observed.
 //!
 //! # One control answers a row and one leaves the pane for it
 //!
@@ -26,8 +26,8 @@
 //! verdict on a row that is holding a call; [`GO`] aims and selects, which is
 //! a view and out of the parity contract (PARITY §2). Both stand down on a row
 //! this seat cannot address, and the row says why in the roster's own words —
-//! `crate::ui::model::queue::Model::wall` is the one place that resolution is
-//! asked, so this pane holds no opinion about how a wall is addressed. **The
+//! `crate::ui::model::queue::Model::workspace` is the one place that resolution is
+//! asked, so this pane holds no opinion about how a workspace is addressed. **The
 //! acts are `crate::ui::ask::choices`, read and spent here as there** (bl-da16):
 //! one list, so the reaches a held row permits are decided once.
 //!
@@ -89,7 +89,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         theme::paint::empty(ui, NOT_ANSWERED);
         return true;
     }
-    // **One section an ENGINE, each row once** (bl-52d2): two channels that
+    // **One section a SERVER, each row once** (bl-52d2): two channels that
     // dial one address each answer its whole queue, and painted a section a
     // channel the same conversation stood twice (`Model::sections`).
     let sections = model.sections();
@@ -106,8 +106,8 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         .show(ui, |ui| {
             for section in &sections {
                 // **A section that answered nothing is silent, not a sentence.**
-                // The union is the subject here; an engine holding nothing
-                // waiting is a fact the roster already carries per wall, and a
+                // The union is the subject here; a server holding nothing
+                // waiting is a fact the roster already carries per workspace, and a
                 // header over a blank for every quiet channel would bury the
                 // rows this pane exists for.
                 if section.rows.is_empty() {
@@ -171,7 +171,7 @@ fn waiting_row(ui: &mut egui::Ui, model: &mut Model, channel: &Channel, row: &Qu
 
 /// The row's controls, or the sentence that stands where they would be.
 fn acts(ui: &mut egui::Ui, model: &mut Model, channel: &Channel, row: &QueueRow) {
-    if model.wall(channel, &row.workspace).is_none() {
+    if model.workspace(channel, &row.workspace).is_none() {
         ui.colored_label(
             theme::accent(theme::State::Annotation),
             crate::ui::roster::NO_NAME_HERE,
@@ -194,7 +194,7 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, channel: &Channel, row: &QueueRow)
         // **The verdicts are offered only on a row that is holding one**
         // (bl-bce2): `answer` is scoped to the exact call parked at the far
         // end, so a control on a row with nothing parked would fire a gesture
-        // the engine refuses by name — and this pane is the one place that
+        // the server refuses by name — and this pane is the one place that
         // already says what is parked (`parked`). `choices` holds that rule.
         for choice in offered.iter().filter(|choice| !choice.wider()) {
             seat(ui, choice);
@@ -237,7 +237,7 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, channel: &Channel, row: &QueueRow)
 /// where it is, and how long it has waited.
 ///
 /// The workspace is on it because this pane is the one place in the window
-/// where two rows may be on two different walls, so a label alone would not
+/// where two rows may be on two different workspaces, so a label alone would not
 /// say which conversation an operator is looking at.
 pub fn headline(row: &QueueRow) -> String {
     let mut said = vec![format!(
@@ -279,7 +279,7 @@ pub fn parked(row: &QueueRow) -> Option<String> {
     ))
 }
 
-/// Why it is asking: the engine's own sentence (`says`, bl-5507), the raw
+/// Why it is asking: the server's own sentence (`says`, bl-5507), the raw
 /// signal words only where it wrote none, or none where it named nothing —
 /// [`QueueRow::why`] makes the choice.
 pub fn signalled(row: &QueueRow) -> Option<String> {

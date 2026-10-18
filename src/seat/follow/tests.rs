@@ -40,10 +40,10 @@ fn tail(text: &str) -> Value {
     json!({"ok": true, "kind": "follow", "tools": [], "stream": {"delta": "text", "text": text}})
 }
 
-/// The gestures an engine was asked, without the version preface each
+/// The gestures a server was asked, without the version preface each
 /// connection opens with.
-fn asked(engine: &crate::test_support::engine::Engine) -> Vec<Value> {
-    engine
+fn asked(server: &crate::test_support::server::Server) -> Vec<Value> {
+    server
         .heard()
         .into_iter()
         .filter(|frame| frame.get("op").is_some())
@@ -67,11 +67,11 @@ fn formed(scratch: &Scratch, form: Form) -> (crate::cli::Verdict, Vec<String>) {
 /// **A conversation already at rest is told so at once, and exits 0**
 /// (bl-3dca). It opens no held connection at all, so the half-minute of
 /// silence is not shortened — it never happens — and the failure code that was
-/// indistinguishable from a dead engine is gone with it.
+/// indistinguishable from a dead server is gone with it.
 #[test]
 fn a_quiescent_conversation_answers_at_once_and_succeeds() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![vec![agent("quiescent")], vec![inbox(0)]],
@@ -108,7 +108,7 @@ fn a_quiescent_conversation_answers_at_once_and_succeeds() {
     // instant (bl-87ab); neither opens a follow, so the half-minute of silence
     // bl-3dca removed stays removed.
     assert_eq!(
-        asked(&engine),
+        asked(&server),
         vec![
             json!({"op": "agent", "workspace": "home", "agent": "PelicanQuiet"}),
             json!({"op": "inbox", "workspace": "home", "agent": "PelicanQuiet"}),
@@ -117,14 +117,14 @@ fn a_quiescent_conversation_answers_at_once_and_succeeds() {
     );
 }
 
-/// **The watch outlives the engine's step boundary** (bl-f076). A held read
+/// **The watch outlives the server's step boundary** (bl-f076). A held read
 /// ends when a step commits; the conversation is still working, so the line is
 /// taken up again — and the operator sees one continuous tail rather than
 /// having to invent a loop.
 #[test]
 fn a_read_that_ends_at_a_step_boundary_is_taken_up_again() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![
@@ -145,14 +145,14 @@ fn a_read_that_ends_at_a_step_boundary_is_taken_up_again() {
     assert_eq!(said.len(), 3, "one printing per frame: {said:?}");
     assert!(said.concat().contains(" is 391."), "{said:?}");
     assert_eq!(
-        asked(&engine).len(),
+        asked(&server).len(),
         5,
         "three state reads and two held reads: {:?}",
-        asked(&engine)
+        asked(&server)
     );
 }
 
-/// **A read that brought nothing settles before asking again.** The engine
+/// **A read that brought nothing settles before asking again.** The server
 /// paces this loop on its own, so the pause is insurance against one that
 /// closes an empty read at once — the alternative being a busy loop on
 /// somebody else's socket.
@@ -232,8 +232,8 @@ fn a_channel_that_will_not_answer_says_so_on_either_read() {
         &held,
         &flat(),
         vec![
-            crate::test_support::engine::Answer::Frames(vec![agent("in-flight")]),
-            crate::test_support::engine::Answer::Hangup,
+            crate::test_support::server::Answer::Frames(vec![agent("in-flight")]),
+            crate::test_support::server::Answer::Hangup,
         ],
     );
     let (verdict, _) = watched(&held);

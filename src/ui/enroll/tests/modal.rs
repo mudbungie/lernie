@@ -70,13 +70,13 @@ fn the_arrows_walk_nothing_while_the_enrollment_stands() {
 
 /// **Nothing live paints under it.** The composer is a bottom panel and so
 /// outside what a central panel covers, which left a live `start` control —
-/// firing a conversation on the very wall being enrolled into — beneath the
+/// firing a conversation on the very workspace being enrolled into — beneath the
 /// symbol.
 #[test]
 fn the_composer_stands_down_while_an_enrollment_is_open() {
     let mut aimed = Model {
         aim: Some(Aim {
-            channel: "(this box's own engine)".to_owned(),
+            channel: "(this box's own server)".to_owned(),
             address: "home".to_owned(),
         }),
         conversation: None,

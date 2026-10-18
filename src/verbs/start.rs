@@ -46,18 +46,18 @@
 //! It is the one exception to the verbatim carry below and it is the carry's
 //! own rule rather than a hole in it: the body is handed back untouched EXCEPT
 //! where this seat has something to say, which was the workspace and is now
-//! the workspace and the role. Unstated leaves whatever the engine answered,
+//! the workspace and the role. Unstated leaves whatever the server answered,
 //! which is how a fire that names no role stays the byte-identical fire.
 //!
 //! **A role this seat does not check**, for the reason it checks no path:
 //! litany resolves the role before the fork, so a role the governing commit
-//! does not declare leaves no branch, no ref and no worktree, and the engine
+//! does not declare leaves no branch, no ref and no worktree, and the server
 //! refuses in its own words. A second validity check here could only disagree
 //! with it.
 //!
-//! **A path this seat does not check.** The directory is the ENGINE's box, not
+//! **A path this seat does not check.** The directory is the SERVER's box, not
 //! this one — a seat dials a server and may hold no such path at all — so a
-//! path that is not there is refused by the engine, in its own words, which is
+//! path that is not there is refused by the server, in its own words, which is
 //! the same division §4.10 draws for `enroll`'s grade in the other direction.
 //!
 //! # The prepared body is handed back, and re-addressed on the way
@@ -67,7 +67,7 @@
 //! spelling, and this box's §8.2 mapping runs client→host at
 //! [`crate::seat::route`] and nowhere else — so a body handed back unrewritten
 //! names a workspace no entry claims, falls through to the flat root, and fires
-//! the start into this box's own engine. [`crate::envelope`] already records
+//! the start into this box's own server. [`crate::envelope`] already records
 //! that hazard beside the nested slot it reads; this is the site it was written
 //! about.
 
@@ -96,7 +96,7 @@ pub const ROLE: &str = "role";
 /// **The role plan mode is**, spelled once. yog's `docs/REMOTE.md` §9.21 names
 /// it outright — *"the seat deposits the body back as `/prompt` with `"role":
 /// "planner"`"* — so it is the wire's own word for the one role choice this
-/// suite has a name for, and not a name this seat invented. A wall whose
+/// suite has a name for, and not a name this seat invented. A workspace whose
 /// governing config declares no such role refuses the fire in litany's own
 /// words, which is the module doc's *a role this seat does not check*.
 pub const PLANNER: &str = "planner";
@@ -105,7 +105,7 @@ pub const PLANNER: &str = "planner";
 /// a work target is named, and on the bare rung when none is.
 ///
 /// `address` is **this box's** name for the workspace — the leaf of an entry,
-/// or the name this box's own engine answers to — because the mapping is spent
+/// or the name this box's own server answers to — because the mapping is spent
 /// at the channel boundary and every gesture is composed on the client side of
 /// it.
 ///
@@ -128,7 +128,7 @@ pub fn prepare(address: String, dir: Option<String>) -> Value {
 /// **The goal a fire carries: the rung's own prefill, and then the
 /// operator's.**
 ///
-/// The engine composes a prefill for every rung that has one — the path rung's
+/// The server composes a prefill for every rung that has one — the path rung's
 /// is the §3.3 target preamble, verbatim — and its own help states the seat's
 /// half: *"To fire a prefill with words of your own, send the two joined as one
 /// goal — that text is the reply's `prepared.goal`, and editing it is exactly
@@ -148,11 +148,11 @@ pub fn goal(prefill: &str, typed: &str) -> String {
 ///
 /// `address` re-addresses the body into this box's spelling (see the module
 /// doc); `seed` is spelled `null` because this seat predicts no conversation
-/// name — the mint is the engine's, and a seat that predicted one would have to
+/// name — the mint is the server's, and a seat that predicted one would have to
 /// fire the name it painted.
 /// `role`, where the operator asked for one, is written onto that same body —
 /// see the module doc on why this is the carry's rule and not an exception to
-/// it. `None` leaves the field exactly as the engine answered it, so a fire
+/// it. `None` leaves the field exactly as the server answered it, so a fire
 /// that names no role is the fire this seat sent before the field existed.
 pub fn prompt(prepared: &Prepared, address: String, goal: String, role: Option<String>) -> Value {
     let mut body = envelope::with_workspace(&prepared.body, &address);

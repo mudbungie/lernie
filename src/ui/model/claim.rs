@@ -5,8 +5,8 @@
 //! §3.4), and honouring it directly does not work: the minted name is a barrier
 //! — every gesture after the receipt may address it — but only once the
 //! detached driver has written the conversation's branch, and until then the
-//! engine resolves it nowhere. A seat that simply selected it would publish the
-//! standing set's third question against an address the engine refuses, and
+//! server resolves it nowhere. A seat that simply selected it would publish the
+//! standing set's third question against an address the server refuses, and
 //! paint the operator's own new conversation as unknown for the whole of a
 //! healthy start.
 //!
@@ -23,11 +23,11 @@
 //! - **A row stands where the conversation will be.** [`Model::rows`] is the
 //!   list every surface paints and walks, so the row is one row in one list
 //!   rather than a case each of them carries. It is what nothing observed: no
-//!   lock, no completed step, flagged uncertain — exactly what the engine's own
+//!   lock, no completed step, flagged uncertain — exactly what the server's own
 //!   classifier answers for a conversation it cannot probe. **It must not read
 //!   `live`**, which would claim a driver this seat has never seen.
 //! - **It is spent where it was made.** [`Model::resolve`] retires the claim
-//!   the moment the engine answers a row under that name, and moves the
+//!   the moment the server answers a row under that name, and moves the
 //!   selection **only while the selection is still the name the claim put
 //!   there**. A start can take a minute to write its branch, and an operator
 //!   who read something else in that minute must not be yanked back by their
@@ -42,7 +42,7 @@ use crate::reply::convs::{AgentState, ConvRow, Tone};
 use crate::ui::Model;
 
 impl Model {
-    /// **The conversation this window started and the engine cannot yet
+    /// **The conversation this window started and the server cannot yet
     /// resolve**, as the row that stands for it.
     ///
     /// The comparison against the selection is the whole predicate. Aiming
@@ -52,7 +52,7 @@ impl Model {
     ///
     /// **`name` is absent on the row** for the reason the vocabulary gives that
     /// field: it is what a later act may *address*, and this is the one
-    /// conversation the engine will not answer to yet. Withholding it is also
+    /// conversation the server will not answer to yet. Withholding it is also
     /// what keeps [`resolve`](Self::resolve) from matching this row against the
     /// claim it was built from.
     pub fn pending(&self) -> Option<ConvRow> {
@@ -76,7 +76,7 @@ impl Model {
             depth: 0,
             tone: Tone::Weak,
             // Nothing has run yet, so nothing has failed: this row is the
-            // window's own word for a send the engine has not confirmed.
+            // window's own word for a send the server has not confirmed.
             failure: None,
         })
     }
@@ -102,8 +102,8 @@ impl Model {
         }
     }
 
-    /// **The conversation list as it is painted and walked** — what the engine
-    /// answered, and the claim's row before the engine has anything to answer.
+    /// **The conversation list as it is painted and walked** — what the server
+    /// answered, and the claim's row before the server has anything to answer.
     ///
     /// One list, because the pointer and the keyboard both read it: a row a
     /// click could reach and a key could not is the second surface
@@ -122,7 +122,7 @@ impl Model {
         )
     }
 
-    /// **Spend the claim against what the engine answered.**
+    /// **Spend the claim against what the server answered.**
     ///
     /// The name is the join: a row hands back its *addressable* name exactly
     /// when a stored fact backs it, which is the same moment the conversation

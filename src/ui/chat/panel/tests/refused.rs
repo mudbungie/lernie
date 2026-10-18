@@ -1,6 +1,6 @@
-//! **The roster read refused** (bl-693d): a fresh engine answers a fresh seat
+//! **The roster read refused** (bl-693d): a fresh server answers a fresh seat
 //! *registered in no workspace*, which is an answer — so the card and the
-//! switcher say it under the engine, the bar does not, and the roster answer
+//! switcher say it under the server, the bar does not, and the roster answer
 //! that follows a founding takes it off the glass with no Esc.
 
 use serde_json::json;
@@ -10,8 +10,8 @@ use crate::reply::Read;
 use crate::test_support::window::seated;
 use crate::ui::{Held, Model, roster, theme};
 
-/// What the engine says to a client registered nowhere, in short.
-const NOWHERE: &str = "this certificate is registered in no workspace on this engine";
+/// What the server says to a client registered nowhere, in short.
+const NOWHERE: &str = "this certificate is registered in no workspace on this server";
 
 /// Collapse every run of whitespace, so a wrapped sentence reads back whole.
 fn words(seen: &[Seen], ink: egui::Color32) -> String {
@@ -29,7 +29,7 @@ fn glass(model: &mut Model) -> Vec<Seen> {
     crate::test_support::window::seen(&window, |ctx| crate::ui::render(ctx, model))
 }
 
-/// A seat whose one engine has not answered yet, its roster refused.
+/// A seat whose one server has not answered yet, its roster refused.
 fn refused() -> Model {
     let mut model = Model {
         conversation: None,
@@ -37,13 +37,13 @@ fn refused() -> Model {
         ..seated()
     };
     model.roster[0].held = Held::Unheard;
-    model.roster[0].walls.clear();
+    model.roster[0].workspaces.clear();
     let channel = model.roster[0].channel.clone();
     model.receipt(&channel, "workspaces", Read::Refusal(NOWHERE.to_owned()));
     model
 }
 
-/// **On the card, in the bar's words, and not in the bar**: the engine is
+/// **On the card, in the bar's words, and not in the bar**: the server is
 /// not 'waiting to hear' — it answered.
 #[test]
 fn a_refused_roster_is_said_on_the_card_and_not_in_the_bar() {
@@ -51,7 +51,7 @@ fn a_refused_roster_is_said_on_the_card_and_not_in_the_bar() {
     assert_eq!(model.notice, None, "the bar is not the channel's");
     let seen = glass(&mut model);
     let red = words(&seen, theme::accent(theme::State::Error));
-    let expected = format!("(this box's own engine) — the engine refused: {NOWHERE}");
+    let expected = format!("(this box's own server) — the server refused: {NOWHERE}");
     assert!(red.contains(&expected), "{red:?}");
     assert!(
         !seen
@@ -60,7 +60,7 @@ fn a_refused_roster_is_said_on_the_card_and_not_in_the_bar() {
     );
 }
 
-/// **Under the engine's row in the switcher, with the founding beside it**:
+/// **Under the server's row in the switcher, with the founding beside it**:
 /// `+ new workspace` is the remedy the refusal names.
 #[test]
 fn the_switcher_says_the_refusal_and_still_offers_a_founding() {
@@ -69,10 +69,10 @@ fn the_switcher_says_the_refusal_and_still_offers_a_founding() {
     let seen = glass(&mut model);
     let red = words(&seen, theme::accent(theme::State::Error));
     assert!(
-        red.contains(&format!("the engine refused: {NOWHERE}")),
+        red.contains(&format!("the server refused: {NOWHERE}")),
         "{red:?}"
     );
-    assert!(seen.iter().any(|run| run.text == roster::engine::FOUND));
+    assert!(seen.iter().any(|run| run.text == roster::server::FOUND));
     assert!(
         !seen
             .iter()
@@ -81,7 +81,7 @@ fn the_switcher_says_the_refusal_and_still_offers_a_founding() {
 }
 
 /// **The next roster answer spends it**: once a founding registers the
-/// client, the refusal is off the glass on the beat the walls land.
+/// client, the refusal is off the glass on the beat the workspaces land.
 #[test]
 fn the_roster_answer_after_a_founding_takes_the_refusal_down() {
     let mut model = refused();

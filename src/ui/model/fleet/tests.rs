@@ -1,5 +1,5 @@
 //! The fleet pane between frames: the gate on opening it, the three words, the
-//! receipt read by its op, and the retirement that goes with the wall.
+//! receipt read by its op, and the retirement that goes with the workspace.
 
 use crate::reply::{Read, Reply};
 use crate::test_support::window::{attempt, diff, fleeting, own, seated};
@@ -9,7 +9,7 @@ use crate::ui::Model;
 /// nothing aimed at would be controls with nowhere to fire. The aim is the
 /// gate, exactly as it is the tuning pane's.
 #[test]
-fn the_pane_opens_only_on_an_aimed_wall_and_closes_again() {
+fn the_pane_opens_only_on_an_aimed_workspace_and_closes_again() {
     let mut unaimed = Model::default();
     unaimed.begin_fleet();
     assert!(
@@ -86,7 +86,7 @@ fn the_two_reads_are_filed_off_the_pane() {
     assert_eq!(model.work.as_deref().expect("answered").len(), 1);
 }
 
-/// **The pane and both its answers go with the wall.** Its acts run drones and
+/// **The pane and both its answers go with the workspace.** Its acts run drones and
 /// spend money in ONE workspace, so a pane left standing over a new aim would
 /// offer to start a fleet somewhere the operator is no longer looking.
 #[test]
@@ -98,9 +98,9 @@ fn an_aim_retires_the_pane_and_both_its_answers() {
         "a selection retired a pane it is not about"
     );
     let aim = model.aim.clone().expect("the fixture is aimed");
-    // Another wall: an aim that did not move retires nothing
+    // Another workspace: an aim that did not move retires nothing
     // (`crate::ui::model::acts`).
-    model.aim_at(&aim.channel, "another wall entirely");
+    model.aim_at(&aim.channel, "another workspace entirely");
     assert!(model.fleet.is_none());
     assert!(model.attempts.is_none());
     assert!(model.work.is_none());
@@ -119,7 +119,7 @@ fn an_act_is_posted_as_one() {
 
 /// **A candidate act is addressed down the aimed channel, or not composed at
 /// all** — a seat holding no such channel has nothing to address it to, and a
-/// fan would accept the candidate on every engine this box is a client of.
+/// fan would accept the candidate on every server this box is a client of.
 #[test]
 fn a_candidate_with_no_channel_to_go_down_is_not_composed() {
     let mut model = Model::default();

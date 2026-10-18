@@ -5,7 +5,7 @@ server.
 
 > ## ⚠ The name has two eras, and the version is the fence
 >
-> **`lernie` through 0.0.x was the agent-loop engine.** That program did not
+> **`lernie` through 0.0.x was the agent loop.** That program did not
 > retire — it was renamed, and it continues as
 > **[`litany`](https://github.com/mudbungie/litany)**. If you are upgrading
 > from `lernie` 0.0.x, `litany` is what you want, and its README carries the
@@ -19,10 +19,10 @@ server.
 > **The version is the only rule that separates them.** A published record
 > cannot be corrected in place, so both READMEs state the fence and both name
 > the other era. Read every `lernie` you meet against it: a bare one names the
-> seat, and one bound to a `0.0.x` version names the engine at that release.
+> seat, and one bound to a `0.0.x` version names litany at that release.
 
 A seat holds an operator-issued certificate for the machine it runs on and dials
-in to an engine somewhere else. It asks the boundary's queries, dispatches its
+in to a server somewhere else. It asks the boundary's queries, dispatches its
 actions, and paints what comes back.
 
 It holds **no world**, runs **no agent** and executes **nothing**. Every durable
@@ -31,9 +31,10 @@ part you look at.
 
 ## Why it is a separate program
 
-lernie is one of four components that meet only at the wire — the server
-(**yog**), the seat (**lernie**), the agent-loop engine (**litany**, beneath the
-server) and the tool-execution foot (**thrall**).
+lernie is one of four components — the server (**yog**), the seat
+(**lernie**), the tool-execution foot (**thrall**), and **litany**, the agent
+loop yog runs as a subprocess per verb. The first three meet only at the wire;
+litany is not on it.
 
 The seat was severed so the machine holding the conversations is not the machine
 an operator sits at. A phone, a laptop and a desk can all be seats on one world
@@ -49,7 +50,7 @@ everything through the front door.
 **A working seat client, and no window yet.**
 
 ```
-lernie workspaces                       # every workspace an engine holds
+lernie workspaces                       # every workspace a server holds
 lernie conversations <workspace>        # one workspace's conversations
 lernie transcript <workspace> <agent>   # one conversation, entries and tail
 lernie follow <workspace> <agent>       # hold the line on the live tail
@@ -64,9 +65,9 @@ lernie clear-workflow <workspace> <agent>        # drop that mark; the tip's gov
 lernie delete-agent <workspace> <agent> <typed>  # empty <typed>; its name takes the children
 lernie delete-workspace <workspace> <typed>      # <typed> must be the workspace's own name
 
-lernie prices                                    # every engine's price table, bound and spend
-lernie price <provider> <model> <rates…> | off [--on <channel>]   # one engine's row
-lernie ceiling <usd> | off [--on <channel>]      # one engine's bound; `--on` names which
+lernie prices                                    # every server's price table, bound and spend
+lernie price <provider> <model> <rates…> | off [--on <channel>]   # one server's row
+lernie ceiling <usd> | off [--on <channel>]      # one server's bound; `--on` names which
                                                  # where this box holds more than one
 
 lernie start <workspace> <goal> [<dir>]  # begin a conversation — two acts, one word;
@@ -76,10 +77,10 @@ lernie                  # open the window
 lernie --json <verb>…   # the reply frames as they crossed, instead of rendered
 lernie entries          # every channel this box holds, without dialling any
 lernie ask <envelope>   # the same gestures, written out as JSON
-lernie help [<verb>]    # what a verb takes — answered with no engine up
+lernie help [<verb>]    # what a verb takes — answered with no server up
 ```
 
-A verb opens the channel its workspace names — this box's own engine, or one of
+A verb opens the channel its workspace names — this box's own server, or one of
 the workspaces it participates in elsewhere — over a real mTLS handshake with a
 real version preface, carries the envelope across, and **prints the reply
 rendered**: the rows of a listing, the entries of a transcript, the sentence a
@@ -104,7 +105,7 @@ parameters, then a `prompt` that hands that body straight back with the goal —
 so the thing between them is a local, and one word is what holds it. Both reply
 streams print; the exit code is the fire's. Name a **directory** after the goal
 and the start is staged on the path rung instead of the bare one: the
-conversation's driver runs there, and the engine's own target preamble is fired
+conversation's driver runs there, and the server's own target preamble is fired
 ahead of the goal. A directory named in the goal's prose is a request the
 agent's tools are free to ignore; the rung is not.
 
@@ -114,15 +115,15 @@ transcript a one-line status rule says where you are and what it costs; under
 the rule the prompt line, where Enter sends and Shift+Enter breaks a line.
 The rule's first five runs — workspace, provider, model, effort, priority —
 are dropups: a click lists what the seat holds and reloads it, and a pick
-aims the wall or sets the worker role (`/model` and Ctrl+O open the model's);
+aims the workspace or sets the worker role (`/model` and Ctrl+O open the model's);
 after them come this conversation's state, tokens, cost and context, and its
 name at the right end is a link to the switcher; the prompt's hint and the seat's card name the ways in —
 `/help`, Ctrl+X, `/roles`, `/login` for a provider's sign-in.
 Nothing else is on the glass until it is asked for: `/` opens a completion
 menu of every verb this seat offers right now — `/records`, `/trail`,
 `/attention`, `/stop`, `/flag <reason>` and the rest — and the word is the
-pane or the act; Ctrl+X opens the switcher, the one list of engines, their
-workspaces and their conversations, with a `+` on each engine that begins a
+pane or the act; Ctrl+X opens the switcher, the one list of servers, their
+workspaces and their conversations, with a `+` on each server that begins a
 conversation on it. What is asked for floats in a framed box over the
 transcript and Esc puts it down. While the selected conversation is asking,
 its decision stands above the rule as numbered choices a digit picks on an
@@ -145,9 +146,9 @@ conversation.
 **Everything it does is reachable from the keyboard.** Most of that is egui's —
 Tab moves focus between the controls and Space fires the focused one — and what
 Tab cannot make *usable* is a list, so the arrows walk the switcher's one
-list — engine rows, the open engine's workspaces, and the aimed one's
+list — server rows, the open server's workspaces, and the aimed one's
 conversations, in the order the glass paints them — and Escape puts an
-overlay, then a notice, down. Enter or Space on an engine's row opens it;
+overlay, then a notice, down. Enter or Space on a server's row opens it;
 Enter on a selected conversation chooses it. Moving in the list **selects**,
 so the cursor and the selection are one thing and the highlight the pointer
 paints is where the keyboard is. Every binding calls the same door the click
@@ -183,8 +184,8 @@ written by lernie:
 where the data root is `$XDG_DATA_HOME/lernie` or `$HOME/.local/share/lernie`.
 Each directory holds `ca.pem`, `client.pem`, `client.key` and `address`, plus an
 optional `workspace` file naming what that workspace is called on its host —
-and, for an engine that roves behind a NAT with no dialable listener, the pair
-`rendezvous.pub` and `pairing.salt`, with which a dial finds the engine over
+and, for a server that roves behind a NAT with no dialable listener, the pair
+`rendezvous.pub` and `pairing.salt`, with which a dial finds the server over
 the mainline DHT and punches a connection to it (`docs/DESIGN.md` §4.40; yog's
 `docs/REMOTE.md` §13). An entry without the pair is dialled at its address and
 nowhere else.
@@ -312,21 +313,21 @@ version crates.io does not already serve — tagged `v<version>`, with a GitHub
 Release beside it. `release-plz.toml` holds the four policy decisions it reads
 and the reason for each.
 
-**A protocol bump waits for the engine** (bl-52b5). yog mints the wire protocol
+**A protocol bump waits for the server** (bl-52b5). yog mints the wire protocol
 version and this crate *vendors* a copy of the number in a repo-root
 `PROTOCOL` file — one line, compiled into the constant by `build.rs` (bl-55b1),
 at the one address a module split cannot move, which is what both gates read;
 the wire is fail-closed on a mismatch and does not negotiate (yog
 `docs/REMOTE.md` §3). So `merge-release-pr` **holds every release while this repository's `PROTOCOL`
 exceeds the newest published yog's** — thrall took that road first, shipping 16
-while the published engine spoke 15, which composes with nothing. Strictly
-greater, not different: a seat *behind* the engine is the mirror-image defect
+while the published server spoke 15, which composes with nothing. Strictly
+greater, not different: a seat *behind* the server is the mirror-image defect
 and its release is the fix. Between the two gates — yog holds a bump until the
 consumers' mains carry it, each consumer holds a release until yog has
 published it — the ordering a bump requires is: **the consumers' mains first,
 then yog publishes, then the consumers publish.** The decision is
 `scripts/protocol-gate.sh`, proved both ways by `make protocol-gate`. A hold
-clears when the engine publishes, which is an event this repository never sees,
+clears when the server publishes, which is an event this repository never sees,
 so `merge-release-pr` runs on a `workflow_dispatch` of Release-plz as well as
 on a push (bl-614a): that dispatch is the door for re-judging a held release,
 and without it the release waited for an unrelated landing on `main`.
@@ -404,7 +405,7 @@ tracking releases is one `systemctl --user disable lernie-update.timer` away
 from stopping, with nothing to change here.
 
 It seats three text files — `scripts/deploy/lernie-update` and its `.timer` and
-`.service` — and carries no build. The engine's deployment moves an image
+`.service` — and carries no build. The server's deployment moves an image
 because an image is its unit of install; a seat's unit of install is a
 published version, and the registry already serves it. From then on the box
 reads the crates.io sparse index hourly, compares the newest **live** version
@@ -430,7 +431,7 @@ lands, and the tick leaves it standing, saying so, until the registry serves
 something newer (bl-d735; it used to put the older published version back
 within the hour).
 
-**A seat may run ahead of its engine, and the refusal is designed.** Engine
+**A seat may run ahead of its server, and the refusal is designed.** Server
 boxes reconcile on their own hourly schedule, so a seat that updates first may
 speak a newer `PROTOCOL` and be refused at the hello — fail-closed, in band,
 naming both versions (yog's `docs/REMOTE.md` §9.5). Wait; the skew closes

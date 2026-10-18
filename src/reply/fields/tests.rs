@@ -42,7 +42,7 @@ fn a_required_field_reads_or_refuses_by_name() {
 }
 
 /// The exit status is the one narrowing on this surface that is a real check:
-/// a status no `i32` holds is an engine saying something unpaintable.
+/// a status no `i32` holds is a server saying something unpaintable.
 #[test]
 fn an_exit_status_is_narrowed_and_says_so() {
     assert_eq!(exit(&body(&json!({"exit": 0}))), Ok(0));

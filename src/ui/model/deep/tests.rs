@@ -21,7 +21,7 @@ fn asking_for_a_step_posts_a_read_carrying_its_seq() {
     );
 }
 
-/// **With no wall or no conversation there is nothing to address**, which are
+/// **With no workspace or no conversation there is nothing to address**, which are
 /// the two states the pane cannot paint the control in.
 #[test]
 fn asking_with_no_subject_composes_nothing() {

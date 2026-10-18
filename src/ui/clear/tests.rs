@@ -27,7 +27,7 @@ fn the_trail_s_control_opens_the_place_and_stands_the_trail_down() {
 /// down every channel the standing set holds, and naming only the ones that
 /// answered would understate what the cut reaches.
 #[test]
-fn it_names_every_engine_the_cut_would_reach() {
+fn it_names_every_server_the_cut_would_reach() {
     let mut model = trailing();
     let quiet = Channel {
         name: "elsewhere".to_owned(),

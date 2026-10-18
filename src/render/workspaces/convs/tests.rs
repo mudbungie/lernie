@@ -45,7 +45,7 @@ fn a_subtree_is_named_under_its_root_rather_than_listed_beside_it() {
         said.contains("3 under it: TrellisCopper, ShoalTeacup, FrostyHillside"),
         "{said}"
     );
-    // The root still says how big the subtree is, off the field the engine
+    // The root still says how big the subtree is, off the field the server
     // already carries.
     assert!(said.contains("4 members"), "{said}");
 }

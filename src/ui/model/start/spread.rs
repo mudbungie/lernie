@@ -27,7 +27,7 @@
 //!
 //! `fan` carries its workspace inside the prepared body (`crate::envelope`),
 //! so it routes like any addressed gesture. The `prompt`s do too. What neither
-//! can do is name the ENGINE without a workspace — which is why `deliver` and
+//! can do is name the SERVER without a workspace — which is why `deliver` and
 //! `retire` are addressed down a channel instead (DESIGN §4.30's ruling, one
 //! pane over).
 
@@ -111,7 +111,7 @@ impl Model {
     /// with the one goal the operator typed.
     ///
     /// A `fanned` answer this window did not ask for still fires — nothing
-    /// that arrives is dropped ([`Model::fire`]'s own rule) — against the wall
+    /// that arrives is dropped ([`Model::fire`]'s own rule) — against the workspace
     /// each candidate came back naming, with the candidate's own goal. That is
     /// empty on the bare rung, so the ordinary empty-goal guard makes it a
     /// no-op rather than n conversations about nothing.

@@ -10,7 +10,7 @@ use egui_kittest::kittest::Queryable;
 const FIRST: &str = "20260830T051200Z-a1b2";
 const SECOND: &str = "20260830T052000Z-b2c3";
 
-/// The seated wall with a second conversation, asking, and both open.
+/// The seated workspace with a second conversation, asking, and both open.
 fn two_open() -> Model {
     let mut model = seated();
     let mut asking = conv(SECOND, "tidy the rule");

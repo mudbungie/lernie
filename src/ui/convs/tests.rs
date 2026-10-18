@@ -1,4 +1,4 @@
-//! The conversations under a wall: the two empty states, the headline, the
+//! The conversations under a workspace: the two empty states, the headline, the
 //! age, the indent, and the click that selects.
 
 /// What hangs under a conversation, on the glass.
@@ -15,20 +15,23 @@ use crate::test_support::window::{click, conv, pane, seated, seen};
 use crate::ui::Model;
 
 /// **The rows as the roster paints them** — [`super::under`] against the
-/// fixture's own aim, which is what `crate::ui::roster::wall` hands it.
+/// fixture's own aim, which is what `crate::ui::roster::workspace` hands it.
 pub(super) fn beneath(ui: &mut egui::Ui, model: &mut Model) {
-    let aim = model.aim.clone().expect("the fixture is aimed at a wall");
+    let aim = model
+        .aim
+        .clone()
+        .expect("the fixture is aimed at a workspace");
     super::under(ui, model, &aim, false);
 }
 
-/// **Two empty states and they are two different facts** (bl-f780): a wall
-/// nobody has been answered about yet, and a wall that answered nothing.
+/// **Two empty states and they are two different facts** (bl-f780): a workspace
+/// nobody has been answered about yet, and a workspace that answered nothing.
 ///
 /// The second used to be said about both, which states a definite fact about a
-/// wall nobody looked at — the same thing `super::UNCERTAIN` refuses to do one
+/// workspace nobody looked at — the same thing `super::UNCERTAIN` refuses to do one
 /// level down. **The other two went with the pane** (DESIGN §4.39): *pick a
 /// workspace* had no subject to name once the rows stand under their own
-/// wall's row, and an aim naming a channel this seat does not hold has no row
+/// workspace's row, and an aim naming a channel this seat does not hold has no row
 /// to stand under at all.
 #[test]
 fn the_empty_states_say_two_different_things() {
@@ -48,7 +51,7 @@ fn the_empty_states_say_two_different_things() {
 
 /// **Aiming somewhere else retires the ANSWER with the rows.** The transient
 /// face of the same defect: between the keypress and the reply the list stood
-/// under the new wall's row and said that wall held nothing.
+/// under the new workspace's row and said that workspace held nothing.
 #[test]
 fn aiming_elsewhere_leaves_the_pane_waiting_rather_than_reporting_nothing() {
     let mut model = seated();
@@ -58,7 +61,7 @@ fn aiming_elsewhere_leaves_the_pane_waiting_rather_than_reporting_nothing() {
         crate::reply::Read::Answer(crate::reply::Reply::Conversations(vec![conv("id", "one")])),
     );
     assert_eq!(model.answered, model.aim, "the answer is about the aim");
-    model.aim_at("(this box's own engine)", "elsewhere");
+    model.aim_at("(this box's own server)", "elsewhere");
     assert_eq!(model.answered, None, "and it is retired with the rows");
     let painted = pane(|ui| beneath(ui, &mut model));
     assert!(painted.contains(NOT_ANSWERED), "{painted}");
@@ -151,7 +154,7 @@ fn a_member_is_indented_and_its_preview_is_weak_ink_at_the_row_s_own_edge() {
 
 /// **A red row says what is wrong with it** (REMOTE §9.10). A conversation
 /// whose latest model call failed used to paint a `bad` tone and no words, so
-/// a wall whose provider row holds no credential was a list of red rows an
+/// a workspace whose provider row holds no credential was a list of red rows an
 /// operator opened one by one to learn the one thing all of them said.
 ///
 /// Three assertions, and the ordering is the one that would rot silently: the
@@ -187,7 +190,7 @@ fn a_failed_row_paints_its_clause_above_its_preview_and_in_its_own_tone() {
 }
 
 /// **Selecting a conversation drops the last one's transcript**, for the reason
-/// the roster drops the last wall's list: content under a new header reads as
+/// the roster drops the last workspace's list: content under a new header reads as
 /// current, and a transcript is the one place that lies worst.
 #[test]
 fn a_click_selects_the_conversation_and_drops_the_last_one_s_transcript() {
@@ -203,7 +206,7 @@ fn a_click_selects_the_conversation_and_drops_the_last_one_s_transcript() {
 }
 
 /// **A state nothing observed wears a `?`** after the glyph it qualifies. The
-/// engine answers a reading and whether it could take one, and a badge that
+/// server answers a reading and whether it could take one, and a badge that
 /// painted only the first would state a definite fact about a conversation
 /// nobody looked at.
 #[test]
@@ -216,10 +219,10 @@ fn an_unobserved_state_is_marked_rather_than_painted_as_definite() {
 }
 
 /// **The conversation this window just started stands in the list**, before the
-/// engine has anything to answer about it: the minted name, the operator's own
+/// server has anything to answer about it: the minted name, the operator's own
 /// goal beneath it, and a badge that says nothing observed any of it.
 #[test]
-fn a_started_conversation_stands_in_the_list_before_the_engine_can_answer() {
+fn a_started_conversation_stands_in_the_list_before_the_server_can_answer() {
     let mut model = Model {
         conversation: Some("brisk-otter".to_owned()),
         start: Some(crate::ui::model::Start {

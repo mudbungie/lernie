@@ -37,15 +37,15 @@
 //! taking the root as an argument.
 //!
 //! **`LERNIE_HOME` is doubly refused, and the second reason is the fence.**
-//! That variable *existed*, and it named the agent-loop engine's harness root
+//! That variable *existed*, and it named the agent loop's harness root
 //! through `lernie` 0.0.x. It is `LITANY_HOME` now (REMOTE §12), and reviving
 //! the old spelling for a different program would make one name mean two things
 //! on a box that has both installed.
 //!
 //! **The data root has the same collision and it is benign, deliberately.** A
-//! box that ran the pre-fence engine may hold a `$XDG_DATA_HOME/lernie` from
+//! box that ran litany under this name may hold a `$XDG_DATA_HOME/lernie` from
 //! that era. This crate reads exactly two paths under its root — `wire/` and
-//! `wire/workspaces/` — and the engine's home held none of that shape, so the
+//! `wire/workspaces/` — and litany's home held none of that shape, so the
 //! two coexist without a file in common. Picking a different directory to avoid
 //! a directory name would have been the seat conceding the name it was given.
 //!

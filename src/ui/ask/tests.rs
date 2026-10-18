@@ -270,11 +270,11 @@ fn a_seen_row_that_still_asks_is_said_to() {
     assert!(said.contains("still asking"), "{said}");
 }
 
-/// **While the aimed engine will not dial, nothing is answered** (bl-8d6d):
+/// **While the aimed server will not dial, nothing is answered** (bl-8d6d):
 /// the choices go faint, the box's key line goes, a click, a digit and
-/// Enter post nothing, and the field's hint is the engine's own sentence.
+/// Enter post nothing, and the field's hint is the server's own sentence.
 #[test]
-fn a_down_engine_s_ask_goes_faint_and_answers_nothing() {
+fn a_down_server_s_ask_goes_faint_and_answers_nothing() {
     let why = "nothing provisioned for this channel";
     let mut model = asked();
     model.roster[0].held = crate::ui::Held::Unheld(why.to_owned());

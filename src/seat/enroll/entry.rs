@@ -6,7 +6,7 @@
 //!
 //! An entry is four files, and their names are
 //! [`crate::channel::material`]'s — the wire's own, read by this seat and by
-//! every foot — plus, from an engine holding rendezvous material, the two
+//! every foot — plus, from a server holding rendezvous material, the two
 //! [`crate::channel::rendezvous`] names (`rendezvous.pub`, `pairing.salt`;
 //! REMOTE §8.4, §13.2), so six. This module writes those lists rather than a
 //! list of its own, so a name that moves moves once. What it lays down is
@@ -31,7 +31,7 @@
 //! entry already holding material is never overwritten. Re-issuing distrusts
 //! nothing, so a clobbered `client.pem` would leave two live certificates
 //! under one identity with the surviving key belonging to neither — the same
-//! reason the engine's own mint refuses a second enrollment under one name
+//! reason the server's own mint refuses a second enrollment under one name
 //! (REMOTE §8.4). A fresh directory is the remedy and the refusal says so.
 //!
 //! # And the private key is created narrow, not widened afterwards
@@ -39,8 +39,8 @@
 //! The mode rides the `open`, so the file is never readable by anyone else
 //! even for the instant between creating it and correcting it. Every file is
 //! `0600` but one: `rendezvous.pub` is a public key and lands `0644`, the mode
-//! the engine's own mint gives it — the salt beside it is shared with the
-//! engine and stays narrow. `#[cfg(unix)]`
+//! the server's own mint gives it — the salt beside it is shared with the
+//! server and stays narrow. `#[cfg(unix)]`
 //! guards the one call rather than the function, because a mode is the only
 //! part of this that is a platform's fact.
 
@@ -52,7 +52,7 @@ use crate::reply::enrolled::{Enrolled, Handoff};
 
 /// The mode of every file but one.
 const NARROW: u32 = 0o600;
-/// The engine's rendezvous public key's, as the engine mints it.
+/// The server's rendezvous public key's, as the server mints it.
 const OPEN: u32 = 0o644;
 
 /// What a refusal offers instead. It is an act on this box, by this hand, and

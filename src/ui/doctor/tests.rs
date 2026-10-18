@@ -17,7 +17,7 @@ fn a_shut_pane_paints_nothing_and_reports_it() {
 }
 
 /// **One row per check, in each ok state**: a check that holds says so and
-/// carries no remedy; one that does not says so and carries the engine's
+/// carries no remedy; one that does not says so and carries the server's
 /// remedy verbatim under it.
 #[test]
 fn every_check_paints_its_state_its_fact_and_the_remedy_where_there_is_one() {
@@ -26,10 +26,10 @@ fn every_check_paints_its_state_its_fact_and_the_remedy_where_there_is_one() {
         render(ui, &mut model);
     });
     for word in [
-        "(this box's own engine)",
+        "(this box's own server)",
         "ok  listener: what listener was found to be",
         "NOT OK  address: what address was found to be",
-        "the engine's own remedy for address",
+        "the server's own remedy for address",
     ] {
         assert!(painted.contains(word), "{word:?}:\n{painted}");
     }

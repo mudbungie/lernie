@@ -2,7 +2,7 @@
 //! entries with the live tail folded among them, which is the whole of what
 //! the chat pane paints.
 //!
-//! **Bytes ride as text, and that is the engine's ruling read from this side.**
+//! **Bytes ride as text, and that is the server's ruling read from this side.**
 //! Every entry carries the verbatim bytes it was read from, and they cross as
 //! a string: a transcript entry is a text file, the Raw toggle is the only
 //! other door to the envelope the parsed view drops, and a byte array beside
@@ -11,12 +11,12 @@
 //! wire carried and never claims to hold the file.
 //!
 //! **Every entry is kept, including the ones nothing can parse.** An entry
-//! whose filename or bytes the engine could not read arrives as
+//! whose filename or bytes the server could not read arrives as
 //! [`EntryKind::Raw`], and an entry of a kind *this build* does not know
 //! arrives as [`EntryKind::Unknown`] — rung 3 of [`super`]'s policy, spent
 //! here rather than rung 2's refusal, because the entry still carries its
 //! `raw` and a pane that can show the bytes has something true to paint. The
-//! two are held apart deliberately: "the engine could not read this" and "this
+//! two are held apart deliberately: "the server could not read this" and "this
 //! seat is behind" are different sentences and only one of them is fixed by an
 //! upgrade.
 
@@ -56,7 +56,7 @@ pub enum EntryKind {
     /// deposit** — a child's terminal, asserting how it ended.
     ///
     /// The epitaph rides as its **label**, not as an enum this seat mirrors.
-    /// The engine's own reader for it is total by design — an unrecognised
+    /// The server's own reader for it is total by design — an unrecognised
     /// ending reads back as the word it was written from — so a seat that
     /// re-derived a closed set here would be strictly stricter than the
     /// authority it implements against, which is a way of being wrong.
@@ -111,7 +111,7 @@ pub enum EntryKind {
         reason: Option<String>,
         auth_row: Option<String>,
     },
-    /// The engine could not parse it, and surfaced it rather than dropping it.
+    /// The server could not parse it, and surfaced it rather than dropping it.
     Raw,
     /// **This build** could not name it. The word is kept verbatim, and `raw`
     /// still holds what the entry said.

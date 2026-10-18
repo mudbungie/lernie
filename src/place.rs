@@ -17,17 +17,17 @@
 //! first run gets. There is no refusal here and no repair path, because a
 //! forgotten selection is a keypress and a startup error is an outage.
 //!
-//! That is also why the aim is not checked against anything. A wall that has
-//! gone is a wall no channel resolves, and the standing set already declines to
+//! That is also why the aim is not checked against anything. A workspace that has
+//! gone is a workspace no channel resolves, and the standing set already declines to
 //! ask about one (`crate::state::Standing::aimed`) — so a stale place is inert
 //! by a rule that was already there, and validating it here would be a second
 //! answer to a question already settled.
 //!
 //! # What it holds, and how it grows
 //!
-//! The wall the window was aimed at, the accordion beside it (DESIGN §4.39):
-//! which engine is open, what each engine's last opening ranks as, and the
-//! wall last aimed under each — whether the bar is pinned open (§4.44), and
+//! The workspace the window was aimed at, the accordion beside it (DESIGN §4.39):
+//! which server is open, what each server's last opening ranks as, and the
+//! workspace last aimed under each — whether the bar is pinned open (§4.44), and
 //! the settings set off their defaults (§4.46 item 4), the two widths the
 //! bar's edge was dragged to among them.
 //! **A JSON object rather than lines**, so
@@ -40,7 +40,7 @@
 //! **Why the accordion is here and not across the boundary**: §4.39's ruling,
 //! and it is not §4.25's pin exception. A channel is a client-side fact, named
 //! by this box and held by no other, so the order this box shows its channels
-//! in can be nobody else's and there is no engine to assert it into.
+//! in can be nobody else's and there is no server to assert it into.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -48,7 +48,7 @@ use std::path::{Path, PathBuf};
 use serde_json::{Value, json};
 
 use crate::settings::{self, Settings};
-use crate::ui::{Aim, Engines};
+use crate::ui::{Aim, Servers};
 
 /// The file, under the state root. One name, so there is nothing to configure.
 const FILE: &str = "place.json";
@@ -75,11 +75,11 @@ const SETTINGS: &str = "settings";
 /// float has no total equality. Nothing here needs one.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Place {
-    /// The wall the window was aimed at, or nothing — which an operator who
+    /// The workspace the window was aimed at, or nothing — which an operator who
     /// left the roster comes back to.
     pub aim: Option<Aim>,
-    /// How the engines were arranged (`crate::ui::Engines`).
-    pub engines: Engines,
+    /// How the servers were arranged (`crate::ui::Servers`).
+    pub servers: Servers,
     /// **Whether the bar is pinned open** (DESIGN §4.44): where the bar
     /// stands is a layout the operator chose, so it outlives the run.
     pub pinned: bool,
@@ -95,7 +95,7 @@ impl Place {
     pub fn of(model: &crate::ui::Model) -> Self {
         Self {
             aim: model.aim.clone(),
-            engines: model.engines.clone(),
+            servers: model.servers.clone(),
             pinned: model.bar.pinned,
             settings: model.settings.clone(),
         }
@@ -116,7 +116,7 @@ pub fn read(root: &Path) -> Place {
         .unwrap_or(Value::Null);
     Place {
         aim: aimed(&held),
-        engines: Engines {
+        servers: Servers {
             open: held.get(OPEN).and_then(Value::as_str).map(str::to_owned),
             opened: table(&held, OPENED, Value::as_u64),
             aimed: table(&held, AIMED, |held| held.as_str().map(str::to_owned)),
@@ -166,9 +166,9 @@ pub fn write(root: &Path, place: &Place) -> Result<(), String> {
             .aim
             .clone()
             .map(|aim| json!({ CHANNEL: aim.channel, ADDRESS: aim.address })),
-        OPEN: place.engines.open,
-        OPENED: place.engines.opened,
-        AIMED: place.engines.aimed,
+        OPEN: place.servers.open,
+        OPENED: place.servers.opened,
+        AIMED: place.servers.aimed,
         PINNED: place.pinned,
     });
     let knobs = settings::to_json(&place.settings);

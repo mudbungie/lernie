@@ -4,7 +4,7 @@
 # hand. `scripts/deploy/update-selftest.sh` drives this file under fake
 # `curl`/`cargo` shims and is what `make deploy-selftest` runs.
 #
-# ONE RECONCILIATION, NOT TWO. The engine's retired reconciler had a second
+# ONE RECONCILIATION, NOT TWO. The server's retired reconciler had a second
 # half — restart the unit under the new binary, deferred while a turn was in
 # flight — and none of it applies here. **A seat has no unit and no turn.** It
 # is a window somebody launched; `cargo install` replaces the file by rename,
@@ -21,22 +21,22 @@
 # ---------------------------------------------------------------------------
 # PROTOCOL SKEW IS DESIGNED BEHAVIOR, NOT A DEFECT TO CODE AROUND.
 #
-# The seat and the engine are separately installed components on separate
+# The seat and the server are separately installed components on separate
 # schedules (yog `docs/REMOTE.md` §12), and this timer is one of those
-# schedules. A seat that updates ahead of its engine may speak a newer
+# schedules. A seat that updates ahead of its server may speak a newer
 # `PROTOCOL`, and yog's §9.5 hello is fail-closed: each end writes one
 # `{"protocol": <integer>}` frame before it reads the peer's, a mismatch is
 # refused in band on the connection the seat opened, *before* any gesture is
 # decoded, and the refusal names both versions. So the window will not paint —
 # it will say, in one line, that the two ends disagree and by how much.
 #
-# **Wait, do not intervene.** Engine boxes reconcile hourly from their own
+# **Wait, do not intervene.** Server boxes reconcile hourly from their own
 # registry, so the skew closes itself within the hour without anybody logging
 # in to either machine. There is no version list here, no capability probe, no
 # compat shim and no downgrade, by REMOTE's ruling and not by omission — an
 # unversioned wire answering an old question with a new meaning is the failure
 # the preface exists to prevent, and a seat that quietly spoke down to an old
-# engine would be exactly that. If the skew does NOT close, the engine box's
+# server would be exactly that. If the skew does NOT close, the server box's
 # reconciler is the thing that is broken; this one is working.
 # ---------------------------------------------------------------------------
 set -eu
@@ -61,11 +61,11 @@ ROOT="$HOME/.local"
 BIN="$ROOT/bin/$CRATE"
 
 # **The era fence** (`docs/DESIGN.md` §0). The name carries two programs: the
-# agent-loop engine through 0.0.x, this seat from 0.1.0, and the version is the
+# agent loop through 0.0.x, this seat from 0.1.0, and the version is the
 # only rule separating them. Both lines are live on the registry and neither
 # can ever be un-published. So "the newest live version" is only the right
 # answer while it is a seat — if every 0.1.x were yanked, the newest live
-# version would be an *engine*, and this timer would unattendedly replace the
+# version would be *litany*'s, and this timer would unattendedly replace the
 # operator's window with a different program that happens to share its name.
 # Checked once on the winner rather than per line, so the refusal can say what
 # it actually found.
@@ -143,7 +143,7 @@ want=$(latest_live)
 [ -n "$want" ] || die 'the registry index named no live version'
 at_or_above_fence "$want" \
     || die "the newest live version is $want, below the $FENCE fence: that is the
-  agent-loop engine's line, not this seat's (docs/DESIGN.md §0). Refusing to
+  agent loop's line, not this seat's (docs/DESIGN.md §0). Refusing to
   install it. Every seat release is yanked — un-yank one, or publish."
 
 have=$(installed)

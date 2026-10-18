@@ -37,7 +37,7 @@ fn a_roster_carries_its_rows_and_how_current_they_are() {
 }
 
 /// **The ordinary answer says nothing about currency**, and that absence is
-/// what makes "current" and "the engine declined to say" one reading. An empty
+/// what makes "current" and "the server declined to say" one reading. An empty
 /// enumeration is an answer too.
 #[test]
 fn a_current_roster_states_no_note_and_an_empty_one_is_an_answer() {
@@ -63,7 +63,7 @@ fn an_unpinned_row_states_no_rank_at_all() {
 
 /// **Rung 3.** A classification this build does not know keeps its word and
 /// paints it; it never becomes one of the three, because a replay painted as a
-/// wall is a lie about what may be written to.
+/// workspace is a lie about what may be written to.
 #[test]
 fn an_unknown_classification_keeps_its_word() {
     for (word, expected) in [
@@ -94,8 +94,8 @@ fn a_row_that_is_not_a_row_refuses() {
     assert!(listing.contains("not an object"), "{listing}");
 }
 
-/// **The ledger column** (REMOTE §9.23): a wall's whole priced spend, read
-/// where it rode and `None` where the engine has no price table.
+/// **The ledger column** (REMOTE §9.23): a workspace's whole priced spend, read
+/// where it rode and `None` where the server has no price table.
 #[test]
 fn a_row_carries_its_spend_where_one_rode() {
     let bare = json!({ "workspace": "home", "kind": "named",

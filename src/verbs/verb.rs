@@ -1,7 +1,7 @@
 //! **What a verb IS**: the row, the usage line it computes, the flags its own
 //! word can raise, and the one envelope it becomes.
 //!
-//! Split from [`super`] at the 300-line wall on the seam that module's own doc
+//! Split from [`super`] at the 300-line workspace on the seam that module's own doc
 //! draws: [`super`] is the SURFACE — which words exist, which module each row
 //! lives in, and what the whole table is for — and this is the one type every
 //! row is an instance of. The first moves whenever a gesture is added; the

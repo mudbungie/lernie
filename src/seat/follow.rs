@@ -11,9 +11,9 @@
 //!   and exited 1** (bl-3dca). Nothing is wrong with a conversation at rest —
 //!   it is the ordinary state of one an operator has just looked at — but exit
 //!   1 with no output is byte for byte what a failed dial, a refused
-//!   certificate and a dead engine look like, and those are what a first-time
+//!   certificate and a dead server look like, and those are what a first-time
 //!   user suspects.
-//! - **On a live one it returned mid-turn, every time** (bl-f076). The engine
+//! - **On a live one it returned mid-turn, every time** (bl-f076). The server
 //!   ends the stream at the STEP boundary (yog's REMOTE §5.1), not at the
 //!   turn's, so three consecutive reads of one conversation ended after 3, 8
 //!   and 6 seconds while it worked on. Watching an agent was
@@ -23,9 +23,9 @@
 //! # The rule this file implements
 //!
 //! **Hold the line until the conversation rests, or until the user quits.**
-//! The engine's own step boundary is not the end of anything an operator
+//! The server's own step boundary is not the end of anything an operator
 //! cares about, so a read that ends there is re-asked; what ends the WORD is
-//! the conversation coming to rest, and that is a fact the engine already
+//! the conversation coming to rest, and that is a fact the server already
 //! answers — `agent`'s `state`. So the loop is: ask what it is doing, and if
 //! it is not working, say so and exit 0; otherwise hold a read and print what
 //! lands, then ask again.
@@ -82,8 +82,8 @@ use rest::{Rest, ending, parked, resting, waiting};
 
 /// **How long a read that brought nothing waits before asking again.**
 ///
-/// The engine paces this loop on its own — a held read stays open while the
-/// tail is quiet — so this is insurance against an engine that closes an empty
+/// The server paces this loop on its own — a held read stays open while the
+/// tail is quiet — so this is insurance against a server that closes an empty
 /// read at once, where the alternative is a busy loop on somebody else's
 /// socket. It is not a poll interval: a read that brought a frame asks again
 /// immediately.
@@ -102,7 +102,7 @@ pub fn follow(
     let holding = crate::verbs::follow(workspace.to_owned(), agent.to_owned());
     let mail = crate::verbs::inbox(workspace.to_owned(), agent.to_owned());
     // **What the closing line's elapsed is measured from** (bl-293d): the
-    // whole of what this seat can say a duration about. The engine's own
+    // whole of what this seat can say a duration about. The server's own
     // turn started before the watch did and is not this end's to time.
     let began = Instant::now();
     let mut told = false;
@@ -112,7 +112,7 @@ pub fn follow(
             Err(reach) => return Verdict::failed(reach.said()),
         };
         match resting(&standing) {
-            // The engine answered something this build cannot read a state
+            // The server answered something this build cannot read a state
             // out of — a refusal, or a kind it does not paint. That answer is
             // the product and the exit code is what says the watch never
             // started.

@@ -13,14 +13,14 @@ use crate::cli::Stream;
 use crate::test_support::{Scratch, wire};
 
 /// **A destination that will not take the material never costs it** (bl-1554).
-/// The enrollment is already spent at the engine, so the answer goes to stdout
+/// The enrollment is already spent at the server, so the answer goes to stdout
 /// whichever way the filing went and only the exit code says no — and the
 /// reason it was not filed is a diagnosis, so it is said on the other stream
 /// (bl-ac76), which is what lets the answer be one envelope under `--json`.
 #[test]
 fn a_destination_that_refuses_still_says_the_material_and_fails() {
     let scratch = Scratch::new();
-    let _engine = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
+    let _server = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
     let blocked = scratch.path().join("occupied");
     std::fs::write(&blocked, "notreal").expect("the blocker was written");
     let (verdict, warned) = acted(
@@ -41,7 +41,7 @@ fn a_destination_that_refuses_still_says_the_material_and_fails() {
     assert!(verdict.text.contains("yog-enroll"), "{}", verdict.text);
 }
 
-/// **A refusal is the engine answering**, so it is this run's product: it goes
+/// **A refusal is the server answering**, so it is this run's product: it goes
 /// to stdout with the rest of the stream and only the exit code says no. It
 /// carries no material to withhold.
 #[test]
@@ -98,7 +98,7 @@ fn a_root_with_no_channel_fails_before_anything_is_asked() {
 /// pair (1567 without) against a 2331-byte ceiling, so this is a recipe that
 /// moved — an RSA key, a longer chain — and
 /// saying the size is what makes that legible rather than mysterious. But the
-/// enrollment is already spent at the engine, so withholding the answer over a
+/// enrollment is already spent at the server, so withholding the answer over a
 /// drawing would burn the name: the line is said, and the symbol is what is
 /// missing.
 #[test]
@@ -126,10 +126,10 @@ fn material_too_big_for_a_symbol_says_so_and_still_says_the_material() {
 #[test]
 fn an_enrollment_that_crossed_with_no_answer_is_in_doubt_and_says_not_to_repeat() {
     let scratch = Scratch::new();
-    let _engine = wire::wired(
+    let _server = wire::wired(
         &scratch,
         &wire::flat(),
-        vec![crate::test_support::engine::Answer::Hangup],
+        vec![crate::test_support::server::Answer::Hangup],
     );
     let (verdict, _) = acted(
         scratch.path(),
@@ -148,10 +148,10 @@ fn an_enrollment_that_crossed_with_no_answer_is_in_doubt_and_says_not_to_repeat(
     );
 }
 
-/// An engine that closes without a frame has answered nothing, and that is its
+/// A server that closes without a frame has answered nothing, and that is its
 /// own sentence rather than a reading of an absent object.
 #[test]
-fn an_empty_stream_says_the_engine_answered_nothing() {
+fn an_empty_stream_says_the_server_answered_nothing() {
     let (verdict, ..) = spent(Vec::new());
     assert!(verdict.text.contains("nothing at all"), "{}", verdict.text);
 }

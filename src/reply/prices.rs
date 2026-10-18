@@ -35,7 +35,7 @@ pub(crate) const KIND: &str = "prices";
 /// what a ceiling act woke.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Prices {
-    /// The table, flattened, in the engine's own order.
+    /// The table, flattened, in the server's own order.
     pub rows: Vec<Rate>,
     /// The bound in USD, where one is set.
     pub ceiling: Option<Number>,

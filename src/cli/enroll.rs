@@ -2,7 +2,7 @@
 //! than its parameters, in its own file for the reason yog's own line reader
 //! cut the same seam at (`src/boundary/line/enroll.rs`): *a verb whose grammar
 //! is more than words is its own file*. It took [`super`] past the 300-line
-//! wall when the second optional word landed (bl-971c).
+//! workspace when the second optional word landed (bl-971c).
 //!
 //! Everything here is read in the pure function, because everything here is
 //! decided entirely by what was typed — the two optional words, and the grade,
@@ -25,7 +25,7 @@ use crate::render::Form;
 /// material down; neither implies the other, and a device behind an alias
 /// needs the first whether or not it needs the second. What the seat settles
 /// about `--at` is only that the word was given a value: whether the value
-/// names an endpoint a device can dial is the ENGINE's judgement, which it
+/// names an endpoint a device can dial is the SERVER's judgement, which it
 /// makes on its own address and a stated one alike and answers with the remedy
 /// (`yog wire-certs`), so a copy of that rule here would be a second authority
 /// on addresses that could disagree with the first.
@@ -38,7 +38,7 @@ use crate::render::Form;
 /// It used to cost a full round trip and come back `unknown grade "OPERATOR"` —
 /// true, and naming neither of the two words that would have worked.
 ///
-/// **It is not a second authority on grades.** The engine stays the place that
+/// **It is not a second authority on grades.** The server stays the place that
 /// decides what a grade means and whether this box may ask for one at all —
 /// §8.4 refuses the act unless this box's own leaf is operator-grade, which is
 /// not knowable here. What is settled here is only whether the word is one of
@@ -124,7 +124,7 @@ pub const INTO: &str = "--into";
 
 /// The route the enrolled device will dial, which becomes
 /// [`crate::verbs::ADDRESS`] on the wire. It is `--at` and not `--address`
-/// because it reads as the preposition it is, and because the engine's own
+/// because it reads as the preposition it is, and because the server's own
 /// line spells it that way (yog's `/enroll <name> [foot] --at <host>:<port>`),
 /// so an operator who learned it at one face has learned it at both.
 pub const AT: &str = "--at";

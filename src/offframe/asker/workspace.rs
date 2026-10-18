@@ -1,16 +1,16 @@
-//! **The questions that name one workspace**, asked of the aimed wall.
+//! **The questions that name one workspace**, asked of the aimed workspace.
 //!
 //! Split from [`super`] at the design-time budget on the seam that module's
 //! own doc already draws (`crate::verbs::Verb::addresses_a_workspace`): a
 //! question with no workspace field goes down every channel this box holds and
-//! its pane is the union, and a question with one goes down the aimed wall's
+//! its pane is the union, and a question with one goes down the aimed workspace's
 //! alone. This is the second, and it is where six panes' reads nest — which is
 //! why it is the half that grows.
 //!
 //! **A pane that asks at BOTH widths appears here AND in [`super::fanned`]**,
 //! and that is a fact about its ops rather than a special case: the ball pane
 //! reads `balls` and `board` of every channel and `workspace-balls` and
-//! `marks` of the aimed wall, from one standing (DESIGN §4.31).
+//! `marks` of the aimed workspace, from one standing (DESIGN §4.31).
 
 use std::path::Path;
 
@@ -18,7 +18,7 @@ use super::{aimed, asked, down, read};
 use crate::state::{Link, Open};
 use crate::ui::Channel;
 
-/// **The questions that name one workspace**, asked of the aimed wall.
+/// **The questions that name one workspace**, asked of the aimed workspace.
 pub(super) fn ask(
     link: &Link,
     root: &Path,
@@ -34,7 +34,7 @@ pub(super) fn ask(
     );
     tuning(link, root, standing, channel, aim);
     // **And the ball pane's other two are AIMED** (bl-d2af), on the roles
-    // read's own terms: the wall the operator is looking at is asked what
+    // read's own terms: the workspace the operator is looking at is asked what
     // balls it holds and which branch it tracks them on, while the same pane
     // stands. One pane, two widths, because that is what its four ops are.
     if standing.standing(&Open::Board) {
@@ -54,7 +54,7 @@ pub(super) fn ask(
     fleet(link, root, standing, channel, aim);
     // **The machines stand on their pane** (bl-e53c), on the provider table's
     // own terms and for a sharper form of its reason: a row's presence is true
-    // only at the instant the engine answered it, so the read that says a foot
+    // only at the instant the server answered it, so the read that says a foot
     // is connected is worth nothing unless it is asked again.
     if standing.standing(&Open::Clients) {
         aimed(
@@ -67,7 +67,7 @@ pub(super) fn ask(
     config(link, root, standing, channel, aim);
 }
 
-/// **The selected conversation's reads**, asked of the wall it is on — ahead
+/// **The selected conversation's reads**, asked of the workspace it is on — ahead
 /// of everything else in a pass, and again at the next leg when the selection
 /// moves mid-pass ([`super::caught_up`], bl-1f22).
 pub(super) fn selected(
@@ -75,7 +75,7 @@ pub(super) fn selected(
     root: &Path,
     standing: &crate::state::Standing,
     channel: &Channel,
-    wall: &str,
+    workspace: &str,
     conversation: &str,
 ) {
     about(
@@ -83,7 +83,7 @@ pub(super) fn selected(
         root,
         channel,
         conversation,
-        &crate::verbs::transcript(wall.to_owned(), conversation.to_owned()),
+        &crate::verbs::transcript(workspace.to_owned(), conversation.to_owned()),
     );
     // **The conversation's own ROW stands with its transcript** (bl-7b03), and
     // not with the records pane it used to be asked for. It carries the four
@@ -97,13 +97,13 @@ pub(super) fn selected(
         root,
         channel,
         conversation,
-        &crate::verbs::agent(wall.to_owned(), conversation.to_owned()),
+        &crate::verbs::agent(workspace.to_owned(), conversation.to_owned()),
     );
     // **The records pane's reads stand on the pane exactly as the roles read
     // does** (bl-2cf7): the selected conversation is asked what its loop did
     // and what its worktree holds only while somebody is looking.
     if standing.standing(&Open::Records) {
-        records(link, root, channel, wall, conversation);
+        records(link, root, channel, workspace, conversation);
     }
 }
 
@@ -119,7 +119,7 @@ pub(super) fn selected(
 /// were the conversation's own row and its undelivered mail, of which the row
 /// went back out to the conversation's own standing set at bl-7b03 — this pane
 /// still reads it, off the same field, but the header over the TRANSCRIPT
-/// needs it whether or not this pane is open. The sixth is the wall's lineage
+/// needs it whether or not this pane is open. The sixth is the workspace's lineage
 /// listing (bl-ed20), the config pane's read asked here too, because the names
 /// it answers are the only arguments the workflow mark's control can carry
 /// (`crate::ui::records::workflow`) — the spine's reason, one read over. It
@@ -128,13 +128,13 @@ pub(super) fn selected(
 /// **The pane's seventh read is not here and never will be**: `step` is
 /// addressed at one row of the ledger rather than at the pane, so the control
 /// on that row posts it (`crate::ui::model::deep`).
-fn records(link: &Link, root: &Path, channel: &Channel, wall: &str, conversation: &str) {
+fn records(link: &Link, root: &Path, channel: &Channel, workspace: &str, conversation: &str) {
     for ask in [
-        crate::verbs::steps(wall.to_owned(), conversation.to_owned()),
-        crate::verbs::files(wall.to_owned(), conversation.to_owned()),
-        crate::verbs::rail(wall.to_owned(), conversation.to_owned()),
-        crate::verbs::governing(wall.to_owned(), conversation.to_owned()),
-        crate::verbs::inbox(wall.to_owned(), conversation.to_owned()),
+        crate::verbs::steps(workspace.to_owned(), conversation.to_owned()),
+        crate::verbs::files(workspace.to_owned(), conversation.to_owned()),
+        crate::verbs::rail(workspace.to_owned(), conversation.to_owned()),
+        crate::verbs::governing(workspace.to_owned(), conversation.to_owned()),
+        crate::verbs::inbox(workspace.to_owned(), conversation.to_owned()),
     ] {
         about(link, root, channel, conversation, &ask);
     }
@@ -142,14 +142,14 @@ fn records(link: &Link, root: &Path, channel: &Channel, wall: &str, conversation
         link,
         root,
         channel,
-        &crate::verbs::lineages(wall.to_owned()),
+        &crate::verbs::lineages(workspace.to_owned()),
     );
 }
 
 /// **One read about the selected conversation, stamped with it** (bl-19b8):
 /// the frame drops what lands after the selection has moved, as it drops a
 /// stale follow tail ([`crate::state::Said::About`]). The aim alone cannot
-/// say it — `+ new` and a switch both keep the wall — and a transcript names
+/// say it — `+ new` and a switch both keep the workspace — and a transcript names
 /// no conversation, so only the leg that asked knows whose answer it is.
 fn about(link: &Link, root: &Path, channel: &Channel, conversation: &str, ask: &serde_json::Value) {
     match asked(root, ask) {
@@ -166,12 +166,12 @@ fn about(link: &Link, root: &Path, channel: &Channel, conversation: &str, ask: &
     }
 }
 
-/// **The wall's roles, and the tuning pane's offerings**: what each provider
+/// **The workspace's roles, and the tuning pane's offerings**: what each provider
 /// row its rows and its draft name offer (bl-b7d9).
 ///
 /// **The roles stand on the aim, not on the pane** (bl-d74b): the rule's
 /// selectors paint the worker role's provider, model, effort and priority on
-/// every window aimed at a wall, and a selector that read a fact only while a
+/// every window aimed at a workspace, and a selector that read a fact only while a
 /// pane two gestures away was open would be a selector that is usually blank.
 /// It is one config-file read per pass; the offerings below still stand on
 /// the pane alone, because each is a provider listing.
@@ -261,9 +261,9 @@ fn fleet(
 /// (bl-5c53). The lineage listing carries the aim's workspace and is routed by
 /// it like every other aimed read. The file read is routed by it only for the
 /// two destinations that name one: litany's globals and yog's own cadence file
-/// belong to the ENGINE, so what they address is the channel the window is
+/// belong to the SERVER, so what they address is the channel the window is
 /// aimed at — asked here the way a roster is, by name, rather than falling
-/// through to this box's own engine (DESIGN §4.30).
+/// through to this box's own server (DESIGN §4.30).
 ///
 /// **The staged proposals stand beside them** (bl-a1d6), at the depth of the
 /// row the pane has named: one op at two depths, so naming a row deepens this

@@ -39,7 +39,7 @@ use super::fields;
 pub(crate) const KIND: &str = "rail";
 
 /// What a notch shows when its step recorded no read-state commit. The
-/// engine's own spelling of it, so the two faces say the absence alike.
+/// server's own spelling of it, so the two faces say the absence alike.
 pub const NO_COMMIT: &str = "—";
 
 /// git's own short-oid width — the width upstream clips its `short` to, and
@@ -49,7 +49,7 @@ const SHORT_OID: usize = 7;
 /// The spine whole: the notches, and the cards hanging off them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Rail {
-    /// One notch per step, in the engine's own order.
+    /// One notch per step, in the server's own order.
     pub notches: Vec<Notch>,
     /// The children dispatched from this conversation, each naming its notch.
     pub cards: Vec<Card>,
@@ -67,7 +67,7 @@ pub struct Notch {
     /// including it, never this step's own figure. It rides so a seat does not
     /// fold the prefix itself, which would be deriving over an answer.
     pub budget: u64,
-    /// **That same rollup, priced** (REMOTE §9.23) — `None` where the engine
+    /// **That same rollup, priced** (REMOTE §9.23) — `None` where the server
     /// has no price table.
     pub cost: Option<super::spend::Cost>,
     /// Where the notch sits in the chat, where the chat has a seat for it.
@@ -93,8 +93,8 @@ pub struct Card {
     pub agent: String,
     /// Its display name.
     pub name: String,
-    /// **Where it forked from, in the engine's own words** — `from here`,
-    /// `from config/<name>`, `from <Name>@<oid>`. It is prose the engine
+    /// **Where it forked from, in the server's own words** — `from here`,
+    /// `from config/<name>`, `from <Name>@<oid>`. It is prose the server
     /// composes and this seat repeats: the two edges VISION draws are what
     /// this sentence says, and a seat that re-derived them would be a second
     /// author of one fact.

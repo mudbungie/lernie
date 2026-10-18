@@ -1,7 +1,7 @@
-//! **The work an engine is holding**: the binding table, the fleet board, one
-//! wall's own balls and the delivery attempts. What those attempts CHANGED is
+//! **The work a server is holding**: the binding table, the fleet board, one
+//! workspace's own balls and the delivery attempts. What those attempts CHANGED is
 //! a diff rather than a listing, so it is next door ([`super::work`]). The three
-//! reads whose subject is the engine rather than a wall are next door
+//! reads whose subject is the server rather than a workspace are next door
 //! ([`super::reads`]).
 
 use crate::reply::balls::{BallRow, BoundBall};
@@ -11,7 +11,7 @@ use crate::reply::spend::priced;
 
 use super::parts::{brief, clause, line, line_over, listing, tally, things, when};
 
-/// **Every ball this box can see, and the wall it is bound to.**
+/// **Every ball this box can see, and the workspace it is bound to.**
 pub(super) fn balls(rows: &[BallRow]) -> String {
     let painted = rows
         .iter()
@@ -73,7 +73,7 @@ pub(super) fn board(board: &Board) -> String {
     )
 }
 
-/// **The balls one wall holds**, with what each has cost.
+/// **The balls one workspace holds**, with what each has cost.
 pub(super) fn workspace_balls(rows: &[BoundBall]) -> String {
     let painted = rows
         .iter()
@@ -91,10 +91,14 @@ pub(super) fn workspace_balls(rows: &[BoundBall]) -> String {
             ])
         })
         .collect();
-    listing("this wall's balls", painted, "this wall holds no ball")
+    listing(
+        "this workspace's balls",
+        painted,
+        "this workspace holds no ball",
+    )
 }
 
-/// **Every delivery attempt of one wall**, with what it cost and how it ended.
+/// **Every delivery attempt of one workspace**, with what it cost and how it ended.
 pub(super) fn science(rows: &[Attempt]) -> String {
     let painted = rows
         .iter()
@@ -118,5 +122,5 @@ pub(super) fn science(rows: &[Attempt]) -> String {
             )
         })
         .collect();
-    listing("attempts", painted, "this wall has attempted nothing")
+    listing("attempts", painted, "this workspace has attempted nothing")
 }

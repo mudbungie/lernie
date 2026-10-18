@@ -1,7 +1,7 @@
 //! **The conversation, as prose**: its transcript and its own whole row.
 //!
-//! Split from [`super::walls`] at the design-time budget on the seam the two
-//! shapes already have. A wall's reads are listings of ROWS — a line each,
+//! Split from [`super::workspaces`] at the design-time budget on the seam the two
+//! shapes already have. A workspace's reads are listings of ROWS — a line each,
 //! scanned. A conversation is a listing of what was SAID: arbitrary prose from
 //! a model and a person, printed rather than summarised, because eliding it is
 //! eliding the answer itself.
@@ -10,7 +10,7 @@ use crate::reply::agent::{Agent, Offer};
 use crate::reply::transcript::{Block, Entry, EntryKind, Transcript};
 
 use super::parts::{brief, clause, line, line_over, listing, when};
-use super::walls::{parked, tail};
+use super::workspaces::{parked, tail};
 
 /// **The conversation itself.** One block an entry, its name over what it
 /// says — and the `raw` bytes every entry carries beside its reading are not
@@ -120,7 +120,7 @@ fn counts(usage: &std::collections::BTreeMap<String, u64>) -> String {
 }
 
 /// **The conversation's own row, whole** — the deepest read of one, and the
-/// only place the engine's own OFFERS are printed, which is what tells an
+/// only place the server's own OFFERS are printed, which is what tells an
 /// operator that a stop with children is on the table (bl-9fd1).
 pub(super) fn agent(agent: &Agent) -> String {
     let facts = line(vec![

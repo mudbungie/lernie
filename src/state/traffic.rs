@@ -25,9 +25,9 @@ pub struct Heard {
 }
 
 /// What a leg produced. **More than one failure outcome**, because a channel
-/// this box cannot open is a different sentence from an engine that refused:
+/// this box cannot open is a different sentence from a server that refused:
 /// the first is about this box's own files or the far end being down, the
-/// second is the engine answering. A seat that read them alike would send an
+/// second is the server answering. A seat that read them alike would send an
 /// operator to check a certificate over a workspace name they mistyped.
 ///
 /// The fourth arm is that division taken one step further (bl-3969): what a
@@ -41,7 +41,7 @@ pub enum Said {
     /// filed under whatever was selected when it landed).
     ///
     /// The stamp is what makes a stale tail impossible rather than unlikely.
-    /// The engine was asked about a conversation and answers about that one, so
+    /// The server was asked about a conversation and answers about that one, so
     /// only this end knows the focus has moved — and only the FRAME knows what
     /// it is looking at right now. So the lane says what its frames are about
     /// and the frame decides whether they are still wanted, which is a pure
@@ -60,7 +60,7 @@ pub enum Said {
     },
     /// **A sign-in lane's fold so far, stamped with the row it is about**
     /// (REMOTE §8.3, bl-e3c5) — [`About`](Self::About)'s shape one noun over,
-    /// and stamped for the identical reason: the engine was asked about one
+    /// and stamped for the identical reason: the server was asked about one
     /// provider and answers about that one, so only the FRAME knows whether the
     /// operator is still following it. A run started on a second row replaces
     /// the first upstream, and an unstamped frame would paint one run's lines
@@ -115,13 +115,13 @@ pub enum Said {
 ///
 /// It is keyed on the PANE rather than on a focus, for one reason all four
 /// share: the reads are cheap, and a standing question nobody has a use for is
-/// still a question the engine answers on every beat, forever. The queue's is
+/// still a question the server answers on every beat, forever. The queue's is
 /// the sharpest — a read that fans costs one round trip per channel per beat —
 /// and the login pane's is the one whose standing actually buys something, a
-/// credential landing on the engine while the operator is looking at the table.
+/// credential landing on the server while the operator is looking at the table.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Open {
-    /// **The tuning pane** — the aimed wall's fourth question, what its roles
+    /// **The tuning pane** — the aimed workspace's fourth question, what its roles
     /// are set to (bl-4a2c), carrying the provider rows its rows and draft
     /// name, each asked what it offers on the same standing (bl-b7d9).
     Tuning(Vec<String>),
@@ -140,30 +140,30 @@ pub enum Open {
     /// **The ball pane** — the third question that is nobody's focus, and
     /// the one that is BOTH: `balls` and `board` name no workspace, so they
     /// are asked of every channel, and `workspace-balls` and `marks` name the
-    /// aimed wall, so they are asked of it while the same pane stands
+    /// aimed workspace, so they are asked of it while the same pane stands
     /// (bl-d2af). It stands for the trail's reason exactly — a board is what
     /// is happening.
     Board,
-    /// **The fleet pane** — the aimed wall's seventh question, its delivery
+    /// **The fleet pane** — the aimed workspace's seventh question, its delivery
     /// attempts and what its agents changed (bl-a43a). Both are DERIVED when
     /// asked — nothing behind either is stored — so the same row a minute
     /// later is a statement about the world a minute later, which is the
     /// trail's reason for standing read on a subject that is a focus.
     Fleet,
-    /// **The clients pane** — the aimed wall's sixth question, the machines
+    /// **The clients pane** — the aimed workspace's sixth question, the machines
     /// registered in it and what each offers (bl-e53c). Its standing buys the
     /// same thing the login pane's does: presence is true only at the moment
     /// it was answered (REMOTE §5), so a row that said *not connected* says
     /// otherwise on the next beat with nothing asked again.
     Clients,
-    /// **The config pane** — the aimed wall's seventh question: the lineages
+    /// **The config pane** — the aimed workspace's seventh question: the lineages
     /// it holds, the file the pane is pointed at (bl-5c53), and the staged
     /// proposals at the depth of the one it has named (bl-a1d6). Both ride
     /// *inside* the arm for [`Open::Login`]'s reason: there is no file and no
     /// proposal to read while the pane is down, so a field beside it would be
     /// a second authority for one fact.
     Config(Option<crate::verbs::Where>, Option<String>),
-    /// **The login pane** — the aimed wall's fifth question, what it can sign
+    /// **The login pane** — the aimed workspace's fifth question, what it can sign
     /// in to, carrying the provider row whose sign-in the held lane is on where
     /// one has been started (bl-e3c5). The row rides *inside* the pane's own
     /// arm because there is no sign-in to follow while the pane is down, so a
@@ -207,7 +207,7 @@ impl Open {
 pub struct Standing {
     /// Every channel this seat holds: each is asked for its own roster.
     pub channels: Vec<Channel>,
-    /// The aimed wall, whose conversations are the second question.
+    /// The aimed workspace, whose conversations are the second question.
     pub aim: Option<Aim>,
     /// **Which covering pane's standing read is up**, if any.
     ///
@@ -222,7 +222,7 @@ pub struct Standing {
     /// live tail is the held read.
     ///
     /// **Not every selection is one.** A conversation this window has just
-    /// started is selected under a name the engine resolves nowhere until its
+    /// started is selected under a name the server resolves nowhere until its
     /// driver writes the branch, and asking about it would earn a refusal per
     /// pass for the whole of a healthy start. `Model::asked` is the reading
     /// that leaves it out (`crate::ui::model::claim`).

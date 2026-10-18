@@ -94,7 +94,7 @@ fn walking_keeps_it_open_and_choosing_closes_it() {
     let mut model = seated();
     model.switching = true;
     let window = Window::new();
-    // Down onto the wall's `+ new` and Up back onto its one conversation.
+    // Down onto the workspace's `+ new` and Up back onto its one conversation.
     for key in [egui::Key::ArrowDown, egui::Key::ArrowUp] {
         window.frame(vec![press(key)], |ctx| crate::ui::render(ctx, &mut model));
     }
@@ -126,24 +126,24 @@ fn the_plus_closes_it_on_the_way_to_the_box() {
     let mut model = seated();
     model.switching = true;
     let window = Window::new();
-    click(&window, crate::ui::roster::wall::NEW, |ctx| {
+    click(&window, crate::ui::roster::workspace::NEW, |ctx| {
         crate::ui::render(ctx, &mut model);
     });
     assert!(!model.switching);
     assert_eq!(model.conversation, None);
 }
 
-/// **A keyboard walk onto an engine's row brings it into view** in the
+/// **A keyboard walk onto a server's row brings it into view** in the
 /// switcher, as it did in the column: the row the cursor stands on is
 /// scrolled to when the walk says the list owes it a place.
 #[test]
-fn the_walk_brings_the_standing_engine_into_view() {
+fn the_walk_brings_the_standing_server_into_view() {
     let mut model = seated();
     model.switching = true;
-    model.standing = Some(crate::ui::Stand::Engine(
-        "(this box's own engine)".to_owned(),
+    model.standing = Some(crate::ui::Stand::Server(
+        "(this box's own server)".to_owned(),
     ));
     model.reveal = true;
     let text = painted(&mut model);
-    assert!(text.contains("(this box's own engine)"), "{text}");
+    assert!(text.contains("(this box's own server)"), "{text}");
 }

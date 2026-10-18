@@ -129,8 +129,8 @@ fn every_required_field_refuses_and_says_which_one() {
 }
 
 /// **The held row's `scopes` is an absence, not a requirement** (yog
-/// bl-0da6; bl-da16): a held object without the key — every engine before it
-/// — reads as an empty list, *the engine did not say*; one that carries it
+/// bl-0da6; bl-da16): a held object without the key — every server before it
+/// — reads as an empty list, *the server did not say*; one that carries it
 /// reads verbatim, a word this build does not know included (rung 3, the
 /// filter is the offer's); and one of the wrong shape refuses by name (rung 1).
 #[test]
@@ -179,11 +179,11 @@ fn the_queue_and_its_raise_are_answers() {
     );
 }
 
-/// **`says` is the engine's sentence, and the signals stand in only where it
+/// **`says` is the server's sentence, and the signals stand in only where it
 /// wrote none** (bl-5507): an empty string and a missing key are both absence
-/// (rung 4 reads a key an older engine never wrote as nothing said).
+/// (rung 4 reads a key an older server never wrote as nothing said).
 #[test]
-fn the_engine_s_sentence_wins_and_the_signals_stand_in_without_it() {
+fn the_server_s_sentence_wins_and_the_signals_stand_in_without_it() {
     let whole = row(&full()).expect("a queue row");
     assert_eq!(
         whole.why(", ").as_deref(),

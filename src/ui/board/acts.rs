@@ -1,10 +1,10 @@
 //! **The block a ball's text is authored in**, and the four acts that hang off
 //! it (bl-f7ae; DESIGN §4.35).
 //!
-//! Split from [`super::wall`] at the design-time budget on the seam the pane
-//! draws: that section is what the aimed wall HOLDS, and this is what an
+//! Split from [`super::workspace`] at the design-time budget on the seam the pane
+//! draws: that section is what the aimed workspace HOLDS, and this is what an
 //! operator would do to one of them. It is one block with two subjects — a
-//! ball that does not exist yet and a ball this wall holds — because authoring
+//! ball that does not exist yet and a ball this workspace holds — because authoring
 //! a ball's words is one act, which is the fold upstream's own
 //! `actions/verbs/balls/edit` already made.
 //!
@@ -40,16 +40,16 @@
 //! **The arming names its own subject**, which is why nothing records which
 //! ball is armed: the box holds an id, and the control it enables is the one
 //! on the ball with that id. And it is never spent on firing (§4.20): a
-//! refusal is the common case — the engine declines while the gate fails — and
-//! clearing the box would charge a retype for the engine's *no*.
+//! refusal is the common case — the server declines while the gate fails — and
+//! clearing the box would charge a retype for the server's *no*.
 
 use crate::ui::{Authoring, Model, keys, theme};
 
 /// The control that opens the block on a ball that does not exist yet.
 pub const FILE: &str = "file a ball…";
-/// The control that opens it on a ball this wall holds.
+/// The control that opens it on a ball this workspace holds.
 pub const ACT: &str = "act on it…";
-/// The control that claims a ready ball for the aimed wall — on a board row
+/// The control that claims a ready ball for the aimed workspace — on a board row
 /// rather than in the block, because the row is its subject.
 pub const CLAIM: &str = "claim it for this workspace";
 /// What the claim does.

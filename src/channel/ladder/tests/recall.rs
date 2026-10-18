@@ -22,7 +22,7 @@ fn a_dropped_line_re_calls_from_cached_presence_and_lands() {
         let (listener, at) = listener();
         let b = Bench::new(dead(), Some(presence(at)));
         let script = vec![Reply::yes().then(fate), Reply::yes()];
-        let engine = Engine::listen(b.scratch.path(), listener, script);
+        let server = Server::listen(b.scratch.path(), listener, script);
         let channel = b.channel();
         assert!(channel.ask(&request(1)).is_ok());
         let (first, seq) = written(&b);
@@ -31,7 +31,7 @@ fn a_dropped_line_re_calls_from_cached_presence_and_lands() {
         b.clock.advance(advance);
         ended(&b);
         assert!(channel.ask(&request(2)).is_ok());
-        assert_eq!(engine.connections(), 2, "the dropped line was not reused");
+        assert_eq!(server.connections(), 2, "the dropped line was not reused");
         let (nonce, again) = written(&b);
         assert_ne!(nonce, first, "a fresh call");
         assert!(again > seq, "a rising sequence");
@@ -57,10 +57,10 @@ fn an_expired_re_call_clears_the_cache_and_presence_is_read_again() {
     let (listener, at) = listener();
     let b = Bench::new(dead(), Some(presence(at)));
     let script = vec![Reply::yes().then(Fate::Fin), Reply::yes()];
-    let _engine = Engine::listen(b.scratch.path(), listener, script);
+    let _server = Server::listen(b.scratch.path(), listener, script);
     let channel = b.channel().tuned(
         Roving {
-            // The re-call to where the engine was waits this out, a floor;
+            // The re-call to where the server was waits this out, a floor;
             // the call after it lands inside it, a bet with room (bl-73f2).
             window: Duration::from_secs(2),
             ..b.roving()
@@ -68,7 +68,7 @@ fn an_expired_re_call_clears_the_cache_and_presence_is_read_again() {
         b.clock.arc(),
     );
     assert!(channel.ask(&request(1)).is_ok());
-    // As if the engine had moved since: the cache names where it no longer is.
+    // As if the server had moved since: the cache names where it no longer is.
     crate::state::worked(&b.scratch.path().display().to_string(), |w| {
         w.endpoints = vec![dead()];
     });
@@ -129,7 +129,7 @@ fn a_re_call_carries_where_the_last_walk_saw_this_end() {
         Mood::Claim(SocketAddr::new(far, 6881)),
     );
     let script = vec![Reply::yes().then(Fate::Fin), Reply::yes()];
-    let _engine = Engine::listen(b.scratch.path(), listener, script);
+    let _server = Server::listen(b.scratch.path(), listener, script);
     let channel = b.channel();
     assert!(channel.ask(&request(1)).is_ok());
     ended(&b);

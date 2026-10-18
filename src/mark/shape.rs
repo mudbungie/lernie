@@ -15,7 +15,7 @@ pub(super) const SPAN: i64 = 1000;
 
 /// One flat-filled figure.
 ///
-/// Three, because three is what the mark has: the engine held elsewhere, the
+/// Three, because three is what the mark has: the server held elsewhere, the
 /// seat that is here, and the one wire between them. A fourth arrives with a
 /// mark that needs it.
 pub(super) enum Shape {

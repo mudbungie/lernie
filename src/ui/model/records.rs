@@ -5,18 +5,18 @@
 //!
 //! The tuning pane is a two-state enum because an assignment can be mid-edit;
 //! this pane's own state is one draft and no mode — every row on it is the
-//! engine's answer, filed on [`Model`] beside the roles whether or not the
+//! server's answer, filed on [`Model`] beside the roles whether or not the
 //! pane is open, and the fork's two words are a bare field (`super::spine`).
 //! So `records` is a `bool`, and a struct here would be a state machine with
 //! one state.
 //!
 //! # It follows the tuning pane's whole shape, one noun over
 //!
-//! The subject is the SELECTED CONVERSATION where tuning's is the aimed wall,
+//! The subject is the SELECTED CONVERSATION where tuning's is the aimed workspace,
 //! and every consequence carries across: the pane opens only where there is a
 //! subject; the two reads stand while it is open and only then
 //! (`crate::state::Standing::records`), so what it paints is always the
-//! engine's fact and never this end's prediction; and it closes when the
+//! server's fact and never this end's prediction; and it closes when the
 //! subject moves ([`Model::select`], [`Model::aim_at`]), because a pane about
 //! *the selected conversation* left open over a new selection would paint one
 //! conversation's records under another's name for a beat.
@@ -142,7 +142,7 @@ impl Model {
     ///
     /// **The arming is not spent** (DESIGN §4.20): the refusal is the common
     /// answer here, and clearing the box would charge a retype for the
-    /// engine's *no*.
+    /// server's *no*.
     pub fn post_cascade(&mut self) {
         let (Some(aim), Some(agent)) = (self.aim.clone(), self.conversation.clone()) else {
             return;
@@ -157,7 +157,7 @@ impl Model {
             aim.address,
             agent,
             // **The boundary field, at its one site in this window.** litany
-            // bl-3114 made every engine stop take its children, so yog retires
+            // bl-3114 made every litany stop take its children, so yog retires
             // this field at its next PROTOCOL bump (yog bl-6efc) — and what
             // the bump deletes here is this line.
             true,

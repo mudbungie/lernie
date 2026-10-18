@@ -1,5 +1,5 @@
-//! **The conversations that stand under a wall** (DESIGN §4.39) — the rows
-//! themselves, the two sentences a wall with none says, and the words a row is
+//! **The conversations that stand under a workspace** (DESIGN §4.39) — the rows
+//! themselves, the two sentences a workspace with none says, and the words a row is
 //! made of.
 //!
 //! A row is a glance, not a transcript: what it is called, what it is doing,
@@ -11,14 +11,14 @@
 //!
 //! Until DESIGN §4.39 this was the window's middle column, with a heading, a
 //! scroll region and four emptinesses of its own. The fold put these rows
-//! under the wall they belong to, inside the roster's one scroll region, so
+//! under the workspace they belong to, inside the roster's one scroll region, so
 //! what is left here is a row and the facts a row is made of — [`under`] is
-//! called by `crate::ui::roster::wall` and nothing paints a pane.
+//! called by `crate::ui::roster::workspace` and nothing paints a pane.
 //!
 //! **Two of the four emptinesses went with the pane and neither is missed.**
 //! *pick a workspace under channels to list its conversations* was the pane
-//! saying it had no subject; there is no pane, and a wall's rows only ever
-//! stand under that wall's own row, so the subject is on the glass by
+//! saying it had no subject; there is no pane, and a workspace's rows only ever
+//! stand under that workspace's own row, so the subject is on the glass by
 //! construction. And the sentence for an aim naming a channel this seat does
 //! not hold (bl-f780's permanent case) has no row to stand under at all: a
 //! stale aim read back out of the place file now shows as an accordion with
@@ -44,14 +44,14 @@ mod row;
 pub use row::{HIDE, SHOW};
 pub(crate) use row::{STEP, indent};
 
-/// What a wall says when it answered and holds no conversation. **It names the
-/// next act** (§4.38), and the act is the `+ new` row under the wall's
-/// conversations (`crate::ui::roster::wall::NEW`).
+/// What a workspace says when it answered and holds no conversation. **It names the
+/// next act** (§4.38), and the act is the `+ new` row under the workspace's
+/// conversations (`crate::ui::roster::workspace::NEW`).
 pub const NO_CONVERSATIONS: &str = "no conversations here yet — begin one with + new below";
-/// **What it says for a wall it has not been ANSWERED about** (bl-f780).
+/// **What it says for a workspace it has not been ANSWERED about** (bl-f780).
 ///
 /// The [`UNCERTAIN`] doctrine one level up: *no conversations here* is a
-/// definite fact about a wall nobody has looked at yet, and this pane already
+/// definite fact about a workspace nobody has looked at yet, and this pane already
 /// refuses to state a definite fact about a conversation nobody could take a
 /// reading of. It stands from the keypress that aims until the answer lands —
 /// a round trip on a wire, not the millisecond it is on loopback.
@@ -64,11 +64,11 @@ pub const SELECT_HELP: &str = "shows this conversation";
 /// What the bar row's trashcan does.
 pub const TRASH_HELP: &str = "deletes this conversation; Ctrl+click skips the question";
 
-/// **The conversations that stand under the aimed wall**, and the sentence
+/// **The conversations that stand under the aimed workspace**, and the sentence
 /// that stands there when it holds none.
 ///
 /// **The list is the model's, not this file's**: a conversation this window
-/// has started but the engine cannot resolve yet stands in it as a row of its
+/// has started but the server cannot resolve yet stands in it as a row of its
 /// own (`crate::ui::model::claim`), and it stands there for the pointer and
 /// the keyboard alike because both walk the one list
 /// (`crate::ui::roster::track`).
@@ -99,7 +99,7 @@ pub(crate) fn under(ui: &mut egui::Ui, model: &mut Model, aim: &Aim, reveal: boo
 /// **Whether an ancestor level's thread continues past this row** — the whole
 /// of what a threading rail claims (`crate::ui::convs::row`).
 ///
-/// The engine's order is a root followed by its descendants, deepest last, so
+/// The server's order is a root followed by its descendants, deepest last, so
 /// the answer is the first row below `at` that is NOT deeper than `level`: if
 /// it sits exactly at `level` the branch has another member coming and the
 /// rail carries on past this row; if it is shallower the branch ended here and
@@ -118,7 +118,7 @@ fn continues(rows: &[ConvRow], at: usize, level: u64) -> bool {
 /// and what is waiting under it (DESIGN §4.42 item 7).
 ///
 /// **The glyph wears a `?` for a state nothing observed** — `✓?` is *at
-/// rest, as far as anyone has looked*. The engine answers a reading and
+/// rest, as far as anyone has looked*. The server answers a reading and
 /// whether it could take one, and painting the first without the second
 /// would state a definite fact about a conversation nobody looked at —
 /// including this window's own, between a start's receipt and its driver's

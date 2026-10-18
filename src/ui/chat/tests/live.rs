@@ -19,7 +19,7 @@ fn fold(text: &str) -> Stream {
 }
 
 /// The committed read with the turn still open: the deposit, then the
-/// engine's streaming entry riding the open response.
+/// server's streaming entry riding the open response.
 fn in_flight(text: &str) -> Transcript {
     Transcript {
         entries: vec![
@@ -51,7 +51,7 @@ fn a_live_fold_replaces_the_streaming_entry_rather_than_standing_beside_it() {
 
 /// **Once the turn commits, the answer is painted once** (bl-f6b5). The lane's
 /// last fold outlives the turn in `Model::live` — nothing clears it on a
-/// commit — and a read with no `Streaming` entry is the engine saying the
+/// commit — and a read with no `Streaming` entry is the server saying the
 /// response closed, so the fold has nothing to be newer than. Driven through
 /// the model's own door, in the order the glass saw it: the fold, then the
 /// committed read.

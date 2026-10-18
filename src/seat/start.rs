@@ -14,7 +14,7 @@
 //! wants to read both, so every frame of both prints, in order, exactly as one
 //! ask's do. What the exit code says is the *second* act: a stage that answered
 //! something other than a staged body exits non-zero with its frames on stdout,
-//! because the frames are still the engine answering and the start still did
+//! because the frames are still the server answering and the start still did
 //! not happen.
 //!
 //! **A stage that lands and a fire that cannot be sent is its own sentence.** It
@@ -27,7 +27,7 @@
 //! the stage's steps are convergent (§8.1: *"steps are individually
 //! idempotent-or-convergent"*) and the fire did not happen. It is exactly wrong
 //! for a fire that crossed and was not answered: an act with no reply is IN
-//! DOUBT, a second `lernie start` is a second conversation on a wall that may
+//! DOUBT, a second `lernie start` is a second conversation on a workspace that may
 //! already have one running, and the recovery is to LOOK. This file was the one
 //! place in the crate that told an operator to resend an act, and it now tells
 //! them which of the two happened and what the read is.
@@ -49,7 +49,7 @@ const UNFIRED: &str = "the start was staged and the fire could not be sent";
 /// convergent and the fire is not, so a start that may already be running must
 /// not be typed again (REMOTE §3).
 const INDOUBT: &str = "the start was staged and the fire crossed with no answer, so it is IN DOUBT — \
-     the conversation may be running. Do NOT start it again: ask what the wall \
+     the conversation may be running. Do NOT start it again: ask what the workspace \
      holds (`lernie conversations <workspace>`)";
 
 /// **Begin a conversation**: stage a start in `address`, then fire it with
@@ -80,7 +80,7 @@ pub fn start(
         Err(reach) => return Verdict::failed(reach.said()),
     };
     let Some(prepared) = prepared(&staged) else {
-        // The engine refused, answered a kind this build cannot read, or
+        // The server refused, answered a kind this build cannot read, or
         // terminated saying nothing. Its frames are the product either way, and
         // the exit code is what says no start happened — a stage that answered
         // `ok: true` and no staged body must not exit zero.

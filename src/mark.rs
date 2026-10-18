@@ -2,14 +2,14 @@
 //!
 //! A window that names no icon wears whatever the desktop invents for it, and
 //! what the desktop invents is the generic one every unnamed client gets. So
-//! the seat carries a mark of its own — and it is *its own*: the engine's mark
-//! belongs to the engine, and two programs wearing one picture is worse than
+//! the seat carries a mark of its own — and it is *its own*: the server's mark
+//! belongs to the server, and two programs wearing one picture is worse than
 //! one program wearing none.
 //!
-//! **What the picture says.** A ring is the engine, held elsewhere and hollow
+//! **What the picture says.** A ring is the server, held elsewhere and hollow
 //! because nothing of it is here. A filled disc is the seat, which is here. Between them runs the one wire, in the dimmer of the two
 //! inks, reaching into the ring rather than stopping at it. That is the whole
-//! of what this crate is (`crate::channel` — *one wire to one engine*), and it
+//! of what this crate is (`crate::channel` — *one wire to one server*), and it
 //! is three shapes because at 16 px a taskbar icon has room for three.
 //!
 //! # Two emissions, one geometry
@@ -101,25 +101,25 @@ const CASING: Ink = Ink {
 
 /// Where the two nodes sit, in thousandths. The wire is written from these
 /// rather than repeating them, so a node cannot be moved without its wire.
-const ENGINE: (i64, i64) = (660, 340);
+const SERVER: (i64, i64) = (660, 340);
 const SEAT: (i64, i64) = (240, 790);
 
 /// **The mark, back to front.** The wire is laid first so both nodes sit over
-/// it — which is what lets the wire run to the engine's centre and read as
+/// it — which is what lets the wire run to the server's centre and read as
 /// reaching into it rather than stopping short.
 fn shapes() -> Vec<Shape> {
     vec![
         Shape::Bar {
             ax: SEAT.0,
             ay: SEAT.1,
-            bx: ENGINE.0,
-            by: ENGINE.1,
+            bx: SERVER.0,
+            by: SERVER.1,
             half: 42,
             ink: CASING,
         },
         Shape::Ring {
-            cx: ENGINE.0,
-            cy: ENGINE.1,
+            cx: SERVER.0,
+            cy: SERVER.1,
             r: 200,
             half: 55,
             ink: PHOSPHOR,

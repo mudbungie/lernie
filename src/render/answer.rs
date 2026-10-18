@@ -1,29 +1,29 @@
 //! **The one dispatch**: an answer, and the rendering it is.
 //!
 //! It is the census read in the other direction — [`crate::reply::Reply`] says
-//! what an engine can answer, and this says what each of those looks like — so
+//! what a server can answer, and this says what each of those looks like — so
 //! a kind added there is a match arm missing here, which is the compiler
 //! saying the rendering half of a pane was not built. That is the same
 //! discipline the reply vocabulary itself holds: a kind nothing renders is a
 //! kind nobody has to carry.
 //!
 //! The arms delegate by family and the families are the panes', not the wire's:
-//! what a wall holds, what one conversation's records are, what the balls and
+//! what a workspace holds, what one conversation's records are, what the balls and
 //! the fleet are doing, and what an ACT came back saying.
 
 use crate::reply::Reply;
 
-use super::{acts, chat, policy, reads, records, step, tasks, walls, work};
+use super::{acts, chat, policy, reads, records, step, tasks, work, workspaces};
 
 /// What one answer looks like to a person.
 pub(super) fn answer(reply: &Reply) -> String {
     match reply {
-        Reply::Workspaces(roster) => walls::workspaces(roster),
-        Reply::Conversations(rows) => walls::conversations(rows),
-        Reply::Attention(rows) => walls::attention(rows),
+        Reply::Workspaces(roster) => workspaces::workspaces(roster),
+        Reply::Conversations(rows) => workspaces::conversations(rows),
+        Reply::Attention(rows) => workspaces::attention(rows),
         Reply::Acknowledged(acked) => acts::acknowledged(acked),
         Reply::Transcript(transcript) => chat::transcript(transcript),
-        Reply::Follow(stream) => walls::follow(stream),
+        Reply::Follow(stream) => workspaces::follow(stream),
         Reply::Agent(agent) => chat::agent(agent),
 
         Reply::Steps(steps) => records::steps(steps),

@@ -19,7 +19,7 @@
 //! depth-1 row the operator DID start, and a seat that guessed from a preview
 //! would be reading prose to make a structural decision.
 //!
-//! What the engine does give is the descent, and the descent is the whole
+//! What the server does give is the descent, and the descent is the whole
 //! answer: **the list is the conversations, and what hangs under one is under
 //! it.** A root is always on the glass; its subtree is one gesture away and
 //! says how much of it there is. That satisfies the ball's own first remedy —
@@ -37,7 +37,7 @@
 //!
 //! **What the attention rows say is not this seat's to fix.** Every compactor
 //! in that session earned an `attention` row saying *came to rest — your
-//! turn*, which is false of a finished compaction; that is a fact the engine
+//! turn*, which is false of a finished compaction; that is a fact the server
 //! answers and yog's own ball owns it. This seat's half is where the rows are
 //! painted.
 
@@ -48,7 +48,7 @@ impl Model {
     /// **`rows` with every unopened subtree left out.**
     ///
     /// A pure function of the ordered rows and what the operator has opened.
-    /// The order is the engine's — a root followed by its descendants, deepest
+    /// The order is the server's — a root followed by its descendants, deepest
     /// last — so one pass with a cut depth is the whole of it: below an
     /// unopened row, everything deeper than that row belongs to it.
     pub(super) fn unfolded(&self, rows: Vec<ConvRow>) -> Vec<ConvRow> {

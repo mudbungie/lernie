@@ -14,7 +14,7 @@ pub const READY: &str = "ready";
 /// `/plan` holds it (§4.42 item 3; bl-6f3f).
 pub const PLAN: &str = "plan";
 
-/// **The state slot**: the notice, else why the aimed engine will not dial,
+/// **The state slot**: the notice, else why the aimed server will not dial,
 /// else the selected conversation's state and age, else `ready`.
 pub fn state(model: &Model) -> super::Run {
     if let Some(notice) = &model.notice {
@@ -30,9 +30,9 @@ pub fn state(model: &Model) -> super::Run {
     }
 }
 
-/// **Why the engine this conversation is on will not dial**, where it will
+/// **Why the server this conversation is on will not dial**, where it will
 /// not (bl-4cac): the one dial-state fact about THIS conversation, so it
-/// stays on the rule while the seat-wide count of engines left it.
+/// stays on the rule while the seat-wide count of servers left it.
 pub fn down(model: &Model) -> Option<String> {
     let aim = model.aim.as_ref()?;
     model
@@ -62,7 +62,7 @@ pub fn calm(model: &Model) -> super::Run {
 /// **The menu rows a sentence names** (bl-7a77): every `/word` in it that
 /// is a row this seat offers right now, once each in the order said — so a
 /// refusal saying *sign in first … /config brazen* names `/config`, and the
-/// remedy can be a click as well as a word. The engine words the remedy and
+/// remedy can be a click as well as a word. The server words the remedy and
 /// the menu decides what is a door ([`super::door`]); nothing here names a
 /// verb.
 pub fn named(model: &Model, sentence: &str) -> Vec<crate::ui::slash::Row> {
@@ -143,7 +143,7 @@ pub fn diagnostics(model: &Model) -> Vec<super::Run> {
         out.push(run(said, theme::INK_WEAK));
     }
     // **The money in §4.41's words**, and nothing where no rate priced it —
-    // never `$0`, which would be a claim the engine did not make.
+    // never `$0`, which would be a claim the server did not make.
     if let Some(cost) = &row.spend.cost {
         out.push(run(cost.said(), theme::INK_WEAK));
     }

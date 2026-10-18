@@ -10,13 +10,13 @@
 //! # Four of the family's five ops are a MACHINE's, and none of them is here
 //!
 //! `advertise`, `invocations`, `complete`, `invoke` and `capture` are all
-//! classed `machine` by the engine's own help table — the field yog's PARITY §7
+//! classed `machine` by the server's own help table — the field yog's PARITY §7
 //! roster is generated from — and a seat owes a control for none of them. Two
 //! are worth naming, because they are the two an operator might reasonably
 //! expect on this pane:
 //!
 //! - **`invocations` cannot be READ by a seat, even to look.** It is
-//!   follow-class and it *drains*: it parks until the engine's hold expires
+//!   follow-class and it *drains*: it parks until the server's hold expires
 //!   and answers the queue addressed to *the certificate this connection
 //!   presented* (REMOTE §5.3). So a seat asking it would learn nothing about
 //!   any foot — its own queue is empty by construction — while a box whose
@@ -56,7 +56,7 @@ pub const CLIENTS: Verb = Verb {
              never over this wire.",
 };
 
-/// **The machines this workspace holds**, asked of the wall `workspace` names.
+/// **The machines this workspace holds**, asked of the workspace `workspace` names.
 pub fn clients(workspace: String) -> Value {
     CLIENTS.built(vec![workspace], &[])
 }

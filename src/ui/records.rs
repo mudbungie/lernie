@@ -8,9 +8,9 @@
 //! something: the steps taken and the files touched. It is the third covering
 //! pane and the second that is a place rather than a moment, and it follows
 //! `crate::ui::tuning` in every joint: it opens on its subject (the SELECTED
-//! CONVERSATION where tuning's is the aimed wall), its two reads are standing
+//! CONVERSATION where tuning's is the aimed workspace), its two reads are standing
 //! while it is open (`crate::state::Standing::records`), and everything on it
-//! is the engine's answer — this pane holds no state at all, not even a draft.
+//! is the server's answer — this pane holds no state at all, not even a draft.
 //!
 //! # Every empty state is a sentence, and the sentences differ
 //!
@@ -90,7 +90,7 @@ pub const NOT_ANSWERED_FILES: &str = "waiting to hear what its worktree holds";
 pub const NO_WORKTREE: &str = "no worktree stands for this conversation";
 /// The listing of nothing, which is the other claim.
 pub const EMPTY_WORKTREE: &str = "the worktree holds nothing";
-/// Said under a listing the engine cut short of the worktree.
+/// Said under a listing the server cut short of the worktree.
 pub const TRUNCATED: &str = "…and more — the listing was cut short";
 
 /// Paint the pane and take the clicks on it. Answers whether there was one to

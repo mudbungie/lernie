@@ -20,7 +20,7 @@ mod machinery;
 /// A toggle's memory is one conversation's (§4.45 item 5; bl-b83d).
 mod memory;
 /// A message this seat sent: on the glass the frame it is sent, in the
-/// pending ink until acknowledged, and gone when the engine's row lands.
+/// pending ink until acknowledged, and gone when the server's row lands.
 mod sent;
 /// The working's three stages: whole in flight, compact once done, one line
 /// once the answer stands — and each a door.
@@ -114,12 +114,12 @@ fn a_tool_result_says_whether_it_failed() {
     }
 }
 
-/// **The two unreadables are held apart.** "The engine could not read this" and
+/// **The two unreadables are held apart.** "The server could not read this" and
 /// "this seat is behind" are different sentences, and only one of them is fixed
 /// by an upgrade — but neither is dropped, because a transcript the operator
 /// reads as shorter than it was is the one failure it must not have.
 #[test]
-fn the_engine_s_unreadable_and_this_seat_s_read_differently_and_both_are_kept() {
+fn the_server_s_unreadable_and_this_seat_s_read_differently_and_both_are_kept() {
     let raw = rows(&of(EntryKind::Raw), None);
     assert!(raw[0].who.contains("unparsed"), "{:?}", raw[0]);
     let unknown = rows(&of(EntryKind::Unknown("annotation".to_owned())), None);
@@ -208,7 +208,7 @@ fn the_pane_says_what_it_is_waiting_for() {
 
 /// **The committed path obeys the live path's rule, because there is one rule.**
 ///
-/// The engine emits `{"kind":"thinking","text":""}` as an ordinary block, so a
+/// The server emits `{"kind":"thinking","text":""}` as an ordinary block, so a
 /// committed model turn can carry a half with nothing in it exactly as a turn
 /// in flight can. It painted a `(thinking)` header over nothing (bl-beb7) —
 /// which reads as *the model thought something and this seat lost it* — until

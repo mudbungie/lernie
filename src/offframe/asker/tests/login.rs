@@ -4,7 +4,7 @@
 //! A module of its own rather than a member of [`super::nesting`], which is at
 //! the design-time budget — and the split is on the seam that file's own doc
 //! draws: that one is *how the three questions nest*, and this is a read that
-//! nests under none of them. It is the aimed wall's, keyed on a pane, and its
+//! nests under none of them. It is the aimed workspace's, keyed on a pane, and its
 //! answer's other half is a held lane on a different thread entirely
 //! (`crate::offframe::signin`).
 
@@ -19,12 +19,12 @@ use serde_json::{Value, json};
 /// one noun over, because the start's hint reads the worker's row in it
 /// before any pane is open — and opening the login pane asks nothing more.
 /// The standing still buys what it bought there: a credential lands on the
-/// ENGINE while the operator is looking at the table, so a row that said
+/// SERVER while the operator is looking at the table, so a row that said
 /// *no credential* says otherwise on the next beat with nothing asked again.
 #[test]
 fn the_provider_table_stands_on_the_aim() {
     let scratch = Scratch::new();
-    let engine = wired(
+    let server = wired(
         &scratch,
         &flat(),
         vec![
@@ -56,7 +56,7 @@ fn the_provider_table_stands_on_the_aim() {
     model.begin_login();
     link.settle(&mut model);
     tick(&link, scratch.path());
-    let ops: Vec<String> = engine
+    let ops: Vec<String> = server
         .heard()
         .iter()
         .filter_map(|said| said.get("op").and_then(Value::as_str))

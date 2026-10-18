@@ -1,4 +1,4 @@
-//! Both items open from bytes the ENGINE sealed — cross-implementation
+//! Both items open from bytes the SERVER sealed — cross-implementation
 //! compatibility asserted, not assumed — round-trip through this end's own
 //! seal, and everything that is not one of them opens to nothing.
 
@@ -34,7 +34,7 @@ fn sig(hex: &str) -> [u8; 64] {
 }
 
 #[test]
-fn presence_the_engine_sealed_and_signed_opens_and_verifies_here() {
+fn presence_the_server_sealed_and_signed_opens_and_verifies_here() {
     let p = pairing();
     let sealed = unhex(PRESENCE_SEALED).unwrap();
     assert_eq!(
@@ -44,22 +44,22 @@ fn presence_the_engine_sealed_and_signed_opens_and_verifies_here() {
         })
     );
     let item = Mutable {
-        key: p.engine,
+        key: p.server,
         salt: p.presence_salt(),
         seq: 5,
         value: sealed,
         sig: sig(PRESENCE_SIG),
     };
-    assert!(item.verify(), "the engine's signature holds under its key");
+    assert!(item.verify(), "the server's signature holds under its key");
     assert_eq!(item.target().to_string(), PRESENCE_TARGET);
     assert_eq!(
-        target_of(&p.engine, &p.presence_salt()).to_string(),
+        target_of(&p.server, &p.presence_salt()).to_string(),
         PRESENCE_TARGET
     );
 }
 
 #[test]
-fn a_call_the_engine_sealed_and_signed_is_what_this_end_would_write() {
+fn a_call_the_server_sealed_and_signed_is_what_this_end_would_write() {
     let p = pairing();
     let sealed = unhex(CALL_SEALED).unwrap();
     assert_eq!(
@@ -76,7 +76,7 @@ fn a_call_the_engine_sealed_and_signed_is_what_this_end_would_write() {
         value: sealed.clone(),
         sig: sig(CALL_SIG),
     };
-    assert!(item.verify(), "the derived inbox keypair is the engine's");
+    assert!(item.verify(), "the derived inbox keypair is the server's");
     assert_eq!(item.target().to_string(), CALL_TARGET);
     // And this end signs the same bytes to the same signature: ed25519 is
     // deterministic, so the derived keypair is proved equal by its output.
@@ -89,7 +89,7 @@ fn a_call_the_engine_sealed_and_signed_is_what_this_end_would_write() {
 }
 
 #[test]
-fn a_call_this_end_seals_opens_under_the_engines_half() {
+fn a_call_this_end_seals_opens_under_the_servers_half() {
     let call = Call {
         nonce: 0x0102_0304_0506_0708,
         endpoints: endpoints(),

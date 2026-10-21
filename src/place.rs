@@ -66,6 +66,11 @@ const PINNED: &str = "pinned";
 /// object — **written only where set**, so a seat that touched nothing
 /// writes nothing and reads the table's defaults (`crate::settings`).
 const SETTINGS: &str = "settings";
+/// **The own channel's spelling before bl-dab9's sweep** (bl-ba9d). A channel
+/// is keyed here by its display name, so the sweep that reworded
+/// [`crate::seat::OWN`] orphaned every file a seat wrote before it. Read as the
+/// current name for one release and never written; delete it after.
+const RETIRED_OWN: &str = "(this box's own engine)";
 
 /// **Everything the seat remembers between runs.** One value, because it is
 /// one file: read whole at boot and written whole once the event loop has
@@ -117,7 +122,7 @@ pub fn read(root: &Path) -> Place {
     Place {
         aim: aimed(&held),
         servers: Servers {
-            open: held.get(OPEN).and_then(Value::as_str).map(str::to_owned),
+            open: held.get(OPEN).and_then(Value::as_str).map(current),
             opened: table(&held, OPENED, Value::as_u64),
             aimed: table(&held, AIMED, |held| held.as_str().map(str::to_owned)),
         },
@@ -134,9 +139,20 @@ pub fn read(root: &Path) -> Place {
 fn aimed(held: &Value) -> Option<Aim> {
     let text = |key| held.get(AIM)?.get(key)?.as_str().map(str::to_owned);
     Some(Aim {
-        channel: text(CHANNEL)?,
+        channel: current(&text(CHANNEL)?),
         address: text(ADDRESS)?,
     })
+}
+
+/// **A channel name as this build spells it**: the retired own spelling read
+/// as [`crate::seat::OWN`], every other name as itself (bl-ba9d).
+fn current(name: &str) -> String {
+    if name == RETIRED_OWN {
+        crate::seat::OWN
+    } else {
+        name
+    }
+    .to_owned()
 }
 
 /// One name-keyed table, dropping every row this build cannot read — rung 3,
@@ -146,7 +162,7 @@ fn table<T>(held: &Value, key: &str, read: impl Fn(&Value) -> Option<T>) -> BTre
         .and_then(Value::as_object)
         .map(|rows| {
             rows.iter()
-                .filter_map(|(name, held)| Some((name.clone(), read(held)?)))
+                .filter_map(|(name, held)| Some((current(name), read(held)?)))
                 .collect()
         })
         .unwrap_or_default()

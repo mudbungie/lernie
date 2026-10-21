@@ -1935,6 +1935,23 @@ none. The dragged edges were three keys and are two since bl-b9a3 folded the
 middle column away: `roster_width` and `convs_width` are read by nothing, and
 a file that carries them is a seat that has dragged nothing.
 
+**A glass word is not a key, and the own channel's name is both** (bl-ba9d).
+`aim.channel`, `open` and the keys of `opened` and `aimed` are channel names,
+and the own channel's name is `seat::OWN` — the flat root's display label,
+`(this box's own server)`. bl-dab9 reworded it from `(this box's own engine)`,
+and every file written before that sweep then aimed at a channel nothing
+resolved: the bar read *waiting to hear about this workspace* until the
+workspace was re-picked. The stable-key refactor was weighed and declined: a
+channel's name is its identity in every layer that holds one (the roster, the
+standing set, the asker, the dropup), so a key apart from it is a rename
+across the seat, not a fix to this file. What landed is the smaller honest
+answer: `place::read` takes the one retired spelling as `seat::OWN` in all four
+fields (`place::current`), and `place::write` only ever writes the current
+one, so a file is migrated by the first run that saves it. The retired spelling
+is read for one release and then deleted. **The rule this leaves**: a sweep
+that rewords `seat::OWN` adds its old spelling to that read in the same commit,
+because otherwise the sweep is a silent forgetting of every seat's place.
+
 **And it costs the frame nothing.** The place is a **projection of the model**
 (`place::Place::of`), published by the settle that already publishes the
 standing set — the same lock acquisition, on the same terms, derived so there

@@ -224,3 +224,43 @@ fn a_root_that_cannot_be_made_says_so_and_names_itself() {
     let refusal = write(&blocked.join("under"), &Place::default()).expect_err("refused");
     assert!(refusal.contains("under"), "{refusal}");
 }
+
+/// **A file written before bl-dab9's sweep still aims** (bl-ba9d): the own
+/// channel's retired spelling is read as [`crate::seat::OWN`] in every field
+/// that names a channel, other names pass untouched, and a save writes the
+/// current spelling — so the retired one is gone after one run.
+#[test]
+fn the_own_channels_retired_spelling_reads_as_its_current_name() {
+    let scratch = Scratch::new();
+    std::fs::write(
+        at(scratch.path()),
+        r#"{"aim":{"address":"dev","channel":"(this box's own engine)"},
+            "aimed":{"(this box's own engine)":"dev","lab":"bench"},
+            "open":"(this box's own engine)",
+            "opened":{"(this box's own engine)":1},"pinned":false}"#,
+    )
+    .expect("write");
+    let own = crate::seat::OWN.to_owned();
+    let held = read(scratch.path());
+    assert_eq!(
+        held.aim,
+        Some(Aim {
+            channel: own.clone(),
+            address: "dev".to_owned(),
+        })
+    );
+    assert_eq!(held.servers.open, Some(own.clone()));
+    assert_eq!(held.servers.opened.get(&own), Some(&1));
+    assert_eq!(
+        held.servers.aimed.get(&own).map(String::as_str),
+        Some("dev")
+    );
+    assert_eq!(
+        held.servers.aimed.get("lab").map(String::as_str),
+        Some("bench")
+    );
+    write(scratch.path(), &held).expect("written");
+    let text = std::fs::read_to_string(at(scratch.path())).expect("read");
+    assert!(!text.contains("own engine"), "{text}");
+    assert_eq!(read(scratch.path()), held);
+}

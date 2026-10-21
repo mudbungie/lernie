@@ -1,7 +1,8 @@
 +++
 title = "a place file written before the own channel's rename aims at '(this box's own engine)': no channel matches, and the bar says 'waiting to hear about this workspace' until the workspace is re-picked"
 created = 1792561594
-updated = 1792561594
+updated = 1792561619
+claimant = "Unstop-place"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

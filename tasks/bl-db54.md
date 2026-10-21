@@ -1,7 +1,8 @@
 +++
 title = "the settled working's line says what it hides by kind — N tool calls · M thoughts · K intermediate responses — on a full-width lit door; '+ worked · N calls · M notes' was a weak-ink run nobody reads as a control"
 created = 1792561594
-updated = 1792561594
+updated = 1792561615
+claimant = "Unstop-fold"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

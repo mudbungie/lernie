@@ -13,6 +13,8 @@ mod bubble;
 mod idiom;
 /// The two knobs the chat reads: bubbles off, and the fold off.
 mod knobs;
+/// The working's one line: its counts by kind, and its width-wide door.
+mod line;
 /// The live fold: where it paints, and when it has nothing to paint over.
 mod live;
 /// A machine's answer on the glass: folded, and one gesture from the whole.

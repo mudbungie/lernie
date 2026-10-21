@@ -2,7 +2,8 @@
 //! puts every block on the ground, and `fold` off leaves a settled working
 //! and its finished steps whole.
 
-use super::idiom::{head, prose, result, with, working};
+use super::idiom::{prose, result, with, working};
+use super::line::head;
 use crate::paint_probe::frame::Window;
 use crate::paint_probe::{fills_of, seen_of};
 use crate::settings::Toggle;
@@ -68,7 +69,7 @@ fn fold_off_leaves_the_working_and_its_steps_whole() {
     let mut model = settled();
     model.settings.set(Toggle::Fold, false);
     let shown = runs(&window, &mut model);
-    assert!(shown.contains(&head(true, 1, 2)), "{shown:?}");
+    assert!(shown.contains(&head(true, [1, 1, 1, 0])), "{shown:?}");
     assert!(
         shown.iter().any(|t| t.contains("line 001")),
         "the output whole: {shown:?}"

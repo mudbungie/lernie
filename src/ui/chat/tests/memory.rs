@@ -5,7 +5,8 @@
 //! area's salt names only its own scroll state, so the memory's key is the
 //! conversation's id pushed over everything under it (`super::super::render`).
 
-use super::idiom::{head, prose, result, with, working};
+use super::idiom::{prose, result, with, working};
+use super::line::head;
 use crate::paint_probe::frame::Window;
 use crate::paint_probe::seen_of;
 use crate::test_support::window::{click, numbered, said};
@@ -38,7 +39,7 @@ fn a_toggle_is_remembered_per_conversation() {
     let first = model.conversation.clone();
     let window = Window::sized(1400.0, 900.0);
     runs(&window, &mut model);
-    click(&window, &head(false, 1, 1), |ctx| {
+    click(&window, &head(false, [1, 1, 0, 0]), |ctx| {
         crate::ui::render(ctx, &mut model);
     });
     let call = format!("{} read(src/ui.rs)", glyph::DONE);
@@ -49,8 +50,8 @@ fn a_toggle_is_remembered_per_conversation() {
     // The second conversation: its working shut, and opened, its step compact.
     model.conversation = Some("20260830T051200Z-b2c3".to_owned());
     let second = runs(&window, &mut model);
-    assert!(second.contains(&head(false, 1, 1)), "{second:?}");
-    click(&window, &head(false, 1, 1), |ctx| {
+    assert!(second.contains(&head(false, [1, 1, 0, 0])), "{second:?}");
+    click(&window, &head(false, [1, 1, 0, 0]), |ctx| {
         crate::ui::render(ctx, &mut model);
     });
     let compact = runs(&window, &mut model);
@@ -59,6 +60,6 @@ fn a_toggle_is_remembered_per_conversation() {
     // Back to the first: as the operator left it.
     model.conversation = first;
     let back = runs(&window, &mut model);
-    assert!(back.contains(&head(true, 1, 1)), "{back:?}");
+    assert!(back.contains(&head(true, [1, 1, 0, 0])), "{back:?}");
     assert!(whole(&back), "still open: {back:?}");
 }

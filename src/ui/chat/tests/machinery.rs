@@ -39,7 +39,7 @@ fn spilling(n: usize) -> Model {
 /// what is inside: the working's line, then the step's.
 fn opened(window: &Window, model: &mut Model) {
     window.frame(Vec::new(), |ctx| crate::ui::render(ctx, model));
-    click(window, &super::idiom::head(false, 1, 0), |ctx| {
+    click(window, &super::line::head(false, [1, 0, 0, 0]), |ctx| {
         crate::ui::render(ctx, model);
     });
     let step = format!("{} returned", crate::ui::theme::glyph::DONE);

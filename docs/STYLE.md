@@ -128,7 +128,7 @@ the ways in: *the verbs, a conversation, the model, a provider*. Under the
 transcript, the prompt; under the prompt, the rule.
 
 **A transcript is read by its gutter.** `❯` is the operator, `┊` the model,
-a tree of stems the working — `+ worked · 2 calls · 1 note` at rest, open
+a tree of stems the working — `+ 2 tool calls · 1 thought` at rest, open
 `├─ ✓ Bash("…")` over one elided line of its output, `└─ ✗` in the error
 accent, a step in flight whole — and `───` parts the turns. No block wears a side rule and
 every block stands on a faint bubble that says its role (§5), and a
@@ -267,7 +267,9 @@ then its choices as numbered rows, `1.` to at most `6.`, the chosen one
 `RAISED`.
 
 **A working** (`chat::working`): stems `├─` `└─` `│` in `INK_FAINT`; its
-one line `+ worked · 2 calls · 1 note` in `INK_WEAK`, a door; a finished
+one line `+ 2 tool calls · 1 thought · 1 intermediate response` in
+`INK_WEAK` — its counts by kind, a kind with none left out — a full-width
+row that lights across the bubble and opens every step it hid; a finished
 call compact as a row, `✓ name("preview")` with the mark in `INK_WEAK` or
 the error accent and one line of its output elided beneath; a finished note
 `· who · first line…`; a step whole `● name("preview") ✓` with the dot in

@@ -6,8 +6,9 @@
 //! working are [`super::stages`]'s.
 
 use super::super::RESPONSE;
+use super::line::head;
 use crate::paint_probe::frame::Window;
-use crate::paint_probe::{fills_of, frame::locate_in, seen_of};
+use crate::paint_probe::{fills_of, seen_of};
 use crate::reply::transcript::{Block, Entry, EntryKind, Transcript, Usage};
 use crate::test_support::window::{click, said, seated};
 use crate::ui::Model;
@@ -114,17 +115,6 @@ fn the_gutter_says_who_spoke() {
     );
 }
 
-/// **The working's one line, open or shut**, in the exact words it is read
-/// in: the sign, then `worked` and its two counts parted by the note glyph.
-pub(super) fn head(open: bool, calls: u64, notes: u64) -> String {
-    format!(
-        "{} worked · {} · {}",
-        if open { glyph::OPEN } else { glyph::SHUT },
-        crate::render::counted(calls, "call"),
-        crate::render::counted(notes, "note")
-    )
-}
-
 /// **A settled working stands as one line** (§4.45 item 5), counting what it
 /// holds; a click opens it to its compact steps — a call with the mark of
 /// how it ended and its output beneath — and the toggle is remembered on
@@ -139,17 +129,20 @@ fn a_settled_working_stands_as_one_line_and_the_line_opens_it() {
     ]);
     let output = glass(&mut model);
     let seen = texts(&output);
-    assert!(seen.iter().any(|t| *t == head(false, 1, 1)), "{seen:?}");
+    assert!(
+        seen.iter().any(|t| *t == head(false, [1, 1, 0, 0])),
+        "{seen:?}"
+    );
     assert!(
         !seen.iter().any(|t| t.contains("read(src/ui.rs)")),
         "{seen:?}"
     );
     let window = Window::sized(1400.0, 900.0);
-    click(&window, &head(false, 1, 1), |ctx| {
+    click(&window, &head(false, [1, 1, 0, 0]), |ctx| {
         crate::ui::render(ctx, &mut model);
     });
     let opened = window.text(|ctx| crate::ui::render(ctx, &mut model));
-    assert!(opened.contains(&head(true, 1, 1)), "{opened}");
+    assert!(opened.contains(&head(true, [1, 1, 0, 0])), "{opened}");
     // One call, met with its result on one row, compact: the mark of how it
     // ended leads the line and the output stands beneath; the reasoning is a
     // step and not a call (bl-eb4e); the id never reaches the glass.
@@ -169,40 +162,20 @@ fn a_settled_working_stands_as_one_line_and_the_line_opens_it() {
 fn a_running_working_stands_open_and_a_toggle_is_remembered() {
     let mut model = with(vec![said("op", "port it"), working(), running("")]);
     let seen = texts(&glass(&mut model));
-    assert!(seen.iter().any(|t| *t == head(true, 1, 1)), "{seen:?}");
+    assert!(
+        seen.iter().any(|t| *t == head(true, [1, 1, 0, 0])),
+        "{seen:?}"
+    );
     assert!(seen.iter().any(|t| t == "read(src/ui.rs)"), "{seen:?}");
     let window = Window::sized(1400.0, 900.0);
-    click(&window, &head(true, 1, 1), |ctx| {
+    click(&window, &head(true, [1, 1, 0, 0]), |ctx| {
         crate::ui::render(ctx, &mut model);
     });
     for _ in 0..2 {
         let shut = window.text(|ctx| crate::ui::render(ctx, &mut model));
-        assert!(shut.contains(&head(false, 1, 1)), "{shut}");
+        assert!(shut.contains(&head(false, [1, 1, 0, 0])), "{shut}");
         assert!(!shut.contains("read(src/ui.rs)"), "{shut}");
     }
-}
-
-/// **The working's line lights under the pointer** (§4.45 item 6): the
-/// hover wash under it, and nothing in that wash away from it.
-#[test]
-fn the_working_s_line_lights_under_the_pointer() {
-    let mut model = with(vec![said("op", "port it"), working()]);
-    let window = Window::sized(1400.0, 900.0);
-    let at = locate_in(&window, &head(false, 1, 1), |ctx| {
-        crate::ui::render(ctx, &mut model);
-    })
-    .expect("the head is on the glass");
-    let washed = |output: &egui::FullOutput| {
-        fills_of(output)
-            .iter()
-            .any(|(_, ink)| *ink == theme::hover())
-    };
-    let away = window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
-    assert!(!washed(&away), "bare at rest");
-    let under = window.frame(vec![egui::Event::PointerMoved(at)], |ctx| {
-        crate::ui::render(ctx, &mut model);
-    });
-    assert!(washed(&under), "lit under the pointer");
 }
 
 /// **A `response` line parts an OPEN working from the prose after it** —
@@ -240,7 +213,7 @@ fn a_response_line_and_a_hairline_part_what_follows() {
         "a second turn is parted by a hairline"
     );
     let window = Window::sized(1400.0, 900.0);
-    click(&window, &head(false, 1, 1), |ctx| {
+    click(&window, &head(false, [1, 1, 0, 0]), |ctx| {
         crate::ui::render(ctx, &mut two);
     });
     let opened = window.text(|ctx| crate::ui::render(ctx, &mut two));

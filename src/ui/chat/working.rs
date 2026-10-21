@@ -14,7 +14,7 @@
 //! compact: a call is its call line and ONE line of its output elided with `…`
 //! at the width it has, a preview and not the content; a finished thinking or
 //! intermediate prose is one elided line. A settled turn's working is one
-//! line, the counts of what it holds. Each compact step and the one line are
+//! line, the counts of what it hides by kind. Each compact step and the one line are
 //! doors that open what they hide in place.
 //!
 //! **A toggle is remembered and the stages decide only where nobody toggled**:
@@ -30,26 +30,46 @@ use super::{Kind, Row, trail};
 use crate::settings::{Settings, Toggle};
 use crate::ui::theme::{self, Speaker, glyph};
 
-/// The word on a settled working's one line, before its counts.
-pub const WORKED: &str = "worked";
-/// What the working's line does, each way, and what a step is.
-pub const UNFOLD_HELP: &str = "unfolds what the turn did: its calls, their results and its notes";
-pub const FOLD_HELP: &str = "folds the working back to one line";
+/// What the working's line does, each way, and what a step is. The line is
+/// the one way back to what a settled turn hid, so its sentence says so.
+pub const UNFOLD_HELP: &str = "opens what the turn did — every step it hid: the calls, their results, the thoughts and the prose between";
+pub const FOLD_HELP: &str = "folds the working back to its one line";
 pub const STEP_HELP: &str = "one step of the working; its result stands elided beneath";
 
-/// **The working's one line**: `worked · N calls · M notes` — the calls it
-/// holds, and the notes, which are every row that is not a call: the reasoning
-/// and the prose between. A result that met its call stands on the call's
-/// row, and one whose call is not on this read is the end of a call still.
+/// **The working's one line** (bl-db54): what it hides, counted by kind in a
+/// fixed order — `tool calls`, `thoughts`, `intermediate responses`, `notes`
+/// — with a kind it holds none of left out, parted by the note glyph. A
+/// result that met its call stands on the call's row, and one whose call is
+/// not on this read is the end of a call still; the model's own prose
+/// between is an intermediate response, and every other row said inside the
+/// working — a peer's, a compaction — is a note.
 pub fn counted(steps: &[Row]) -> String {
-    let calls = steps.iter().filter(|row| is_call(row)).count();
-    let notes = steps.len() - calls;
-    let sep = glyph::NOTE;
-    format!(
-        "{WORKED} {sep} {} {sep} {}",
-        crate::render::counted(calls as u64, "call"),
-        crate::render::counted(notes as u64, "note"),
-    )
+    ["tool call", "thought", "intermediate response", "note"]
+        .into_iter()
+        .enumerate()
+        .map(|(kind, noun)| (steps.iter().filter(|row| sort(row) == kind).count(), noun))
+        .filter(|(count, _)| *count > 0)
+        .map(|(count, noun)| crate::render::counted(count as u64, noun))
+        .collect::<Vec<_>>()
+        .join(&format!(" {} ", glyph::NOTE))
+}
+
+/// Which of the line's four kinds a row is, by its place in the line.
+fn sort(row: &Row) -> usize {
+    if is_call(row) {
+        0
+    } else if row.kind == Kind::Thinking {
+        1
+    } else if is_response(row) {
+        2
+    } else {
+        3
+    }
+}
+
+/// The model's own prose between its calls.
+fn is_response(row: &Row) -> bool {
+    row.kind == Kind::Said && row.weight == Speaker::Model
 }
 
 fn is_call(row: &Row) -> bool {
@@ -73,15 +93,25 @@ pub(super) fn working(ui: &mut egui::Ui, at: usize, steps: &[Row], settings: &Se
     let id = ui.make_persistent_id(("working", at));
     let live = steps.iter().any(|row| row.live) || !settings.on(Toggle::Fold);
     let mut open = ui.data(|d| d.get_temp::<bool>(id)).unwrap_or(live);
-    let head = format!(
-        "{} {}",
-        if open { glyph::OPEN } else { glyph::SHUT },
-        counted(steps)
-    );
-    // **The line is a door** (§4.45 item 6): a link at the body size, so it
-    // lights under the pointer as every other clickable seat does.
-    let help = if open { FOLD_HELP } else { UNFOLD_HELP };
-    if theme::paint::tab(ui, &head, theme::INK_WEAK, help).clicked() {
+    // **The line is a door the width of the bubble** (§4.45 item 6;
+    // bl-db54): the row idiom, so the whole width is its seat, it lights
+    // under the pointer across it and it holds the keyboard.
+    let door = theme::paint::Row {
+        mark: (
+            if open { glyph::OPEN } else { glyph::SHUT }.to_owned(),
+            theme::INK_WEAK,
+        ),
+        words: counted(steps),
+        ink: theme::INK_WEAK,
+        state: None,
+        chosen: false,
+        indent: 0.0,
+        aside: None,
+        beneath: Vec::new(),
+        door: None,
+        help: if open { FOLD_HELP } else { UNFOLD_HELP }.to_owned(),
+    };
+    if door.paint(ui).clicked() {
         open = !open;
         ui.data_mut(|d| d.insert_temp(id, open));
     }

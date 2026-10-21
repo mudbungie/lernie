@@ -3,14 +3,13 @@
 //! at the width, a settled turn's working one counted line — and every
 //! compact shape a door that opens what it hides in place.
 
-use super::idiom::{entry, glass, head, prose, result, running, with, working};
+use super::idiom::{glass, prose, result, running, with, working};
+use super::line::head;
 use crate::paint_probe::frame::Window;
 use crate::paint_probe::frame::locate_in;
 use crate::paint_probe::{fills_of, seen_of};
-use crate::reply::transcript::EntryKind;
 use crate::test_support::window::{click, numbered, said};
 use crate::ui::Model;
-use crate::ui::chat::{rows, working::counted};
 use crate::ui::theme::{self, glyph};
 
 /// What one settled frame put on the glass, as whole runs.
@@ -43,7 +42,7 @@ fn a_settled_working_opens_to_compact_steps_and_a_step_opens_whole() {
     ]);
     let window = Window::sized(1400.0, 900.0);
     let shut = runs(&window, &mut model);
-    assert!(shut.contains(&head(false, 1, 2)), "{shut:?}");
+    assert!(shut.contains(&head(false, [1, 1, 1, 0])), "{shut:?}");
     for word in [
         "line 001",
         "read(src/ui.rs)",
@@ -52,7 +51,7 @@ fn a_settled_working_opens_to_compact_steps_and_a_step_opens_whole() {
     ] {
         assert!(!shut.iter().any(|t| t.contains(word)), "{word}: {shut:?}");
     }
-    click(&window, &head(false, 1, 2), |ctx| {
+    click(&window, &head(false, [1, 1, 1, 0]), |ctx| {
         crate::ui::render(ctx, &mut model);
     });
     let compact = runs(&window, &mut model);
@@ -101,7 +100,7 @@ fn a_finished_output_is_one_line_elided_at_the_width() {
     ]);
     let window = Window::sized(1400.0, 900.0);
     window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
-    click(&window, &head(false, 1, 1), |ctx| {
+    click(&window, &head(false, [1, 1, 0, 0]), |ctx| {
         crate::ui::render(ctx, &mut model);
     });
     let compact = runs(&window, &mut model);
@@ -129,7 +128,7 @@ fn a_running_turn_paints_the_step_in_flight_whole_and_the_finished_ones_compact(
     ]);
     let output = glass(&mut model);
     let seen: Vec<String> = seen_of(&output).into_iter().map(|run| run.text).collect();
-    assert!(seen.contains(&head(true, 1, 3)), "{seen:?}");
+    assert!(seen.contains(&head(true, [1, 1, 2, 0])), "{seen:?}");
     assert!(seen.iter().any(|t| t == "so far"), "{seen:?}");
     assert!(seen.contains(&call_line()), "{seen:?}");
     assert!(seen.contains(&prose_line()), "{seen:?}");
@@ -164,7 +163,7 @@ fn a_compact_step_lights_under_the_pointer() {
     ]);
     let window = Window::sized(1400.0, 900.0);
     window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
-    click(&window, &head(false, 1, 1), |ctx| {
+    click(&window, &head(false, [1, 1, 0, 0]), |ctx| {
         crate::ui::render(ctx, &mut model);
     });
     let failed = format!("{} read(src/ui.rs)", glyph::FAILED);
@@ -198,28 +197,6 @@ fn a_compact_step_lights_under_the_pointer() {
     assert!(washed(&under), "lit under the pointer");
 }
 
-/// **The line counts what it hides**: calls are calls, answered or not, and a
-/// result whose call is not on the read is the end of a call still; every
-/// other row — the reasoning and the prose between — is a note.
-#[test]
-fn the_line_counts_calls_and_notes() {
-    let transcript = with(vec![
-        prose("first I will read"),
-        working(),
-        result("done", false),
-        entry(EntryKind::ToolResult {
-            tool_use_id: "tu-9".to_owned(),
-            content: "orphaned".to_owned(),
-            is_error: false,
-        }),
-        running("so far"),
-    ])
-    .transcript;
-    let shown = rows(&transcript, None);
-    assert_eq!(counted(&shown), "worked · 2 calls · 3 notes", "{shown:?}");
-    assert_eq!(counted(&shown[1..3]), "worked · 1 call · 1 note");
-}
-
 /// **A peer's words inside the working and a call that answered nothing**:
 /// the peer's compact line wears the note's glyph, since the words are not
 /// the model's, and a call whose result was empty is its line alone — no
@@ -235,7 +212,7 @@ fn a_peer_s_note_and_an_empty_result_compact_to_their_lines_alone() {
     ]);
     let window = Window::sized(1400.0, 900.0);
     window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
-    click(&window, &head(false, 1, 2), |ctx| {
+    click(&window, &head(false, [1, 1, 0, 1]), |ctx| {
         crate::ui::render(ctx, &mut model);
     });
     let compact = runs(&window, &mut model);

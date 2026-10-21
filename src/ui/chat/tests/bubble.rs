@@ -2,7 +2,8 @@
 //! under each block says its role, the gutter glyph stands inside it, and a
 //! streaming turn's prose stands on the intermediate rung.
 
-use super::idiom::{glass, head, prose, result, running, with, working};
+use super::idiom::{glass, prose, result, running, with, working};
+use super::line::head;
 use crate::paint_probe::frame::Window;
 use crate::paint_probe::{fills_of, seen_of, strokes_of};
 use crate::test_support::window::{click, said};
@@ -45,7 +46,7 @@ fn each_block_stands_on_the_fill_its_role_wears_with_its_glyph_inside() {
     ]);
     let window = Window::sized(1400.0, 900.0);
     window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
-    click(&window, &head(false, 1, 2), |ctx| {
+    click(&window, &head(false, [1, 1, 1, 0]), |ctx| {
         crate::ui::render(ctx, &mut model);
     });
     let line = format!("{} model-a {} first I will read", glyph::MODEL, glyph::NOTE);
@@ -72,7 +73,7 @@ fn each_block_stands_on_the_fill_its_role_wears_with_its_glyph_inside() {
     // own colour, so what tells it from the pane is the stroke around it.
     let head = seen_of(&output)
         .into_iter()
-        .find(|seen| seen.text == head(true, 1, 2))
+        .find(|seen| seen.text == head(true, [1, 1, 1, 0]))
         .expect("the working's line is on the glass")
         .laid;
     let (_, ring) = bubble(Bubble::Trail);

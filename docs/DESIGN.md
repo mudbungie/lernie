@@ -6025,11 +6025,37 @@ changes.
      prose (one a further step followed) is one elided line. Each compact
      step is a door that opens it whole in place, and the fold's head and
      whole (`chat::fold`) are what it opens to.
-   - **A settled turn's working is one line** — `+ worked · N calls · M
-     notes`, the counts of what it holds — standing between the operator's
-     turn and the final answer, so the transcript at rest reads as question
-     and answer. A click opens it to the compact steps; a second click on a
-     step opens that step.
+   - **A settled turn's working is one line** — the counts of what it
+     hides, by kind, standing between the operator's turn and the final
+     answer, so the transcript at rest reads as question and answer. A
+     click opens it to the compact steps; a second click on a step opens
+     that step.
+
+     **The line's words and shape** (bl-db54, amending bl-0174's
+     `+ worked · N calls · M notes`). Operator ruling 2026-10-20, verbatim:
+     *"the tool collapse goes too far and there's no way to reopen it.
+     Everything between the user prompt and the LLM response should break
+     down into a status line showing what is hidden: '16 tool calls, 13
+     thoughts, 4 intermediate responses'"*. Reproduced, the click did open
+     it; the defect was that nothing read as a door — a weak-ink text run
+     whose seat was its words alone, lumping thoughts and prose as
+     `notes`. So the line is now:
+     - **Counts by kind, in a fixed order, a kind with none left out**:
+       `tool calls` (a call, answered or not, and a result whose call is
+       not on the read), `thoughts` (the reasoning), `intermediate
+       responses` (the model's own prose between), `notes` (any other row
+       said inside the working — a peer's, a compaction), each through
+       `render::counted` for the singular and parted by `·`. `worked` is
+       gone: the counts are the sentence — `+ 16 tool calls · 13 thoughts
+       · 4 intermediate responses` at rest, the same behind `−` open.
+     - **The row idiom** (`theme::paint::Row`, as the compact step is): the
+       bubble's whole width is its seat, it lights under the pointer across
+       that width, it is in the Tab order, and its help sentence says it
+       opens every step the turn hid — this line is the one way back to
+       them.
+
+     The phone follows in yog-android bl-0db5, same words and the same
+     four kinds, so the two seats read alike.
    An explicit toggle is remembered as before, the toolkit's memory of a
    view state — of ONE step's, in the conversation it was clicked in: every
    id under the transcript is pushed under the conversation's (bl-b83d), so

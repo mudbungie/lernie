@@ -1,7 +1,8 @@
 +++
 title = "brazen bl-6feb phase 1: delete the bl-526d dropup filter; start::unsigned fires when the worker's row is absent from the providers table"
 created = 1792729118
-updated = 1792729118
+updated = 1792729121
+claimant = "Gelded-lernie"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["integration"]

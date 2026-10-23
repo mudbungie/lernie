@@ -48,6 +48,24 @@ fn each_list_is_the_held_rows_with_the_cursor_on_what_is_in_force() {
     assert_eq!(texts(&model)[1], "home · annex");
 }
 
+/// **A row holding no credential it needs is left off the provider list**
+/// (bl-526d), unless the worker is on it.
+#[test]
+fn a_bare_row_is_not_a_provider_choice() {
+    let mut model = selecting();
+    let mut bare = crate::test_support::window::provider("keyedvendor");
+    bare.fact = "auth api_key · no credential stored".to_owned();
+    model.providers.get_or_insert_default().push(bare);
+    let texts =
+        |model: &Model| -> Vec<String> { model.choices().into_iter().map(|c| c.text).collect() };
+    model.drop_up(Selector::Provider);
+    assert_eq!(texts(&model), vec!["housevendor", "othervendor"]);
+    for row in model.providers.iter_mut().flatten() {
+        row.fact = "auth oauth2 · not signed in".to_owned();
+    }
+    assert_eq!(texts(&model), vec!["housevendor"], "the row in force stays");
+}
+
 /// **The model the worker is on is listed whether or not its provider's
 /// listing has come back**, and a provider with none in hand lists nothing.
 #[test]

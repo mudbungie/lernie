@@ -18,13 +18,20 @@ impl Model {
         let worker = self.worker();
         match open.selector {
             Selector::Workspace => self.workspaces(),
+            // **A row that needs a credential and holds none is not a
+            // choice** (bl-526d): picking it binds a worker every step of
+            // which is refused. The login pane lists it, which is where it
+            // becomes one; the row in force stays listed, so the list still
+            // says where the worker stands.
             Selector::Provider => self
                 .providers
                 .iter()
                 .flatten()
-                .map(|row| Choice {
+                .map(|row| (row, worker.is_some_and(|w| w.provider == row.name)))
+                .filter(|(row, current)| *current || !row.bare())
+                .map(|(row, current)| Choice {
                     text: row.name.clone(),
-                    current: worker.is_some_and(|w| w.provider == row.name),
+                    current,
                     pick: Pick::Provider(row.name.clone()),
                 })
                 .collect(),

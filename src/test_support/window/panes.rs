@@ -72,10 +72,12 @@ pub(crate) fn provider(name: &str) -> crate::reply::providers::ProviderRow {
 /// **The seated model with the login pane open and answered** (bl-e3c5): a row
 /// that can be signed in to and is being followed mid-flow, a row the server
 /// has blocked, and a row asked what it offers — every sentence the pane can
-/// say about a row, on one screen.
+/// say about a row, on one screen. The pane lists the CATALOG (bl-8c03), so
+/// that is what is answered here; the routing table is left unanswered, which
+/// is what proves the pane never reads it.
 pub(crate) fn signing() -> Model {
     let blocked = crate::reply::providers::ProviderRow {
-        fact: "no credential".to_owned(),
+        fact: "auth oauth2 · not signed in".to_owned(),
         blocked: Some("no login flow".to_owned()),
         effort: false,
         priority: false,
@@ -86,7 +88,7 @@ pub(crate) fn signing() -> Model {
             following: Some("housevendor".to_owned()),
             asking: Some("otherhouse".to_owned()),
         }),
-        providers: Some(vec![provider("housevendor"), blocked]),
+        catalog: Some(vec![provider("housevendor"), blocked]),
         offered: Some(vec!["house-model-1".to_owned()]),
         signin: Some(crate::reply::login::Signin {
             lines: vec![

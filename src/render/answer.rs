@@ -56,6 +56,7 @@ pub(super) fn answer(reply: &Reply) -> String {
         Reply::Enrolled(enrolled) => acts::enrolled(enrolled),
         Reply::Login(signin) => acts::login(signin),
         Reply::Providers(rows) => acts::providers(rows),
+        Reply::Catalog(rows) => acts::catalog(rows),
         Reply::Models(rows) => acts::models(rows),
         Reply::Answered {
             tool,

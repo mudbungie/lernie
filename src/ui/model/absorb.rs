@@ -182,13 +182,14 @@ impl Model {
             Reply::Armed(on) => self.armed("", on),
             Reply::Marks { branch } => self.marks = Some(branch),
             Reply::Found(found) => self.hit(channel, found),
-            // The login pane's three, on the roles' own terms — filed whether
+            // The login pane's four, on the roles' own terms — filed whether
             // or not the pane is open, because a frame that arrives after it
             // closed is the last one in flight rather than a thing to drop.
-            // The table's rows and one row's offering are plain answers; the
-            // sign-in run replaces, exactly as the live tail does, because the
-            // lane hands over the whole fold (`crate::offframe::signin`).
+            // The table, the catalog and one row's offering are plain answers;
+            // the sign-in run replaces, exactly as the live tail does, because
+            // the lane hands over the whole fold (`crate::offframe::signin`).
             Reply::Providers(rows) => self.providers = Some(rows),
+            Reply::Catalog(rows) => self.catalog = Some(rows),
             Reply::Models(rows) => self.offered = Some(rows),
             Reply::Login(run) => self.signin = Some(run),
             Reply::Transcript(transcript) => self.carried(transcript),

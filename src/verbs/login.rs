@@ -1,14 +1,15 @@
-//! **The sign-in family** (yog's `docs/REMOTE.md` §8.3; PROTOCOL 13) — the
-//! table a workspace can sign in to, what one row offers, the act that starts a
-//! sign-in, and the lane that streams it.
+//! **The sign-in family** (yog's `docs/REMOTE.md` §8.3, §9.27; PROTOCOL 13) —
+//! the table a workspace routes, the catalog it can sign in to, what one row
+//! offers, the act that starts a sign-in, and the lane that streams it.
 //!
 //! They are one module for [`super::tuning`]'s reason: one subject, read and
-//! written from both ends. `providers` is the table, `login` starts a run
+//! written from both ends. `providers` is the routing table, `catalog` is the
+//! sign-in catalog over the same row shape (bl-8c03), `login` starts a run
 //! **inside that workspace's directory on the server**, and `login-tail` is that
 //! same run held open. A seat that filed the read with the other reads and the
-//! act with the other acts would have split the one subject in four.
+//! act with the other acts would have split the one subject in five.
 //!
-//! # All four are rows, and the act is a row like any other
+//! # All five are rows, and the act is a row like any other
 //!
 //! Every parameter is a named string, which is [`super`]'s whole test for a
 //! row — so nothing here needs a typed door beside the table the way the
@@ -40,15 +41,32 @@ pub const PROVIDERS: Verb = Verb {
     word: "providers",
     params: &["workspace"],
     flags: &[],
-    summary: "the providers this workspace can sign in to",
-    detail: "One row per provider the workspace routes, in the server's own \
-             listing order — which is brazen's routing order, so the first \
-             row that can answer is the one a turn goes down. Each says what \
-             the server knows about its credential, why a sign-in cannot be \
-             started on it where one cannot, and whether it takes an effort \
-             level and the priority lane at all. It is read on the workspace the \
+    summary: "the provider rows this workspace routes to",
+    detail: "One row per provider the workspace routes — the rows named in \
+             the brazen config plus the built-in presets holding a credential \
+             — in the server's own listing order, which is brazen's routing \
+             order, so the first row that can answer is the one a turn goes \
+             down. Each says what the server knows about its credential, why \
+             a sign-in cannot be started on it where one cannot, and whether \
+             it takes an effort level and the priority lane at all. A preset \
+             nobody named and nobody signed into is not here; `catalog` lists \
+             what can be signed into. It is read on the workspace the \
              workspace names, so a workspace held elsewhere answers about the \
              credentials its own agents read.",
+};
+
+/// **The catalog**: every provider row this workspace can sign in to.
+pub const CATALOG: Verb = Verb {
+    word: "catalog",
+    params: &["workspace"],
+    flags: &[],
+    summary: "the providers this workspace can sign in to",
+    detail: "One row per provider `login` can serve on this workspace, signed \
+             in or not — every row carrying a sign-in flow, built in or \
+             declared — in `providers`' own row shape, so a row that is \
+             not signed in here is the row that appears there once it is. \
+             It is the login pane's listing; a fresh workspace routes nothing \
+             and can still sign in to what is here.",
 };
 
 /// **The offering**: what one row will answer to.
@@ -98,6 +116,11 @@ pub const LOGIN_TAIL: Verb = Verb {
 /// **The provider table**, asked of the workspace `address` names.
 pub fn providers(workspace: String) -> Value {
     PROVIDERS.built(vec![workspace], &[])
+}
+
+/// **The sign-in catalog**, asked of the same workspace.
+pub fn catalog(workspace: String) -> Value {
+    CATALOG.built(vec![workspace], &[])
 }
 
 /// **What one row offers.**

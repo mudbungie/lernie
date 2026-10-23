@@ -188,25 +188,26 @@ fn tuning(
     channel: &Channel,
     aim: &crate::ui::Aim,
 ) {
-    aimed(
-        link,
-        root,
-        channel,
-        &crate::verbs::roles(aim.address.clone()),
-    );
     // **The provider table stands on the aim** (bl-7a77), as the roles read
     // does (bl-d74b): the start's hint says *no provider yet* off the worker's
     // row in it, and the rule's effort and priority stand on its capability
     // flags, before any pane is opened. It stood on the login pane first
-    // (bl-e3c5) for the reason it still serves there — a credential lands
-    // while the operator looks, and the row says so on the next beat. The
-    // run's own lines are the held lane's (`crate::offframe::signin`).
-    aimed(
-        link,
-        root,
-        channel,
-        &crate::verbs::providers(aim.address.clone()),
-    );
+    // (bl-e3c5); what stands there now is the SIGN-IN CATALOG (bl-8c03), the
+    // one read here whose standing buys something — a credential lands while
+    // the operator looks, and the row that said *not signed in* says otherwise
+    // on the next beat. A second read and not a filter on the table, because
+    // the table no longer holds the rows a sign-in exists for (REMOTE §9.27).
+    // The run's own lines are the held lane's (`crate::offframe::signin`).
+    let mut asks = vec![
+        crate::verbs::roles(aim.address.clone()),
+        crate::verbs::providers(aim.address.clone()),
+    ];
+    if standing.standing(&Open::Login(standing.signin())) {
+        asks.push(crate::verbs::catalog(aim.address.clone()));
+    }
+    for ask in &asks {
+        aimed(link, root, channel, ask);
+    }
     let Some(Open::Tuning(providers)) = &standing.open else {
         return;
     };

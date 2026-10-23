@@ -81,13 +81,14 @@ pub struct Model {
     /// which row a sign-in is being followed on, and which was asked what it
     /// offers.
     pub login: Option<Login>,
-    /// **What the aimed workspace can sign in to**, or `None` while nobody has been
-    /// answered about it — the one-option reading [`Self::roles`] gets, and
-    /// filed here rather than on the pane because the rows are the server's.
+    /// **What the aimed workspace routes to** — brazen's table, standing on the
+    /// aim (bl-7a77) — or `None` while nobody has been answered about it.
     pub providers: Option<Vec<crate::reply::providers::ProviderRow>>,
+    /// **What it can sign in to** — the catalog the login pane lists, standing
+    /// on the pane (bl-8c03) — on the same one-option reading.
+    pub catalog: Option<Vec<crate::reply::providers::ProviderRow>>,
     /// **What the last row asked answered with** — the posted read's answer,
-    /// dropped by the act that asks another (`login`). Which row it is about
-    /// is the pane's `asking`, because the reply carries no name.
+    /// dropped by the act that asks another (`login`); which row is `asking`.
     pub offered: Option<Vec<String>>,
     /// **The sign-in run this seat is following**, as the lane has folded it —
     /// the login pane's held read, and [`Self::live`]'s shape one noun over

@@ -162,6 +162,14 @@
 # control — and `proposal` carries a tag on each verdict, armed by the
 # proposal's own id under §4.20. Both rows are gone from this ledger.
 
+# `catalog` arrived at edition 24 (yog bl-c6e3, REMOTE §9.27; PROTOCOL still
+# 19): the sign-in catalog brazen bl-6feb severed from the routing table, and
+# the first control-classed op to arrive since the ledger emptied. bl-8c03
+# landed it in the same commit as the re-vendor — the login pane lists the
+# catalog instead of the table, so the `/login` row that opens the pane carries
+# `act:catalog` where it carried `act:providers`, and `providers` keeps its tags
+# on the rule's dropup door and the prices pane. No line was ever written here.
+
 # The edition-19 money ops arrived with bl-5378's re-vendor to edition 20,
 # which was for the enrollment envelope and surfaced none of them. bl-9111
 # landed the prices pane (DESIGN §4.41, REMOTE §9.23): it hangs off the roster

@@ -15,7 +15,7 @@
 //!
 //! # What is NOT held here is any answer
 //!
-//! [`Model::providers`], [`Model::offered`] and [`Model::signin`] are the
+//! [`Model::catalog`], [`Model::offered`] and [`Model::signin`] are the
 //! server's, filed on the model beside the roles for `super::tuning`'s reason
 //! verbatim: a pane that wrote its own row back would be painting a claim the
 //! server had not made, and a sign-in is exactly the act whose outcome this end
@@ -24,10 +24,13 @@
 //! # One read stands, one is posted, and one is held
 //!
 //! All three of DESIGN's cadences meet on this pane, which is why each is
-//! stated. **`providers` STANDS while the pane is open** (§4.17's rule): a
-//! credential lands on the server while the operator is looking at the table,
-//! so the row that said *no credential* has to say otherwise on the next beat
-//! without anybody asking again. **`models` is POSTED** (§4.21's rule): what a
+//! stated. **`catalog` STANDS while the pane is open** (§4.17's rule; bl-8c03):
+//! a credential lands on the server while the operator is looking at the
+//! listing, so the row that said *not signed in* has to say otherwise on the
+//! next beat without anybody asking again. The pane lists the catalog and not
+//! [`Model::providers`] — brazen's routing table, which stands on the aim
+//! (bl-7a77) and omits exactly the unsigned presets a sign-in exists for
+//! (REMOTE §9.27). **`models` is POSTED** (§4.21's rule): what a
 //! row offers is fixed for the life of the server's own answer, and a standing
 //! read would spend a round trip a beat forever on something that cannot change
 //! under the operator. **`login-tail` is HELD** on its own thread
@@ -142,12 +145,13 @@ impl Model {
             .is_some_and(|channel| channel.named_there.is_some())
     }
 
-    /// **The pane and its three answers go with the workspace they are about** —
+    /// **The pane and its four answers go with the workspace they are about** —
     /// called by the act that moves the aim, so nothing on it outlives its
     /// subject. It is `super::records::retire_records`'s rule one noun over.
     pub(super) fn retire_login(&mut self) {
         self.login = None;
         self.providers = None;
+        self.catalog = None;
         self.offered = None;
         self.signin = None;
     }

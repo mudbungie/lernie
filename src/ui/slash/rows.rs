@@ -145,8 +145,8 @@ fn workspace_rows(pinned: bool, out: &mut Vec<Row>) {
     ));
     out.push(Row::new(
         crate::ui::login::WORD,
-        said(verbs::PROVIDERS.word),
-        &[verbs::PROVIDERS.word],
+        said(verbs::CATALOG.word),
+        &[verbs::CATALOG.word],
     ));
     out.push(Row::new(
         crate::ui::clients::WORD,

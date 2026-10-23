@@ -41,7 +41,7 @@ pub(crate) const FLOOR: u32 = 18;
 ///
 /// Stated in the preface beside the major so the far end knows what this one
 /// can read, and re-read from the corpus by [`tests`] on every run.
-pub(crate) const EDITION: u32 = 20;
+pub(crate) const EDITION: u32 = 24;
 
 /// **The post-floor ledger**: `(shape, field path, the edition it appeared
 /// at)`, for every path stamped above [`FLOOR`].
@@ -56,6 +56,28 @@ pub(crate) const EDITION: u32 = 20;
 /// its cut, which is a handful of paths — an index over it would be a second
 /// representation of a list short enough to read.
 pub(crate) const STAMPS: &[(&str, &str, u32)] = &[
+    ("reply/acknowledged", "/rows/[]/held/scopes", 23),
+    ("reply/acknowledged", "/rows/[]/held/scopes/[]", 23),
+    ("reply/attention", "/rows/[]/held/scopes", 23),
+    ("reply/attention", "/rows/[]/held/scopes/[]", 23),
+    ("reply/catalog", "", 24),
+    ("reply/catalog", "/kind", 24),
+    ("reply/catalog", "/ok", 24),
+    ("reply/catalog", "/rows", 24),
+    ("reply/catalog", "/rows/[]", 24),
+    ("reply/catalog", "/rows/[]/blocked", 24),
+    ("reply/catalog", "/rows/[]/effort", 24),
+    ("reply/catalog", "/rows/[]/fact", 24),
+    ("reply/catalog", "/rows/[]/name", 24),
+    ("reply/catalog", "/rows/[]/priority", 24),
+    ("reply/doctor", "/rendezvous", 21),
+    ("reply/doctor", "/rendezvous/accepted", 22),
+    ("reply/doctor", "/rendezvous/active", 21),
+    ("reply/doctor", "/rendezvous/calls", 21),
+    ("reply/doctor", "/rendezvous/last_poll_unix", 21),
+    ("reply/doctor", "/rendezvous/published", 21),
+    ("reply/doctor", "/rendezvous/punched", 21),
+    ("reply/doctor", "/rendezvous/served", 21),
     ("reply/enrolled", "/pairing_salt", 20),
     ("reply/enrolled", "/rendezvous_pub", 20),
     ("reply/governing", "/workflow_mark", 19),
@@ -96,6 +118,9 @@ pub(crate) const STAMPS: &[(&str, &str, u32)] = &[
     ("reply/workspaces", "/rows/[]/spend/micro_usd", 19),
     ("reply/workspaces", "/rows/[]/spend/unpriced_tokens", 19),
     ("reply/workspaces", "/rows/[]/spend/usd", 19),
+    ("request/catalog", "", 24),
+    ("request/catalog", "/op", 24),
+    ("request/catalog", "/workspace", 24),
     ("request/ceiling", "", 19),
     ("request/ceiling", "/op", 19),
     ("request/ceiling", "/usd", 19),

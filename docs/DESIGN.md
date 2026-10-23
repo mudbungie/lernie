@@ -388,9 +388,10 @@ both §4.19's, the window's own three — one server's verb table (`help`), what
 a needle found (`search`) and the trail (`ops`, §4.27) — the ball pane's four:
 the whole box's binding table (`balls`), the fleet board (`board`), one workspace's
 own balls (`workspace-balls`) and the branch it tracks them on (`marks`), all
-§4.30's — the login pane's three: what a workspace
-can sign in to (`providers`), what one of its rows offers (`models`) and one
-sign-in run (`login`), all §4.24's — the machines registered in one
+§4.30's — the login pane's four: what a workspace
+routes to (`providers`), what it can sign in to (`catalog`, bl-8c03), what one
+of its rows offers (`models`) and one sign-in run (`login`), all §4.24's — the
+machines registered in one
 workspace (`clients`, §4.28), the config pane's two — the lineages a workspace
 holds (`lineages`) and one file's bytes with the settings its schema found in
 them (`config`), both §4.30's — a captured
@@ -2978,6 +2979,20 @@ cannot tell one control from two.
 subject is the aimed workspace.** §4.17's tuning pane is what a workspace's roles are set
 to; this is what that workspace can sign in to, and the act that signs it in.
 
+**It lists the sign-in CATALOG, never the routing table** (bl-8c03; REMOTE
+§9.27). brazen bl-6feb severed the two: `providers` is the rows the operator
+named in config plus the built-in presets holding a credential — so a preset
+nobody has signed into is absent from it, and a pane fed from it could offer no
+sign-in on a fresh workspace, which is the one workspace a sign-in pane exists
+for. `catalog` is every row `bz --login` can serve, signed in or not, in the
+table's own row shape under its own kind — one parser, one more `kind` arm
+(`Reply::Catalog`), and `Model::catalog` beside `Model::providers`. The table
+stays what every other question reads: the dropup, the start hint and the
+effort/priority gates all ask *what can run here*, and the pane alone asks
+*what can be signed into*. An empty catalog is therefore a workspace that
+declares no row with a sign-in flow, which is what `NO_PROVIDERS` says, and
+never a missing credential.
+
 **The act is the SERVER'S and this crate never spawns one.** `bz --login` runs
 on the server, inside the named workspace's directory, so the credential lands where
 the agents that read it run and nothing credential-shaped crosses this wire
@@ -2992,11 +3007,13 @@ re-implement.
 This is the only surface in the seat where they do, which is why they are
 stated together:
 
-- **`providers` STANDS while the pane is open** (§4.17's rule, keyed on the
-  pane). Here the standing buys something the tuning pane's does not: a
-  credential lands on the SERVER while the operator is looking at the table, so
-  a row that said *no credential* says otherwise on the next beat with nothing
-  asked again.
+- **`catalog` STANDS while the pane is open** (§4.17's rule, keyed on the
+  pane; `Open::Login`). Here the standing buys something the tuning pane's does
+  not: a credential lands on the SERVER while the operator is looking at the
+  listing, so a row that said *not signed in* says otherwise on the next beat
+  with nothing asked again. `providers` stood here first (bl-e3c5) and now
+  stands on the aim instead (bl-7a77), because the start hint and the rule's
+  gates read it before any pane is open.
 - **`models` is POSTED** (§4.21's rule). What a row offers is fixed for the
   life of the server's own answer, so a standing read would spend a round trip
   a beat forever on something that cannot change under the operator. It is a

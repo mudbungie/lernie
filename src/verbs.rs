@@ -144,7 +144,9 @@ pub use fleet::{
     ARM, DISARM, DISBAND, FLEET, SCAN, SCIENCE, WORK_DIFF, arm, disarm, disband, fleet, scan,
     science, work_diff,
 };
-pub use login::{LOGIN, LOGIN_TAIL, MODELS, PROVIDERS, login, login_tail, models, providers};
+pub use login::{
+    CATALOG, LOGIN, LOGIN_TAIL, MODELS, PROVIDERS, catalog, login, login_tail, models, providers,
+};
 pub use prices::{CEILING, PRICE, PRICES, ceiling, price};
 pub use proposals::{PROPOSAL, PROPOSALS, proposal, proposals};
 pub use queue::{ATTENTION, FLAG, SEEN, attention, flag, seen};

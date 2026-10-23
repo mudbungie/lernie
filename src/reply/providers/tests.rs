@@ -1,7 +1,7 @@
 //! The provider table: the four required fields, the block whose absence is the
 //! reading, and the offering that is a list of bare strings.
 
-use super::{KIND, MODELS, ProviderRow, offered, row};
+use super::{CATALOG, KIND, MODELS, ProviderRow, offered, row};
 use crate::reply::{Read, Reply, read};
 use serde_json::json;
 
@@ -113,6 +113,11 @@ fn the_frames_read_as_their_listings_and_one_bad_row_fails_it_all() {
         panic!("a providers frame is an answer: {:?}", read(&frame));
     };
     assert_eq!(rows.len(), 1);
+    let frame = json!({"kind": CATALOG, "ok": true, "rows": [open()]});
+    let Read::Answer(Reply::Catalog(catalog)) = read(&frame) else {
+        panic!("a catalog frame is an answer: {:?}", read(&frame));
+    };
+    assert_eq!(catalog, rows, "one row shape, one parser, two kinds");
     let frame = json!({"kind": MODELS, "ok": true, "rows": ["opus", "sonnet"]});
     let Read::Answer(Reply::Models(rows)) = read(&frame) else {
         panic!("a models frame is an answer: {:?}", read(&frame));

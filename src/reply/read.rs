@@ -119,6 +119,7 @@ fn decode(frame: &Value) -> Result<Read, String> {
             branch: balls::marks(obj)?,
         },
         providers::KIND => Reply::Providers(fields::rows(obj, providers::row)?),
+        providers::CATALOG => Reply::Catalog(fields::rows(obj, providers::row)?),
         providers::MODELS => Reply::Models(fields::rows(obj, providers::offered)?),
         login::KIND => Reply::Login(login::signin(obj)?),
         stream::KIND => Reply::Follow(stream::follow(obj)?),

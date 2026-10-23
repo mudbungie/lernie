@@ -1,5 +1,8 @@
-//! **The login pane**: what this workspace can sign in to, and the act that signs it
-//! in (yog's `docs/REMOTE.md` §8.3; PROTOCOL 13).
+//! **The login pane**: the sign-in catalog — what this workspace can sign in
+//! to, signed in or not (`catalog`, REMOTE §9.27) — and the act that signs it
+//! in (yog's `docs/REMOTE.md` §8.3; PROTOCOL 13). It lists the catalog and
+//! never the routing table (`providers`): brazen bl-6feb severed the two, and
+//! the table omits exactly the unsigned presets a sign-in exists for.
 //!
 //! # The act is the SERVER'S and this pane only asks for it
 //!
@@ -65,9 +68,12 @@ pub const WORD: &str = "login";
 pub const HEADING: &str = "sign in";
 /// What it says for a workspace nobody has been answered about yet.
 pub const NOT_ANSWERED: &str = "waiting to hear what this workspace can sign in to";
-/// What it says for a workspace that answered and routes no provider at all. A fact
-/// about the workspace, and the one empty state here that is not a wait.
-pub const NO_PROVIDERS: &str = "this workspace uses no provider — /config names one";
+/// What it says for a workspace that answered and can sign in to nothing. A
+/// fact about the workspace, and the one empty state here that is not a wait:
+/// the catalog is every row carrying a sign-in flow, so an empty one means no
+/// such row is declared — never that a credential is missing.
+pub const NO_PROVIDERS: &str =
+    "no provider here can sign in — /config brazen declares an oauth row";
 /// The word on the control that starts a sign-in on a row.
 pub const SIGN_IN: &str = "sign in to this provider";
 /// What the sign-in does.
@@ -107,7 +113,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         ui.colored_label(theme::tone_ink(&crate::reply::convs::Tone::Weak), ELSEWHERE);
         ui.colored_label(theme::tone_ink(&crate::reply::convs::Tone::Weak), LOOPBACK);
     }
-    match model.providers.clone() {
+    match model.catalog.clone() {
         None => {
             ui.label(NOT_ANSWERED);
         }

@@ -1,15 +1,17 @@
 //! **What a workspace routes to** — the provider table, and what one row is
 //! offering (yog's `docs/REMOTE.md` §8.3; PROTOCOL 13).
 //!
-//! Two kinds in one module because they are one subject read at two depths:
+//! Three kinds in one module because they are one subject read three ways:
 //! `providers` is brazen's ROUTING TABLE for this workspace — the rows the
 //! operator named in config plus the built-in presets holding a credential
-//! (brazen bl-6feb; lernie bl-67aa) — and `models` is what one of those rows
-//! will answer to. A seat that filed them apart would have split the provider
-//! in half. A preset nobody named and nobody signed into is not a row here at
-//! all, so a fact ending in one of [`BARE`] stands only on a row the operator
-//! named; what CAN be signed in to is a separate, forthcoming catalog read
-//! (bl-8c03), not this table.
+//! (brazen bl-6feb; lernie bl-67aa) — `catalog` is its SIGN-IN CATALOG, every
+//! row `bz --login` can serve whether or not it is signed in (REMOTE §9.27;
+//! bl-8c03), and `models` is what one row will answer to. A seat that filed
+//! them apart would have split the provider in three. The two listings share
+//! one row shape under two kinds, so they share one parser — [`row`] — and a
+//! row can be in either without the other: an unsigned oauth preset is
+//! catalog-only, a keyed row is table-only. The login pane renders the
+//! catalog; every other "which rows exist" question stays on the table.
 //!
 //! # `blocked` is the whole of whether a row can be signed in to
 //!
@@ -43,6 +45,9 @@ use super::fields;
 
 /// The kind token the table answers to.
 pub(crate) const KIND: &str = "providers";
+/// The kind token the sign-in catalog answers to — the table's row shape,
+/// the other membership.
+pub(crate) const CATALOG: &str = "catalog";
 /// The kind token one row's offering answers to.
 pub(crate) const MODELS: &str = "models";
 

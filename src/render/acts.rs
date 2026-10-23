@@ -84,8 +84,19 @@ pub(super) fn login(signin: &Signin) -> String {
     )
 }
 
-/// **What a workspace can sign in to.**
+/// **What a workspace routes to** — the table.
 pub(super) fn providers(rows: &[ProviderRow]) -> String {
+    table(rows, "providers", "this workspace routes to no provider")
+}
+
+/// **What a workspace can sign in to** — the catalog, the same rows painted
+/// the same way under its own heading (bl-8c03).
+pub(super) fn catalog(rows: &[ProviderRow]) -> String {
+    table(rows, "catalog", "this workspace can sign in to nothing")
+}
+
+/// One provider listing: a line per row, or `empty` where there is none.
+fn table(rows: &[ProviderRow], heading: &str, empty: &str) -> String {
     let painted = rows
         .iter()
         .map(|row| {
@@ -98,11 +109,7 @@ pub(super) fn providers(rows: &[ProviderRow]) -> String {
             ])
         })
         .collect();
-    listing(
-        "providers",
-        painted,
-        "this workspace can sign in to nothing",
-    )
+    listing(heading, painted, empty)
 }
 
 /// **What one provider row is offering** — the list `lernie model` is checked

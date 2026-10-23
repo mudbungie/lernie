@@ -85,14 +85,18 @@ fn an_aimless_pane_composes_nothing_even_when_it_is_open() {
     assert_eq!(model.following().as_deref(), Some("housevendor"));
 }
 
-/// **The pane and its three answers go with the workspace.** Aiming elsewhere
-/// retires all four, because the act signs a credential into one workspace's store.
+/// **The pane and its four answers go with the workspace.** Aiming elsewhere
+/// retires all five, because the act signs a credential into one workspace's store.
 #[test]
 fn aiming_at_another_workspace_retires_the_pane_and_every_answer_on_it() {
-    let mut model = signing();
+    let mut model = Model {
+        providers: Some(Vec::new()),
+        ..signing()
+    };
     model.aim_at("(this box's own server)", "elsewhere");
     assert_eq!(model.login, None);
     assert_eq!(model.providers, None);
+    assert_eq!(model.catalog, None);
     assert_eq!(model.offered, None);
     assert_eq!(model.signin, None);
 }
@@ -122,11 +126,11 @@ fn a_workspace_held_elsewhere_is_read_off_the_channel_and_not_off_an_address() {
     assert!(!model.elsewhere(), "nothing aimed at is nothing to say");
 }
 
-/// **The three answers are filed whether or not the pane is open**, on the
+/// **The four answers are filed whether or not the pane is open**, on the
 /// roles read's own terms: a frame that arrives after it closed is the last one
 /// in flight rather than a thing to drop.
 #[test]
-fn the_panes_three_answers_come_in_through_the_one_door() {
+fn the_panes_four_answers_come_in_through_the_one_door() {
     let mut model = seated();
     let channel = model.roster[0].channel.clone();
     for (frame, check) in [
@@ -135,6 +139,14 @@ fn the_panes_three_answers_come_in_through_the_one_door() {
                 {"name": "housevendor", "fact": "credential present",
                  "blocked": null, "effort": true, "priority": false}]}),
             "providers",
+        ),
+        (
+            json!({"ok": true, "kind": "catalog", "rows": [
+                {"name": "housevendor", "fact": "auth oauth2 · signed in",
+                 "blocked": null, "effort": true, "priority": false},
+                {"name": "otherhouse", "fact": "auth oauth2 · not signed in",
+                 "blocked": null, "effort": false, "priority": false}]}),
+            "catalog",
         ),
         (
             json!({"ok": true, "kind": "models", "rows": ["house-model-1"]}),
@@ -153,6 +165,11 @@ fn the_panes_three_answers_come_in_through_the_one_door() {
         model.providers.as_deref().map(<[_]>::len),
         Some(1),
         "the table"
+    );
+    assert_eq!(
+        model.catalog.as_deref().map(<[_]>::len),
+        Some(2),
+        "the catalog"
     );
     assert_eq!(
         model.offered,

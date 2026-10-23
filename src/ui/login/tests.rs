@@ -20,17 +20,20 @@ fn a_shut_pane_paints_nothing_and_reports_it() {
     assert!(!painted.contains(HEADING), "{painted}");
 }
 
-/// **Three states, and the first two are different sentences.** A workspace nobody
-/// has been answered about is not a workspace that routes no provider.
+/// **Three states, and the first two are different sentences.** A workspace
+/// nobody has been answered about is not a workspace that can sign in to
+/// nothing — and the listing is the CATALOG, never the routing table: a table
+/// that lists nothing beside a catalog that lists one row paints the row.
 #[test]
 fn an_unanswered_workspace_and_a_workspace_with_no_provider_say_different_things() {
-    for (providers, expected) in [
+    for (catalog, expected) in [
         (None, NOT_ANSWERED),
         (Some(Vec::new()), NO_PROVIDERS),
         (Some(vec![provider("housevendor")]), "housevendor"),
     ] {
         let mut model = Model {
-            providers,
+            catalog,
+            providers: Some(Vec::new()),
             login: Some(Login::default()),
             ..seated()
         };
@@ -77,9 +80,9 @@ fn a_blocked_row_states_the_reason_and_its_control_is_not_live() {
     // is what fires, and the disabled seat below is what proves the other
     // cannot.
     let blocked = model
-        .providers
+        .catalog
         .clone()
-        .expect("the table")
+        .expect("the catalog")
         .into_iter()
         .find(|row| row.name == "otherhouse")
         .expect("the blocked row");
@@ -159,7 +162,7 @@ fn clicking_the_two_row_controls_composes_the_act_and_the_read() {
         ),
     ] {
         let mut model = Model {
-            providers: Some(vec![provider("housevendor")]),
+            catalog: Some(vec![provider("housevendor")]),
             login: Some(Login::default()),
             ..seated()
         };

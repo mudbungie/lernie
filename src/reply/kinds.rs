@@ -18,7 +18,7 @@ use super::{
     search, start, step, steps, stream, transcript,
 };
 
-/// **The kinds the window draws.** Forty-six, and each is here because a
+/// **The kinds the window draws.** Forty-seven, and each is here because a
 /// surface paints it; DESIGN §4.9 holds the ledger of what a later pane adds.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Reply {
@@ -186,11 +186,15 @@ pub enum Reply {
     /// standing while the trail pane is open (bl-4c48). It names no workspace,
     /// so it is one channel's answer and the pane is the union.
     Ops(Vec<ops::OpRow>),
-    /// **What this workspace can sign in to** — the login pane's first read,
-    /// standing while it is open (bl-e3c5). It is the server's listing order,
-    /// which is brazen's own routing order, and a seat that re-sorted it would
-    /// be holding a second opinion about a table it does not own.
+    /// **What this workspace routes to** — brazen's routing table, standing
+    /// on the aim (bl-7a77). It is the server's listing order, which is
+    /// brazen's own routing order, and a seat that re-sorted it would be
+    /// holding a second opinion about a table it does not own.
     Providers(Vec<providers::ProviderRow>),
+    /// **What this workspace can sign in to** — the sign-in catalog, the
+    /// login pane's read, standing while it is open (REMOTE §9.27; bl-8c03).
+    /// The table's row shape under its own kind, read by the table's parser.
+    Catalog(Vec<providers::ProviderRow>),
     /// **The machines registered in one workspace** — the clients pane's one
     /// read, standing while it is open (bl-e53c). Presence is answered at the
     /// moment it is asked and the advertised set is what that machine last

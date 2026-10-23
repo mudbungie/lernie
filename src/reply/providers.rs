@@ -1,10 +1,15 @@
-//! **What a workspace can sign in to** — the provider table, and what one row is
+//! **What a workspace routes to** — the provider table, and what one row is
 //! offering (yog's `docs/REMOTE.md` §8.3; PROTOCOL 13).
 //!
 //! Two kinds in one module because they are one subject read at two depths:
-//! `providers` is every row brazen routes for this workspace, and `models` is
-//! what one of those rows will answer to. A seat that filed them apart would
-//! have split the provider in half.
+//! `providers` is brazen's ROUTING TABLE for this workspace — the rows the
+//! operator named in config plus the built-in presets holding a credential
+//! (brazen bl-6feb; lernie bl-67aa) — and `models` is what one of those rows
+//! will answer to. A seat that filed them apart would have split the provider
+//! in half. A preset nobody named and nobody signed into is not a row here at
+//! all, so a fact ending in one of [`BARE`] stands only on a row the operator
+//! named; what CAN be signed in to is a separate, forthcoming catalog read
+//! (bl-8c03), not this table.
 //!
 //! # `blocked` is the whole of whether a row can be signed in to
 //!

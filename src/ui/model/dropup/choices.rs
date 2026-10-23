@@ -18,23 +18,34 @@ impl Model {
         let worker = self.worker();
         match open.selector {
             Selector::Workspace => self.workspaces(),
-            // **A row that needs a credential and holds none is not a
-            // choice** (bl-526d): picking it binds a worker every step of
-            // which is refused. The login pane lists it, which is where it
-            // becomes one; the row in force stays listed, so the list still
-            // says where the worker stands.
-            Selector::Provider => self
-                .providers
-                .iter()
-                .flatten()
-                .map(|row| (row, worker.is_some_and(|w| w.provider == row.name)))
-                .filter(|(row, current)| *current || !row.bare())
-                .map(|(row, current)| Choice {
-                    text: row.name.clone(),
-                    current,
-                    pick: Pick::Provider(row.name.clone()),
-                })
-                .collect(),
+            // **Every row of the table is a choice** (bl-67aa; it filtered
+            // bare rows off under bl-526d): the providers read is brazen's
+            // routing table, so a preset nobody named and nobody signed into
+            // is not in it at all. **The row in force is listed whether or
+            // not the table names it** — a worker bound to such a preset is
+            // on no table row — so the list still says where the worker
+            // stands.
+            Selector::Provider => {
+                let mut names: Vec<String> = self
+                    .providers
+                    .iter()
+                    .flatten()
+                    .map(|row| row.name.clone())
+                    .collect();
+                if let Some(w) = worker
+                    && !names.contains(&w.provider)
+                {
+                    names.insert(0, w.provider.clone());
+                }
+                names
+                    .into_iter()
+                    .map(|name| Choice {
+                        current: worker.is_some_and(|w| w.provider == name),
+                        text: name.clone(),
+                        pick: Pick::Provider(name),
+                    })
+                    .collect()
+            }
             Selector::Model => {
                 let provider = open.provider.clone().unwrap_or_default();
                 let mut ids = self.offered_by(&provider);

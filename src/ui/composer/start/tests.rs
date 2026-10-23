@@ -230,8 +230,10 @@ fn the_hint_names_the_workspace_and_the_plan() {
 }
 
 /// **A workspace whose worker reaches no model says so before a goal is typed**
-/// (bl-7a77): the worker's provider row is bare, so the hint names the doors
-/// and the pick; a credentialed row, or a table not yet read, asks the goal.
+/// (bl-7a77): the worker's provider row is bare — or absent from the answered
+/// table, which is brazen's routing table and lists no unfunded preset nobody
+/// named (bl-67aa) — so the hint names the doors and the pick; a credentialed
+/// row, or a table not yet read, asks the goal.
 #[test]
 fn a_workspace_whose_worker_holds_no_credential_names_the_doors() {
     let worker = crate::reply::roles::RoleRow {
@@ -251,6 +253,11 @@ fn a_workspace_whose_worker_holds_no_credential_names_the_doors() {
     for (providers, unsigned) in [
         (Some(vec![row("auth api_key · no credential stored")]), true),
         (Some(vec![row("auth api_key · credential stored")]), false),
+        (Some(Vec::new()), true),
+        (
+            Some(vec![crate::test_support::window::provider("housevendor")]),
+            true,
+        ),
         (None, false),
     ] {
         let mut model = Model {

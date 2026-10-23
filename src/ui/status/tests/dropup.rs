@@ -57,6 +57,13 @@ fn the_cached_list_stands_under_the_reload_until_the_answer_lands() {
     let attention = theme::accent(theme::State::Attention);
     assert!(wears(&model, &seen, theme::glyph::DONE, attention));
     assert!(!wears(&model, &seen, theme::glyph::RELOAD, annotation));
+    // **The row in force stands though the table has no row for it**
+    // (bl-67aa); only a list with no worker to stand on is empty.
+    let texts: Vec<&str> = seen.iter().map(|run| run.text.as_str()).collect();
+    assert!(texts.contains(&"• housevendor"), "{texts:?}");
+    assert!(!texts.contains(&"othervendor"), "{texts:?}");
+    model.roles = None;
+    let seen = glass(&window, &mut model);
     assert!(
         seen.iter()
             .any(|run| run.text == super::super::dropup::NOTHING)

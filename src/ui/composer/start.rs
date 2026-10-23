@@ -67,17 +67,18 @@ pub const START_HELP: &str =
     "the first message of a new conversation on this workspace; Enter begins it";
 
 /// **Whether the aimed workspace's worker reaches no model yet**: its provider's
-/// row in the provider table is bare (`ProviderRow::bare`). Both reads stand
+/// row in the provider table is bare (`ProviderRow::bare`), **or is not in the
+/// table at all** (bl-67aa) — the table is brazen's routing table, rows the
+/// operator named plus presets holding a credential, so a worker bound to a
+/// preset nobody named and nobody signed into is on no row. Both reads stand
 /// on the aim; where either has not answered, nothing is claimed.
 pub fn unsigned(model: &Model) -> bool {
-    let Some(worker) = model.worker() else {
+    let (Some(worker), Some(rows)) = (model.worker(), &model.providers) else {
         return false;
     };
-    model
-        .providers
-        .iter()
-        .flatten()
-        .any(|row| row.name == worker.provider && row.bare())
+    rows.iter()
+        .find(|row| row.name == worker.provider)
+        .is_none_or(crate::reply::providers::ProviderRow::bare)
 }
 
 /// **The start's own sentence, with the doors it names** (bl-7a77): a

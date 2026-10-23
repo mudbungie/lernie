@@ -48,10 +48,12 @@ fn each_list_is_the_held_rows_with_the_cursor_on_what_is_in_force() {
     assert_eq!(texts(&model)[1], "home · annex");
 }
 
-/// **A row holding no credential it needs is left off the provider list**
-/// (bl-526d), unless the worker is on it.
+/// **Every table row is a provider choice, and the worker's row is listed
+/// whether or not the table names it** (bl-67aa): a worker bound to a preset
+/// nobody named and nobody signed into is on no table row, and the list still
+/// says where it stands.
 #[test]
-fn a_bare_row_is_not_a_provider_choice() {
+fn the_worker_s_provider_is_listed_whether_or_not_the_table_names_it() {
     let mut model = selecting();
     let mut bare = crate::test_support::window::provider("keyedvendor");
     bare.fact = "auth api_key · no credential stored".to_owned();
@@ -59,11 +61,21 @@ fn a_bare_row_is_not_a_provider_choice() {
     let texts =
         |model: &Model| -> Vec<String> { model.choices().into_iter().map(|c| c.text).collect() };
     model.drop_up(Selector::Provider);
+    assert_eq!(
+        texts(&model),
+        vec!["housevendor", "othervendor", "keyedvendor"],
+        "a bare row the operator named is a choice"
+    );
+    model.providers = Some(vec![crate::test_support::window::provider("othervendor")]);
+    let rows = model.choices();
     assert_eq!(texts(&model), vec!["housevendor", "othervendor"]);
-    for row in model.providers.iter_mut().flatten() {
-        row.fact = "auth oauth2 · not signed in".to_owned();
-    }
-    assert_eq!(texts(&model), vec!["housevendor"], "the row in force stays");
+    assert!(rows[0].current && !rows[1].current, "{rows:?}");
+    model.providers = None;
+    assert_eq!(
+        texts(&model),
+        vec!["housevendor"],
+        "before the table answers"
+    );
 }
 
 /// **The model the worker is on is listed whether or not its provider's

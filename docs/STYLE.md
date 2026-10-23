@@ -101,7 +101,8 @@ cut in half; *what this conversation is for — Enter begins it* and the same
 ways in, in start mode; *nothing is aimed · / for a verb · Ctrl+X for a
 conversation or a new workspace* with no workspace aimed; *no provider yet —
 /login or /config, then pick one on the rule* on a workspace whose worker's
-provider holds no credential (bl-7a77), where prose goes nowhere and the verbs that
+provider holds no credential or is absent from the answered provider table
+(bl-7a77; bl-67aa), where prose goes nowhere and the verbs that
 need no aim still fire; *it is asking — 1–6 answers, or say it — Enter sends* while it asks, the caret
 staying in the box (bl-1252). There is no send control and no row of controls under
 it: the field is the control, and the verbs are typed.

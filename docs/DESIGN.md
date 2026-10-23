@@ -5123,7 +5123,12 @@ parts, in its vertical order, each with what it becomes here.
    off the providers read's own words — the row's fact ends `not signed in`
    or `no credential stored` (`ProviderRow::bare`), because the wire carries
    that fact as words and no flag; a fact this build cannot read claims
-   nothing; `✎ plan` becomes `/plan`, a toggle shown on
+   nothing — **or off the row's absence from an answered table** (bl-67aa;
+   brazen bl-6feb): the table is brazen's routing table, the rows the
+   operator named plus the presets holding a credential, so a worker bound
+   to a preset nobody named and nobody signed into is on no row at all, and
+   a bare fact stands only on a row the operator named. A table not yet
+   read still claims nothing; `✎ plan` becomes `/plan`, a toggle shown on
    the rule while it is on. **With nothing aimed it is the same line again**
    (bl-2cb0), never a sentence where a field was: the field is where every
    slash verb is typed, and the window's own — `/attention`, `/help`,
@@ -5487,7 +5492,11 @@ parts, in its vertical order, each with what it becomes here.
     *Workspace* lists every workspace the roster holds (with its server where the
     seat reaches more than one), reloads with `workspaces`, and a pick aims
     — the switcher's own door, `Model::aim_at` with the server's opening.
-    *Provider* lists the providers read's rows, reloads with `providers` —
+    *Provider* lists the providers read's rows — every one, since the read
+    is brazen's routing table and already lists no unfunded preset nobody
+    named (bl-67aa; the bl-526d filter on bare rows is gone) — with the
+    worker's row first where the table lacks it, so the row in force is
+    listed whether or not the table names it; reloads with `providers` —
     a read that stands on the aim beside the roles' (bl-7a77; it stood on
     the login pane alone before) — and a pick opens the *model* list on that row rather than writing,
     because a provider alone is half an assignment and the write takes the

@@ -107,6 +107,17 @@ pub struct Card {
     pub tail: Option<String>,
     /// Which notch it hangs from — an index into [`Rail::notches`].
     pub notch: u64,
+    /// **The workflow binding that forked this child**, when one did (REMOTE
+    /// §9.28, edition 25): `user_message` for a titler, `worker_flush` for a
+    /// compactor, `worker_return` for a verifier. A card carrying it is a
+    /// **procedure run** — out of band, never a conversation (§4.47) — and
+    /// paints as a marker on its notch's chat seat, not as a subagent card.
+    pub procedure: Option<String>,
+    /// The role the child was dispatched as, when its founding commit says.
+    pub role: Option<String>,
+    /// The flat file the parent landed the child's conclusion as (`title` for
+    /// a titler); the words are the card's own [`tail`](Self::tail).
+    pub landed: Option<String>,
 }
 
 impl Notch {
@@ -167,6 +178,9 @@ fn card(value: &Value) -> Result<Card, String> {
         tokens: fields::count(obj, "tokens")?,
         tail: fields::opt_text(obj, "tail")?,
         notch: fields::count(obj, "notch")?,
+        procedure: fields::opt_text(obj, "procedure")?,
+        role: fields::opt_text(obj, "role")?,
+        landed: fields::opt_text(obj, "landed")?,
     })
 }
 

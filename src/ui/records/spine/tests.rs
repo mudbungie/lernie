@@ -165,3 +165,24 @@ fn a_shut_pane_paints_no_spine() {
     let mut nothing = seated();
     assert!(!painted(&mut nothing).contains(GOVERNING_HEAD));
 }
+
+/// **A procedure run reads as the chat's own marker line** (§4.47), never as
+/// a subagent card, so the two panes cannot say two things about one child.
+#[test]
+fn a_procedure_run_reads_as_the_chats_own_marker_line() {
+    let mut model = recorded();
+    let spine = model
+        .records
+        .rail
+        .as_mut()
+        .expect("the fixture holds a spine");
+    spine.cards[0].procedure = Some("user_message".to_owned());
+    spine.cards[0].role = Some("titler".to_owned());
+    spine.cards[0].landed = Some("title".to_owned());
+    let text = pane(|ui| render(ui, &mut model));
+    assert!(
+        text.contains("titler \u{b7} user_message \u{b7} landed title: \u{201c}working\u{201d} \u{b7} 9 tokens"),
+        "{text}"
+    );
+    assert!(!text.contains("Cobalt — from here"), "{text}");
+}

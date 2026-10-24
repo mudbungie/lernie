@@ -6349,6 +6349,53 @@ paint order, and a long list is still a long Tab; the chords and the words
 are what make the long way short, and the switcher (§4.42 item 7) is still
 the keyboard's door to a conversation.
 
+### 4.47 A procedure run is a marker on the message that fired it (bl-1d79)
+
+Operator ruling 2026-10-22, in the design thread bl-454d, on the engine's
+**procedures** — the children a workflow binding forks beside a conversation
+(litany `docs/DESIGN_PROCEDURES.md`: a titler on a cheap model, an
+independent evaluation, a watcher for injected instructions), out of band,
+whose conclusion alone lands: *"you shouldn't be dropping into a conversation
+with a titler. That's silly."* Three things follow, and this seat holds the
+last of them.
+
+1. **A procedure child is not a conversation.** It never appears in the bar
+   or the switcher. The server keeps it out (yog bl-009a; §4.44 as amended by
+   bl-b538): an agent whose own dispatch commit carries litany's
+   `Procedure: <event>` trailer (litany bl-2854, ARCH §2.5 — the binding that
+   forked it, written by the harness and by nothing else) leaves the
+   conversations answer with its whole descent, counted in no `members` and
+   no `direct`. This seat guesses nothing from a preview; the fact is read off
+   the tree where the harness wrote it.
+2. **Where it shows is the transcript, at the message that fired it.** The
+   server already places every child: a `reply/rail` card hangs from its
+   provenance notch, and a notch carries its chat seat — the entry its rule
+   is drawn above (yog `docs/REMOTE.md` §9.28, edition 25: the card gains
+   `procedure`, `role` and `landed`). So a card carrying `procedure` paints as
+   one line of weak ink **above the first row of that entry**
+   (`src/ui/chat/procedures.rs`): the role, the binding, and what came of it —
+   `titler · user_message · landed title: “Session titling design” · 12
+   tokens` — or the state while it runs. The words are the card's own `tail`,
+   which for a finished child is the last thing it said; this seat reads no
+   file. A card no notch seats paints nowhere, because there is nowhere
+   honest to put it. The records pane's card list reads the same line for the
+   same card (`src/ui/records/spine.rs`), so two panes cannot say two things
+   about one child.
+3. **The spine rides every selection.** The rail used to be the records
+   pane's read alone; the chat now needs the cards whenever it has the
+   transcript, so `offframe::asker::workspace::selected` asks `rail` beside
+   `transcript` and `agent`, and the records pane stops asking it twice. Every
+   chat row carries the entry it was projected from (`Row::entry`,
+   `src/ui/chat/rows/row.rs`), which is the key a seat names and the one the
+   marker matches on — never a row index, which the pairing of calls with
+   their results moves.
+
+**What this does not paint.** A held reply — a worker's return the gate holds
+for an eval — is a state the wire does not yet say (yog bl-ed70, lernie
+bl-e8b5). The rules view — what enter will do — is yog bl-20d2. A guard's
+`INJECTED` reaches the attention row by the server's own marks (litany
+bl-ef78), with the landed sentence as its reason once bl-8155 lands.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -6590,6 +6637,8 @@ the keyboard's door to a conversation.
 | `src/ui/ask/keys.rs` | the digit, the arrows and Enter an empty prompt lends the ask, and the field's hint while it asks (bl-1252). | ~75 |
 | `src/ui/dock.rs` | **the live dock** (§4.42): what runs under the aimed workspace, one line — a door — above the rule or a row apiece when Ctrl+T unfolds it. | ~100 |
 | `src/ui/chat/rows.rs` | one conversation as rows: every committed entry, projected, with the live fold painted in the `Streaming` entry's place and nowhere else (§4.9, bl-f6b5). | ~160 |
+| `src/ui/chat/rows/row.rs` | one row of the pane: what it is made of, the entry it was projected from (§4.47), and the few ways one is born (bl-1d79). | ~110 |
+| `src/ui/chat/procedures.rs` | a procedure run as a marker on the message that fired it (§4.47): the lines a `reply/rail` card with `procedure` paints above the entry its notch seats, and the one line a run reads as in either pane. | ~60 |
 | `src/ui/chat/rows/live.rs` | the turn that has not settled — the two halves of the prose and the tool window under them, plus `half`, the rule both routes share and neither may copy. | ~105 |
 | `src/ui/chat/rows/sent.rs` | what this seat sent, as rows (§4.45 item 4): `whole`, the pane as data — the committed rows and the live fold, then one operator row per standing record for the selected conversation, pending until acknowledged — which paints what stands and retires nothing. | ~40 |
 | `src/ui/chat/rows/role.rs` | a row's role (§4.45 item 7): whose weight a delivered message is said in, the bubble a row is born on, and the pass over each turn's shape that makes prose a trail follows — or the running turn's — intermediate and marks the running turn's rows live. | ~80 |

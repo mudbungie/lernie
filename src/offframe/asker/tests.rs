@@ -47,6 +47,7 @@ mod fleet;
 mod login;
 /// The three questions, and how each waits for the last to have an answer.
 mod nesting;
+mod records;
 /// The selection, read at the next leg and ahead of the fan.
 mod selection;
 /// The tuning pane's offerings, stamped with the row each was asked of.

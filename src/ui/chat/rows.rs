@@ -19,8 +19,8 @@
 //! — see [`half`], which is that rule's one home. An empty half is not
 //! something the operator was not shown; it is something that was never said.
 
-use super::{Fold, fold};
-use crate::ui::theme::{Bubble, Speaker};
+use super::fold;
+use crate::ui::theme::Speaker;
 
 /// The turn that has not settled yet.
 mod live;
@@ -28,6 +28,9 @@ mod live;
 mod pair;
 /// Whose weight a row is said in, and which bubble it stands on.
 mod role;
+/// The row itself — what one line of the pane is made of (bl-1d79).
+mod row;
+pub use row::Row;
 /// What this seat sent, as rows after the committed ones.
 pub mod sent;
 
@@ -61,94 +64,6 @@ pub enum Kind {
     Thinking,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Row {
-    pub who: String,
-    pub said: String,
-    /// **Whose voice this is, told by weight and never by hue** (STYLE §5,
-    /// `theme::speaker`): the ink of the rule beside the block and of the
-    /// header over it. It is decided HERE, where the entry is read, because
-    /// the paint knows a row and only this knows what kind of entry made one.
-    pub weight: Speaker,
-    /// **Whether this row is a failure.** The one thing a transcript says that
-    /// is a STATE rather than a speaker — so it is the one row whose rule is
-    /// an accent (`State::Error`) instead of a weight, and colour still means
-    /// state.
-    pub failed: bool,
-    /// What this row hides while it is folded, or `None` where it hides
-    /// nothing — see [`fold`].
-    pub fold: Option<Fold>,
-    /// Said, or a step of the trail — see [`Kind`].
-    pub kind: Kind,
-    /// **The tool-use id that meets a call with its result** ([`pair`]) —
-    /// carried for the pairing and never painted: an id is the wire's
-    /// bookkeeping, not anything the operator reads.
-    pub call: Option<String>,
-    /// **Whether the server has yet to acknowledge it** ([`sent`]): the one
-    /// row whose words wear the pending ink rather than the body's.
-    pub pending: bool,
-    /// **The fill this row stands on** (§4.45 item 7), decided here and not
-    /// by the painter — see [`role`].
-    pub bubble: Bubble,
-    /// **Whether this row belongs to the turn that has not settled** — what a
-    /// trail's fold reads for its default (§4.45 item 5).
-    pub live: bool,
-}
-
-impl Row {
-    /// **A row that hides nothing and did not fail** — everything a person, a
-    /// model or this seat itself put on the glass. One constructor rather than
-    /// a `fold: None` at eight sites, because a row that hides something is
-    /// the exception and naming the exception is what keeps it visible.
-    pub(super) fn plain(who: String, said: String, weight: Speaker) -> Self {
-        Self {
-            who,
-            said,
-            weight,
-            failed: false,
-            fold: None,
-            kind: Kind::Said,
-            call: None,
-            pending: false,
-            bubble: role::born(weight, Kind::Said),
-            live: false,
-        }
-    }
-
-    /// The same row as a step of the trail.
-    pub(super) fn as_(mut self, kind: Kind) -> Self {
-        self.kind = kind;
-        self.bubble = role::born(self.weight, kind);
-        self
-    }
-
-    /// **A call, as the trail names it**: `name(<head of its input>)`, the
-    /// id kept for the pairing and off the glass.
-    pub(super) fn call(name: &str, input: &str, id: &str) -> Self {
-        Self {
-            call: Some(id.to_owned()),
-            ..Self::plain(pair::head(name, input), String::new(), Speaker::Model).as_(Kind::Call)
-        }
-    }
-
-    /// **A result**, by the one word for how it ended.
-    pub(super) fn result(id: &str, said: String, failed: bool, fold: Option<Fold>) -> Self {
-        Self {
-            who: if failed { FAILED } else { RETURNED }.to_owned(),
-            said,
-            // A tool answers for the model, not as it: a peer's weight.
-            weight: Speaker::Peer,
-            failed,
-            fold,
-            kind: Kind::Result,
-            call: Some(id.to_owned()),
-            pending: false,
-            bubble: Bubble::Trail,
-            live: false,
-        }
-    }
-}
-
 /// **Who a wound's row is said by**: nobody — it is the conversation's
 /// state, so it wears the error rule and a word for what happened rather
 /// than the server's virtual entry name.
@@ -180,9 +95,12 @@ pub fn rows(transcript: &Transcript, live: Option<&Stream>) -> Vec<Row> {
         transcript
             .entries
             .iter()
-            .flat_map(|entry| match (&entry.kind, live) {
-                (EntryKind::Streaming { .. }, Some(fold)) => streaming(fold),
-                _ => entry_rows(entry),
+            .flat_map(|entry| {
+                let rows = match (&entry.kind, live) {
+                    (EntryKind::Streaming { .. }, Some(fold)) => streaming(fold),
+                    _ => entry_rows(entry),
+                };
+                rows.into_iter().map(|row| row.from(&entry.name))
             })
             .collect(),
     );
@@ -195,8 +113,8 @@ pub fn rows(transcript: &Transcript, live: Option<&Stream>) -> Vec<Row> {
 }
 
 /// The two words a settled call is said in, on both routes.
-const RETURNED: &str = "returned";
-const FAILED: &str = "failed";
+pub(super) const RETURNED: &str = "returned";
+pub(super) const FAILED: &str = "failed";
 
 /// One entry's rows.
 fn entry_rows(entry: &Entry) -> Vec<Row> {

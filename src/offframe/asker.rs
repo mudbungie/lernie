@@ -31,6 +31,8 @@ use serde_json::Value;
 
 use super::down;
 
+/// The records pane's reads, asked only while it is open.
+mod records;
 /// The questions that name one workspace, asked of the aimed workspace.
 mod workspace;
 use crate::state::{Link, Open, Said};

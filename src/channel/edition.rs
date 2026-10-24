@@ -41,7 +41,7 @@ pub(crate) const FLOOR: u32 = 18;
 ///
 /// Stated in the preface beside the major so the far end knows what this one
 /// can read, and re-read from the corpus by [`tests`] on every run.
-pub(crate) const EDITION: u32 = 24;
+pub(crate) const EDITION: u32 = 25;
 
 /// **The post-floor ledger**: `(shape, field path, the edition it appeared
 /// at)`, for every path stamped above [`FLOOR`].
@@ -102,6 +102,9 @@ pub(crate) const STAMPS: &[(&str, &str, u32)] = &[
     ("reply/prices", "/spent/micro_usd", 19),
     ("reply/prices", "/spent/unpriced_tokens", 19),
     ("reply/prices", "/spent/usd", 19),
+    ("reply/rail", "/cards/[]/landed", 25),
+    ("reply/rail", "/cards/[]/procedure", 25),
+    ("reply/rail", "/cards/[]/role", 25),
     ("reply/rail", "/rows/[]/cost", 19),
     ("reply/rail", "/rows/[]/cost/micro_usd", 19),
     ("reply/rail", "/rows/[]/cost/unpriced_tokens", 19),

@@ -35,6 +35,8 @@ pub mod fold;
 /// The two panels at the head of the pane: the conversation's facts, and the
 /// seat's where nothing is selected.
 pub mod panel;
+/// A procedure run as a marker on the entry it fired at (§4.47).
+pub mod procedures;
 pub mod rows;
 /// A scroll the keyboard asked for, spent inside the area (§4.46 item 3).
 pub mod scroll;
@@ -102,6 +104,14 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) -> bool {
                 // Whether the working just painted stands open, where one does.
                 let mut opened = None;
                 while let Some(row) = all.get(at) {
+                    // A procedure run stands above the first row of the entry
+                    // its notch seats (`procedures`, §4.47).
+                    if at == 0 || all.get(at - 1).is_some_and(|prev| prev.entry != row.entry) {
+                        procedures::paint(
+                            ui,
+                            &procedures::markers(model.records.rail.as_ref(), &row.entry),
+                        );
+                    }
                     let rest = all.get(at..).unwrap_or(&[]);
                     let run = rest
                         .iter()

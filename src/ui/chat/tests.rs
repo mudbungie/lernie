@@ -21,6 +21,10 @@ mod live;
 mod machinery;
 /// A toggle's memory is one conversation's (§4.45 item 5; bl-b83d).
 mod memory;
+/// A procedure run as a marker on the glass (§4.47).
+mod procedures;
+/// Each committed entry kind, projected (bl-f6b5).
+mod projection;
 /// A message this seat sent: on the glass the frame it is sent, in the
 /// pending ink until acknowledged, and gone when the server's row lands.
 mod sent;
@@ -32,87 +36,17 @@ mod weight;
 
 use super::{LIVE, NO_AIM, NO_CONVERSATION, Row, render, rows};
 use crate::reply::transcript::{Block, Entry, EntryKind, Transcript, Usage};
-use crate::test_support::window::{pane, said, seated};
+use crate::test_support::window::{pane, seated};
 use crate::ui::Model;
 use crate::ui::theme::Speaker;
 
-fn of(kind: EntryKind) -> Transcript {
+pub(super) fn of(kind: EntryKind) -> Transcript {
     Transcript {
         entries: vec![Entry {
             name: "003-model-a.json".to_owned(),
             raw: "{}".to_owned(),
             kind,
         }],
-    }
-}
-
-/// A delivered message, and the epitaph that says how a child ended.
-#[test]
-fn a_delivered_message_names_its_sender_and_its_ending() {
-    assert_eq!(
-        rows(
-            &Transcript {
-                entries: vec![said("op", "port it")]
-            },
-            None
-        ),
-        vec![Row::plain(
-            "op".to_owned(),
-            "port it".to_owned(),
-            Speaker::Operator,
-        )]
-    );
-    let ended = of(EntryKind::Delivered {
-        sender: "child".to_owned(),
-        sender_name: None,
-        epitaph: Some("delivered".to_owned()),
-        body: "landed".to_owned(),
-    });
-    assert_eq!(rows(&ended, None)[0].who, "child (delivered)");
-}
-
-/// **Reasoning is a row, not a spinner.** A badge that never grows cannot tell
-/// a model thinking hard from a driver that has hung, so each block becomes its
-/// own row and each says which kind it is.
-#[test]
-fn a_model_turn_becomes_one_row_per_block() {
-    let turn = of(EntryKind::Model {
-        model_id: "model-a".to_owned(),
-        blocks: vec![
-            Block::Thinking("weighing two seams".to_owned()),
-            Block::Text("the seam is real".to_owned()),
-            Block::ToolUse {
-                id: "tu-1".to_owned(),
-                name: "read".to_owned(),
-                input: "src/ui.rs".to_owned(),
-            },
-            Block::Unknown("citation".to_owned()),
-        ],
-        usage: Usage::new(),
-    });
-    let who: Vec<String> = rows(&turn, None).into_iter().map(|r| r.who).collect();
-    assert_eq!(
-        who,
-        vec![
-            "model-a (thinking)",
-            "model-a",
-            "read(src/ui.rs)",
-            "model-a (citation, which this version of lernie cannot read)",
-        ]
-    );
-}
-
-/// A tool result says which way it went, because a failure the operator has to
-/// read the body to spot is a failure they will miss.
-#[test]
-fn a_tool_result_says_whether_it_failed() {
-    for (is_error, word) in [(false, "returned"), (true, "failed")] {
-        let entry = of(EntryKind::ToolResult {
-            tool_use_id: "tu-1".to_owned(),
-            content: "done".to_owned(),
-            is_error,
-        });
-        assert_eq!(rows(&entry, None)[0].who, word);
     }
 }
 
@@ -149,11 +83,14 @@ fn a_compacted_span_says_what_went() {
     });
     assert_eq!(
         rows(&gap, None),
-        vec![Row::plain(
-            "compacted 4–9".to_owned(),
-            "six were squashed".to_owned(),
-            Speaker::Peer,
-        )]
+        vec![
+            Row::plain(
+                "compacted 4–9".to_owned(),
+                "six were squashed".to_owned(),
+                Speaker::Peer,
+            )
+            .from("003-model-a.json")
+        ]
     );
 }
 
@@ -227,11 +164,14 @@ fn a_committed_half_with_nothing_in_it_is_no_row_either() {
     });
     assert_eq!(
         rows(&turn, None),
-        vec![Row::plain(
-            "model-a".to_owned(),
-            "the seam is real".to_owned(),
-            Speaker::Model,
-        )]
+        vec![
+            Row::plain(
+                "model-a".to_owned(),
+                "the seam is real".to_owned(),
+                Speaker::Model,
+            )
+            .from("003-model-a.json")
+        ]
     );
     // And the other half, the same way: a turn that has only thought so far.
     let thinking_only = of(EntryKind::Model {

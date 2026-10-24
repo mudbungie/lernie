@@ -48,6 +48,7 @@ fn a_selection_is_read_before_the_fan_and_the_fan_still_visits_every_channel() {
             vec![json!({"ok": true, "kind": "providers", "rows": []})],
             vec![json!({"ok": true, "kind": "transcript", "rows": []})],
             vec![json!({"ok": true, "kind": "refused", "why": "no such agent"})],
+            vec![json!({"ok": true, "kind": "rail", "rows": [], "cards": []})],
             roster(),
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
             vec![json!({"ok": true, "kind": "roles", "rows": []})],
@@ -70,6 +71,7 @@ fn a_selection_is_read_before_the_fan_and_the_fan_still_visits_every_channel() {
             "providers",
             "transcript",
             "agent",
+            "rail",
             "workspaces",
             "conversations",
             "roles",
@@ -91,24 +93,25 @@ fn a_leg_boundary_asks_only_about_a_selection_that_moved() {
         vec![
             vec![json!({"ok": true, "kind": "transcript", "rows": []})],
             vec![json!({"ok": true, "kind": "refused", "why": "no such agent"})],
+            vec![json!({"ok": true, "kind": "rail", "rows": [], "cards": []})],
         ],
     );
     let mut model = aimed_home(&scratch);
     model.select("20260830T051200Z-a1b2");
     let link = asking(&model);
     let asked = caught_up(&link, scratch.path(), None);
-    assert_eq!(ops(&own), vec!["transcript", "agent"]);
+    assert_eq!(ops(&own), vec!["transcript", "agent", "rail"]);
     assert_eq!(
         caught_up(&link, scratch.path(), asked.clone()),
         asked,
         "the same selection again"
     );
-    assert_eq!(ops(&own).len(), 2, "is not asked twice in one pass");
+    assert_eq!(ops(&own).len(), 3, "is not asked twice in one pass");
     model.aim = None;
     model.conversation = None;
     link.settle(&mut model);
     assert_eq!(caught_up(&link, scratch.path(), asked), None);
-    assert_eq!(ops(&own).len(), 2, "and no selection asks nothing");
+    assert_eq!(ops(&own).len(), 3, "and no selection asks nothing");
 }
 
 /// **A selection's read that lands after the selection moved is dropped**
@@ -125,11 +128,19 @@ fn a_selection_s_read_is_filed_only_while_it_is_selected() {
         ]})]
     };
     let refused = || vec![json!({"ok": true, "kind": "refused", "why": "no such agent"})];
+    let rail = || vec![json!({"ok": true, "kind": "rail", "rows": [], "cards": []})];
     let scratch = Scratch::new();
     let _own = wired(
         &scratch,
         &flat(),
-        vec![transcript(), refused(), transcript(), refused()],
+        vec![
+            transcript(),
+            refused(),
+            rail(),
+            transcript(),
+            refused(),
+            rail(),
+        ],
     );
     let mut model = aimed_home(&scratch);
     model.select("20260830T051200Z-a1b2");

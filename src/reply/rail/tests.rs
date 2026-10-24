@@ -58,6 +58,17 @@ fn a_card_carries_the_child_and_the_words_the_server_wrote_about_it() {
     assert_eq!(read.tokens, 9);
     assert_eq!(read.notch, 0);
     assert_eq!(read.tail.as_deref(), Some("working"));
+    assert_eq!((read.procedure, read.role, read.landed), (None, None, None));
+    // Edition 25: a procedure run's three facts, read when written.
+    let run = card(&json!({
+        "agent": "c-1-t", "name": "Tern", "fork": "from here", "state": "quiescent",
+        "tokens": 3, "notch": 0, "tail": "Port the paint probe",
+        "procedure": "user_message", "role": "titler", "landed": "title"
+    }))
+    .expect("a procedure card reads");
+    assert_eq!(run.procedure.as_deref(), Some("user_message"));
+    assert_eq!(run.role.as_deref(), Some("titler"));
+    assert_eq!(run.landed.as_deref(), Some("title"));
     let quiet = card(&json!({
         "agent": "c-1-b", "name": "Dun", "fork": "from config/main",
         "state": "sideways", "tokens": 0, "notch": 1

@@ -160,6 +160,12 @@ fn cards(ui: &mut egui::Ui, spine: &Rail) {
         return;
     }
     for row in &spine.cards {
+        // A procedure run reads as the chat's own marker line (§4.47), so the
+        // two panes cannot say two things about one child.
+        if row.procedure.is_some() {
+            ui.colored_label(theme::INK_WEAK, crate::ui::chat::procedures::line(row));
+            continue;
+        }
         ui.horizontal_wrapped(|ui| {
             ui.label(card(row));
             if let Some(said) = &row.tail {

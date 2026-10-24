@@ -13,19 +13,22 @@
 //!
 //! # The rule is about DESCENT and not about compactors
 //!
-//! **The wire carries no kind.** A conversation row spells its address, its
-//! badge, its preview and how far it hangs under its root; nothing on it says
-//! *this one is a compactor*, and nothing should — a fork's candidate is a
-//! depth-1 row the operator DID start, and a seat that guessed from a preview
-//! would be reading prose to make a structural decision.
+//! **The wire carries no kind, and since yog bl-009a it carries no machinery
+//! either** (bl-b538; ruling lernie bl-454d): an agent a workflow binding
+//! forked — titler, compactor, verifier — is read off its dispatch commit's
+//! `Procedure:` trailer on the server and leaves the conversations answer with
+//! its descent, counted in no `members` and no `direct`. Nothing on a row says
+//! *this one is a compactor* because no row is one. A seat that guessed from a
+//! preview would be reading prose to make a structural decision, and now has
+//! no reason to.
 //!
-//! What the server does give is the descent, and the descent is the whole
+//! What the server does give is the descent of what remains — the subagents a
+//! model dispatched, a fork's candidates — and the descent is the whole
 //! answer: **the list is the conversations, and what hangs under one is under
 //! it.** A root is always on the glass; its subtree is one gesture away and
-//! says how much of it there is. That satisfies the ball's own first remedy —
-//! *compactors fold under the conversation they compact* — without a rule
-//! about compactors, and it folds a fork's candidates on the same terms, which
-//! is right for the same reason: both are what this conversation is made of.
+//! says how much of it there is. Those rows are what this conversation is made
+//! of, and the operator may well open them, so the fold stays exactly as it
+//! was: its mechanism unchanged, its subject shrunk to conversations.
 //!
 //! # It is ONE list, so the fold is here rather than in the pane
 //!
@@ -35,11 +38,9 @@
 //! `crate::ui::keys` exists in order not to have. Filtering the one list keeps
 //! both honest for free.
 //!
-//! **What the attention rows say is not this seat's to fix.** Every compactor
-//! in that session earned an `attention` row saying *came to rest — your
-//! turn*, which is false of a finished compaction; that is a fact the server
-//! answers and yog's own ball owns it. This seat's half is where the rows are
-//! painted.
+//! **What the attention rows said was not this seat's to fix**, and the server
+//! fixed it (yog bl-3592: a rest is the operator's only when nobody dispatched
+//! it). This seat's half is where the rows are painted.
 
 use crate::reply::convs::ConvRow;
 use crate::ui::Model;

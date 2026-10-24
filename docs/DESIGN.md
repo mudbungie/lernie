@@ -1392,17 +1392,23 @@ ONE conversation. The rows were not wrong: `depth` is 1 and the preview says
 what they are. But an index whose majority is machinery is an index people
 learn to stop reading.
 
-**The wire carries no kind, and it should not.** A conversation row spells its
-address, its badge, its preview and how far it hangs under its root; nothing on
-it says *this one is a compactor*, and a fork's candidate is a depth-1 row the
-operator DID start — so a seat that guessed from a preview would be reading
-prose to make a structural decision. What the server does give is the descent,
-and the descent is the whole answer: the list is the conversations, a root is
-always on the glass, and its subtree is one gesture away with the count on the
-control. That satisfies the ball's own first remedy — *compactors fold under
-the conversation they compact* — with no rule about compactors, and folds a
-fork's candidates on the same terms, which is right for the same reason: both
-are what that conversation is made of.
+**The wire carries no kind, and the server keeps the machinery out of the
+answer** (amended bl-b538; the ruling is lernie bl-454d, 2026-10-22: *a
+procedure child is not a conversation, and nobody drops into a conversation
+with a titler*). A conversation row still spells its address, its badge, its
+preview and how far it hangs under its root, and nothing on it says *this one
+is a compactor* — because since yog bl-009a no row says it at all: an agent
+the workflow forked (a titler at `user_message`, a compactor at
+`worker_flush`, a verifier at `worker_return`) is read off its own dispatch
+commit's `Procedure:` trailer (litany bl-2854, ARCH §2.5) and leaves
+`Reply::Conversations` with its whole descent, counted in no `members` and no
+`direct`. The fact is the server's, read from the tree, never a seat's guess
+from a preview. What this seat still folds is what remains under a root: the
+subagents a model dispatched and a fork's candidates, which are what that
+conversation is made of and which the operator may well open. The fold's
+mechanism is unchanged; its subject shrank to the rows that are conversations.
+Where a procedure's run shows instead is the transcript — a marker on the
+message that fired it (bl-1d79) — never the list.
 
 **The fold is applied to `Model::rows`, which is the one list the pointer
 paints and the keyboard walks** (§4.11's own rule, `crate::ui::model::claim`).
@@ -5675,8 +5681,13 @@ just different views to see different open chats."*
 **Three readings, each checked against the wire.** *Sessions* are the
 wire's **conversations** — `Query::Conversations`' rows (`ConvRow`), the
 rows the switcher paints. *Title* is the row's **preview** — its first
-line, `ConvRow::preview` — because the wire carries no title, and the first
-line is what a traditional chat list shows under a name. *The chat
+line, `ConvRow::preview` — the first line being what a traditional chat
+list shows under a name. (**Amended bl-b538**: the wire's `display` now
+leads with the titler-landed `title` when the conversation has one — yog
+bl-e6ad, litany `docs/DESIGN_PROCEDURES.md` §6, one cheap line rewritten on
+every operator message — above the minted name; the seat paints `display`
+unchanged, so the row's name became the title the moment the server grew
+one, and the preview stays the subtitle beneath it.) *The chat
 interface* whose auto-hiding the pin stops is read as **the bar**: nothing
 else on the glass hides itself.
 

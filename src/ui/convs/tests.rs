@@ -1,6 +1,8 @@
 //! The conversations under a workspace: the two empty states, the headline, the
 //! age, the indent, and the click that selects.
 
+/// What a row's hover sentence says.
+mod help;
 /// What hangs under a conversation, on the glass.
 mod subtree;
 /// The rule, the tint and the connectors a threaded row wears.

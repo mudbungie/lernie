@@ -5856,6 +5856,25 @@ as the keyboard's door and the whole seat's view.
    (`Model::post_delete`, the one composition both go through), the seat
    typing the name the row bears.
 
+   **And the row's help is the glyph's legend** (bl-d9ce; operator
+   2026-10-31: *there is color coding and an icon (checkbox, red square).
+   It's not clear what it means. It should show on mouseover pause*). The
+   row's hover sentence was the constant *shows this conversation*, which
+   said nothing about the `✔`, the `▶`, the `■` or the red they are painted
+   in. It is now derived from the row — `convs::help`, one function beside
+   `convs::mark` and `convs::rule`, read by this bar and by the switcher so
+   both say the same words — and leads with the state in words: *asking, N
+   waiting* while the row asks (asking outranks the state, as on the glyph),
+   else *working*, *at rest*, *stopped*, or an unknown word verbatim;
+   *, as far as anyone has looked* where the server could not observe it
+   (`ConvRow::uncertain`, the glyph's trailing `?` in words); then
+   ` · ` and the failure clause verbatim where there is one
+   (`ConvRow::failure`, the words behind a red row, which only the switcher
+   paints beneath); then ` — click shows this conversation`. One sentence,
+   §4.46 item 2's rule: *stopped · no credential for provider row "work" —
+   click shows this conversation*. The trashcan's help is its own and
+   unchanged.
+
 2. **The tabs** (`src/ui/tabs.rs`; bl-03c1) are a strip at the top of the
    column, above the transcript, one tab per **open** conversation of the
    aimed workspace: the name, with the asking `?` in the attention accent
@@ -6249,7 +6268,10 @@ surface.
    overlay's own box and ink (STYLE §5), and never while the pointer
    moves. **The sentence is authored at the control, beside its word**, as
    a constant where the word is one (`bar::PIN` and `bar::PIN_HELP`) and
-   composed where the word is a name (a tab's: *shows this conversation*),
+   composed where the word is a name (a tab's: *shows this conversation*;
+   a conversation row's is composed from the row's state, its uncertainty
+   and its failure clause — `convs::help`, §4.44 item 1, bl-d9ce — because
+   the row's glyph and ink have no legend but this one),
    because a table from label to sentence is the translation table PARITY
    §4 refuses, and it drifts the first time a word is reworded.
 

@@ -59,8 +59,6 @@ pub const NOT_ANSWERED: &str = "waiting to hear about this workspace";
 
 /// The mark a state nothing observed wears, inside the badge it qualifies.
 pub const UNCERTAIN: &str = "?";
-/// What a conversation's row does wherever it stands (DESIGN §4.46 item 2).
-pub const SELECT_HELP: &str = "shows this conversation";
 /// What the bar row's trashcan does.
 pub const TRASH_HELP: &str = "deletes this conversation; Ctrl+click skips the question";
 
@@ -155,6 +153,42 @@ pub fn rule(row: &ConvRow) -> Option<egui::Color32> {
     } else {
         theme::state_of(&row.state).map(theme::accent)
     }
+}
+
+/// **A row's help sentence** (DESIGN §4.46 item 2; bl-d9ce): the state in
+/// words, why the row is red where it is, and what the click does — one
+/// sentence, the same in the bar and the switcher because both read it here.
+///
+/// The glyph and its ink are a legend nobody printed: nothing on the glass
+/// says what `✔` or a red `■` means, and the row's help used to say only
+/// *shows this conversation*. So the sentence leads with what the glyph is a
+/// picture of — `asking, N waiting` while the row asks (asking outranks the
+/// state here as it does on the glyph), else `working`, `at rest`, `stopped`,
+/// or the unknown word verbatim — qualified by *as far as anyone has looked*
+/// where nothing observed it ([`UNCERTAIN`]'s doctrine in words), then the
+/// server's failure clause verbatim where there is one (`ConvRow::failure`,
+/// the words behind the red), then the click.
+pub fn help(row: &ConvRow) -> String {
+    use crate::reply::convs::AgentState;
+    let mut said = if row.attention > 0 {
+        format!("asking, {} waiting", row.attention)
+    } else {
+        match &row.state {
+            AgentState::Live | AgentState::InFlight => "working".to_owned(),
+            AgentState::Quiescent => "at rest".to_owned(),
+            AgentState::Stopped => "stopped".to_owned(),
+            AgentState::Unknown(word) => word.clone(),
+        }
+    };
+    if row.uncertain {
+        said.push_str(", as far as anyone has looked");
+    }
+    if let Some(failure) = &row.failure {
+        said.push_str(" · ");
+        said.push_str(failure);
+    }
+    said.push_str(" — click shows this conversation");
+    said
 }
 
 /// **A row's state glyph and its ink**: `?` in the attention accent while it

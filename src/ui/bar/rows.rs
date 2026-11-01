@@ -11,7 +11,9 @@
 //!
 //! **A trashcan stands at the open row's right end while the pointer is
 //! over it** (§4.44 item 1; bl-e837): `theme::paint::Row`'s door, in faint
-//! ink and lit under the pointer, under a seat of its own. Its click asks
+//! ink and lit under the pointer, under a seat of its own. **The row's help
+//! is `convs::help`'s sentence** — the state in words and the failure clause
+//! — so the glyph's meaning is one rest of the pointer away (bl-d9ce). Its click asks
 //! before deleting — the confirmation on the box (`super::confirm`) — and
 //! with Ctrl held it deletes at once; both go through `Model::post_delete`,
 //! the one door `/delete` goes through too (§4.42 item 5).
@@ -104,7 +106,7 @@ fn one(
         aside: open.then_some(age),
         beneath,
         door: open.then_some((theme::glyph::TRASH, convs::TRASH_HELP)),
-        help: convs::SELECT_HELP.to_owned(),
+        help: convs::help(row),
     }
     .paint_doored(ui);
     crate::ui::act::tag(

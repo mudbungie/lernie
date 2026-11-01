@@ -35,7 +35,6 @@ pub const SHOW: &str = "show";
 pub const HIDE: &str = "hide";
 /// What the subtree's row does.
 pub const SUBTREE_HELP: &str = "shows or hides the conversations under this one";
-use super::SELECT_HELP;
 
 /// **One row, and everything that hangs off it.**
 ///
@@ -79,7 +78,7 @@ pub(super) fn conversation(
         aside: None,
         beneath,
         door: None,
-        help: SELECT_HELP.to_owned(),
+        help: super::help(row),
     }
     .paint(ui);
     // **Two reads hang off this one gesture** (`crate::ui::act`): selecting a

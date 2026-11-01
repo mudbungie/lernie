@@ -22,10 +22,10 @@ use crate::ui::{Aim, Channel, Chunk, Model};
 pub(crate) mod panes;
 
 pub(crate) use panes::{
-    asked, attempt, boarded, checked, clearing, column, commanded, configured, deposit, diff,
-    doctored, drilled, figure, finding, fleeting, helped, hit, lineage, machine, machines, mark,
-    notch, own_row, pinned, priced, provider, queued, recorded, selecting, signing, step, trailed,
-    trailing, tuned, waiting,
+    HELD_SAYS, asked, attempt, boarded, checked, clearing, column, commanded, configured, deposit,
+    diff, doctored, drilled, figure, finding, fleeting, helped, hit, lineage, machine, machines,
+    mark, notch, own_row, pinned, priced, provider, queued, recorded, selecting, signing, step,
+    trailed, trailing, tuned, waiting,
 };
 
 /// **A selector's run as the glass says it** (DESIGN §4.44 item 5): its

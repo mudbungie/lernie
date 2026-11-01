@@ -27,8 +27,8 @@ pub(crate) use fleet::{attempt, diff, fleeting};
 pub(crate) use prices::priced;
 pub(crate) use records::{deposit, drilled, mark, notch, own_row, recorded, step};
 pub(crate) use union::{
-    asked, checked, clearing, commanded, doctored, finding, helped, hit, queued, trailed, trailing,
-    waiting,
+    HELD_SAYS, asked, checked, clearing, commanded, doctored, finding, helped, hit, queued,
+    trailed, trailing, waiting,
 };
 
 use crate::ui::{Login, Model, Tuning};

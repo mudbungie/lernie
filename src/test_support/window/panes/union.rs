@@ -31,6 +31,11 @@ pub(crate) fn waiting(workspace: &str, agent: &str) -> crate::reply::queue::Queu
     }
 }
 
+/// **The server's own hold sentence on the parked call** — the tool, what it
+/// was about to do, the class and the evidence (yog `control::reason`), which
+/// is why the ask writes no tool name ahead of it (bl-9f2b).
+pub(crate) const HELD_SAYS: &str = r#"Bash {"command":"git push"} classified writes (…)"#;
+
 /// **The seated model with the decision queue open and answered** (bl-f0ef):
 /// a flagged row carrying every line the pane can hang off one — the raise,
 /// the failure clause, the parked invocation and the signals — a quiet row,
@@ -53,7 +58,7 @@ pub(crate) fn queued() -> Model {
         held: Some(crate::reply::queue::Held {
             tool: "Bash".to_owned(),
             tool_use: "toolu_1".to_owned(),
-            reason: "writes".to_owned(),
+            reason: HELD_SAYS.to_owned(),
             scopes: Vec::new(),
         }),
         ..waiting("home", "20260830T051200Z-a1b2")

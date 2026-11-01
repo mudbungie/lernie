@@ -2420,7 +2420,12 @@ remedy, *was cut off at its output cap — nothing was committed; raise the
 role's max_output_tokens…* — and the pane, the ask box (§4.42 item 8) and
 `lernie attention` all paint it in place of the signal list. The signals stand
 in only where `says` is absent or empty, and `QueueRow::why` is the one place
-that choice is made.
+that choice is made. **The parked call's line keeps the same rule** (bl-9f2b):
+the hold's `reason` is the server's own sentence and already opens with the
+tool and what it was about to do (yog `control::reason`: *Bash {"command":…}
+classified open-world (…)*), so the ask box and the queue pane write *waiting
+for your approval:* and that sentence, naming the tool once; the bare tool
+name stands in only where the server wrote no sentence (`ui::queue::parked`).
 
 Five decisions, and each is a choice rather than a mechanism:
 

@@ -271,12 +271,20 @@ pub fn flagged(row: &QueueRow) -> Option<String> {
 /// is `answer`, which belongs to the tool-host pane this seat does not have
 /// (`parity.toml`, bl-e53c). Saying what is parked is worth more than saying
 /// nothing while that pane is unbuilt.
+///
+/// **The server's sentence carries the line** (bl-9f2b, bl-5507's rule one
+/// noun over): the hold's `reason` already opens with the tool and what it was
+/// about to do — *Bash {"command":…} classified open-world (…)* — so a seat
+/// that wrote the tool ahead of it named the tool twice. The bare tool name
+/// stands in only where the server wrote no sentence.
 pub fn parked(row: &QueueRow) -> Option<String> {
     let held = row.held.as_ref()?;
-    Some(format!(
-        "waiting for your approval: {} — {}",
-        held.tool, held.reason
-    ))
+    let what = if held.reason.is_empty() {
+        &held.tool
+    } else {
+        &held.reason
+    };
+    Some(format!("waiting for your approval: {what}"))
 }
 
 /// Why it is asking: the server's own sentence (`says`, bl-5507), the raw

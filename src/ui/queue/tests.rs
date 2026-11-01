@@ -13,7 +13,7 @@ use super::{
     signalled,
 };
 use crate::paint_probe::frame::Window;
-use crate::test_support::window::{click, escape, pane, queued, seated, seen, waiting};
+use crate::test_support::window::{HELD_SAYS, click, escape, pane, queued, seated, seen, waiting};
 use crate::ui::{Asking, Model, theme};
 
 /// A closed pane paints nothing and says so, which is what lets the shell put
@@ -42,7 +42,7 @@ fn the_answered_pane_paints_every_line_a_row_can_carry() {
         "2 under it",
         "flagged 2026-09-01T22:10Z — it is rewriting an unrelated crate",
         "Unauthorized",
-        "waiting for your approval: Bash — writes",
+        &format!("waiting for your approval: {HELD_SAYS}"),
         "held  mail  flagged",
         "it stopped on the third attempt",
         crate::ui::roster::NO_NAME_HERE,
@@ -84,6 +84,24 @@ fn every_empty_state_is_its_own_sentence() {
             "a channel with nothing waiting is silent:\n{painted}"
         );
     }
+}
+
+/// **The parked line names the tool once** (bl-9f2b): the server's own hold
+/// sentence opens with the tool and what it was about to do, so it carries the
+/// line alone; the bare tool name stands in only where no sentence came.
+#[test]
+fn the_parked_line_names_the_tool_once() {
+    let model = queued();
+    let row = &model.waiting[0].rows[0];
+    let said = parked(row).expect("a parked call");
+    assert_eq!(said, format!("waiting for your approval: {HELD_SAYS}"));
+    assert_eq!(said.matches("Bash").count(), 1, "{said}");
+    let mut unsaid = row.clone();
+    unsaid.held.as_mut().expect("a parked call").reason.clear();
+    assert_eq!(
+        parked(&unsaid).as_deref(),
+        Some("waiting for your approval: Bash")
+    );
 }
 
 /// **A row nobody flagged, nothing parked and no token names says none of the

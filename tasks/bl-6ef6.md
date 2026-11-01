@@ -1,7 +1,8 @@
 +++
 title = "start mode's hint says no provider yet while the rule beneath it shows a provider and a model"
 created = 1792037252
-updated = 1792037252
+updated = 1793512372
+claimant = "Provider-Truth"
 parent = "bl-4446"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

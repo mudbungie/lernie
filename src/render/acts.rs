@@ -14,26 +14,35 @@ use crate::reply::start::Prepared;
 
 use super::parts::{brief, clause, line, line_over, listing, when};
 
-/// **A captured run**: the verdict off the exit code, and what the child said.
+/// **A captured run**: what the child said, under a verdict only where the
+/// words do not already carry it.
 ///
 /// Both streams are printed and neither is elided — a run's output is the
 /// whole of what it answered, and a `bl close` that failed says why in the
-/// last line of a long stderr.
+/// last line of a long stderr. **A run that succeeded and spoke is told in
+/// its words alone** (bl-401b): `ok` over them restated an exit code the
+/// sentence already carried, and in the state slot it read as this seat's
+/// own prefix on the engine's receipt. The words are the child's verbatim
+/// (REMOTE §8.2) and nothing here rewrites them — a sentence that names a
+/// conversation by an id this seat paints nowhere else is the engine's to
+/// change, not a prefix to strip. `ok` is said only over silence, because a
+/// run that said nothing must still read apart from one that never fired
+/// (bl-9760).
 pub(super) fn outcome(outcome: &Outcome) -> String {
-    listing(
-        &line(vec![
-            Some(if outcome.ok() { "ok" } else { "failed" }.to_owned()),
-            when(!outcome.ok(), &format!("exit {}", outcome.exit)),
-        ]),
-        [
-            when(!outcome.stdout.is_empty(), outcome.stdout.trim_end()),
-            when(!outcome.stderr.is_empty(), outcome.stderr.trim_end()),
-        ]
+    let said: Vec<String> = [&outcome.stdout, &outcome.stderr]
         .into_iter()
-        .flatten()
-        .collect(),
-        "",
-    )
+        .map(|stream| stream.trim_end())
+        .filter(|stream| !stream.is_empty())
+        .map(str::to_owned)
+        .collect();
+    if outcome.ok() {
+        return if said.is_empty() {
+            "ok".to_owned()
+        } else {
+            said.join("\n")
+        };
+    }
+    listing(&format!("failed  exit {}", outcome.exit), said, "")
 }
 
 /// **A start, staged.** The goal the rung composed is the operator's next
@@ -196,3 +205,6 @@ pub(super) fn armed(standing: bool) -> String {
         "it is not armed".to_owned()
     }
 }
+
+#[cfg(test)]
+mod tests;

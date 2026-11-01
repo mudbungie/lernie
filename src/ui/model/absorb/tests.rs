@@ -46,7 +46,9 @@ fn a_receipt_replaces_the_notice_and_never_clears_it() {
 
 /// **A retarget that had nothing to do says so, in the Annotation ink, on the
 /// glass** — the server's sentence read back off the painted glyphs, not off
-/// the model, and Escape puts it down.
+/// the model, with no `ok ·` of the seat's ahead of it (bl-401b), and Escape
+/// puts it down. The `litany:` prefix and the id inside the sentence are the
+/// engine's words relayed verbatim, which is yog's to change.
 #[test]
 fn a_successful_run_paints_its_own_sentence_in_the_annotation_ink() {
     let mut model = seated();
@@ -64,7 +66,11 @@ fn a_successful_run_paints_its_own_sentence_in_the_annotation_ink() {
         .iter()
         .find(|run| run.text.contains("nothing to retarget"))
         .expect("the receipt reached the glass");
-    assert!(line.text.starts_with("ok · litany"), "{}", line.text);
+    assert!(
+        line.text.starts_with("litany: config/default"),
+        "the engine's sentence alone, under no `ok ·` of the seat's (bl-401b): {}",
+        line.text
+    );
     assert_eq!(line.ink, theme::accent(theme::State::Annotation));
     crate::test_support::window::escape(&window, |ctx| crate::ui::render(ctx, &mut model));
     assert_eq!(model.notice, None);
@@ -94,7 +100,7 @@ fn a_witnessed_act_s_receipt_says_nothing_in_the_slot() {
     model.receipt(&flat, "retarget", ran(0, "nothing to retarget", ""));
     assert_eq!(
         model.notice,
-        Some(Notice::Said("ok · nothing to retarget".to_owned()))
+        Some(Notice::Said("nothing to retarget".to_owned()))
     );
 }
 

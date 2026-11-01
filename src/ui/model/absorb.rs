@@ -225,7 +225,7 @@ impl Model {
             // from one that never fired. So each stands in the state slot as
             // the CLI's own sentence ([`crate::render::receipt`]) — one source
             // for both seats — until Escape or the next notice replaces it. A
-            // run that failed is told in the child's own words instead.
+            // run is told in the child's own words either way (bl-401b).
             Reply::Outcome(outcome) if !outcome.ok() => {
                 self.notice = Some(Notice::Refused(outcome.stderr));
             }

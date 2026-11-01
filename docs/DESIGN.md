@@ -4035,6 +4035,23 @@ Esc or the next notice. The one exception is a deposit (`message`,
 `ok` standing over the conversation's state after every send would hide the one
 fact the slot is for.
 
+**Amended by bl-401b: a captured run's receipt is the child's words, and `ok`
+is said only over silence.** `/retarget` on a conversation already on the head
+stood in the slot as `ok · litany: config/default already governs [<id>] —
+nothing to retarget`. Of that, only `ok ·` was this seat's: the verdict heading
+`crate::render::acts::outcome` put over a sentence that already carried it. A
+run that succeeded and spoke is now told in its words alone, on both seats; a
+silent success still says `ok` (the bl-9760 rule above); a failure still says
+`failed  exit N` over the child's words. The rest of the sentence — the
+`litany:` prefix and the agent id, which no other surface paints (bl-c887) — is
+the engine's stderr relayed verbatim (REMOTE §8.2: *"All three answer
+`Reply::Outcome` — the spawned verb's `exit`/`stdout`/`stderr`"*), and this seat
+does not rewrite prose: stripping a prefix or substituting a name inside it is
+a translation table keyed on another repository's wording. Naming the
+conversation as the switcher does needs the receipt to carry it as a field,
+which is yog's (yog bl-1965). Saying nothing is not an answer: bl-9760 is
+exactly that a no-op must read apart from an act that never fired.
+
 **Amended again by bl-a7f5: a receipt is about the selection it was spent
 on.** Two holes the round-2 drive found. The rule's selectors (§4.42 item 11)
 spend `model`, `effort` and `priority`, whose success is a captured run with

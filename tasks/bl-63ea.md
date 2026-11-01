@@ -1,7 +1,8 @@
 +++
 title = "an opened trail paints a tool result's trailing newline as a blank line at its foot"
 created = 1792035467
-updated = 1792035467
+updated = 1793512369
+claimant = "Trail-Trim"
 parent = "bl-4792"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

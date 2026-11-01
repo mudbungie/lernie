@@ -108,6 +108,7 @@ pub(super) fn working(ui: &mut egui::Ui, at: usize, steps: &[Row], settings: &Se
         indent: 0.0,
         aside: None,
         beneath: Vec::new(),
+        tail: None,
         door: None,
         help: if open { FOLD_HELP } else { UNFOLD_HELP }.to_owned(),
     };
@@ -195,6 +196,7 @@ fn compact(ui: &mut egui::Ui, row: &Row) -> egui::Response {
         indent: 0.0,
         aside: None,
         beneath,
+        tail: None,
         door: None,
         help: STEP_HELP.to_owned(),
     }

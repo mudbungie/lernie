@@ -39,9 +39,13 @@ pub const LINGER: f32 = 0.75;
 pub const EASE: f32 = 0.12;
 /// The bar's collapsed width in points (§4.44 item 1, §4.45 item 2).
 pub const BAR_SHUT: f32 = 80.0;
-/// **The desk size's width** (`crate::snapshot::SIZES`), whose quarter is
-/// the bar's open width by default.
+/// **The desk size's width** (`crate::snapshot::SIZES`), which the bar's
+/// open width is read off.
 pub const DESK: f32 = 1400.0;
+/// **The bar's open width by default**, in points (§4.44 item 1): three
+/// tenths of the desk — a quarter until the row grew its fourth word
+/// (bl-2997). What a drag open writes stands over it.
+pub const BAR_OPEN: f32 = DESK * 3.0 / 10.0;
 
 /// **Everything this seat can be set to**, typed. `Default` is the table's
 /// defaults, and the two widths are `None` until dragged or set: absent is

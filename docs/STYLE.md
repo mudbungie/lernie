@@ -182,7 +182,13 @@ and a list are told apart by the air between their lines.
 **Delta:** a list row stands `ROW 24` points tall where the phone's touch
 target is 48 — a pointer's target is not a thumb's, and a list of
 conversations at 48 a row scrolls twice as much; a control is its word plus
-its padding, no taller than it needs. A block's corner is `RADIUS 6` in
+its padding, no taller than it needs. **A row with lines beneath its head
+stands as tall as its lines** (`theme::paint::Row`; bl-2997): the head at
+the body's own height, each line beneath at its own, `XXS` of air above and
+below and none between — the bar's two-line row is `XXS + BODY's height +
+SMALL's height + XXS`, about a sixth under the `ROW + SMALL's height + XXS`
+of a head centred in `ROW` with a line hung beneath, which spent a third of
+the block on air. A block's corner is `RADIUS 6` in
 proportion; a state's rule is `RULE 3`, as on the phone.
 
 ## 5. Anatomy
@@ -207,11 +213,18 @@ inside each seat (`theme::paint::heading_link`; bl-bc9d) — the pin in
 a link is larger than its word, because a target a pointer reaches for at
 the top of a column is reached for often.
 
-**A bar row** (`bar::rows`): the row above led by the conversation's state
-glyph, and — while the pointer is over it — `🗑` in `INK_FAINT` at its right
-end under a seat of its own (`theme::paint::Row::door`; bl-e837), lit with the
-wash like every door, the age stepping left of it; the row keeps its wash
-while the pointer is on the trashcan. **The deletion's confirmation**
+**A bar row** (`bar::rows`): the row above as a two-line block (bl-2997).
+The head is led by the conversation's state glyph in its state's ink, then
+`ConvRow::display` in `INK` (the selected one's in the brand) at `BODY`, the
+age at the right end in `INK_WEAK` at `SMALL`; beneath it the preview's
+first line at the left in `INK_WEAK` at `SMALL`, cut with `…` at the width
+the name leaves it, and `ConvRow::name` at the right end in the same ink and
+size (`theme::paint::Row::tail`), only where it differs from the display.
+`XXS` of air above and below and none between the lines (§4). While the
+pointer is over it — `🗑` in `INK_FAINT` at the head's right end under a seat
+of its own (`theme::paint::Row::door`; bl-e837), lit with the wash like every
+door, the age stepping left of it; the row keeps its wash while the pointer
+is on the trashcan. Collapsed, the glyph and the display alone, one line. **The deletion's confirmation**
 (`bar::confirm`): the ask's box in the error accent, on the prompt — its name
 on the first line with *Enter deletes · Esc keeps* at the line's other end in
 `INK_WEAK` at `SMALL`, the conversation's name in `INK`, then `keep` in

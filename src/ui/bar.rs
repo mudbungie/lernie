@@ -38,7 +38,7 @@ pub use rows::{EMPTY, NOTHING_AIMED};
 /// bl-773e), and the desk size's width (`crate::snapshot::SIZES`), whose
 /// quarter is the expanded width's default. What the operator set is read
 /// off `Model::settings` on every frame.
-pub use crate::settings::{BAR_SHUT as SHUT, DESK, EASE, LINGER};
+pub use crate::settings::{BAR_OPEN, BAR_SHUT as SHUT, DESK, EASE, LINGER};
 /// The pin's two words: it stops the auto-hiding, and it takes the stop back.
 pub const PIN: &str = "pin";
 pub const UNPIN: &str = "unpin";
@@ -91,10 +91,10 @@ impl Bar {
     }
 }
 
-/// **The expanded width's default in a window `window` wide**: a quarter of
-/// the desk size's width, and never more than the ceiling.
+/// **The expanded width's default in a window `window` wide**: [`BAR_OPEN`],
+/// three tenths of the desk size's width, and never more than the ceiling.
 pub fn open_width(window: f32) -> f32 {
-    (DESK / 4.0).min(drag::ceiling(window))
+    BAR_OPEN.min(drag::ceiling(window))
 }
 
 /// **Paint the bar** at the window's left edge, before every other panel, so

@@ -1,13 +1,19 @@
 //! **The bar's rows** (DESIGN §4.44 item 1): one per conversation of the
 //! aimed workspace, in the listing's order, with the subtree's indent.
 //!
-//! Expanded, a row is the state glyph in its state's ink, the name in body
-//! ink (the selected one's in the brand), the age at the right end and the
-//! preview beneath, both in weak ink. Collapsed, it is the glyph and the
-//! name alone, which the row elides with `…` at the width it has — so a
-//! collapsed bar dragged wider shows more of each name (§4.45 item 2;
-//! bl-773e). Every word is `crate::ui::convs`' — a glyph or an age changes
-//! there for both painters.
+//! Expanded, a row is a block of two lines (bl-2997; operator 2026-10-31:
+//! *the name is a useful piece of data, but it's not the most valuable*):
+//! the state glyph in its state's ink and `ConvRow::display` in body ink
+//! (the selected one's in the brand) with the age at the right end, and
+//! beneath them the preview's first line with `ConvRow::name` — the
+//! addressable name — at the right end, both in weak ink at the small size.
+//! The name stands only where it differs from the display: a row whose
+//! display IS its name says it once, at the head. The line beneath is laid
+//! whether or not there is a preview, so every open row is one height.
+//! Collapsed, it is the glyph and the display alone, which the row elides
+//! with `…` at the width it has — so a collapsed bar dragged wider shows
+//! more of each (§4.45 item 2; bl-773e). Every word is `crate::ui::convs`'
+//! or the wire's — a glyph or an age changes there for both painters.
 //!
 //! **A trashcan stands at the open row's right end while the pointer is
 //! over it** (§4.44 item 1; bl-e837): `theme::paint::Row`'s door, in faint
@@ -72,10 +78,11 @@ pub(super) fn render(ui: &mut egui::Ui, model: &mut Model, open: bool) {
 }
 
 /// **One row**, answering the seat a click lands on and the trashcan's where
-/// it stood. Open, it is the whole block — glyph and name, the age at the
-/// right end, the preview beneath — under one seat, so the tint fills what a
-/// click takes (DESIGN §4.44 item 5); the trashcan is the open row's alone,
-/// since a collapsed row has no room past its glyph.
+/// it stood. Open, it is the whole block — glyph and display, the age at the
+/// right end, the preview beneath with the name at its right end — under one
+/// seat, so the tint fills what a click takes (DESIGN §4.44 item 5); the
+/// trashcan is the open row's alone, since a collapsed row has no room past
+/// its glyph.
 fn one(
     ui: &mut egui::Ui,
     model: &Model,
@@ -86,12 +93,15 @@ fn one(
     let ink = if selected { theme::BRAND } else { theme::INK };
     let (glyph, glyph_ink) = convs::mark(row);
     let age = convs::age(row.age_secs);
-    let preview = row.preview.lines().next().filter(|line| !line.is_empty());
-    let beneath = preview
-        .filter(|_| open)
-        .map(|line| (line.to_owned(), theme::INK_WEAK, egui::TextStyle::Small))
-        .into_iter()
-        .collect();
+    let preview = row.preview.lines().next().unwrap_or_default();
+    let beneath = if open {
+        vec![(preview.to_owned(), theme::INK_WEAK, egui::TextStyle::Small)]
+    } else {
+        Vec::new()
+    };
+    let name = open
+        .then(|| row.name.clone().filter(|name| *name != row.display))
+        .flatten();
     let (seat, trash) = theme::paint::Row {
         mark: (glyph, glyph_ink),
         words: row.display.clone(),
@@ -105,6 +115,7 @@ fn one(
         },
         aside: open.then_some(age),
         beneath,
+        tail: name,
         door: open.then_some((theme::glyph::TRASH, convs::TRASH_HELP)),
         help: convs::help(row),
     }

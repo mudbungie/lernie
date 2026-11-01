@@ -99,6 +99,7 @@ fn a_block_row_is_one_seat_over_every_line() {
                 indent: 0.0,
                 aside: Some("2m".to_owned()),
                 beneath: vec![("beneath".to_owned(), INK_FAINT, egui::TextStyle::Small)],
+                tail: None,
                 door: None,
                 help: "a block".to_owned(),
             }
@@ -144,6 +145,7 @@ fn a_doored_row_tells_the_door_under_the_pointer_and_itself_elsewhere() {
                 indent: 0.0,
                 aside: None,
                 beneath: Vec::new(),
+                tail: None,
                 door: Some(("×", "the door's sentence")),
                 help: "the row's sentence".to_owned(),
             }

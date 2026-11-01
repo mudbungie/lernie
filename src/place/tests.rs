@@ -71,7 +71,7 @@ fn each_setting_comes_back_on_its_own_and_an_untouched_seat_writes_no_object() {
     let both = Place {
         settings: Settings {
             bar_shut: Some(64.5),
-            bar_open: Some(420.0),
+            bar_open: Some(430.0),
             linger: 2.0,
             on: [crate::settings::Toggle::Bubbles].into(),
             ..Settings::default()
@@ -82,14 +82,14 @@ fn each_setting_comes_back_on_its_own_and_an_untouched_seat_writes_no_object() {
     assert_eq!(read(scratch.path()), both);
     let one = Place {
         settings: Settings {
-            bar_open: Some(420.0),
+            bar_open: Some(430.0),
             ..Settings::default()
         },
         ..pointed()
     };
     write(scratch.path(), &one).expect("written");
     let text = std::fs::read_to_string(at(scratch.path())).expect("read");
-    assert!(text.contains(r#""settings":{"bar_open":420.0}"#), "{text}");
+    assert!(text.contains(r#""settings":{"bar_open":430.0}"#), "{text}");
     assert!(!text.contains("bar_shut"), "{text}");
     assert_eq!(read(scratch.path()), one);
     write(scratch.path(), &pointed()).expect("written");
@@ -209,7 +209,7 @@ fn the_place_is_a_projection_of_the_model_and_not_a_stored_copy() {
     let held = Place::of(&model);
     assert_eq!(held.aim, model.aim);
     assert_eq!(held.servers, model.servers);
-    model.settings.bar_open = Some(420.0);
+    model.settings.bar_open = Some(430.0);
     assert_eq!(Place::of(&model).settings, model.settings);
 }
 

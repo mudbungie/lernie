@@ -25,7 +25,7 @@ mod row;
 
 pub use control::{button, seat, toggle};
 pub use knob::slider;
-pub use row::{Row, row, row_width};
+pub use row::{Row, middle, row, row_width};
 
 /// **A control told** (DESIGN §4.46 item 2): `help` — one sentence that
 /// defines what the control does — rides the seat as its tooltip, shown

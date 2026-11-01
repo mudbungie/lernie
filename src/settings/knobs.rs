@@ -2,7 +2,7 @@
 //! them. Each is three strings and two accessors; the help sentence says
 //! what the knob does in the operator's terms and never the toolkit's.
 
-use super::{BAR_SHUT, DESK, Kind, Knob, Knobbed, Toggle, points, seconds};
+use super::{BAR_OPEN, BAR_SHUT, Kind, Knob, Knobbed, Toggle, points, seconds};
 
 /// **Every knob.** Keys are the file's words; the pin is not here because it
 /// is the place file's own key (`crate::place::Place::pinned`), painted on
@@ -102,7 +102,7 @@ pub const KNOBS: &[Knob] = &[
         label: "bar width, open",
         help: "how wide the bar stands while it is open — what dragging its edge open sets",
         kind: points(100.0, 1000.0, 10.0),
-        get: |s| Knobbed::At(s.bar_open.unwrap_or(DESK / 4.0)),
+        get: |s| Knobbed::At(s.bar_open.unwrap_or(BAR_OPEN)),
         set: |s, v| {
             if let Knobbed::At(at) = v {
                 s.bar_open = Some(at);

@@ -11,17 +11,21 @@ use crate::settings::Settings;
 use crate::test_support::window::seated;
 use crate::ui::theme;
 
-/// **The default widths**: a quarter of the desk, never more than two fifths of the
-/// window — so at the matrix's phone the column keeps three fifths — and the
+/// **The default widths**: three tenths of the desk (bl-2997), never more
+/// than two fifths of the window — so at the matrix's phone the column keeps
+/// three fifths, and at its narrow window the ceiling is the lesser — and the
 /// collapsed one holds a glyph and the name elided at the column's width,
 /// **and one dragged to twice that shows more of the name** (bl-773e).
 #[test]
-fn the_widths_are_a_quarter_of_the_desk_and_a_glyph_column() {
+fn the_widths_are_three_tenths_of_the_desk_and_a_glyph_column() {
     let sizes = crate::snapshot::SIZES;
     let near = |a: f32, b: f32| (a - b).abs() < 0.01;
     assert!(near(sizes[2].1, DESK), "the desk is the matrix's");
-    assert!(near(open_width(sizes[2].1), 350.0));
-    assert!(near(open_width(sizes[1].1), 350.0));
+    assert!(near(open_width(sizes[2].1), 420.0));
+    assert!(
+        near(open_width(sizes[1].1), 360.0),
+        "two fifths of the narrow window"
+    );
     assert!(
         near(open_width(sizes[0].1), 160.0),
         "two fifths of the phone"

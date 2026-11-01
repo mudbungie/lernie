@@ -6,6 +6,8 @@ use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, seen};
 use crate::ui::theme::{BRAND, INK, INK_WEAK, RAISED, RULE, State, accent, type_scale};
 
+/// A block's height, and the tail at its last line's right end.
+mod block;
 /// The two fields that take text, split at the cap.
 mod field;
 /// The hover wash, and the mark inside a link.

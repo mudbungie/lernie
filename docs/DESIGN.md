@@ -5778,12 +5778,28 @@ as the keyboard's door and the whole seat's view.
    glyph and, by §4.45 item 2, as much of a name as it holds (it was the first three characters), and the
    panel's margin — so the eye keeps the count and the greens with the
    transcript at full width. Expanded, it is `bar::open_width` wide — a
-   function of the window rather than a constant, since it is a quarter of
-   the desk size's width (`bar::DESK`, 350 points) and never more than two
-   fifths of the window's (160 at the matrix's phone) — and each row says the state glyph
-   in its state's ink, the name in body ink (the selected conversation's in
-   the brand), the preview beneath it in weak ink on one line cut with `…`,
-   and the age at the right end in weak ink. The bar expands the frame the
+   function of the window rather than a constant, since it is three tenths
+   of the desk size's width (`bar::BAR_OPEN`, 420 points; **amended
+   bl-2997** from a quarter, 350, when the row grew its fourth word) and
+   never more than two fifths of the window's (160 at the matrix's phone,
+   360 at its narrow window) — and each row is a block of two lines
+   (**amended bl-2997**; operator 2026-10-31: *the name is a useful piece of
+   data, but it's not the most valuable. Let's move the name to the bottom
+   right, short title top left, last exchange bottom left, and the latest
+   timestamp on the top right*): the state glyph in its state's ink and
+   `ConvRow::display` in body ink (the selected conversation's in the brand)
+   with the age at the right end in weak ink, and beneath them the preview's
+   first line in weak ink at the small size, cut with `…`, with
+   `ConvRow::name` — the addressable name, the one the server answers to —
+   at its right end in the same ink and size, **only where it differs from
+   the display**: a row whose display IS its name says it once, at the head.
+   Both words are the wire's (yog `nav/convs/row/model.rs`): `display` leads
+   with the titler's title when the conversation has one, else the minted
+   name, else the preview or id floor; `name` is `Some` only where the
+   server answers to it. The block stands as tall as its two lines and `XXS`
+   of air above and below (`theme::paint::Row`; STYLE §4), about a sixth
+   shorter than the head centred in `ROW` it replaced, and the line beneath
+   is laid with or without a preview so every open row is one height. The bar expands the frame the
    pointer enters it — **its edge easing** from one width to the other in
    `bar::EASE` (0.12 s, `ctx.animate_value_with_time` on the input clock;
    operator 2026-10-13: *very fast, but just less jarring than the
@@ -5967,15 +5983,20 @@ as the keyboard's door and the whole seat's view.
    the rest.
 
    **A row is its whole block** (bl-232e). A row with lines beneath its
-   head — the bar's open row (glyph and name, the age at the right end, the
-   preview beneath) and the switcher's (the headline, the failure's own
+   head — the bar's open row (glyph and display, the age at the right end,
+   the preview beneath with the addressable name at its right end; item 1 as
+   amended by bl-2997) and the switcher's (the headline, the failure's own
    words, the preview) — is one `theme::paint::Row`: one seat over every
    line, edge to edge of the list, so the hover wash, the chosen `RAISED`,
    the state rule and the focus ring all span exactly what a click takes,
    and a click on the preview selects as a click on the name does. It was a
    one-line row with labels hung under it, so the tint covered the name line
    alone. The collapsed bar's rows are the same painter with nothing
-   beneath. The switcher's `show N`/`hide N` stays a row of its own: it is a
+   beneath. **A block stands as tall as its lines** (bl-2997): the head at
+   the body's own height, each line beneath at its own, `XXS` of air above
+   and below; a single line keeps `ROW`. The bottom line's right end is the
+   `Row::tail` slot, the aside's twin, which the bar spends on the name and
+   the switcher leaves empty. The switcher's `show N`/`hide N` stays a row of its own: it is a
    different act. The queue's rows are not pickable as a whole (their acts
    are their controls) and keep their lines as labels.
 
@@ -6398,7 +6419,7 @@ surface.
    | `linger` | seconds the bar stays open after the pointer leaves (§4.45 item 1) | 0.75 |
    | `ease` | seconds the bar's edge takes to travel; 0 snaps (§4.44 item 1) | 0.12 |
    | `bar_shut` | the bar's collapsed width in points — what a drag sets (§4.45 item 2) | 80 |
-   | `bar_open` | its open width — the other drag | a quarter of the desk |
+   | `bar_open` | its open width — the other drag | three tenths of the desk |
    | `bubbles` | the fills under blocks by role (§4.45 item 7) | on |
    | `fold` | whether a working folds itself once the answer stands (§4.45 item 5) | on |
    | `confirm` | whether a delete asks first; off, the trashcan deletes at once (§4.44 item 1) | on |

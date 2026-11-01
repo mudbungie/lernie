@@ -1,6 +1,6 @@
 //! The table's invariants, and the two projections round-tripping.
 
-use super::{BAR_SHUT, DESK, KNOBS, Kind, Knobbed, Settings, Toggle, from_json, knob, to_json};
+use super::{BAR_OPEN, BAR_SHUT, KNOBS, Kind, Knobbed, Settings, Toggle, from_json, knob, to_json};
 use serde_json::{Value, json};
 
 /// **Every knob has its own key, its own label and a sentence**, and every
@@ -86,7 +86,7 @@ fn the_widths_read_as_their_defaults_until_set() {
     let shut = knob("bar_shut").expect("a knob");
     let open = knob("bar_open").expect("a knob");
     assert_eq!((shut.get)(&held), Knobbed::At(BAR_SHUT));
-    assert_eq!((open.get)(&held), Knobbed::At(DESK / 4.0));
+    assert_eq!((open.get)(&held), Knobbed::At(BAR_OPEN));
     (shut.set)(&mut held, Knobbed::At(64.5));
     (open.set)(&mut held, Knobbed::At(420.0));
     assert_eq!(held.bar_shut, Some(64.5));
@@ -105,7 +105,7 @@ fn only_what_is_off_its_default_is_written_and_all_of_it_comes_back() {
         linger: 2.0,
         ease: 0.0,
         bar_shut: Some(64.5),
-        bar_open: Some(420.0),
+        bar_open: Some(430.0),
         on: [Toggle::Dock].into(),
     };
     let written = to_json(&set);

@@ -156,9 +156,11 @@ fn the_pin_holds_it_open_and_says_what_it_would_do() {
     assert!(open.contains(&pin), "{open:?}");
 }
 
-/// **An open row**: the glyph in its state's ink, the name in body ink (the
-/// selected one's in the brand), the age at the right end and the preview
-/// beneath in weak ink, indented by its depth; and a click selects it.
+/// **An open row**: the glyph in its state's ink, the display in body ink
+/// (the selected one's in the brand), the age at the right end, the preview
+/// beneath in weak ink with the addressable name at its right end — where it
+/// differs from the display, and once at the head where it is the display
+/// (bl-2997) — indented by its depth; and a click selects it.
 #[test]
 fn an_open_row_says_its_state_name_age_and_first_line_and_a_click_selects() {
     let mut model = seated();
@@ -167,6 +169,7 @@ fn an_open_row_says_its_state_name_age_and_first_line_and_a_click_selects() {
     child.depth = 1;
     child.preview = "first line\nsecond line".to_owned();
     child.attention = 1;
+    child.name = Some("c3d4".to_owned());
     model.convs.push(child);
     model.opened.insert("20260830T051200Z-a1b2".to_owned());
     let ctx = egui::Context::default();
@@ -183,8 +186,24 @@ fn an_open_row_says_its_state_name_age_and_first_line_and_a_click_selects() {
     assert_eq!(asking.ink, theme::accent(theme::State::Attention));
     assert!(asking.laid.min.x > selected.laid.min.x, "indented");
     assert_eq!(find("42s").ink, theme::INK_WEAK);
-    assert_eq!(find("first line").ink, theme::INK_WEAK);
+    let (first, name) = (find("first line"), find("c3d4"));
+    assert_eq!(first.ink, theme::INK_WEAK);
+    assert_eq!(name.ink, theme::INK_WEAK, "the name in weak ink");
+    assert!(
+        name.laid.min.x > first.laid.max.x,
+        "at the line's right end"
+    );
+    assert!(
+        (name.laid.center().y - first.laid.center().y).abs() < 1.0,
+        "on the preview's line"
+    );
     assert!(!runs.iter().any(|run| run.text.contains("second line")));
+    let said = |text: &str| runs.iter().filter(|run| run.text.contains(text)).count();
+    assert_eq!(
+        said("port the paint probe"),
+        1,
+        "a display that is the name says it once"
+    );
     let window = Window::sized(DESK, 900.0);
     let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
     crate::test_support::window::click(&window, "? the child", &mut body);

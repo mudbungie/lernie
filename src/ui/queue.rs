@@ -144,6 +144,7 @@ fn waiting_row(ui: &mut egui::Ui, model: &mut Model, channel: &Channel, row: &Qu
         indent: 0.0,
         aside: None,
         beneath: Vec::new(),
+        tail: None,
         door: None,
         help: ROW_HELP.to_owned(),
     }

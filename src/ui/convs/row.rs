@@ -67,7 +67,8 @@ pub(super) fn conversation(
     .into_iter()
     .flatten()
     .map(|(said, ink)| (said, ink, egui::TextStyle::Body))
-    .collect();
+    .collect::<Vec<_>>();
+    let blocked = !beneath.is_empty();
     let seat = paint::Row {
         mark: (glyph, ink),
         words: super::words(row),
@@ -77,6 +78,7 @@ pub(super) fn conversation(
         indent: indent(row.depth),
         aside: None,
         beneath,
+        tail: None,
         door: None,
         help: super::help(row),
     }
@@ -101,7 +103,7 @@ pub(super) fn conversation(
     // answer to *which conversation is this about*.
     super::menu::show(&seat, model, aim, row);
     subtree(ui, model, row);
-    connectors(ui, row, rails, seat.rect);
+    connectors(ui, row, rails, seat.rect, blocked);
 }
 
 /// **The control that opens what hangs under a conversation** (bl-00f5), on
@@ -146,13 +148,14 @@ fn subtree(ui: &mut egui::Ui, model: &mut Model, row: &ConvRow) {
 /// A rail stands at every ancestor level whose thread continues past this row
 /// and spans everything the row put on the glass, so a reader can follow a
 /// branch down through the members of the branches inside it. The elbow is
-/// this row's own: down from its top to its middle, then across into its
+/// this row's own: down from its top to its head's middle (`paint::middle`,
+/// which a block lays higher than a single line), then across into its
 /// words — the one line that says *this hangs from that*.
 ///
 /// **They are painted last, so they are painted ON TOP.** A painter appends to
 /// its layer, and a connector under the row's hover tint is a connector that
 /// vanishes exactly when the pointer is on the row it explains.
-fn connectors(ui: &egui::Ui, row: &ConvRow, rails: &[u64], seat: egui::Rect) {
+fn connectors(ui: &egui::Ui, row: &ConvRow, rails: &[u64], seat: egui::Rect, blocked: bool) {
     let bottom = ui.cursor().min.y;
     for level in rails {
         paint::rail(ui, at_level(seat.min.x, *level), seat.min.y, bottom);
@@ -162,7 +165,7 @@ fn connectors(ui: &egui::Ui, row: &ConvRow, rails: &[u64], seat: egui::Rect) {
             ui,
             at_level(seat.min.x, row.depth),
             seat.min.y,
-            seat.min.y + theme::ROW / 2.0,
+            seat.min.y + paint::middle(ui, blocked),
             seat.min.x + theme::RULE + indent(row.depth) + theme::space::M,
         );
     }

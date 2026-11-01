@@ -1,7 +1,14 @@
 //! **The list row** (`docs/STYLE.md` §5): one line, or a block of them — a
-//! head, an aside at its right end and the lines hung beneath it — under ONE
-//! seat, so the tint under the pointer and the chosen row's tint fill exactly
-//! what a click takes (DESIGN §4.44 item 5).
+//! head, an aside at its right end, the lines hung beneath it and a tail at
+//! the last one's right end — under ONE seat, so the tint under the pointer
+//! and the chosen row's tint fill exactly what a click takes (DESIGN §4.44
+//! item 5).
+//!
+//! **A single line stands [`ROW`] tall; a block stands as tall as its lines**
+//! (bl-2997): the head at the body's own height and each line beneath at its
+//! own, with `XXS` of air above and below the block and none between the
+//! lines — the font's own height is what a row keeps (STYLE §4), and a head
+//! centred in `ROW` over a line beneath carried a third of the block as air.
 
 use egui::{Color32, Pos2, Rect, Response, Sense, Stroke, vec2};
 
@@ -38,10 +45,30 @@ pub fn row(
         indent,
         aside: None,
         beneath: Vec::new(),
+        tail: None,
         door: None,
         help: help.to_owned(),
     }
     .paint(ui)
+}
+
+/// **Where the head's words centre, under the block's top**: half [`ROW`]
+/// for a single line, and `XXS` plus half the body's own height for a block
+/// — the one answer, so a connector aimed at a row's words meets them.
+pub fn middle(ui: &egui::Ui, blocked: bool) -> f32 {
+    let (top, band) = head(ui, blocked);
+    top + band / 2.0
+}
+
+/// **The head's band**: how far under the block's top it begins, and how
+/// tall it stands. The air above it is the air under the block, so the two
+/// sum the block's padding.
+fn head(ui: &egui::Ui, blocked: bool) -> (f32, f32) {
+    if blocked {
+        (space::XXS, tall(ui, &egui::TextStyle::Body))
+    } else {
+        (0.0, ROW)
+    }
 }
 
 /// **The width a row needs to say `words` uncut** (bl-8d6d): the geometry
@@ -59,9 +86,10 @@ pub fn row_width(ui: &egui::Ui, words: &str) -> f32 {
 }
 
 /// **A row as a block**: [`marked`]'s head, with an aside in weak ink at its
-/// right end and lines hung beneath, each in its own ink and size and cut with
-/// `…` at the row's width. The whole block is one seat — tinted, ruled and
-/// ringed edge to edge — because it is one thing a click takes.
+/// right end, lines hung beneath, each in its own ink and size and cut with
+/// `…` at the width it has, and a tail in weak ink at the last line's right
+/// end. The whole block is one seat — tinted, ruled and ringed edge to edge —
+/// because it is one thing a click takes.
 pub struct Row {
     pub mark: (String, Color32),
     pub words: String,
@@ -73,6 +101,12 @@ pub struct Row {
     pub aside: Option<String>,
     /// The lines beneath the head, aligned with its words.
     pub beneath: Vec<(String, Color32, egui::TextStyle)>,
+    /// **At the last line beneath's right end**, `SMALL` in weak ink — the
+    /// aside's twin on the bottom line, the bar row's addressable name
+    /// (DESIGN §4.44 item 1; bl-2997). The line it shares is cut at the
+    /// width the tail leaves it; with nothing beneath there is no line to
+    /// stand on and it is not painted.
+    pub tail: Option<String>,
     /// **A door at the head's right end, painted only while the pointer is
     /// over the row** (DESIGN §4.44 item 1; bl-e837): its glyph, in faint ink
     /// under a seat of its own, so its click is never the row's. The aside
@@ -101,12 +135,16 @@ impl Row {
             .filter(|part| !part.is_empty())
             .collect::<Vec<_>>()
             .join(" ");
-        let height = ROW
+        let blocked = !self.beneath.is_empty();
+        let (pad, band) = head(ui, blocked);
+        let height = pad
+            + band
             + self
                 .beneath
                 .iter()
                 .map(|(_, _, s)| tall(ui, s))
-                .sum::<f32>();
+                .sum::<f32>()
+            + pad;
         let (rect, seat) =
             ui.allocate_exact_size(vec2(ui.available_width(), height), Sense::click());
         seat.widget_info(|| {
@@ -141,19 +179,19 @@ impl Row {
         }
         let left = rect.min.x + RULE + self.indent + space::M;
         let mut right = rect.max.x - space::S;
-        let middle = rect.min.y + ROW / 2.0;
+        let middle = rect.min.y + pad + band / 2.0;
         let door = self
             .door
             .filter(|_| seat.contains_pointer())
             .map(|(glyph, help)| {
-                let head = Rect::from_min_max(
-                    Pos2::new(left, rect.min.y),
-                    Pos2::new(right, rect.min.y + ROW),
+                let strip = Rect::from_min_max(
+                    Pos2::new(left, rect.min.y + pad),
+                    Pos2::new(right, rect.min.y + pad + band),
                 );
                 let mut child = ui.new_child(
                     egui::UiBuilder::new()
                         .id_salt(seat.id)
-                        .max_rect(head)
+                        .max_rect(strip)
                         .layout(egui::Layout::right_to_left(egui::Align::Center)),
                 );
                 let door = super::tab(&mut child, glyph, INK_FAINT, help);
@@ -174,19 +212,7 @@ impl Row {
         let galley = elided(ui, &said, lead, inks, &body, right - left);
         let at = Pos2::new(left, middle - galley.size().y / 2.0);
         ui.painter().galley(at, galley, self.ink);
-        let mut top = rect.min.y + ROW;
-        for (line, ink, style) in &self.beneath {
-            let galley = elided(
-                ui,
-                line,
-                0,
-                (*ink, *ink),
-                style,
-                rect.max.x - space::S - left,
-            );
-            ui.painter().galley(Pos2::new(left, top), galley, *ink);
-            top += tall(ui, style);
-        }
+        self.hang(ui, rect, left, rect.min.y + pad + band);
         // **The door's sentence is the one the pointer is on** (bl-a6b3): egui
         // keeps a seat's tooltip open while the pointer is anywhere inside
         // that seat, and the door stands inside the row — so a row that kept
@@ -202,12 +228,33 @@ impl Row {
         };
         (seat, door)
     }
+
+    /// **Hang the lines beneath the head** from `top`, each cut at the width
+    /// it has, and the tail at the last one's right end.
+    fn hang(&self, ui: &egui::Ui, rect: Rect, left: f32, top: f32) {
+        let mut top = top;
+        let last = self.beneath.len().saturating_sub(1);
+        for (i, (line, ink, style)) in self.beneath.iter().enumerate() {
+            let mut end = rect.max.x - space::S;
+            if let Some(tail) = self.tail.as_ref().filter(|_| i == last) {
+                let small = egui::TextStyle::Small;
+                let galley = elided(ui, tail, 0, (INK_WEAK, INK_WEAK), &small, f32::INFINITY);
+                end -= galley.size().x;
+                let at = Pos2::new(end, top + (tall(ui, style) - galley.size().y) / 2.0);
+                ui.painter().galley(at, galley, INK_WEAK);
+                end -= space::S;
+            }
+            let galley = elided(ui, line, 0, (*ink, *ink), style, end - left);
+            ui.painter().galley(Pos2::new(left, top), galley, *ink);
+            top += tall(ui, style);
+        }
+    }
 }
 
-/// How much height one line beneath a head takes at `style`.
+/// How much height one line of a block takes at `style`: the font's own.
 fn tall(ui: &egui::Ui, style: &egui::TextStyle) -> f32 {
     let font = style.resolve(ui.style());
-    ui.fonts(|fonts| fonts.row_height(&font)) + space::XXS
+    ui.fonts(|fonts| fonts.row_height(&font))
 }
 
 /// **One line of words that stop at a width**, with `…` where they were cut —

@@ -57,15 +57,17 @@ pub fn keys(ctx: &egui::Context, model: &mut Model) {
 }
 
 /// **What the field says while the conversation asks** (bl-1252): that it
-/// asks, the digits that answer where the queue's row has landed, and that
+/// asks, the keys that answer where the queue's row has landed, and that
 /// words typed are sent — because the caret is in the box, and the box is
-/// where both kinds of answer go.
+/// where both kinds of answer go. The keys are worded from the cells on
+/// offer (bl-0531): a range where several are, and where `seen` stands
+/// alone there is no range to name, so it says what the one key does.
 pub fn hint(model: &Model) -> String {
     if let Some(why) = down(model) {
         return why;
     }
     let digits = match row(model).map(|asked| choices(&asked.1).len()) {
-        Some(1) => "1 answers, or ".to_owned(),
+        Some(1) => format!("Enter or 1 marks it {}, or ", crate::ui::queue::SEEN),
         Some(n) => format!("1–{n} answers, or "),
         None => String::new(),
     };

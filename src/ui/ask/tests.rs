@@ -1,5 +1,6 @@
 //! The ask: when it stands, what it offers, and how it is answered.
 
+mod hint;
 mod scopes;
 use super::{Choice, HEADING, HINT, answer, choices, confirm, moved, pick, row, words};
 use crate::paint_probe::frame::{Window, press};
@@ -166,28 +167,6 @@ fn the_box_keeps_the_caret_and_an_empty_draft_lends_the_ask_its_keys() {
         crate::ui::render(ctx, &mut model);
     });
     assert!(model.outbox.is_empty(), "{:?}", model.outbox);
-}
-
-/// **The field's hint while it asks names the digits and the words**
-/// (bl-1252): `1–6` where a call is parked, `1` where only `seen` is offered,
-/// and no digits before the queue's row has landed.
-#[test]
-fn the_hint_names_the_digits_and_the_words() {
-    let mut model = asked();
-    assert_eq!(
-        super::hint(&model),
-        "it is asking — 1–6 answers, or say it — Enter sends"
-    );
-    for section in &mut model.waiting {
-        for row in &mut section.rows {
-            row.held = None;
-        }
-    }
-    assert!(super::hint(&model).contains("— 1 answers, or say it"));
-    model.waiting.clear();
-    assert_eq!(super::hint(&model), "it is asking — say it — Enter sends");
-    let text = painted(&mut asked());
-    assert!(text.contains("1–6 answers"), "{text}");
 }
 
 /// **The doors and the moves are quiet where nothing asks.**

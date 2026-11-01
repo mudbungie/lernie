@@ -5362,8 +5362,9 @@ parts, in its vertical order, each with what it becomes here.
    it (`ask::keys`); with words in the draft every key is the box's and
    Enter sends them, or fires the slash line — typed words never go
    nowhere. The field's hint while it asks says both: *it is asking — 1–6
-   answers, or say it — Enter sends* (`ask::hint`; `1` where only `seen`
-   is offered, no digits before the queue's row lands). Round 2 found the
+   answers, or say it — Enter sends* (`ask::hint`; *Enter or 1 marks it
+   seen, or say it — Enter sends* where only `seen` is offered, since one
+   cell is no range (bl-0531); no digits before the queue's row lands). Round 2 found the
    caret held out of the box so a digit could answer, which sent typed
    words nowhere and spent Enter on the question. A click on a row is the
    same answer. **While the aimed server will not dial nothing is answered**
@@ -6639,7 +6640,7 @@ bl-ef78), with the landed sentence as its reason once bl-8155 lands.
 | `src/ui/chat/trail.rs` | one step of the working, whole (§4.42 item 4, §4.45 item 5): its mark on its stem, its name — a door that shuts it where it was opened from compact — a result folded to its head, and an intermediate prose on its own fill inside the working's. | ~100 |
 | `src/ui/chat/panel.rs` | the two cards at the head of the pane (§4.42): the conversation's facts, and the seat's — each server with what it holds, the version, the two ways in — where nothing is selected. | ~120 |
 | `src/ui/ask.rs` | **the ask** (§4.42): the selected conversation's queue row above the rule while it asks — its words, its choices as numbered rows (the one list the queue pane paints too; the `pass` reaches follow the held row's `scopes`, bl-da16, `tests/scopes.rs`), faint while its server will not dial. | ~270 |
-| `src/ui/ask/keys.rs` | the digit, the arrows and Enter an empty prompt lends the ask, and the field's hint while it asks (bl-1252). | ~75 |
+| `src/ui/ask/keys.rs` | the digit, the arrows and Enter an empty prompt lends the ask, and the field's hint while it asks, worded from the cells on offer (bl-1252; bl-0531; `tests/hint.rs`). | ~75 |
 | `src/ui/dock.rs` | **the live dock** (§4.42): what runs under the aimed workspace, one line — a door — above the rule or a row apiece when Ctrl+T unfolds it. | ~100 |
 | `src/ui/chat/rows.rs` | one conversation as rows: every committed entry, projected, with the live fold painted in the `Streaming` entry's place and nowhere else (§4.9, bl-f6b5). | ~160 |
 | `src/ui/chat/rows/row.rs` | one row of the pane: what it is made of, the entry it was projected from (§4.47), and the few ways one is born (bl-1d79). | ~110 |

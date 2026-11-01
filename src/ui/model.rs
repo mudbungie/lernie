@@ -87,6 +87,9 @@ mod tuning;
 mod uncover;
 /// An unmaking between frames: its subject, its arming, and whether it is asked.
 mod unmake;
+/// The keyboard walk between frames: its reveal, what it set out from, and the
+/// switcher's four acts.
+mod walk;
 /// The window's own two panes: the servers' verb table, and what a needle found.
 mod window;
 
@@ -118,6 +121,7 @@ pub use tabs::Tab;
 pub use trail::Trail;
 pub use tuning::{Edit, Tuning};
 pub use unmake::Unmaking;
+pub use walk::Walk;
 pub use window::{Hits, Lookup, Pages};
 
 #[cfg(test)]

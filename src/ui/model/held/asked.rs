@@ -20,6 +20,6 @@ impl Model {
     /// focused one owed its selection a place. There is one list since DESIGN
     /// §4.39's fold (bl-b9a3), so the question is the flag.
     pub fn revealing(&mut self) -> bool {
-        std::mem::take(&mut self.reveal)
+        std::mem::take(&mut self.walk.reveal)
     }
 }

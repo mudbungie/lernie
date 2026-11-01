@@ -224,15 +224,10 @@ pub struct Model {
     /// and put down by a choice or Esc. A navigation the operator performed,
     /// which is the one class of thing here no other fact can be asked for.
     pub switching: bool,
-    /// **Whether the list owes its selection a place on the glass**, set by a
-    /// keyboard walk and taken by the pane that paints it
-    /// ([`Model::revealing`]).
-    ///
-    /// The keyboard is the only surface that can move a selection out of view:
-    /// a click names a row the operator is already looking at, and a scroll IS
-    /// the operator deciding what to look at — so a pane that revealed on every
-    /// frame would drag the glass back every time they scrolled away.
-    pub reveal: bool,
+    /// **The keyboard walk's own two facts** ([`super::Walk`]; bl-5b49): whether
+    /// the list owes its selection a place on the glass, and the selection the
+    /// switcher stood over — what leaving it without a choosing goes back to.
+    pub walk: super::Walk,
     /// The selected conversation's id.
     pub conversation: Option<String>,
     /// **A deletion awaiting its answer** (`delete`; bl-e837): the root id.

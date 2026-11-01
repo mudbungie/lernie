@@ -5828,9 +5828,16 @@ as the keyboard's door and the whole seat's view.
    were first selected, each with the aim it was selected under
    (`Tab { aim: Aim, root_id: String }`), and the strip paints the ones
    whose aim is the current one. It is filled by `Model::select` and by
-   nothing else: every door that selects — the bar, the switcher, the
-   queue, the rule's name, a start resolving (`Model::resolve`) — opens a
-   tab by selecting, so there is no second act that opens one. A click on a
+   the switcher's choosing (`Model::chose`), and by nothing else: every
+   door that selects — the bar, the switcher's click, the queue, the rule's
+   name, a start resolving (`Model::resolve`) — opens a tab by selecting,
+   so there is no second act that opens one. **The strip is filled by the
+   choosing, not by the walk** (bl-5b49): the switcher's arrows preview
+   (`Model::preview` — item 7 of §4.42 stands, the cursor is the selection
+   and the transcript follows it) and open no tab, Enter or a click opens
+   the previewed one's, and Esc or the chord again puts the preview down
+   (`Model::close_switcher`) — back to the selection the switcher stood
+   over where that is still one of the strip's tabs, else to none. A click on a
    tab selects; the close removes the tab, and where it was the selected
    one the neighbour to its left (or right, at the left end) is selected,
    or the selection is put down to the workspace where it was the last. **A tab
@@ -6665,7 +6672,8 @@ bl-ef78), with the landed sentence as its reason once bl-8155 lands.
 | `src/ui/status/selectors.rs`, `status/diagnostics.rs`, `status/dropup.rs` | **the rule's line** (§4.42 item 11, §4.44 item 3): the four selectors and their marks, the workspace's run the bar's foot paints, this conversation's diagnostics and the aimed server's dial sentence, and a selector's dropup — its list over the segment, its keys and its picks. | ~120 each |
 | `src/ui/status/waiting.rs` | **the seat-wide waiting count off the rule** (item 11, bl-4cac): leaving out a channel that will not dial, painted as the queue's door on the seat panel and at the switcher's head. | ~35 |
 | `src/ui/model/dropup.rs` | **a dropup between frames**: which selector is open, its cursor, whether its read has landed, the read it posts and what a pick fires (`dropup/choices.rs`: what each lists). | ~200 |
-| `src/ui/switcher.rs` | **the switcher** (§4.42): the roster as an overlay, opened by Ctrl+X or `/conversations`, kept open by the walk and closed by a choice. | ~55 |
+| `src/ui/switcher.rs` | **the switcher** (§4.42): the roster as an overlay, opened by Ctrl+X or `/conversations`, kept open by the walk and closed by a choice — the paint; its acts are `model/walk.rs`'s. | ~45 |
+| `src/ui/model/walk.rs` | **the keyboard walk between frames** (§4.42 item 7, §4.44 item 2; bl-5b49): `Walk` — the reveal the list owes its selection, and the selection the switcher stood over — and the switcher's four acts: open, preview (the select without the tab), choose (the tab) and leave (the preview put down). Split from `held.rs` at the cap on the seam the walk draws. | ~110 |
 | `src/ui/tabs.rs` | **the tabs** (§4.44): the strip over the transcript, one tab per conversation opened in the aimed workspace, filled by `Model::select` alone, each with its close. | ~110 |
 | `src/ui/theme.rs` | **the visual language's tokens** (§4.38, `docs/STYLE.md`): the ground ladder, the ink scale, the six states and their accents, the wire's states read onto them, the speaker weights, and the spacing and type scales — every byte once. | ~250 |
 | `src/ui/theme/bubble.rs` | the four bubbles by role (§4.45 item 7): the operator's the brand at half a tint, the trail on the ground inside a hairline, intermediate prose on the surface, final prose raised — derived from the palette, no literal. | ~50 |

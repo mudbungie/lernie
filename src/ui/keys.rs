@@ -181,7 +181,8 @@ fn opening(ctx: &egui::Context, model: &mut Model, pressed: bool) {
         model.fire_stand(&stand);
     } else if model.switching && model.conversation.is_some() {
         // **Enter on a selected conversation is the choosing** — the walk
-        // selected it, and this is the operator saying *that one*.
+        // previewed it, and this is the operator saying *that one*, which
+        // is what opens its tab.
         model.chose();
     }
 }
@@ -197,7 +198,8 @@ fn opening(ctx: &egui::Context, model: &mut Model, pressed: bool) {
 /// operator can see it.
 ///
 /// **The track crosses three kinds of row** (DESIGN §4.39): landing on a workspace
-/// aims it and landing on a conversation selects it, exactly as a click does,
+/// aims it and landing on a conversation selects it — exactly as a click does,
+/// but for the tab, which waits on the choosing (§4.44 item 2) —
 /// and landing on a server's row only STANDS there — the row takes the
 /// keyboard, and Enter or Space fires the same act a pointer fires, because a
 /// walk that opened every server it moved through would be a walk nobody could
@@ -213,10 +215,12 @@ fn walk(model: &mut Model, step: isize) {
         roster::Step::Workspace(aim) => model.aim_at(&aim.channel, &aim.address),
         // `Model::rows`, not `convs`: the list the glass paints carries a
         // started conversation's own row before the server can answer one, and
-        // a row the pointer can aim at is a row a key can aim at.
-        roster::Step::Conversation(root_id) => model.select(&root_id),
+        // a row the pointer can aim at is a row a key can aim at. **A preview,
+        // not a select** (bl-5b49): the cursor is the selection, but the strip
+        // is filled by the choosing, so a walk of four rows opens no tab.
+        roster::Step::Conversation(root_id) => model.preview(&root_id),
     }
-    model.reveal = true;
+    model.walk.reveal = true;
 }
 
 /// Where the cursor lands.

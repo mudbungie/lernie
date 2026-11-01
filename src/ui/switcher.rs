@@ -14,7 +14,9 @@
 //! walk (`crate::ui::keys` — the cursor IS the selection), so a walk that
 //! closed the overlay on the first conversation it crossed would be a walk
 //! nobody could use. A click on a conversation, the `+`, and Enter on a
-//! selection are the choosing ([`Model::chose`]); Esc leaves without one.
+//! selection are the choosing ([`Model::chose`]), and the one act that opens
+//! a tab here; Esc leaves without one ([`Model::close_switcher`]). The four
+//! acts are the model's (`crate::ui::model::walk`); this file is the paint.
 
 use crate::ui::{Model, roster};
 
@@ -22,35 +24,6 @@ use crate::ui::{Model, roster};
 pub const WORD: &str = "conversations";
 /// Its name on the glass: the roster's own word.
 pub const HEADING: &str = roster::HEADING;
-
-impl Model {
-    /// **Open the switcher**, or close it: the one toggle Ctrl+X is.
-    ///
-    /// **Opening it puts down whatever stood** (bl-339d; DESIGN §4.42 item 6,
-    /// *one stands at a time*): the chord is the one way to a second overlay
-    /// while one is open, and a switcher stacked over a pane handed the
-    /// operator back to that pane after they chose a conversation. Each is
-    /// put down by its own Esc, so a pane with a step back (the clearing to
-    /// its trail, an assignment to its roles) goes all the way down. The
-    /// enrollment is the exception it is everywhere: it covers the window and
-    /// is only ever left by its own gesture.
-    pub fn switch(&mut self) {
-        if self.enroll.is_some() {
-            return;
-        }
-        if !self.switching {
-            self.uncover();
-        }
-        self.switching = !self.switching;
-    }
-
-    /// **A conversation was chosen**, so the switcher has done its work.
-    /// Called by the click on a conversation's row, by the `+`, and by Enter
-    /// on a selection — never by the walk.
-    pub fn chose(&mut self) {
-        self.switching = false;
-    }
-}
 
 /// Paint the switcher in the overlay's frame, and say whether it stood.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
@@ -61,7 +34,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     // **The queue's door stands at its head** (§4.42, item 11): the count
     // left the rule, and the switcher is the other seat-wide list.
     if crate::ui::status::waiting::door(ui, model) {
-        model.switching = false;
+        model.close_switcher();
         crate::ui::slash::fire(model, crate::ui::queue::WORD, "");
     }
     roster::render(ui, model);

@@ -3,9 +3,11 @@
 //!
 //! **Open is a navigation the operator performed** — [`Model::opened`]'s
 //! class of fact, which no read can answer — so it is held, per run and never
-//! in the place file. It is filled by [`Model::select`] and by nothing else:
-//! every door that selects opens a tab by selecting, so there is no second act
-//! that opens one. It is emptied by the close, and by the server: a tab whose
+//! in the place file. It is filled by [`Model::select`] and by the switcher's
+//! choosing ([`Model::chose`]; bl-5b49), and by nothing else: every door that
+//! selects opens a tab by selecting, and the one cursor that does not — the
+//! walk, which previews — opens it when Enter or a click chooses the row. It
+//! is emptied by the close, and by the server: a tab whose
 //! conversation the aimed workspace's listing no longer knows leaves with it, and a
 //! selection the server put down (bl-6dfd) is a tab put down.
 

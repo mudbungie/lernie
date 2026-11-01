@@ -41,7 +41,7 @@ pub fn fire(model: &mut Model, word: &str, rest: &str) -> bool {
         w if w == crate::ui::trail::WORD => model.begin_trail(),
         w if w == crate::ui::board::WORD => model.begin_board(),
         w if w == crate::ui::prices::WORD => model.begin_prices(),
-        w if w == crate::ui::switcher::WORD => model.switching = true,
+        w if w == crate::ui::switcher::WORD => model.begin_switching(),
         _ => {
             // `find`: the pane, and the needle where one was typed — spent
             // the way the pane's own control spends it, with the box not

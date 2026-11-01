@@ -143,7 +143,7 @@ fn the_walk_brings_the_standing_server_into_view() {
     model.standing = Some(crate::ui::Stand::Server(
         "(this box's own server)".to_owned(),
     ));
-    model.reveal = true;
+    model.walk.reveal = true;
     let text = painted(&mut model);
     assert!(text.contains("(this box's own server)"), "{text}");
 }

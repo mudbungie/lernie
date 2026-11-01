@@ -8,7 +8,7 @@
 //! with nothing open is the transcript's own empty column.
 //!
 //! **Nothing here decides what is open.** The tabs are [`Model::tabs`], filled
-//! by [`Model::select`] alone; a click on a tab IS that select, so it opens
+//! by [`Model::select`] and the switcher's choosing; a click on a tab IS that select, so it opens
 //! nothing it was not already, and the close is [`Model::close_tab`].
 
 use crate::reply::convs::ConvRow;

@@ -7,7 +7,7 @@
 //! file is what stands the keys DOWN and the one binding that is not a walk,
 //! and this is the walk.
 
-use super::{stocked, typed};
+use super::{conv, stocked, typed};
 use crate::test_support::window::painted;
 use crate::ui::{Aim, Model, Stand};
 
@@ -197,4 +197,95 @@ fn enter_on_a_begin_the_walk_stands_on_fires_it() {
     );
     assert_eq!(founding.standing, None);
     assert!(shown.contains(crate::ui::composer::found::HINT), "{shown}");
+}
+
+/// **The walk opens no tab; the choosing opens one** (DESIGN §4.44 item 2;
+/// bl-5b49). Four presses of Down cross four conversations and the strip is
+/// as it was — the cursor is the selection, so the transcript follows it, but
+/// a strip filled by where the operator PASSED is not a strip of what they
+/// opened — and Enter on the fourth opens that one tab.
+#[test]
+fn the_walk_opens_no_tab_and_enter_opens_the_one_it_chose() {
+    let mut model = Model {
+        conversation: None,
+        switching: true,
+        convs: vec![
+            conv("a", "one"),
+            conv("b", "two"),
+            conv("c", "three"),
+            conv("d", "four"),
+        ],
+        ..stocked()
+    };
+    typed(&mut model, &[egui::Key::ArrowDown; 4]);
+    assert_eq!(
+        model.conversation.as_deref(),
+        Some("d"),
+        "the cursor is the selection"
+    );
+    assert!(model.strip().is_empty(), "and the walk opened nothing");
+    typed(&mut model, &[egui::Key::Enter]);
+    assert!(!model.switching);
+    assert_eq!(model.strip(), ["d"], "the choosing opened one tab");
+}
+
+/// **Leaving without choosing puts the preview down** (bl-5b49): Esc, or the
+/// chord again, goes back to the selection the switcher stood over and the
+/// strip is as it was before it opened; where nothing stood, nothing is
+/// selected; and where the walk re-aimed, the aim stands and nothing is
+/// selected under it.
+#[test]
+fn esc_after_a_walk_restores_what_the_switcher_stood_over() {
+    let mut model = Model {
+        conversation: None,
+        ..stocked()
+    };
+    model.select("a");
+    model.switch();
+    typed(&mut model, &[egui::Key::ArrowDown, egui::Key::Escape]);
+    assert!(!model.switching);
+    assert_eq!(model.conversation.as_deref(), Some("a"), "Esc goes back");
+    assert_eq!(model.strip(), ["a"], "and the strip is as it was");
+    model.switch();
+    typed(&mut model, &[egui::Key::ArrowDown]);
+    assert_eq!(
+        model.conversation.as_deref(),
+        Some("b"),
+        "the walk previews"
+    );
+    model.switch();
+    assert_eq!(
+        model.conversation.as_deref(),
+        Some("a"),
+        "the chord again goes back too"
+    );
+
+    let mut model = Model {
+        conversation: None,
+        ..stocked()
+    };
+    model.switch();
+    typed(&mut model, &[egui::Key::ArrowDown, egui::Key::Escape]);
+    assert_eq!(
+        model.conversation, None,
+        "nothing stood, nothing is selected"
+    );
+    assert!(model.strip().is_empty());
+
+    let mut model = Model {
+        conversation: None,
+        ..stocked()
+    };
+    model.select("a");
+    model.switch();
+    // Past `b` and the two begins onto the other server's row, and Enter
+    // opens it, which aims its first workspace.
+    typed(&mut model, &[egui::Key::ArrowDown; 5]);
+    typed(&mut model, &[egui::Key::Enter, egui::Key::Escape]);
+    assert_eq!(
+        model.aim.as_ref().map(|aim| aim.address.clone()),
+        Some("elsewhere".to_owned()),
+        "the aim the walk moved to stands"
+    );
+    assert_eq!(model.conversation, None, "and nothing is selected under it");
 }

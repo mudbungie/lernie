@@ -126,6 +126,6 @@ fn a_fresh_window_has_nothing_to_walk() {
         "a box that has been asked nothing offers no row to walk"
     );
     walk(&mut model, 1);
-    assert!(!model.reveal, "and a walk over nothing moves nothing");
+    assert!(!model.walk.reveal, "and a walk over nothing moves nothing");
     assert_eq!(model.aim, None);
 }

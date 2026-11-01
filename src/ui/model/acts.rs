@@ -120,19 +120,11 @@ impl Model {
     }
 
     /// **Select a conversation**, by the id every gesture addresses it with.
+    /// A selection is where the cursor is (bl-f991), and opens its tab; the
+    /// switcher's walk is the one cursor that does not (`super::walk`).
     pub fn select(&mut self, root_id: &str) {
-        self.moving_to(Some(root_id));
-        self.conversation = Some(root_id.to_owned());
-        // A selection is where the cursor is (bl-f991), and opens its tab.
+        self.preview(root_id);
         self.open_tab(root_id);
-        self.standing = None;
-        self.founding = None;
-        self.transcript = crate::reply::transcript::Transcript::default();
-        self.live = None;
-        // **The records pane goes with the conversation it was opened on**
-        // (bl-2cf7) — the same rule the tuning pane keeps for its workspace, one
-        // noun over (`super::records`).
-        self.retire_records();
     }
 
     /// **Assert this workspace's place in the strip** — pinned, or not (bl-7782).
@@ -196,7 +188,7 @@ impl Model {
         } else if self.dropup.is_some() {
             self.close_dropup();
         } else if self.switching {
-            self.switching = false;
+            self.close_switcher();
         } else if matches!(self.tuning, Some(super::Tuning::Editing(_))) {
             self.cancel_assignment();
         } else if self.tuning.is_some() {

@@ -1,7 +1,8 @@
 +++
 title = "the CLI listing, the records header and the watch's held line each name the tool ahead of the server's hold sentence, which opens with it"
 created = 1793512458
-updated = 1793512458
+updated = 1793512657
+claimant = "Hold-Sentence"
 parent = "bl-4446"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

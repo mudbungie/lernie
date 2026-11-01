@@ -166,8 +166,8 @@ fn tuning(
     aim: &crate::ui::Aim,
 ) {
     // **The provider table stands on the aim** (bl-7a77), as the roles read
-    // does (bl-d74b): the start's hint says *no provider yet* off the worker's
-    // row in it, and the rule's effort and priority stand on its capability
+    // does (bl-d74b): the start's hint names what the worker's row in it
+    // lacks, and the rule's effort and priority stand on its capability
     // flags, before any pane is opened. It stood on the login pane first
     // (bl-e3c5); what stands there now is the SIGN-IN CATALOG (bl-8c03), the
     // one read here whose standing buys something — a credential lands while

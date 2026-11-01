@@ -100,6 +100,19 @@ impl Model {
         self.roles.as_ref()?.iter().find(|row| row.role == WORKER)
     }
 
+    /// **The worker's provider row in the answered table** (bl-6ef6) — the
+    /// one lookup behind the rule's effort and priority segments and the
+    /// start's hint, so the two never read the role against the table
+    /// differently. `None` where either read has not answered, or where the
+    /// table has and holds no such row; `Model::providers` says which.
+    pub fn worker_row(&self) -> Option<&crate::reply::providers::ProviderRow> {
+        let worker = self.worker()?;
+        self.providers
+            .as_ref()?
+            .iter()
+            .find(|row| row.name == worker.provider)
+    }
+
     /// **Open `selector`'s dropup**, or close it where it is the one open —
     /// the toggle a click on its segment is.
     ///

@@ -5181,18 +5181,25 @@ parts, in its vertical order, each with what it becomes here.
    Shift+Enter breaks a line (§4.38's one read, `composer::entered`, kept).
    The start is the same line with the same glyph and a hint naming the workspace
    a conversation would begin on — **or, where the workspace's worker role
-   resolves a provider row that holds no credential, `no provider yet —
-   /login or /config, then pick one on the rule`** (bl-7a77,
-   `start::unsigned`): the goal's question is the wrong one to ask first on
-   a workspace whose start the server will refuse. *Holds no credential* is read
-   off the providers read's own words — the row's fact ends `not signed in`
+   resolves a provider row that holds no credential, the provider's name
+   and what it lacks: `anthropic holds no credential · /login or /config ·
+   pick another on the rule`** (bl-7a77, `start::missing`): the goal's
+   question is the wrong one to ask first on a workspace whose start the
+   server will refuse. **The hint names the provider the rule under it
+   shows, because both read one query** (bl-6ef6): the rule's provider
+   segment is the worker role's row off the `roles` read, and the hint
+   judges that same row against the provider table (`Model::worker_row`).
+   It used to say *no provider yet* one line above a rule naming one — one
+   fact stated two ways, which §4.45's principle forbids. *Holds no
+   credential* is read off the providers read's own words — the row's fact ends `not signed in`
    or `no credential stored` (`ProviderRow::bare`), because the wire carries
    that fact as words and no flag; a fact this build cannot read claims
    nothing — **or off the row's absence from an answered table** (bl-67aa;
    brazen bl-6feb): the table is brazen's routing table, the rows the
    operator named plus the presets holding a credential, so a worker bound
    to a preset nobody named and nobody signed into is on no row at all, and
-   a bare fact stands only on a row the operator named. A table not yet
+   a bare fact stands only on a row the operator named — the hint then says
+   `anthropic is on no row of this workspace`. A table not yet
    read still claims nothing; `✎ plan` becomes `/plan`, a toggle shown on
    the rule while it is on. **With nothing aimed it is the same line again**
    (bl-2cb0), never a sentence where a field was: the field is where every

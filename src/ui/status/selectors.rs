@@ -124,11 +124,7 @@ pub fn selectors(model: &Model) -> (Vec<Run>, usize) {
     let Some(worker) = worker else {
         return (out, 2);
     };
-    let row = model
-        .providers
-        .iter()
-        .flatten()
-        .find(|row| row.name == worker.provider);
+    let row = model.worker_row();
     if row.is_none_or(|row| row.effort) {
         let level = crate::verbs::tuning::word(worker.effort.as_ref());
         let said = Some(format!("{EFFORT} {level}"));

@@ -1,6 +1,9 @@
 //! The start composer: the case it takes over, what Enter composes, and the
 //! start in flight that refuses a second one.
 
+/// What the start's HINT says: the workspace, the plan, and what the worker's
+/// provider lacks, read off the one query the rule reads (bl-6ef6).
+mod hint;
 /// What the start mode LOOKS like (DESIGN §4.39): the deposit's own field,
 /// its act tags, and the row under it.
 mod shape;
@@ -215,67 +218,4 @@ fn a_refused_start_carries_the_doors_it_names() {
     let mut model = refused("sign in first: no provider holds a credential");
     let painted = pane(|ui| render(ui, &mut model, &aimed()));
     assert!(!painted.lines().any(|line| line == "/config"), "{painted}");
-}
-
-/// **The hint names the workspace the Enter begins on, and says when it begins a
-/// plan** (bl-9031).
-#[test]
-fn the_hint_names_the_workspace_and_the_plan() {
-    let mut model = unselected();
-    let painted = pane(|ui| render(ui, &mut model, &aimed()));
-    assert!(painted.contains("on home is for"), "{painted}");
-    model.plan = true;
-    let planned = pane(|ui| render(ui, &mut model, &aimed()));
-    assert!(planned.contains(&goal("home", true)), "{planned}");
-}
-
-/// **A workspace whose worker reaches no model says so before a goal is typed**
-/// (bl-7a77): the worker's provider row is bare — or absent from the answered
-/// table, which is brazen's routing table and lists no unfunded preset nobody
-/// named (bl-67aa) — so the hint names the doors and the pick; a credentialed
-/// row, or a table not yet read, asks the goal.
-#[test]
-fn a_workspace_whose_worker_holds_no_credential_names_the_doors() {
-    let worker = crate::reply::roles::RoleRow {
-        role: "worker".to_owned(),
-        provider: "anthropic".to_owned(),
-        model: "m".to_owned(),
-        priority: false,
-        effort: None,
-    };
-    let row = |fact: &str| crate::reply::providers::ProviderRow {
-        name: "anthropic".to_owned(),
-        fact: fact.to_owned(),
-        blocked: None,
-        effort: true,
-        priority: true,
-    };
-    for (providers, unsigned) in [
-        (Some(vec![row("auth api_key · no credential stored")]), true),
-        (Some(vec![row("auth api_key · credential stored")]), false),
-        (Some(Vec::new()), true),
-        (
-            Some(vec![crate::test_support::window::provider("housevendor")]),
-            true,
-        ),
-        (None, false),
-    ] {
-        let mut model = Model {
-            roles: Some(vec![worker.clone()]),
-            providers,
-            ..unselected()
-        };
-        assert_eq!(super::unsigned(&model), unsigned);
-        let painted = pane(|ui| render(ui, &mut model, &aimed()));
-        assert_eq!(painted.contains(super::UNSIGNED), unsigned, "{painted}");
-        assert_eq!(
-            painted.contains(&goal("home", false)),
-            !unsigned,
-            "{painted}"
-        );
-    }
-    assert!(
-        !super::unsigned(&unselected()),
-        "no roles read, nothing claimed"
-    );
 }

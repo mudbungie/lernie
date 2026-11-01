@@ -56,29 +56,36 @@ pub fn goal(workspace: &str, plan: bool) -> String {
     format!("what this conversation on {workspace} is for — {tail}")
 }
 
-/// **What the box says on a workspace whose worker reaches no model yet**
-/// (bl-7a77): the worker role's provider row holds no credential, so a goal
-/// typed now would be refused — the hint names the two doors and the pick
-/// before the operator types one. It stands in the goal's place, not after
-/// it: the goal's question is the wrong one to ask first.
-pub const UNSIGNED: &str = "no provider yet — /login or /config, then pick one on the rule";
+/// **The doors the hint names after what is missing** (bl-7a77), dropped
+/// from the right where the line has no room, as the goal's ways are.
+pub const DOORS: [&str; 2] = ["/login or /config", "pick another on the rule"];
 /// What the box does while it is the start.
 pub const START_HELP: &str =
     "the first message of a new conversation on this workspace; Enter begins it";
 
-/// **Whether the aimed workspace's worker reaches no model yet**: its provider's
-/// row in the provider table is bare (`ProviderRow::bare`), **or is not in the
-/// table at all** (bl-67aa) — the table is brazen's routing table, rows the
-/// operator named plus presets holding a credential, so a worker bound to a
-/// preset nobody named and nobody signed into is on no row. Both reads stand
-/// on the aim; where either has not answered, nothing is claimed.
-pub fn unsigned(model: &Model) -> bool {
-    let (Some(worker), Some(rows)) = (model.worker(), &model.providers) else {
-        return false;
+/// **What stands between the aimed workspace's worker and a model, named**
+/// (bl-7a77; bl-6ef6) — or nothing, where the goal is the right question.
+///
+/// The rule under the box paints the worker role's provider off the `roles`
+/// read, and this hint judges that same row against the provider table
+/// (`Model::worker_row`): one query, read twice. So the hint names the
+/// provider the rule shows and says what it lacks — its row in the table is
+/// bare (`ProviderRow::bare`), **or is not in the table at all** (bl-67aa):
+/// the table is brazen's routing table, rows the operator named plus presets
+/// holding a credential, so a worker bound to a preset nobody named and
+/// nobody signed into is on no row. It used to say *no provider yet* under a
+/// rule naming one, which was one fact stated two ways (DESIGN §4.45). Both
+/// reads stand on the aim; where either has not answered, nothing is claimed.
+pub fn missing(model: &Model) -> Option<String> {
+    let (Some(worker), Some(_)) = (model.worker(), &model.providers) else {
+        return None;
     };
-    rows.iter()
-        .find(|row| row.name == worker.provider)
-        .is_none_or(crate::reply::providers::ProviderRow::bare)
+    let lack = match model.worker_row() {
+        Some(row) if row.bare() => "holds no credential",
+        Some(_) => return None,
+        None => "is on no row of this workspace",
+    };
+    Some(format!("{} {lack}", worker.provider))
 }
 
 /// **The start's own sentence, with the doors it names** (bl-7a77): a
@@ -133,14 +140,13 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
     // from no widget at all. A walk over the accessibility tree can only ever
     // see the control that begins the pair, so both tokens ride it.
     let slashed = crate::ui::slash::parsed(&model.draft).is_some();
-    let said = if unsigned(model) {
-        UNSIGNED.to_owned()
-    } else {
-        super::hint(
+    let said = match missing(model) {
+        Some(lack) => super::hint(ui, &lack, &DOORS),
+        None => super::hint(
             ui,
             &goal(&aim.address, model.plan),
             &crate::ui::chat::panel::WAYS,
-        )
+        ),
     };
     let entry = crate::ui::theme::paint::prompt(
         ui,

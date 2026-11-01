@@ -147,3 +147,30 @@ fn the_walk_brings_the_standing_server_into_view() {
     let text = painted(&mut model);
     assert!(text.contains("(this box's own server)"), "{text}");
 }
+
+/// **A click on a workspace row keeps it standing, and the chord after it
+/// is ONE toggle** (bl-1ea2). The click aims — the workspace's conversations
+/// unfold under it — and nothing it leaves behind spends the chord: no row
+/// holds the keyboard, and `Event::Cut` is read once. Filed as *the first
+/// Ctrl+X after the click opens nothing*; what that press did was close a
+/// switcher the click had not put down, and the next one opened it.
+#[test]
+fn a_workspace_click_keeps_it_and_the_next_chord_is_one_toggle() {
+    use crate::test_support::window::workspace;
+    let mut model = seated();
+    model.roster[0].workspaces.push(workspace("lab"));
+    model.switching = true;
+    let window = Window::new();
+    let label = crate::ui::roster::workspace::line(&workspace("lab"));
+    click(&window, &label, |ctx| crate::ui::render(ctx, &mut model));
+    assert_eq!(
+        model.aim.as_ref().map(|aim| aim.address.as_str()),
+        Some("lab")
+    );
+    assert!(model.switching, "aiming is not choosing");
+    assert_eq!(window.focused(), None, "the row does not keep the keyboard");
+    ctrl_x(&window, &mut model);
+    assert!(!model.switching, "one press, one toggle");
+    ctrl_x(&window, &mut model);
+    assert!(model.switching, "and the next is the other");
+}

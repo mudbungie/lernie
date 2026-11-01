@@ -17,6 +17,9 @@
 //! selection are the choosing ([`Model::chose`]), and the one act that opens
 //! a tab here; Esc leaves without one ([`Model::close_switcher`]). The four
 //! acts are the model's (`crate::ui::model::walk`); this file is the paint.
+//! **A click on a workspace row is a step of the walk, not a choosing**
+//! (bl-1ea2): it aims, the workspace's conversations unfold under it, and the
+//! switcher stands — so the Ctrl+X after it closes it, one press, one toggle.
 
 use crate::ui::{Model, roster};
 

@@ -8,9 +8,11 @@
 //! say the six screens are gone.
 
 use crate::paint_probe::frame::Window;
+use crate::paint_probe::strokes_of;
 use crate::reply::transcript::{Entry, EntryKind, Transcript};
 use crate::test_support::window::{click, numbered, seated, seen};
 use crate::ui::Model;
+use crate::ui::theme::{Bubble, bubble};
 
 /// How many lines the fixture's tool call answers with — the shape of the `bl
 /// --help` that was six screens of the conversation pane.
@@ -18,7 +20,11 @@ const LINES: usize = 700;
 
 /// The seated window with one tool result of `n` numbered lines.
 fn spilling(n: usize) -> Model {
-    let content = numbered(n);
+    answering(numbered(n))
+}
+
+/// The seated window with one tool result saying `content`.
+fn answering(content: String) -> Model {
     let mut model = seated();
     model.transcript = Transcript {
         entries: vec![Entry {
@@ -55,9 +61,10 @@ fn glass(window: &Window, model: &mut Model) -> Vec<String> {
         .collect()
 }
 
-/// The word the control wears while a row of `n` lines is folded.
+/// The word the control wears while a row of `n` lines is folded. The bytes
+/// are the result's as said, which is without its trailing newline (bl-63ea).
 fn control(n: usize) -> String {
-    format!("show all {n} lines, {} bytes", numbered(n).len())
+    format!("show all {n} lines, {} bytes", numbered(n).trim_end().len())
 }
 
 /// **A result long enough to be folded and short enough to read whole**, which
@@ -107,4 +114,39 @@ fn the_control_brings_the_whole_of_it_and_the_other_one_puts_it_back() {
     });
     let closed = glass(&window, &mut model).concat();
     assert!(!closed.contains("line 007"), "and it folds again");
+}
+
+/// **A result's trailing newline is not a blank line at the foot of the
+/// step** (bl-63ea). Nearly every shell answer ends in one, and the galley
+/// laid it as an empty row, so every opened trail wore a missing line at its
+/// foot. Read as the height of the trail's ring around the opened step: the
+/// same with the newline as without, and the probe is proved able to tell one
+/// line apart by a result that really has one more.
+#[test]
+fn a_trailing_newline_is_not_a_blank_line_at_the_foot_of_the_step() {
+    let foot = |content: &str| {
+        let mut model = answering(content.to_owned());
+        let window = Window::sized(1400.0, 900.0);
+        opened(&window, &mut model);
+        window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
+        let output = window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
+        let (_, ring) = bubble(Bubble::Trail);
+        strokes_of(&output)
+            .into_iter()
+            .filter(|(_, ink)| *ink == ring.color)
+            .map(|(rect, _)| rect.height())
+            .fold(0.0, f32::max)
+    };
+    let bare = foot("first line\nsecond line");
+    assert!(bare > 0.0, "the trail is ringed");
+    let trailing = foot("first line\nsecond line\n");
+    assert!(
+        (trailing - bare).abs() < 0.5,
+        "a trailing newline is no line: {trailing} against {bare}"
+    );
+    let longer = foot("first line\nsecond line\nthird line");
+    assert!(
+        longer > bare + 8.0,
+        "a third line is a line: {longer} against {bare}"
+    );
 }

@@ -143,14 +143,21 @@ fn entry_rows(entry: &Entry) -> Vec<Row> {
             tool_use_id,
             content,
             is_error,
-        } => vec![Row::result(
-            tool_use_id,
-            content.clone(),
-            *is_error,
-            // **The one row in this pane that hides anything**, and only when
-            // there is something to hide (`fold`).
-            fold::of(content),
-        )],
+        } => {
+            // **A result's trailing newline is not a line** (bl-63ea): nearly
+            // every shell answer ends in one, and a galley lays it as a blank
+            // row at the foot of the opened step. Trimmed HERE, because the
+            // projection decides what is said and the painter paints it.
+            let content = content.trim_end_matches(['\n', '\r']);
+            vec![Row::result(
+                tool_use_id,
+                content.to_owned(),
+                *is_error,
+                // **The one row in this pane that hides anything**, and only
+                // when there is something to hide (`fold`).
+                fold::of(content),
+            )]
+        }
         EntryKind::Streaming { thinking, text } => live_rows(thinking, text),
         EntryKind::Compacted {
             first,

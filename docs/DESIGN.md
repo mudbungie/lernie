@@ -1375,6 +1375,13 @@ lines, and five hundred characters of them, since a `git log` is six hundred
 short lines and a JSON blob is thirty kilobytes on ONE line, which a pane that
 wraps paints as three hundred rows of glass.
 
+**A result's trailing newline is not a line** (`chat::rows`; bl-63ea). Nearly
+every shell answer ends in one, and the galley laid it as an empty row, so
+every opened step wore a blank line at its foot that read as a missing row. The
+projection trims it where the result becomes a row — the projection decides
+what is said and the painter paints it — so the fold's head, its counts and the
+opened whole all read the same trimmed text, and the painter is told nothing.
+
 **Whether one row is open is the toolkit's memory, keyed on the row**, on
 bl-83ae's own reasoning one noun over: it is a per-row view state no other fact
 can be asked for and no gesture on the wire corresponds to, so putting it on

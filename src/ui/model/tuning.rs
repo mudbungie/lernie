@@ -26,7 +26,8 @@
 //!
 //! The read is standing while the pane is open
 //! (`crate::state::Standing`), so a tuning act that lands is reflected by the
-//! next answer rather than by this end predicting one. A seat that wrote its
+//! next answer rather than by this end predicting one — and a write's receipt
+//! asks for that answer at once (`Model::retuned`). A seat that wrote its
 //! own row back would be painting a claim the server had not made — and the
 //! three writes go through `litany config`, which can refuse.
 //!
@@ -35,6 +36,15 @@
 
 use super::{Aim, Model};
 use crate::reply::roles::RoleRow;
+
+/// **The three writes the rule's selectors spend** (bl-a7f5): each one's
+/// receipt is the segment it was picked on, so it stands nothing in the slot
+/// and re-asks the read that repaints the segment (bl-3abe).
+pub(super) const WRITES: [&str; 3] = [
+    crate::verbs::MODEL.word,
+    crate::verbs::EFFORT,
+    crate::verbs::PRIORITY,
+];
 
 /// The tuning pane, while it is open.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -185,6 +195,22 @@ impl Model {
         };
         let Aim { address, .. } = aim;
         self.outbox.push(super::Posted::act(gesture(address)));
+    }
+
+    /// **A write took: ask the aimed workspace's roles again, now** (bl-3abe).
+    ///
+    /// The standing read would bring the row back on its own, but the asker
+    /// re-posts it every beat and asks it LAST in a pass, after the roster fan
+    /// over every channel — so a pick on the rule showed seconds after it
+    /// took. Posting the same read through the outbox on the receipt costs
+    /// the repaint one round trip, the way opening a dropup posts its own
+    /// refresh, and the server stays the authority: what repaints is still
+    /// its answer, never this seat's claim about the row.
+    pub(super) fn retuned(&mut self) {
+        if let Some(aim) = &self.aim {
+            let read = crate::verbs::roles(aim.address.clone());
+            self.outbox.push(super::Posted::read(read));
+        }
     }
 }
 

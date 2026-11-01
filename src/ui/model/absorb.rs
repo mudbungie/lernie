@@ -68,10 +68,13 @@ impl Model {
             // the operator sent land in the pane they are looking at, so the
             // run's `ok` would only cover the conversation's own state in the
             // slot after every send. A role write's is the rule's own segment
-            // (bl-a7f5): the roles read repaints it on the next beat. Every
-            // other act's receipt is the bar's.
+            // (bl-a7f5), and the receipt re-asks the roles read that repaints
+            // it (bl-3abe). Every other act's receipt is the bar's.
             Read::Answer(Reply::Outcome(ref run)) if run.ok() && witnessed(op) => {
                 self.notice = None;
+                if super::tuning::WRITES.contains(&op) {
+                    self.retuned();
+                }
             }
             // **The roster's refusal is the channel's, not the bar's**
             // (bl-693d): it re-posts every beat while it holds, and it stops
@@ -286,13 +289,7 @@ impl Model {
 /// operator's own words on the transcript, and the three role writes the
 /// rule's selectors spend repaint the segment they were picked on.
 fn witnessed(op: &str) -> bool {
-    super::sent::DEPOSITS.contains(&op)
-        || [
-            crate::verbs::MODEL.word,
-            crate::verbs::EFFORT,
-            crate::verbs::PRIORITY,
-        ]
-        .contains(&op)
+    super::sent::DEPOSITS.contains(&op) || super::tuning::WRITES.contains(&op)
 }
 
 #[cfg(test)]

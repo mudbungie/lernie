@@ -104,6 +104,38 @@ fn a_witnessed_act_s_receipt_says_nothing_in_the_slot() {
     );
 }
 
+/// **A role write's receipt re-asks the roles read at once** (bl-3abe): a
+/// good `model`, `effort` or `priority` outcome leaves the aimed workspace's
+/// `roles` read in the outbox — one read, never an act — while a refusal, a
+/// failed run and a deposit's receipt leave none.
+#[test]
+fn a_role_write_s_receipt_posts_the_aimed_roles_read() {
+    let mut model = seated();
+    let flat = own().channel;
+    for op in super::super::tuning::WRITES {
+        model.outbox.clear();
+        model.receipt(&flat, op, ran(0, "", ""));
+        let posted = model.outbox.pop().expect(op);
+        assert!(model.outbox.is_empty(), "{op}: one read");
+        assert!(!posted.act, "{op}: a read, asked freely");
+        assert_eq!(posted.envelope, crate::verbs::roles("home".to_owned()));
+    }
+    model.receipt(
+        &flat,
+        crate::verbs::MODEL.word,
+        Read::Refusal("no".to_owned()),
+    );
+    assert!(model.outbox.is_empty(), "a refusal asks nothing");
+    model.receipt(
+        &flat,
+        crate::verbs::MODEL.word,
+        ran(1, "", "config said no"),
+    );
+    assert!(model.outbox.is_empty(), "a failed run asks nothing");
+    model.receipt(&flat, crate::verbs::MESSAGE.word, ran(0, "deposited", ""));
+    assert!(model.outbox.is_empty(), "a deposit's receipt asks nothing");
+}
+
 /// **A receipt goes with the conversation it was about** (bl-a7f5): moving the
 /// selection — to another conversation, or off every one to begin — retires
 /// it, so the slot says the new selection's state; re-selecting the same one

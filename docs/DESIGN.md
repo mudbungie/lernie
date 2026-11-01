@@ -4064,7 +4064,9 @@ on.** Two holes the round-2 drive found. The rule's selectors (§4.42 item 11)
 spend `model`, `effort` and `priority`, whose success is a captured run with
 nothing to say, so every pick stood a bare `ok` over the state word until Esc
 — those three join the deposits, because their receipt is the segment the
-roles read repaints on the next beat. And a receipt outlived the conversation
+roles read repaints — and the receipt re-asks that read itself (bl-3abe;
+§4.42 item 11), so the repaint is one round trip rather than the asker's next
+pass. And a receipt outlived the conversation
 it was about: `seen` on one, then `+ new` and a whole turn of another, read
 `seen <the first> — off the queue` where `live · 3s` belonged. So moving the
 selection (`Model::select` to another conversation, `Model::aim_at` off every
@@ -5562,7 +5564,18 @@ parts, in its vertical order, each with what it becomes here.
     `effort` or `priority` for the worker, and each stands only where the
     worker's provider row's capability flag allows it — or where the
     providers read has not said, because absence is not evidence. With
-    nothing aimed only the workspace stands.
+    nothing aimed only the workspace stands. **A pick's receipt re-asks the
+    roles read** (bl-3abe): a good `model`, `effort` or `priority` outcome
+    posts the aimed workspace's `roles` read through the outbox at once
+    (`Model::retuned`), the way opening a dropup posts its own refresh, so
+    the segment shows the pick one round trip after it took — the standing
+    read alone re-posts every beat but is asked last in the asker's pass,
+    after the roster fan over every channel, and a pick waited seconds on
+    it. The server stays the authority: the seat writes nothing to the row,
+    and what repaints is the answer; a refusal re-asks nothing. The picked
+    segment wears no `↻` while that read is out — the mark is the open
+    dropup's, and the pick closed it; holding one for a closed dropup would
+    be a field on the model for one glyph.
 
     **The dropup** (`status/dropup.rs`, `model/dropup.rs`): a click on a
     segment opens a framed list over it, opening upward from the rule — the

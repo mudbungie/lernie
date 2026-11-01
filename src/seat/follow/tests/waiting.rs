@@ -147,13 +147,22 @@ fn the_json_form_says_nothing_while_it_waits_for_a_driver() {
     );
 }
 
+/// The server's own hold sentence, which opens with the tool and what it was
+/// about to do (yog `control::reason`).
+const HOLD: &str = r#"box2_service_status {"unit":"nginx"} classified opaque (…)"#;
+
 /// A held conversation's own row: at rest by its state, and parked by its
 /// mark — which is the shape the defect lived in, since the two are read off
 /// the same object one field apart.
 fn holding() -> Value {
+    holding_for(HOLD)
+}
+
+/// The same, parked with the hold sentence the server wrote — or none.
+fn holding_for(reason: &str) -> Value {
     let mut row = agent("quiescent");
     row["held"] = json!({"tool": "box2_service_status", "tool_use_id": "toolu_02",
-                         "reason": "classified opaque"});
+                         "reason": reason});
     row
 }
 
@@ -171,11 +180,10 @@ fn a_held_conversation_ends_the_watch_naming_the_call_and_the_answer() {
     wired(&scratch, &flat(), vec![vec![holding()]]);
     let (verdict, _) = watched(&scratch);
     assert_eq!(verdict.code, 0, "{}", verdict.text);
+    let sentence = format!("— {HOLD}; release or decline it");
     for needle in [
-        "box2_service_status",
-        "toolu_02",
-        "classified opaque",
-        "for your answer",
+        "holding call toolu_02 for your answer after",
+        sentence.as_str(),
         "lernie answer home PelicanQuiet pass|refuse",
     ] {
         assert!(verdict.text.contains(needle), "{needle}: {}", verdict.text);
@@ -183,6 +191,32 @@ fn a_held_conversation_ends_the_watch_naming_the_call_and_the_answer() {
     assert!(
         !verdict.text.contains("nudged or messaged"),
         "the two remedies are both wrong for a park: {}",
+        verdict.text
+    );
+}
+
+/// **The held line names the tool once** (bl-bf80): the server's hold sentence
+/// opens with the tool, so it carries the line; where no sentence came, the
+/// bare tool stands in, and the `tool_use` id names the call either way.
+#[test]
+fn a_held_line_names_the_tool_once_and_the_bare_tool_only_without_a_sentence() {
+    let scratch = Scratch::new();
+    wired(&scratch, &flat(), vec![vec![holding()]]);
+    let (verdict, _) = watched(&scratch);
+    assert_eq!(
+        verdict.text.matches("box2_service_status").count(),
+        1,
+        "{}",
+        verdict.text
+    );
+    let scratch = Scratch::new();
+    wired(&scratch, &flat(), vec![vec![holding_for("")]]);
+    let (verdict, _) = watched(&scratch);
+    assert!(
+        verdict
+            .text
+            .contains(" — box2_service_status; release or decline it"),
+        "{}",
         verdict.text
     );
 }

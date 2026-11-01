@@ -77,9 +77,11 @@ pub(super) fn attention(rows: &[QueueRow]) -> String {
     listing("waiting on you", painted, "nothing is waiting on you")
 }
 
-/// A parked invocation, as the sentence that says what it is waiting for.
+/// A parked invocation, as the sentence that says what it is waiting for —
+/// the server's own ([`Held::what`], bl-bf80), keyed by the `tool_use` id the
+/// sentence does not carry and the tool window is keyed by (REMOTE §5.5).
 pub(super) fn parked(held: &Held) -> String {
-    format!("held: {} ({}) — {}", held.tool, held.tool_use, held.reason)
+    format!("held ({}): {}", held.tool_use, held.what())
 }
 
 /// **One frame of the live tail: what LANDED, and nothing else.**
@@ -170,15 +172,18 @@ pub(crate) fn at_rest(agent: &str, state: &str, secs: i64) -> String {
 /// The remedy is spelled with the address the watch was aimed at, because a
 /// sentence an operator has to complete from memory is a sentence they will
 /// complete wrongly.
+///
+/// The call is named by its `tool_use` id and said in the server's own hold
+/// sentence ([`Held::what`], bl-bf80), which opens with the tool: writing the
+/// tool ahead of it named the tool twice.
 pub(crate) fn held_at(agent: &str, workspace: &str, held: &Held, secs: i64) -> String {
     narrated(&format!(
-        "{agent} is holding {} ({}) for your answer after {} — {}; release or decline it \
+        "{agent} is holding call {} for your answer after {} — {}; release or decline it \
          with `lernie answer {workspace} {agent} pass|refuse` (a third word widens the \
          answer to every call like it)",
-        held.tool,
         held.tool_use,
         age(secs),
-        held.reason
+        held.what()
     ))
 }
 

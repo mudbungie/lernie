@@ -6,7 +6,7 @@ use super::{
     doing, flighted, marked, named, offered, parked, render, resting, seated as seats_of, spent,
 };
 use crate::reply::agent::Agent;
-use crate::test_support::window::{own_row, pane, recorded};
+use crate::test_support::window::{HELD_SAYS, own_row, pane, recorded};
 use crate::ui::Model;
 
 /// **The answered header paints the whole row** — the name, the rest, why it
@@ -22,7 +22,7 @@ fn the_answered_header_paints_the_conversation_whole() {
         DISPLAY_ONLY,
         "no credential for provider row \"work\"",
         "tools — Bash · 5s",
-        "held at Bash (toolu_1) — unconfined",
+        &format!("held (toolu_1): {HELD_SAYS}"),
         "under 20260830T050000Z-root",
         "marked notified, held",
         "pennant waiting",
@@ -41,6 +41,20 @@ fn the_answered_header_paints_the_conversation_whole() {
     };
     let waiting = pane(|ui| render(ui, &mut nobody));
     assert!(waiting.contains(NOT_ANSWERED), "{waiting}");
+}
+
+/// **The parked line names the tool once** (bl-bf80): the server's hold
+/// sentence opens with the tool, so it carries the line; the bare tool stands
+/// in only where no sentence came, and the `tool_use` id keys both.
+#[test]
+fn the_parked_line_names_the_tool_once() {
+    let row = recorded().records.agent.expect("an answered header");
+    let said = parked(&row).expect("a parked call");
+    assert_eq!(said, format!("held (toolu_1): {HELD_SAYS}"));
+    assert_eq!(said.matches("Bash").count(), 1, "{said}");
+    let mut unsaid = row;
+    unsaid.held.as_mut().expect("a parked call").reason.clear();
+    assert_eq!(parked(&unsaid).as_deref(), Some("held (toolu_1): Bash"));
 }
 
 /// **The quiet row says none of it**, and each silence is a line that is not

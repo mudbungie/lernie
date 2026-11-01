@@ -274,17 +274,11 @@ pub fn flagged(row: &QueueRow) -> Option<String> {
 ///
 /// **The server's sentence carries the line** (bl-9f2b, bl-5507's rule one
 /// noun over): the hold's `reason` already opens with the tool and what it was
-/// about to do — *Bash {"command":…} classified open-world (…)* — so a seat
-/// that wrote the tool ahead of it named the tool twice. The bare tool name
-/// stands in only where the server wrote no sentence.
+/// about to do, so the seat writes no tool ahead of it — [`Held::what`] is
+/// where that choice is made, once, for every surface that names a hold.
 pub fn parked(row: &QueueRow) -> Option<String> {
     let held = row.held.as_ref()?;
-    let what = if held.reason.is_empty() {
-        &held.tool
-    } else {
-        &held.reason
-    };
-    Some(format!("waiting for your approval: {what}"))
+    Some(format!("waiting for your approval: {}", held.what()))
 }
 
 /// Why it is asking: the server's own sentence (`says`, bl-5507), the raw

@@ -2435,7 +2435,15 @@ the hold's `reason` is the server's own sentence and already opens with the
 tool and what it was about to do (yog `control::reason`: *Bash {"command":…}
 classified open-world (…)*), so the ask box and the queue pane write *waiting
 for your approval:* and that sentence, naming the tool once; the bare tool
-name stands in only where the server wrote no sentence (`ui::queue::parked`).
+name stands in only where the server wrote no sentence. `reply::queue::Held::what`
+is the one place that choice is made, and every surface that names a hold
+spends it (bl-bf80): the ask box and the queue pane (`ui::queue::parked`), the
+records header (`ui::records::header::parked`), `lernie attention`'s listing
+(`render::workspaces::parked`) and the line a watch ends on when the call is
+parked (`render::held_at`). The sentence is never parsed (REMOTE §9.26). The
+`tool_use` id is not in it, so the three lines that key the call by it — the
+id the tool window is keyed by — add the id themselves: *held (toolu_1): Bash
+{"command":…} classified writes (…)*.
 
 Five decisions, and each is a choice rather than a mechanism:
 

@@ -171,13 +171,11 @@ pub fn flighted(row: &Agent) -> Option<String> {
 }
 
 /// The invocation parked at its capability boundary, said in the server's
-/// own sentence about it.
+/// own sentence about it ([`crate::reply::queue::Held::what`], bl-bf80) and
+/// keyed by the `tool_use` id that sentence does not carry.
 pub fn parked(row: &Agent) -> Option<String> {
     let held = row.held.as_ref()?;
-    Some(format!(
-        "held at {} ({}) — {}",
-        held.tool, held.tool_use, held.reason
-    ))
+    Some(format!("held ({}): {}", held.tool_use, held.what()))
 }
 
 /// Where it hangs, or none for a conversation that is its own root.

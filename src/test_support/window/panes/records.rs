@@ -65,7 +65,7 @@ pub(crate) fn own_row() -> crate::reply::agent::Agent {
         held: Some(crate::reply::queue::Held {
             tool: "Bash".to_owned(),
             tool_use: "toolu_1".to_owned(),
-            reason: "unconfined".to_owned(),
+            reason: super::union::HELD_SAYS.to_owned(),
             scopes: Vec::new(),
         }),
         present: true,

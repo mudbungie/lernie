@@ -137,6 +137,24 @@ pub struct Held {
     pub scopes: Vec<String>,
 }
 
+impl Held {
+    /// **What is parked, as one line** — the one place that choice is made for
+    /// every surface that names a hold (bl-9f2b, bl-bf80; `QueueRow::why` one
+    /// noun over): the server's own sentence where it wrote one, which already
+    /// opens with the tool and what it was about to do (yog `control::reason`:
+    /// *Bash {"command":…} classified open-world (…)*), and the bare tool name
+    /// only where it did not. A seat that wrote the tool ahead of the sentence
+    /// named it twice. The sentence is never parsed (REMOTE §9.26); the
+    /// `tool_use` id is not in it, so a line that spends the id adds it itself.
+    pub(crate) fn what(&self) -> &str {
+        if self.reason.is_empty() {
+            &self.tool
+        } else {
+            &self.reason
+        }
+    }
+}
+
 impl QueueRow {
     /// **Why it is asking, as one line** — the one place that choice is made,
     /// for every surface that paints a row: the server's own sentence where it

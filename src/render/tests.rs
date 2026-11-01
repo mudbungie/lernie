@@ -181,3 +181,30 @@ fn a_queue_row_prints_the_server_s_sentence_over_its_signals() {
     assert!(said.contains("was cut off at its output cap"), "{said}");
     assert!(!said.contains("truncated"), "{said}");
 }
+
+/// **The listing's parked line names the tool once** (bl-bf80): the hold's
+/// `reason` is the server's sentence and opens with the tool, so it carries
+/// the line, keyed by the `tool_use` id it does not carry; the bare tool name
+/// stands in only where the server wrote no sentence.
+#[test]
+fn a_parked_row_prints_the_server_s_hold_sentence_once() {
+    let listing = |reason: &str| {
+        rendered(&json!({"ok": true, "kind": "attention", "rows": [
+            {"workspace": "home", "agent": "c-1", "display": "Cobalt", "state": "quiescent",
+             "uncertain": false, "preview": "", "age_secs": 5, "pending": 0,
+             "signals": [], "says": null, "failure": null, "flag": null,
+             "held": {"tool": "Bash", "tool_use": "toolu_1", "reason": reason,
+                      "scopes": []}}]}))
+    };
+    let said = listing(crate::test_support::window::HELD_SAYS);
+    assert!(
+        said.contains(&format!(
+            "held (toolu_1): {}",
+            crate::test_support::window::HELD_SAYS
+        )),
+        "{said}"
+    );
+    assert_eq!(said.matches("Bash").count(), 1, "{said}");
+    let unsaid = listing("");
+    assert!(unsaid.contains("held (toolu_1): Bash"), "{unsaid}");
+}

@@ -1911,8 +1911,11 @@ is about the threading rather than about what the passes do. **A stop is seen
 between passes, not during one**: a held lane is parked on a socket read, so it
 learns of a stop when the server writes, when the connection closes, or when the
 transport's own read timeout expires. That is not a leak — closing the window
-ends the process — and the alternative is a second signal path into a blocking
-read, which is a mechanism for a case with no consequence.
+ends the process, and **the exit joins no lane** (bl-9cef): `src/main.rs` drops
+the handles `offframe::run` returns, because a join waited out the server's ping
+(`src/channel/line.rs`'s `PING`, twenty-five seconds) with the window already
+gone — and the alternative is a second signal path into a blocking read, which
+is a mechanism for a case with no consequence.
 
 ### 4.13 The seat's own durable state lives under a DIFFERENT root (§7)
 

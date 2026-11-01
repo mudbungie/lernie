@@ -12,11 +12,12 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
-use super::{pump, run};
+use super::{follow, pump, run};
 use crate::state::Link;
 use crate::test_support::Scratch;
+use crate::test_support::server::Answer;
 use crate::test_support::wire::{flat, wired};
-use crate::ui::{Channel, Chunk, Model};
+use crate::ui::{Aim, Channel, Chunk, Model};
 use serde_json::json;
 
 /// The beats that drive the whole seat and read the glass.
@@ -110,4 +111,62 @@ fn the_threads_carry_a_real_answer_to_a_real_frame() {
         Some("home".to_owned()),
         "the asker's answer reached the frame"
     );
+}
+
+/// **A stop does not end a held lane, so the exit must not wait on one**
+/// (bl-9cef). The follow lane is parked on a socket read and learns of a stop
+/// only when the server writes or hangs up — its ping, twenty-five seconds on a
+/// real server — which is the hang a join at exit became. So `src/main.rs`
+/// drops the handle, and this is the fact that makes dropping it the only
+/// answer: the lane is still running after the stop, and nothing but the
+/// server or the process's end will finish it.
+#[test]
+fn a_stop_leaves_a_held_lane_parked_so_the_exit_joins_nothing() {
+    let scratch = Scratch::new();
+    wired(
+        &scratch,
+        &flat(),
+        vec![Answer::Held(vec![
+            json!({"ok": true, "kind": "follow", "tools": [],
+                   "stream": {"text": "a tail", "delta": "text"}}),
+        ])],
+    );
+    let own = Channel {
+        name: crate::seat::OWN.to_owned(),
+        named_there: None,
+        dials: None,
+    };
+    let mut model = Model {
+        aim: Some(Aim {
+            channel: own.name.clone(),
+            address: "home".to_owned(),
+        }),
+        conversation: Some("20260830T051200Z-a1b2".to_owned()),
+        roster: vec![Chunk::of(own)],
+        ..Model::default()
+    };
+    let link = Link::new(Duration::from_millis(1));
+    link.settle(&mut model);
+    let lane = {
+        let link = link.clone();
+        let root = scratch.path().to_path_buf();
+        std::thread::spawn(move || pump(&link, || follow::tick(&link, &root)))
+    };
+    // The first frame landing is the proof the lane is on the line; from here
+    // it is parked on the next read, which the stand-in holds.
+    let deadline = std::time::Instant::now() + HUNG;
+    while model.live.is_none() && std::time::Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(5));
+        link.settle(&mut model);
+    }
+    assert!(
+        model.live.is_some(),
+        "the held read's first frame reached the frame"
+    );
+    link.stop();
+    assert!(
+        !lane.is_finished(),
+        "the stop did not reach the held read: a join here would wait out the server"
+    );
+    drop(lane);
 }

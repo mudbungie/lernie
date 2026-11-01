@@ -30,8 +30,10 @@
 //! case that matters: it is parked on a socket read, so it learns of a stop
 //! when the server writes, when the connection closes, or when the transport's
 //! own read timeout expires. That is not a leak — closing the window ends the
-//! process — and the alternative is a second signal path into a blocking read,
-//! which is a mechanism for a case that has no consequence.
+//! process, and **the exit joins no lane** (bl-9cef): a join waited out the
+//! server's ping, twenty-five seconds of a window that would not close — and
+//! the alternative is a second signal path into a blocking read, which is a
+//! mechanism for a case that has no consequence.
 
 use std::path::{Path, PathBuf};
 use std::thread::JoinHandle;
@@ -97,9 +99,9 @@ pub(crate) fn file(link: &Link, channel: &Channel, op: &str, stream: Vec<Value>)
     }
 }
 
-/// **Start the four threads.** The handles come back so a caller that stopped
-/// the link can wait for the passes in flight to finish; a caller that does not
-/// want to wait can drop them.
+/// **Start the five threads.** The handles come back so the suite can prove a
+/// pass in flight finishes; the seat drops them, because a held lane ends
+/// when the server lets go and never because it was asked (bl-9cef).
 pub fn run(link: &Link, root: &Path) -> Vec<JoinHandle<()>> {
     let passes: [fn(&Link, &Path); 5] = [
         asker::tick,

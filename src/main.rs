@@ -140,7 +140,12 @@ fn window(root: &std::path::Path) -> Verdict {
     // nothing at all until a frame had run. One settle here is what makes the
     // window's first paint the answer to a question rather than a blank.
     link.settle(&mut model);
-    let workers = lernie::offframe::run(&link, root);
+    // **The handles are dropped, not joined** (bl-9cef). A held lane is parked
+    // on a socket read and learns of a stop only when the server writes or
+    // hangs up — its ping, twenty-five seconds — so a join here was the hang
+    // GNOME offered to force-quit. Closing the window ends the process, and the
+    // process ending is what ends a lane (`lernie::offframe`).
+    drop(lernie::offframe::run(&link, root));
     let ran = eframe::run_native(
         lernie::mark::APP_ID,
         eframe::NativeOptions {
@@ -174,9 +179,6 @@ fn window(root: &std::path::Path) -> Verdict {
         }),
     );
     link.stop();
-    for worker in workers {
-        let _ = worker.join();
-    }
     // **The last frame's aim is already across the lock**: the standing set is
     // published on every settle, so where the operator was pointed is a
     // projection of what the workers were reading and needs no plumbing of its

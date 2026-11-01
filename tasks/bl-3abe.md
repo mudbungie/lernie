@@ -1,7 +1,8 @@
 +++
 title = "a role write repaints the rule on the next asker pass, seconds later: post the roles read on the write's receipt so the pick costs one round trip"
 created = 1793512642
-updated = 1793512642
+updated = 1793512659
+claimant = "Quick-Roles"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["ui"]

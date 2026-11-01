@@ -1,7 +1,8 @@
 +++
 title = "a chat row's state glyph and ink say nothing on hover: the row's help sentence names the state in words, and the failure clause where the row is red"
 created = 1793512653
-updated = 1793512653
+updated = 1793512666
+claimant = "State-Words"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["ui"]

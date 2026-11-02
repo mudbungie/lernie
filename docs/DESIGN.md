@@ -1747,22 +1747,36 @@ subtracts rather than adds.
   inside it and *dismiss the notice* outside it, two contexts that never
   overlap.
 
-**The mark is arithmetic, and where it is SEEN is not where a client sets it**
-(`src/mark.rs`). A window that names no icon wears the generic one every
-unnamed client gets, and the seat's own mark is three shapes — a ring for the
-server held elsewhere, a filled disc for the seat that is here, and the one
-wire between them, which is what `crate::channel` is.
+**The mark is the phone's, and where it is SEEN is not where a client sets it**
+(`src/mark.rs`; bl-708e). A window that names no icon wears the generic one
+every unnamed client gets. The seat's own mark is the congeries as a circuit —
+three circles tangent to a central one, 120° apart, each the root of a 60° arm
+of further circles joined by a dim casing under a bright conductor, a slit
+pupil in the void at the centre — which is the mark the phone seat wears,
+constant for constant. **The two seats are two faces of one product and wear
+one mark** (operator ruling 2026-10-31); the ring-disc-and-wire this module drew
+before, on the doctrine that no two programs may share a picture, is withdrawn.
+The server keeps its own mark; every seat of it wears this one.
 
-- **One geometry, two emissions.** `svg` writes the checked-in vector source
-  and `rgba` rasterizes the same shape list for the toolkit's icon call, over
-  one list in one order. `assets/lernie.svg` is a **derivation** — `make icon`
-  emits it and the suite pins it byte for byte — never a hand-edit.
-- **Every number is an integer**, in thousandths of the canvas, with coverage a
-  count of subsamples rather than a distance through a curve. That is what
-  makes a byte-for-byte pin honest (float formatting can differ by target),
-  it removes the `f32 as u8` a rasterizer otherwise ends in — a cast the lint
-  set denies with no home for a suppression but the manifest — and it means no
-  image or vector crate is linked for a picture the seat can compute.
+- **One walk, three emissions.** `mark` is the phone's shape list — `Trace` /
+  `Lune` / `Disc`, by layer and not by arm — and `icon` is that list over a
+  round ground in the void, the shape a launcher mask cuts, so desk and home
+  screen show one picture. `svg` writes the checked-in vector source from
+  `icon`, `rgba` rasterizes the same list for the toolkit's icon call, and the
+  window says the bare `mark` in egui's words (§4.44 item 2). `assets/lernie.svg`
+  is a **derivation** — `make icon` emits it and the suite pins it byte for
+  byte — never a hand-edit.
+- **The walk is `f32`, and nothing narrows.** The phone's geometry is
+  single-precision trigonometry, and porting it to integers would be a second
+  geometry wearing the first's name. The lint set denies the `as` cast with no
+  home for a suppression but the manifest, so the port avoids casts by
+  construction: pixel coordinates widen through `f32::from`, counts narrow
+  through `u8::try_from`, coverage is an integer count of subsamples, and the
+  hue drive is fixed-point integer arithmetic pinned to the phone's own bytes.
+  Floats become text in one place, the vector source, at a fixed precision —
+  so a last-bit difference between targets rounds away before it reaches the
+  pinned file. No image or vector crate is linked for a picture the seat can
+  compute.
 - **Wayland has no protocol for a client to set its own window icon.** The
   toolkit's call reaches X11 and nothing else; a compositor resolves a window's
   mark by matching its **application id** against an installed desktop entry
@@ -1784,12 +1798,11 @@ wire between them, which is what `crate::channel` is.
   resolves nowhere is the defect, not a fallback. It cannot be the tracked
   file's business: that file is one repository's source for every box, and a
   real path in it would be a disclosure as well as a lie everywhere else.
-- **And no PNG, so the tree still tracks no binary.** Upstream laid sized
-  rasters beside the scalable source and paid for them with the only entry its
-  disclosure gate's `BINARY_ALLOWED` ever held. hicolor's `scalable/` is read
-  by every desktop this seat installs on, so a sized raster is a derivation
-  nobody consumes — and an allowlist entry for a file nothing needs is a hole
-  in the gate bought for nothing.
+- **And no PNG, so the tree still tracks no binary.** The SVG is text the
+  disclosure gate reads, hicolor's `scalable/` is read by every desktop this
+  seat installs on, so a sized raster is a derivation nobody consumes — and an
+  allowlist entry for a file nothing needs is a hole in the gate bought for
+  nothing. `BINARY_ALLOWED` stays the empty set.
 
 **The native boot is `src/main.rs`, which decides nothing.** `ui::render` takes
 an `egui::Context` and the model, so every assertion in this crate runs the real

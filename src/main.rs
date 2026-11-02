@@ -221,4 +221,12 @@ impl eframe::App for Seat {
         // asker can bring something new.
         ctx.request_repaint_after(self.link.beat());
     }
+
+    /// **The swipe is the knob's as well as the notch** (DESIGN §4.46 item 1):
+    /// the one window in which input is read before the toolkit does, so the
+    /// setting reaches a touchpad's points as `line_scroll_speed` reaches a
+    /// wheel's lines.
+    fn raw_input_hook(&mut self, _ctx: &egui::Context, raw_input: &mut egui::RawInput) {
+        lernie::ui::theme::wheel(raw_input, &self.model.settings);
+    }
 }

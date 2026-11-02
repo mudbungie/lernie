@@ -10,7 +10,7 @@
 
 use egui::{Color32, FontFamily, FontId, Rounding, Stroke, TextStyle};
 
-use crate::settings::{Settings, Toggle};
+use crate::settings::{SWIPE, Settings, Toggle};
 
 use super::{
     BRAND, GROUND, HAIRLINE, INK, RADIUS, RAISED, SURFACE, State, accent, space, tint, type_scale,
@@ -67,6 +67,26 @@ pub fn install(ctx: &egui::Context, settings: &Settings) {
     spacing.menu_margin = egui::Margin::same(space::S);
     style.visuals = visuals();
     ctx.set_style(style);
+}
+
+/// **The knob governs the swipe as well as the notch** (DESIGN §4.46 item 1;
+/// bl-4519): the seat's `raw_input_hook` hands every frame's input here before
+/// the toolkit reads it, and each wheel event in points — a touchpad's — is
+/// multiplied by `wheel / SWIPE`. A notch stays the toolkit's own path
+/// (`line_scroll_speed`, installed above) and a page is the screen's height
+/// already; neither is touched, so nothing is scaled twice.
+pub fn wheel(raw: &mut egui::RawInput, settings: &Settings) {
+    let factor = settings.wheel / SWIPE;
+    for event in &mut raw.events {
+        if let egui::Event::MouseWheel {
+            unit: egui::MouseWheelUnit::Point,
+            delta,
+            ..
+        } = event
+        {
+            *delta *= factor;
+        }
+    }
 }
 
 /// **Four sizes and no fifth** (STYLE §4): a button's words are body size,

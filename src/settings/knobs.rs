@@ -11,8 +11,8 @@ pub const KNOBS: &[Knob] = &[
     Knob {
         key: "wheel",
         label: "wheel step",
-        help: "how far one notch of the wheel scrolls",
-        kind: points(20.0, 400.0, 10.0),
+        help: "how far one notch of the wheel scrolls, and a swipe of the touchpad with it",
+        kind: points(20.0, 1000.0, 10.0),
         get: |s| Knobbed::At(s.wheel),
         set: |s, v| {
             if let Knobbed::At(at) = v {

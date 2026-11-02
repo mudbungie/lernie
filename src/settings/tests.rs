@@ -1,6 +1,8 @@
 //! The table's invariants, and the two projections round-tripping.
 
-use super::{BAR_OPEN, BAR_SHUT, KNOBS, Kind, Knobbed, Settings, Toggle, from_json, knob, to_json};
+use super::{
+    BAR_OPEN, BAR_SHUT, KNOBS, Kind, Knobbed, Settings, Toggle, WHEEL, from_json, knob, to_json,
+};
 use serde_json::{Value, json};
 
 /// **Every knob has its own key, its own label and a sentence**, and every
@@ -152,4 +154,15 @@ fn the_switches_are_a_set_and_the_query_reads_it() {
     held.set(Toggle::Help, false);
     assert!(held.on(Toggle::Dock) && !held.on(Toggle::Help));
     assert!(held.on(Toggle::Bubbles) && held.on(Toggle::Fold));
+}
+
+/// **The wheel's default is three hundred points a notch** (DESIGN §4.46
+/// item 1; bl-4519), and a file that names no wheel still means it — so the
+/// default moved in this build reaches every seat that never touched the
+/// knob. That the pane admits it is the first test's, over every row.
+#[test]
+fn the_wheel_defaults_to_three_hundred_and_an_absent_knob_means_it() {
+    assert!((WHEEL - 300.0).abs() < f32::EPSILON);
+    assert!((Settings::default().wheel - WHEEL).abs() < f32::EPSILON);
+    assert!((from_json(&json!({ "linger": 1.0 })).wheel - WHEEL).abs() < f32::EPSILON);
 }

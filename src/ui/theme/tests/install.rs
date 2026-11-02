@@ -1,7 +1,7 @@
 //! **The install** (`theme::install`): the type scale, four sizes and no
 //! fifth, and what the toolkit holds of the settings (DESIGN §4.46).
 
-use super::super::{GROUND, ROW, install, type_scale};
+use super::super::{GROUND, ROW, install, type_scale, wheel};
 use crate::settings::{HELP_DELAY, Settings};
 
 /// **Installing the language sets the type scale**, four sizes and no fifth,
@@ -56,4 +56,58 @@ fn install_installs_the_wheel_the_delay_and_the_scale() {
     assert!(ctx.style().interaction.tooltip_grace_time.abs() < f32::EPSILON);
     install(&ctx, &Settings::default());
     assert!((ctx.style().interaction.tooltip_delay - HELP_DELAY).abs() < f32::EPSILON);
+}
+
+/// **The knob governs the swipe as well as the notch** (DESIGN §4.46 item 1;
+/// bl-4519): a wheel event in points comes out of the hook's half multiplied
+/// by `wheel / SWIPE`, a line-unit one is left to `line_scroll_speed`, and a
+/// page-unit one is the screen's already.
+#[test]
+fn the_wheel_scales_a_swipe_and_leaves_a_notch_and_a_page_alone() {
+    let settings = Settings {
+        wheel: 250.0,
+        ..Settings::default()
+    };
+    let event = |unit| egui::Event::MouseWheel {
+        unit,
+        delta: egui::vec2(2.0, -4.0),
+        modifiers: egui::Modifiers::NONE,
+    };
+    let mut raw = egui::RawInput {
+        events: vec![
+            event(egui::MouseWheelUnit::Point),
+            event(egui::MouseWheelUnit::Line),
+            event(egui::MouseWheelUnit::Page),
+            egui::Event::Zoom(1.5),
+        ],
+        ..egui::RawInput::default()
+    };
+    wheel(&mut raw, &settings);
+    let deltas: Vec<egui::Vec2> = raw
+        .events
+        .iter()
+        .filter_map(|e| match e {
+            egui::Event::MouseWheel { delta, .. } => Some(*delta),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        deltas,
+        vec![
+            egui::vec2(5.0, -10.0),
+            egui::vec2(2.0, -4.0),
+            egui::vec2(2.0, -4.0)
+        ]
+    );
+    assert_eq!(raw.events.len(), 4, "nothing else is touched");
+    // **At the default a swipe moves three times** — the ruling bl-4519 took.
+    let mut raw = egui::RawInput {
+        events: vec![event(egui::MouseWheelUnit::Point)],
+        ..egui::RawInput::default()
+    };
+    wheel(&mut raw, &Settings::default());
+    assert!(matches!(
+        raw.events[0],
+        egui::Event::MouseWheel { delta, .. } if delta == egui::vec2(6.0, -12.0)
+    ));
 }

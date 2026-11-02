@@ -106,14 +106,18 @@ fn a_slider_moves_on_the_arrows_and_writes_its_field() {
     // then the value, then the label, so a point left of the value's run by
     // more than the gap is on the trough — a press there moves the knob to
     // where the pointer landed and hands the slider the keyboard.
-    let value = crate::paint_probe::frame::locate_in(&window, "100 pt", |ctx| {
+    let shown = format!("{} pt", crate::settings::WHEEL);
+    let value = crate::paint_probe::frame::locate_in(&window, &shown, |ctx| {
         crate::ui::render(ctx, &mut model);
     })
     .expect("the wheel's number is on the glass");
     let trough = egui::pos2(value.x - 60.0, value.y);
     crate::paint_probe::frame::click(&window, trough, |ctx| crate::ui::render(ctx, &mut model));
     let pressed = model.settings.wheel;
-    assert!((pressed - 100.0).abs() > f32::EPSILON, "{pressed}");
+    assert!(
+        (pressed - crate::settings::WHEEL).abs() > f32::EPSILON,
+        "{pressed}"
+    );
     let right = egui::Event::Key {
         key: egui::Key::ArrowRight,
         physical_key: None,

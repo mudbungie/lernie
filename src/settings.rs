@@ -24,9 +24,14 @@ use serde_json::{Map, Value, json};
 
 /// **The defaults, each named once** — cited by the readers that used to
 /// hold them (`crate::ui::bar`) so the number has one home.
-/// Points scrolled per wheel notch: egui's own is 40 on native, under two
-/// rows a notch (§4.46 item 1).
-pub const WHEEL: f32 = 100.0;
+/// Points scrolled per wheel notch — and, over [`SWIPE`], the factor on a
+/// touchpad's swipe (§4.46 item 1). egui's own is 40 on native, under two
+/// rows a notch; 100 was too slow by the hand's own measure (bl-4519).
+pub const WHEEL: f32 = 300.0;
+/// **The wheel step at which a swipe moves its own distance**: a touchpad
+/// reports points, and the seat multiplies them by `wheel / SWIPE`, so the
+/// knob keeps meaning points per notch and one knob governs both hands.
+pub const SWIPE: f32 = 100.0;
 /// Seconds the pointer rests on a control before it tells (§4.46 item 2).
 pub const HELP_DELAY: f32 = 0.5;
 /// The window's scale: egui's zoom factor.

@@ -32,7 +32,7 @@ mod visuals;
 
 pub use bubble::{Bubble, bubble};
 pub use fonts::{FALLBACKS, fonts};
-pub use visuals::{install, visuals};
+pub use visuals::{install, visuals, wheel};
 
 /// **The ground ladder** — each rung brighter than the one before, asserted.
 /// The glass; every pane's body; a row and a control at rest.

@@ -6279,13 +6279,30 @@ beside its word and the acceptance suite drove the keys; the shape returns,
 the mechanism is this seat's. Four items, each one rule applied to one
 surface.
 
-1. **The wheel step is a setting, not the toolkit's constant.** egui scrolls
+1. **The wheel step is a setting, not the toolkit's constant — and it
+   governs the swipe as well as the notch.** egui scrolls
    40 points per wheel notch on native (its own *decided by consensus*
    number, `Options::line_scroll_speed`), which on a 24-point row is under
    two rows a notch. The seat installs the step from the settings
-   (`settings::Knob::wheel`, default **100 points** per notch, item 4) in
+   (`settings::Knob::wheel`, default **300 points** per notch, item 4 —
+   100 until bl-4519, when the operator ruled the chat scrolled *way too
+   slow/precise* and asked for about three times the distance) in
    the one call that installs the style (`theme::install`), so the number
    has one home and the pane changes it live.
+
+   **That option scales only a notch** (bl-4519). A wheel reports lines
+   and a touchpad reports points, and `line_scroll_speed` multiplies the
+   first and passes the second through — so on a laptop the knob had never
+   done anything, which is what *too precise* was. A notch and a swipe are
+   both the hand asking for distance, and one knob answers both: the
+   seat's `raw_input_hook` (`src/main.rs`, calling `theme::wheel`)
+   multiplies every point-unit wheel delta by `wheel / settings::SWIPE`
+   (100, the step at which a swipe moves its own distance) before the
+   toolkit reads it, so the knob keeps meaning *points per notch* and a
+   swipe moves three times at the default. A line-unit event is left to
+   the toolkit's path and a page-unit one is the screen's height already;
+   neither is scaled here, so nothing is scaled twice. The pane's row
+   admits up to 1000.
 
 2. **Every control tells** (`theme::paint`; `snapshot::told`). A control is
    painted by one of the theme's painters — a door (`link`, `tab`,

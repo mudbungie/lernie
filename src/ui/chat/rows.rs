@@ -77,9 +77,11 @@ pub const WOUND: &str = "it stopped";
 /// at ask cadence, the follow lane delivers a newer one at write cadence — and
 /// *the newest fold wins* is the only reconciliation either needs.
 ///
-/// **So a transcript with no `Streaming` entry has no turn in flight, and the
-/// fold is not painted at all.** The server's streaming entry rides the open
-/// response (REMOTE §5.5), so its absence is the committed read saying the
+/// **So a transcript with no `Streaming` entry has no response open, and the
+/// fold is not painted at all** — whether the TURN still runs is [`running`],
+/// a different question answered off the transcript's shape. The server's
+/// streaming entry rides the open response (REMOTE §5.5), so its absence is
+/// the committed read saying the
 /// response closed — the turn is a `model` entry now, and a fold appended
 /// after it painted the answer twice, `«live»` under the committed one, for as
 /// long as the lane's last fold stood in [`crate::ui::Model::live`]. The rule
@@ -104,12 +106,36 @@ pub fn rows(transcript: &Transcript, live: Option<&Stream>) -> Vec<Row> {
             })
             .collect(),
     );
-    let running = transcript
-        .entries
-        .iter()
-        .any(|entry| matches!(entry.kind, EntryKind::Streaming { .. }));
-    role::settle(&mut rows, running);
+    role::settle(&mut rows, running(transcript));
     rows
+}
+
+/// **Whether the last turn is still running**, read off the transcript's
+/// SHAPE and never off the open response alone (bl-2101). The `Streaming`
+/// entry rides the open response (REMOTE §5.5), and a response is open only
+/// while the model speaks: between a `tool_use` and the response that answers
+/// its result — the whole time a tool executes, which is most of a turn's
+/// wall time — there is none, and a seat that read *running* off that entry
+/// folded the working to its one line under every tool call. So the turn runs
+/// until the model's final prose stands or the conversation is wounded: its
+/// last entry is the open response, a model entry that called a tool (no
+/// result can precede its call, so the LAST entry calling one is a call
+/// unanswered), or a tool result the model has yet to answer. Anything else
+/// at the end — a model entry with no call in it, a wound, a compaction, a
+/// deposit — is a turn at rest. A stop inside a tool window is settled in
+/// band and deposits (REMOTE §3.1), so it ends in a deposit and reads settled
+/// by this same rule, which is why nothing here asks the conversation row's
+/// state; what is left open is a transcript that ends in a result no driver
+/// will ever answer and no wound names, and it stands running until the next
+/// entry says otherwise.
+fn running(transcript: &Transcript) -> bool {
+    match transcript.entries.last().map(|entry| &entry.kind) {
+        Some(EntryKind::Streaming { .. } | EntryKind::ToolResult { .. }) => true,
+        Some(EntryKind::Model { blocks, .. }) => {
+            blocks.iter().any(|b| matches!(b, Block::ToolUse { .. }))
+        }
+        _ => false,
+    }
 }
 
 /// The two words a settled call is said in, on both routes.

@@ -44,9 +44,9 @@ pub(super) fn born(weight: Speaker, kind: Kind) -> Bubble {
 }
 
 /// **The pass that reads each turn's shape.** A turn is an operator's row
-/// and everything to the next one; `running` says the transcript holds a
-/// `Streaming` entry, which rides the open response (REMOTE §5.5) and so
-/// stands in the LAST turn — the one that has not settled. Within a turn,
+/// and everything to the next one; `running` says the LAST turn has not
+/// settled — its final prose does not stand yet (`super::running`, read off
+/// the transcript's shape and never off the open response alone). Within a turn,
 /// prose a further step follows is intermediate; in the running turn every
 /// prose is, since what follows it is not known yet; and every row of the
 /// running turn is [`Row::live`], which is what a trail's fold reads for its

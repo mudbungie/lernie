@@ -6163,11 +6163,13 @@ changes.
    of the turn — never by size, which is bl-90d0's rule kept:
    - **A step in flight stands whole**: the call with its input head, its
      output as it arrives, a thinking or an intermediate prose as it
-     streams. The working is open while any step is in flight.
+     streams. The working is open while the turn runs (below, bl-2101).
    - **A finished step is compact**: a call whose result landed is its call
      line and ONE line of its output, elided with `…` at the width it has
-     — a preview, not the content; a finished thinking or intermediate
-     prose (one a further step followed) is one elided line. Each compact
+     — a preview, not the content; a finished thinking is one elided line,
+     and so is an intermediate prose **once its turn has settled** — while
+     the turn runs it stands whole, whatever steps follow it (below,
+     bl-2101, amending bl-0174's *one a further step followed*). Each compact
      step is a door that opens it whole in place, and the fold's head and
      whole (`chat::fold`) are what it opens to.
    - **A settled turn's working is one line** — the counts of what it
@@ -6201,6 +6203,42 @@ changes.
 
      The phone follows in yog-android bl-0db5, same words and the same
      four kinds, so the two seats read alike.
+
+     **When a turn runs, and what stands whole while it does** (bl-2101).
+     Operator ruling 2026-10-31, verbatim: *"The tool usage is currently
+     all-collapsed, which isn't what I want. I want it to end up getting
+     collapsed, but it should be expanded as it comes in, progressively
+     collapsing. You send a message, get an intermediate response, which
+     should be printed directly, then some tool calls, which are shown
+     entirely until they are done, at which point they collapse, and only
+     once we get back to the final response, everything should collapse."*
+     The stages above already said most of this; the defect was upstream of
+     them, in what *running* meant. **The defect**: *the turn runs* was read
+     off the `Streaming` entry, which rides the open response (REMOTE §5.5)
+     and so exists only while the model speaks — the whole time a tool
+     executes there was none, so every tool call ran under a settled turn:
+     the working folded to its one line and the prose before it painted on
+     the final bubble as if it were the answer. Tools dominate a turn's wall
+     time, so the operator saw *all collapsed*. **The rule now**: the turn
+     runs by the transcript's SHAPE (`chat::rows::running`, the one query
+     feeding `role::settle` on both routes) — its last entry is the open
+     response, a model entry that called a tool (no result can precede its
+     call, so the last entry calling one is a call unanswered), or a tool
+     result the model has yet to answer. A model entry with no call in it
+     (the final prose), a wound, a compaction or a deposit at the end is a
+     turn at rest. A stop inside a tool window is settled in band and
+     deposits (REMOTE §3.1), so it ends in a deposit and reads settled by the
+     same rule; the conversation row's state is not consulted. **The
+     ruling's amendment**: in the running turn an intermediate prose stands
+     whole until the turn settles — *printed directly* — whatever steps
+     follow it; a call compacts the moment its result lands, last row or
+     not (*once the tool call is done, it should collapse*); a thinking
+     compacts once it is done, as before (the ruling names calls and
+     responses, and the 10-14 ruling's *etc* covers the reasoning); and
+     once the final prose stands the whole working folds to its counted
+     line, as before. **What it leaves open**: a transcript that ends in a
+     tool result no driver will answer and no wound names reads as running,
+     its working open, until its next entry says otherwise.
    An explicit toggle is remembered as before, the toolkit's memory of a
    view state — of ONE step's, in the conversation it was clicked in: every
    id under the transcript is pushed under the conversation's (bl-b83d), so

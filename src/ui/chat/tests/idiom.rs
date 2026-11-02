@@ -220,8 +220,9 @@ fn a_response_line_and_a_hairline_part_what_follows() {
     assert!(opened.contains(RESPONSE), "open, the elbow: {opened}");
 }
 
-/// **A failed result wears the error accent on its mark**, and the trail's
-/// stems are painted rather than typed.
+/// **A failed result wears the error accent on its mark** — compact, since a
+/// call that returned is compact the moment it did even while the turn runs
+/// (bl-2101), its one line is the mark and the head in the accent.
 #[test]
 fn a_failed_step_wears_the_error_accent() {
     let mut model = with(vec![working(), result("no such file", true), running("")]);
@@ -230,7 +231,7 @@ fn a_failed_step_wears_the_error_accent() {
     assert!(
         seen_of(&output)
             .iter()
-            .any(|run| run.text == glyph::FAILED && run.ink == red),
+            .any(|run| run.text.starts_with(glyph::FAILED) && run.ink == red),
         "{:?}",
         texts(&output)
     );

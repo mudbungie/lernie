@@ -115,8 +115,9 @@ fn a_finished_output_is_one_line_elided_at_the_width() {
 
 /// **While the turn runs, the step in flight stands whole and the finished
 /// ones compact**: the prose streaming is on the glass whole, on its own
-/// fill inside the working's; the call that returned and the prose a step
-/// followed are one line each; and no elbow, since no answer stands yet.
+/// fill inside the working's; the call that returned is one line; the prose
+/// a step followed stands whole too, until the turn settles (bl-2101); and
+/// no elbow, since no answer stands yet.
 #[test]
 fn a_running_turn_paints_the_step_in_flight_whole_and_the_finished_ones_compact() {
     let mut model = with(vec![
@@ -131,7 +132,8 @@ fn a_running_turn_paints_the_step_in_flight_whole_and_the_finished_ones_compact(
     assert!(seen.contains(&head(true, [1, 1, 2, 0])), "{seen:?}");
     assert!(seen.iter().any(|t| t == "so far"), "{seen:?}");
     assert!(seen.contains(&call_line()), "{seen:?}");
-    assert!(seen.contains(&prose_line()), "{seen:?}");
+    assert!(seen.iter().any(|t| t == "first I will read"), "{seen:?}");
+    assert!(!seen.contains(&prose_line()), "{seen:?}");
     assert!(!seen.contains(&glyph::CALL.to_owned()), "{seen:?}");
     assert!(
         !seen.iter().any(|t| t == super::super::RESPONSE),

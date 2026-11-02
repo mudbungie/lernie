@@ -9,13 +9,16 @@
 //! by the pane into one block on the trail's bubble.
 //!
 //! **What a step shows is decided by its state, never by its size** (bl-90d0's
-//! rule kept). A step in flight — a call without its result, or the last row
-//! of the running turn, whatever it is — stands whole. A finished step is
-//! compact: a call is its call line and ONE line of its output elided with `…`
-//! at the width it has, a preview and not the content; a finished thinking or
-//! intermediate prose is one elided line. A settled turn's working is one
-//! line, the counts of what it hides by kind. Each compact step and the one line are
-//! doors that open what they hide in place.
+//! rule kept). A step in flight — a call without its result, the reasoning
+//! streaming at the end of the running turn, or **the model's own prose
+//! anywhere in the running turn** (bl-2101: *printed directly*, standing
+//! whole until the turn settles, whatever steps follow it) — stands whole. A
+//! finished step is compact: a call is its call line and ONE line of its
+//! output elided with `…` at the width it has, a preview and not the content;
+//! a finished thinking, or an intermediate prose once its turn settled, is
+//! one elided line. A settled turn's working is one line, the counts of what
+//! it hides by kind. Each compact step and the one line are doors that open
+//! what they hide in place.
 //!
 //! **A toggle is remembered and the stages decide only where nobody toggled**:
 //! the working's default is open while any of its rows is live, and each
@@ -76,10 +79,14 @@ fn is_call(row: &Row) -> bool {
     matches!(row.kind, Kind::Call | Kind::Answered | Kind::Result)
 }
 
-/// **Whether a step is still happening**: a call with no result yet, or the
-/// last row of the turn that runs — the output arriving, the prose streaming.
+/// **Whether a step stands whole**: a call with no result yet; and in the
+/// turn that runs, the model's own prose wherever it stands (§4.45 item 5,
+/// the 2026-10-31 ruling) and the reasoning while it is the last row — still
+/// streaming. A call that returned is compact the moment it did, last or
+/// not: *once the tool call is done, it should collapse*.
 fn in_flight(row: &Row, last: bool) -> bool {
-    row.kind == Kind::Call || (row.live && last)
+    row.kind == Kind::Call
+        || (row.live && (is_response(row) || (last && row.kind == Kind::Thinking)))
 }
 
 /// **The working as one block**: its line as a door, then — while open —

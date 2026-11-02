@@ -9,7 +9,7 @@
 
 use crate::paint_probe::frame::Window;
 use crate::paint_probe::strokes_of;
-use crate::reply::transcript::{Entry, EntryKind, Transcript};
+use crate::reply::transcript::{Block, Entry, EntryKind, Transcript, Usage};
 use crate::test_support::window::{click, numbered, seated, seen};
 use crate::ui::Model;
 use crate::ui::theme::{Bubble, bubble};
@@ -23,19 +23,32 @@ fn spilling(n: usize) -> Model {
     answering(numbered(n))
 }
 
-/// The seated window with one tool result saying `content`.
+/// The seated window with one tool result saying `content`, and the final
+/// prose after it — a turn ending in a result is still running (bl-2101),
+/// and these beats read the settled working.
 fn answering(content: String) -> Model {
     let mut model = seated();
     model.transcript = Transcript {
-        entries: vec![Entry {
-            name: "004-tool.json".to_owned(),
-            raw: content.clone(),
-            kind: EntryKind::ToolResult {
-                tool_use_id: "toolu_1".to_owned(),
-                content,
-                is_error: false,
+        entries: vec![
+            Entry {
+                name: "004-tool.json".to_owned(),
+                raw: content.clone(),
+                kind: EntryKind::ToolResult {
+                    tool_use_id: "toolu_1".to_owned(),
+                    content,
+                    is_error: false,
+                },
             },
-        }],
+            Entry {
+                name: "005-model-a.json".to_owned(),
+                raw: "{}".to_owned(),
+                kind: EntryKind::Model {
+                    model_id: "model-a".to_owned(),
+                    blocks: vec![Block::Text("the seam is real".to_owned())],
+                    usage: Usage::new(),
+                },
+            },
+        ],
     };
     model
 }

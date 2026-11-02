@@ -49,12 +49,16 @@ fn running() -> Entry {
     })
 }
 
-/// One settled frame of the whole window over `entries`.
+/// One settled frame of the whole window over `entries`, **with the fold
+/// knob off** (§4.46 item 4): a step that returned is compact the moment it
+/// did, running turn or not (bl-2101), and a weight is read off the whole
+/// step.
 fn glass(entries: Vec<Entry>) -> egui::FullOutput {
     let mut model = Model {
         transcript: Transcript { entries },
         ..seated()
     };
+    model.settings.set(crate::settings::Toggle::Fold, false);
     let window = Window::sized(1400.0, 900.0);
     window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
     window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model))

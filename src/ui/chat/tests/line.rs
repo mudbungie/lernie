@@ -67,7 +67,12 @@ fn the_line_counts_each_kind_and_leaves_out_the_ones_it_has_none_of() {
 /// opens it.
 #[test]
 fn the_working_s_line_lights_and_opens_across_its_width() {
-    let mut model = with(vec![said("op", "port it"), working()]);
+    let mut model = with(vec![
+        said("op", "port it"),
+        working(),
+        result("done", false),
+        prose("the seam is real"),
+    ]);
     let window = Window::sized(1400.0, 900.0);
     let words = seen_of(&window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model)))
         .into_iter()

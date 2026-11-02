@@ -5919,9 +5919,22 @@ as the keyboard's door and the whole seat's view.
    click shows this conversation*. The trashcan's help is its own and
    unchanged.
 
-2. **The tabs** (`src/ui/tabs.rs`; bl-03c1) are a strip at the top of the
-   column, above the transcript, one tab per **open** conversation of the
-   aimed workspace: the name, with the asking `?` in the attention accent
+2. **The head** (`src/ui/tabs.rs`) is the top of the column, above the
+   transcript: **the seat's mark at its right end, and the tabs wrapping to
+   the left of it.** The mark (bl-036a; `theme::paint::mark`, `ROW` square)
+   is the walk of `crate::mark` said in egui's words — a trace as its
+   centreline and width to egui's stroker, the lune as one convex polygon, a
+   disc as a circle, no second geometry — and it is **a door, not a
+   decoration**: the phone seat's mark is the door to its configuration
+   surface, §4.46 item 2 says every control is told, and so this one opens
+   the seat's settings pane (`/settings`, Ctrl+, — item 4 of §4.46), the
+   desktop's counterpart, with its help citing the chord (`keys::cited`).
+   It wears `theme::hover` under the pointer and the brand ring while it
+   holds the keyboard, like every door, and is one Tab stop; it stands
+   whether or not a tab does, so the head is always a row tall. Were the
+   operator to want it inert, that is one line. The strip is laid in the
+   room left of it, so its row ends at the mark. **The tabs** (bl-03c1) are
+   one tab per **open** conversation of the aimed workspace: the name, with the asking `?` in the attention accent
    before it while that conversation asks (`convs::mark`), the selected
    tab in body ink over a brand hairline and the rest in weak ink, and a
    close `×` in faint ink after each name. **Open is a navigation the

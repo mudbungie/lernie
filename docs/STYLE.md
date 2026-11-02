@@ -54,9 +54,11 @@ name as the dragged width holds — staying open 0.75 s after the pointer
 leaves, or always while pinned (the pin at its head, persisted); its edge
 drags either width, and both are remembered (DESIGN §4.45). `+ new` is
 at its head on the right; its foot is the **workspace**, the one place a
-workspace is chosen, a dropup opening upward. Over the transcript stands a
-**tab strip**, one tab per conversation opened in that workspace, the
-selected one over a brand hairline, a faint `×` closing each. The baseline is the
+workspace is chosen, a dropup opening upward. Over the transcript stands the
+column's **head**: the seat's mark at its right end, a door to the settings
+pane, and left of it the **tab strip**, one tab per conversation opened in
+that workspace, the selected one over a brand hairline, a faint `×` closing
+each. The baseline is the
 Hermes Agent terminal UI, aped part for part, with one order reversed
 (DESIGN §4.45, bl-4792): the transcript fills the window, the **prompt
 line** stands directly under it, and the one-line **status rule** stands at
@@ -206,6 +208,13 @@ the tint, the rule and the ring span every line of it. Its words carry more than
 in `INK_WEAK`, the asking count in the attention accent — and that order is
 the hierarchy. Never a `Button` and never a `selectable_label`: both draw a
 box.
+
+**The column's head** (`tabs::render`): one row, `ROW` tall, at the top of
+the column. The seat's mark (`theme::paint::mark`; bl-036a) at the right
+end, `ROW` square — the mark's own two hues on the bare ground, the hover
+wash under the pointer and the brand ring while it holds the keyboard, as any
+door — and the tab strip wrapping in the room left of it, each run whole.
+With no tab open the mark stands alone.
 
 **The bar's head** (`bar::head`): two links at `HEADING` with `S` of air
 inside each seat (`theme::paint::heading_link`; bl-bc9d) — the pin in

@@ -121,6 +121,14 @@ pub fn hover() -> Color32 {
     BRAND.gamma_multiply(TINT_ALPHA * 0.75)
 }
 
+/// **The mark's own hue as the toolkit's colour** (`crate::mark`): the walk
+/// is pure and speaks bytes, and this is the one place a byte triple becomes
+/// a `Color32` — the rule that confines a colour's spelling to this file
+/// (`rules/no-literal-colour.yml`) is what keeps the conversion here.
+pub fn hue(fill: crate::mark::Hue) -> Color32 {
+    Color32::from_rgb(fill[0], fill[1], fill[2])
+}
+
 /// **The colour a refusal or an unreadable answer is said in** — the
 /// annotation accent under the name every pane already spends.
 pub const NOTICE: Color32 = ANNOTATION;

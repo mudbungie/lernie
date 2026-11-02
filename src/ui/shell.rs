@@ -100,7 +100,8 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
         if enroll::render(ui, model) {
             return;
         }
-        // **The tabs stand over the transcript** (§4.44, item 2).
+        // **The head stands over the transcript** (§4.44, item 2): the mark
+        // at the column's top right, the tabs wrapping to its left.
         tabs::render(ui, model);
         // **The seat panel's waiting count is the queue's door** (§4.42,
         // item 11), as the rule's was.

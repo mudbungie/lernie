@@ -1,15 +1,22 @@
-//! **The tab strip** (DESIGN §4.44 item 2; bl-03c1): over the transcript, one
-//! tab per conversation open in the aimed workspace.
+//! **The column's head** (DESIGN §4.44 item 2): the seat's mark at the top
+//! right of the column, and the **tab strip** wrapping to its left — one tab
+//! per conversation open in the aimed workspace (bl-03c1).
+//!
+//! **The mark is a door, not a decoration** (bl-036a): it opens the seat's
+//! settings pane (`/settings`, Ctrl+, — `crate::ui::settings`), the desktop's
+//! counterpart of the phone seat's configuration surface, which its mark is
+//! the door to. It stands whether or not a tab does, so the head is always
+//! [`theme::ROW`] tall; the strip stands only while a tab stands.
 //!
 //! Each tab is the conversation's name — the asking `?` in the attention
 //! accent before it while it asks (`crate::ui::convs::mark`), the selected one
 //! in body ink over a brand hairline and the rest in weak ink — and a close
-//! `×` in faint ink after it. The strip stands only while a tab stands: a workspace
-//! with nothing open is the transcript's own empty column.
+//! `×` in faint ink after it.
 //!
 //! **Nothing here decides what is open.** The tabs are [`Model::tabs`], filled
-//! by [`Model::select`] and the switcher's choosing; a click on a tab IS that select, so it opens
-//! nothing it was not already, and the close is [`Model::close_tab`].
+//! by [`Model::select`] and the switcher's choosing; a click on a tab IS that
+//! select, so it opens nothing it was not already, and the close is
+//! [`Model::close_tab`].
 
 use crate::reply::convs::ConvRow;
 use crate::ui::{Model, theme};
@@ -17,6 +24,8 @@ use crate::ui::{Model, theme};
 /// What a tab does, and what its `×` does.
 pub const TAB_HELP: &str = "shows this conversation";
 pub const CLOSE_HELP: &str = "closes this tab; the conversation stays";
+/// What the mark does — the chord is cited beside it (`keys::cited`).
+pub const MARK_HELP: &str = "opens this seat's settings";
 
 /// What a tab is called: the row's name where the seat holds the row (the
 /// listing's, or a start's claim before the listing knows it), else its id.
@@ -28,8 +37,20 @@ fn row_of(model: &Model, root_id: &str) -> Option<ConvRow> {
         .find(|row| row.root_id == root_id)
 }
 
-/// **Paint the strip**, if any tab of the aimed workspace stands.
+/// **Paint the head**: the mark at the right, laid first so it keeps its
+/// corner, and the strip in the room left of it.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
+    ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
+        let help = crate::ui::keys::cited(MARK_HELP, &[crate::ui::keys::Act::Settings]);
+        if theme::paint::mark(ui, &help).clicked() {
+            crate::ui::slash::fire(model, crate::ui::settings::WORD, "");
+        }
+        ui.vertical(|ui| strip(ui, model));
+    });
+}
+
+/// **Paint the strip**, if any tab of the aimed workspace stands.
+fn strip(ui: &mut egui::Ui, model: &mut Model) {
     let strip = model.strip();
     if strip.is_empty() {
         return;

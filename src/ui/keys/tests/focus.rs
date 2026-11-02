@@ -39,9 +39,9 @@ fn ringed_by(model: &mut Model, frames: Vec<Vec<egui::Event>>) -> (Vec<egui::Rec
 
 /// **At rest the one thing ringed is the prompt line**, because the caret
 /// lives there (bl-b1a1), and a Tab takes the keyboard on from it — onto
-/// what is laid after the box, or round to the bar's first control where
-/// nothing is (the seated window lays no strip and no fold after it), which
-/// egui gives on the frame after — and the box does not take it back.
+/// what is laid after the box, which is the column's head and its mark
+/// (§4.44 item 2; bl-036a), and egui gives on the frame after — and the box
+/// does not take it back.
 #[test]
 fn the_box_is_ringed_at_rest_and_a_tab_moves_on_from_it() {
     let mut model = seated();
@@ -110,6 +110,10 @@ fn the_caret_comes_back_to_the_box() {
 /// painted before every other panel — its foot, its pin, its `+ new` and the
 /// one conversation's row — so a walk from nothing held crosses them first.
 const BAR: usize = 4;
+/// **The column's head is laid after the box** (§4.44 item 2; bl-036a), so
+/// the first Tab from the caret lands on its mark before the walk rounds to
+/// the bar.
+const HEAD: usize = 1;
 
 /// A window on one server holding two workspaces, which is the shape both beats
 /// below Tab their way down.
@@ -133,12 +137,12 @@ fn two_workspaces() -> Model {
 #[test]
 fn a_tab_reaches_a_workspace_s_row_and_space_on_it_aims() {
     let mut model = two_workspaces();
-    let (rings, _) = ringed(&mut model, &[egui::Key::Tab; BAR + 2]);
+    let (rings, _) = ringed(&mut model, &[egui::Key::Tab; HEAD + BAR + 2]);
     assert_eq!(rings.len(), 1, "{rings:?}");
     let window = Window::new();
     let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
     window.frame(Vec::new(), &mut body);
-    for _ in 0..BAR + 2 {
+    for _ in 0..HEAD + BAR + 2 {
         window.frame(vec![press(egui::Key::Tab)], &mut body);
     }
     window.frame(vec![press(egui::Key::Space)], &mut body);
@@ -167,7 +171,7 @@ fn a_tab_reaches_new_and_space_on_it_begins_a_conversation() {
     let window = Window::new();
     let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
     window.frame(Vec::new(), &mut body);
-    for _ in 0..BAR + 3 {
+    for _ in 0..HEAD + BAR + 3 {
         window.frame(vec![press(egui::Key::Tab)], &mut body);
     }
     window.frame(vec![press(egui::Key::Space)], &mut body);

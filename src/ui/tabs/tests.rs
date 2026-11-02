@@ -3,6 +3,9 @@
 //! asking one, a click that selects, a close that closes, and the `act:` tag.
 
 use crate::paint_probe::{self, frame::Window};
+
+/// The mark at the head's right end: a door to the settings.
+mod mark;
 use crate::test_support::window::{click, conv, painted, seated, seen};
 use crate::ui::{Model, theme};
 use egui_kittest::kittest::Queryable;

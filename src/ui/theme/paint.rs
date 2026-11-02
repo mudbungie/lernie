@@ -20,11 +20,14 @@ mod control;
 mod field;
 /// The slider, the settings pane's number knob (DESIGN §4.46 item 4).
 mod knob;
+/// The seat's mark, as a door.
+mod mark;
 /// The list row, one line or a block of them.
 mod row;
 
 pub use control::{button, seat, toggle};
 pub use knob::slider;
+pub use mark::{MARK, mark};
 pub use row::{Row, middle, row, row_width};
 
 /// **A control told** (DESIGN §4.46 item 2): `help` — one sentence that
@@ -204,6 +207,17 @@ fn door(
     }
     let galley = ui.fonts(|fonts| fonts.layout_job(job));
     let (rect, seat) = ui.allocate_exact_size(galley.size() + vec2(pad, pad) * 2.0, Sense::click());
+    dress(ui, &seat, rect, name);
+    ui.painter().galley(rect.min + vec2(pad, pad), galley, INK);
+    told(seat.on_hover_cursor(egui::CursorIcon::PointingHand), help)
+}
+
+/// **What every door wears under its words**: its name in the tree, the
+/// hover wash under the pointer, and the brand ring while it holds the
+/// keyboard — painted before the words so both lie under them. The mark
+/// ([`mark`]) is a door with a picture where the words would be, and this is
+/// what makes it the same door.
+fn dress(ui: &egui::Ui, seat: &Response, rect: Rect, name: &str) {
     seat.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Link, ui.is_enabled(), name));
     if seat.hovered() {
         ui.painter()
@@ -216,8 +230,6 @@ fn door(
         ui.painter()
             .rect_stroke(rect.expand(space::XS), RADIUS, Stroke::new(1.0, BRAND));
     }
-    ui.painter().galley(rect.min + vec2(pad, pad), galley, INK);
-    told(seat.on_hover_cursor(egui::CursorIcon::PointingHand), help)
 }
 
 pub use field::{field, prompt};

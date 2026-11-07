@@ -6201,7 +6201,9 @@ changes.
    - **A step in flight stands whole**: the call with its input head, its
      output as it arrives, a thinking or an intermediate prose as it
      streams. The working is open while the turn runs (below, bl-2101).
-   - **A finished step is compact**: a call whose result landed is its call
+   - **A finished step is compact** (*amended by §4.48 item 2, bl-80b5: a
+     call is now its call line alone, the exit badge at its right end, and
+     the output preview line is gone*): a call whose result landed is its call
      line and ONE line of its output, elided with `…` at the width it has
      — a preview, not the content; a finished thinking is one elided line,
      and so is an intermediate prose **once its turn has settled** — while
@@ -6738,6 +6740,33 @@ bar* is §4.42 item 11's rule, re-homed (item 4). *A Bot* is defined in item
      seat invents no op). The stripe stands only under a settled turn.
    The *bubbles* knob (§4.46 item 4) keeps its meaning: off, every fill and
    stroke above goes and the gutter glyphs alone say the role.
+
+   **As built** (bl-80b5), where the shape above met the wire and the code:
+   - **No time and no elapsed is painted.** Neither the transcript read's
+     entries (REMOTE: name, raw, kind and the kind's fields) nor the live
+     lane's tool window carries a timestamp or a duration, so the turn
+     strip is the `copy` door alone, at the right end under the final
+     prose, and no call line carries an elapsed time. The day the wire
+     carries either, it stands where this item puts it; until then a seat
+     that painted one would be inventing it (§3).
+   - **The exit badge is read off two routes, one fact each**: on the
+     committed read, the result's own first line — litany's envelope opens
+     every result it renders `Exit code: N` — which then leaves the output,
+     since the badge says it; on the live lane, the window's `exit_code`.
+     A result that opens any other way (a multi-tool aggregate, a refusal)
+     paints no badge. The badge's words are `exit N`, `SMALL`, in the
+     state's accent on that state's tint (`theme::tint`), the pill the
+     baseline draws; the tint is the state's, not a bubble's, so it stays
+     with the knob off.
+   - **The stems inside the working are gone**: the sub-bubbles are what
+     say *a step of this working*, so §4.42 item 4's painted stems under the
+     working's line are not painted; the `response` elbow after an open
+     working stands.
+   - **A finished step's line is the same door at both heights** — the row
+     idiom, filling its sub-bubble — opening it compact and shutting it
+     whole; a step in flight is its mark and name, not a door. The working
+     holds its steps `XXS` from its hairline and `XXS` apart; a step's
+     prose stands at the row's inset, a call's card `XS` inside the step.
 
 3. **Softer tones** (amending STYLE §3's *adopted verbatim*; `theme`). The
    palette's structure stands: the six-state accent ruling, the ground

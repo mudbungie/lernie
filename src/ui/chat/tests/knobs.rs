@@ -9,7 +9,6 @@ use crate::paint_probe::{fills_of, seen_of};
 use crate::settings::Toggle;
 use crate::test_support::window::{numbered, said};
 use crate::ui::Model;
-use crate::ui::theme::glyph;
 
 /// A settled turn with one call and one note under its working.
 fn settled() -> Model {
@@ -75,7 +74,7 @@ fn fold_off_leaves_the_working_and_its_steps_whole() {
         "the output whole: {shown:?}"
     );
     assert!(
-        !shown.contains(&format!("{} read(src/ui.rs)", glyph::DONE)),
-        "no compact step: {shown:?}"
+        shown.iter().any(|t| t.starts_with("show all 12 lines")),
+        "the step whole, its card's control on the glass: {shown:?}"
     );
 }

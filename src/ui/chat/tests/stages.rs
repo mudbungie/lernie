@@ -28,9 +28,10 @@ fn prose_line() -> String {
 }
 
 /// **Settled, the working is one line and no step's text is on the glass**;
-/// a click opens it to compact steps — the call's line with ONE line of its
-/// output beneath, the reasoning and the intermediate prose one line each —
-/// and a second click opens a step whole, where its name shuts it again.
+/// a click opens it to compact steps — each its sub-bubble one line tall: the
+/// call's line, the reasoning's and the intermediate prose's first line — and
+/// a second click opens a step whole, where the same line shuts it again
+/// (DESIGN §4.48 item 2).
 #[test]
 fn a_settled_working_opens_to_compact_steps_and_a_step_opens_whole() {
     let mut model = with(vec![
@@ -63,54 +64,78 @@ fn a_settled_working_opens_to_compact_steps_and_a_step_opens_whole() {
         glyph::NOTE
     );
     assert!(compact.contains(&thought), "{compact:?}");
-    assert!(compact.iter().any(|t| t == "line 001"), "{compact:?}");
     assert!(
-        !compact.iter().any(|t| t.contains("line 002")),
-        "{compact:?}"
+        !compact.iter().any(|t| t.contains("line 001")),
+        "one line tall: {compact:?}"
     );
-    assert!(!compact.contains(&glyph::CALL.to_owned()), "{compact:?}");
     click(&window, &call_line(), |ctx| {
         crate::ui::render(ctx, &mut model);
     });
     let whole = runs(&window, &mut model);
-    assert!(whole.contains(&glyph::CALL.to_owned()), "{whole:?}");
+    assert!(whole.contains(&call_line()), "{whole:?}");
     assert!(whole.iter().any(|t| t.contains("line 006")), "{whole:?}");
     assert!(
         !whole.iter().any(|t| t.contains("line 007")),
         "folded: {whole:?}"
     );
-    click(&window, "read(src/ui.rs)", |ctx| {
+    click(&window, &call_line(), |ctx| {
         crate::ui::render(ctx, &mut model);
     });
     let again = runs(&window, &mut model);
     assert!(again.contains(&call_line()), "{again:?}");
-    assert!(!again.iter().any(|t| t.contains("line 002")), "{again:?}");
+    assert!(!again.iter().any(|t| t.contains("line 001")), "{again:?}");
 }
 
-/// **A finished call's output is one line elided at the width**: a preview,
-/// not the content, cut with `…` on the glass.
+/// **A finished call is its line and its exit badge** (DESIGN §4.48 item 2):
+/// the code the result's own first line states, at the line's right end, in
+/// the attention accent for zero and the error accent otherwise — and off
+/// the output beneath, since the badge says it. A result that states no code
+/// paints no badge.
 #[test]
-fn a_finished_output_is_one_line_elided_at_the_width() {
-    let long = format!("{} end", "x".repeat(600));
-    let mut model = with(vec![
-        said("op", "port it"),
-        working(),
-        result(&long, false),
-        prose("the seam is real"),
-    ]);
-    let window = Window::sized(1400.0, 900.0);
-    window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
-    click(&window, &head(false, [1, 1, 0, 0]), |ctx| {
-        crate::ui::render(ctx, &mut model);
-    });
-    let compact = runs(&window, &mut model);
-    let cut = compact
-        .iter()
-        .find(|t| t.starts_with("xxx"))
-        .unwrap_or_else(|| panic!("{compact:?}"));
-    assert!(cut.ends_with(glyph::ELIDED), "{cut}");
-    assert!(cut.len() < long.len(), "{cut}");
-    assert!(!compact.contains(&long), "{compact:?}");
+fn a_finished_call_wears_the_exit_badge_its_result_states() {
+    let badge = |content: &str| {
+        let mut model = with(vec![
+            said("op", "port it"),
+            working(),
+            result(content, false),
+            prose("the seam is real"),
+        ]);
+        let window = Window::sized(1400.0, 900.0);
+        window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
+        click(&window, &head(false, [1, 1, 0, 0]), |ctx| {
+            crate::ui::render(ctx, &mut model);
+        });
+        click(&window, &call_line(), |ctx| {
+            crate::ui::render(ctx, &mut model);
+        });
+        let output = window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
+        let seen = seen_of(&output);
+        let line = seen
+            .iter()
+            .find(|run| run.text == call_line())
+            .unwrap_or_else(|| panic!("the call's line is on the glass"))
+            .laid;
+        let badge = seen
+            .iter()
+            .find(|run| run.text.starts_with("exit "))
+            .map(|run| {
+                assert!(run.laid.min.x > line.max.x, "at the line's right end");
+                assert!((run.laid.center().y - line.center().y).abs() < 4.0, "on it");
+                (run.text.clone(), run.ink)
+            });
+        let texts: Vec<String> = seen.into_iter().map(|run| run.text).collect();
+        (badge, texts)
+    };
+    let (ok, texts) = badge("Exit code: 0\nhello");
+    let green = theme::accent(theme::State::Attention);
+    assert_eq!(ok, Some(("exit 0".to_owned(), green)), "{texts:?}");
+    assert!(texts.iter().any(|t| t == "hello"), "{texts:?}");
+    assert!(!texts.iter().any(|t| t.contains("Exit code")), "{texts:?}");
+    let (failed, _) = badge("Exit code: 2\nno");
+    let red = theme::accent(theme::State::Error);
+    assert_eq!(failed, Some(("exit 2".to_owned(), red)));
+    let (none, texts) = badge("aggregate: 2 ok");
+    assert_eq!(none, None, "{texts:?}");
 }
 
 /// **While the turn runs, the step in flight stands whole and the finished

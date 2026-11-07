@@ -117,7 +117,7 @@ fn the_gutter_says_who_spoke() {
 
 /// **A settled working stands as one line** (§4.45 item 5), counting what it
 /// holds; a click opens it to its compact steps — a call with the mark of
-/// how it ended and its output beneath — and the toggle is remembered on
+/// how it ended, one line tall — and the toggle is remembered on
 /// the next frame.
 #[test]
 fn a_settled_working_stands_as_one_line_and_the_line_opens_it() {
@@ -144,15 +144,16 @@ fn a_settled_working_stands_as_one_line_and_the_line_opens_it() {
     let opened = window.text(|ctx| crate::ui::render(ctx, &mut model));
     assert!(opened.contains(&head(true, [1, 1, 0, 0])), "{opened}");
     // One call, met with its result on one row, compact: the mark of how it
-    // ended leads the line and the output stands beneath; the reasoning is a
-    // step and not a call (bl-eb4e); the id never reaches the glass.
+    // ended leads the line, one line tall, its output off the glass (DESIGN
+    // §4.48 item 2); the reasoning is a step and not a call (bl-eb4e); the
+    // id never reaches the glass.
     for word in [
         &format!("{} read(src/ui.rs)", glyph::DONE),
-        "done",
         "weighing two seams",
     ] {
         assert!(opened.contains(word), "{word:?}: {opened}");
     }
+    assert!(!opened.contains("done"), "one line tall: {opened}");
     assert!(!opened.contains("tu-1"), "no id: {opened}");
 }
 

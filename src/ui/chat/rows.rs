@@ -175,6 +175,7 @@ fn entry_rows(entry: &Entry) -> Vec<Row> {
             // row at the foot of the opened step. Trimmed HERE, because the
             // projection decides what is said and the painter paints it.
             let content = content.trim_end_matches(['\n', '\r']);
+            let (exit, content) = stated(content);
             vec![Row::result(
                 tool_use_id,
                 content.to_owned(),
@@ -182,6 +183,7 @@ fn entry_rows(entry: &Entry) -> Vec<Row> {
                 // **The one row in this pane that hides anything**, and only
                 // when there is something to hide (`fold`).
                 fold::of(content),
+                exit,
             )]
         }
         EntryKind::Streaming { thinking, text } => live_rows(thinking, text),
@@ -224,6 +226,23 @@ fn entry_rows(entry: &Entry) -> Vec<Row> {
         )],
     }
 }
+
+/// **The exit code a result states, and the words after it** (DESIGN §4.48
+/// item 2): litany's envelope opens every result it renders with the line
+/// `Exit code: N` (its `tool::envelope::render`), so the code is read off
+/// the result's own words — and the line leaves the output, since the
+/// card's badge is where it is said. A result that opens any other way
+/// states no code, and its words stand whole.
+fn stated(content: &str) -> (Option<i32>, &str) {
+    let (first, rest) = content.split_once('\n').unwrap_or((content, ""));
+    match first.strip_prefix(EXIT).and_then(|code| code.parse().ok()) {
+        Some(code) => (Some(code), rest),
+        None => (None, content),
+    }
+}
+
+/// The words litany's envelope opens a result with.
+const EXIT: &str = "Exit code: ";
 
 /// One content block. Reasoning is a **row**, not a spinner: a badge that never
 /// grows cannot tell a model thinking hard from a driver that has hung.

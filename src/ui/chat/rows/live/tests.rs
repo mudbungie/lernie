@@ -34,13 +34,14 @@ fn the_window_paints_a_row_as_a_call_opens_and_another_when_it_lands() {
     fold.tools = vec![call(Some(0))];
     let landed = streaming(&fold);
     assert_eq!(landed.len(), 3, "{landed:?}");
-    assert_eq!(landed[2].said, "exit 0");
+    // The code rides the row as the badge's, never as words to paint.
+    assert_eq!((landed[2].said.as_str(), landed[2].exit), ("", Some(0)));
     assert!(landed[2].who.contains("returned"), "{:?}", landed[2]);
 
     fold.tools = vec![call(Some(2))];
     let failed = streaming(&fold);
     assert!(failed[2].who.contains("failed"), "{:?}", failed[2]);
-    assert_eq!(failed[2].said, "exit 2");
+    assert_eq!(failed[2].exit, Some(2));
 }
 
 /// **A call this fold never saw open is named by its id**, which is what the

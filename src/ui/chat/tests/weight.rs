@@ -154,12 +154,14 @@ fn each_speaker_s_block_wears_its_own_weight() {
 #[test]
 fn a_failed_tool_result_wears_the_error_accent_and_a_returned_one_does_not() {
     let red = theme::accent(theme::State::Error);
+    // The step's line is one run, its mark leading it (DESIGN §4.48 item 2).
+    let line = |mark: &str, word: &str| format!("{mark} {word}");
     let output = glass(vec![tool("no such file", true), running()]);
-    assert_eq!(worn(&output, "failed"), red);
-    assert_eq!(body(&output, crate::ui::theme::glyph::FAILED).ink, red);
+    let failed = line(crate::ui::theme::glyph::FAILED, "failed");
+    assert_eq!(body(&output, &failed).ink, red);
     let returned = glass(vec![tool("done", false), running()]);
-    assert_ne!(worn(&returned, "returned"), red);
-    assert_ne!(body(&returned, crate::ui::theme::glyph::DONE).ink, red);
+    let done = line(crate::ui::theme::glyph::DONE, "returned");
+    assert_ne!(body(&returned, &done).ink, red);
 }
 
 /// **A folded head is dimmed**, so *there is more of this* is read off the

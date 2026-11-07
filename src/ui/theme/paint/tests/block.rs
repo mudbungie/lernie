@@ -21,7 +21,7 @@ fn block(beneath: Option<&str>, tail: Option<&str>) -> egui::FullOutput {
                 state: None,
                 chosen: true,
                 indent: 0.0,
-                aside: Some("2m".to_owned()),
+                aside: Some(("2m".to_owned(), None)),
                 beneath: beneath
                     .map(|line| (line.to_owned(), INK_WEAK, egui::TextStyle::Small))
                     .into_iter()

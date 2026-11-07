@@ -235,14 +235,16 @@ fn every_act_glyph_has_a_glyph_in_the_body_font() {
     assert_eq!(super::worded(super::glyph::STOP, "stop"), "■ stop");
 }
 
-/// **The four bubbles are the palette read as roles** (DESIGN §4.45 item 7):
-/// the operator's the brand at half a tint — fainter than the hover and the
-/// selection, so a wash over it still reads — the model's three the ground
-/// ladder climbing toward what is read, and only the lowest ringed.
+/// **The bubbles are the palette read as roles** (DESIGN §4.48 item 2): the
+/// operator's the brand at half a tint inside a hairline — fainter than the
+/// hover and the selection, so a wash over it still reads — and the model's
+/// the ground ladder read inward: the working on the ground inside a
+/// hairline, a step on `SURFACE`, a step's card on the ground again, the
+/// final prose on the top rung.
 #[test]
 fn the_bubbles_are_the_palette_and_climb_toward_the_final_prose() {
-    let (operator, none) = bubble(Bubble::Operator);
-    assert_eq!(none, egui::Stroke::NONE);
+    let (operator, stroke) = bubble(Bubble::Operator);
+    assert_eq!(stroke.color, HAIRLINE);
     // The brand's own hue, at a fraction: each premultiplied byte is the
     // brand's byte at the bubble's alpha.
     let alpha = f32::from(operator.a()) / 255.0;
@@ -258,6 +260,8 @@ fn the_bubbles_are_the_palette_and_climb_toward_the_final_prose() {
     let (between, _) = bubble(Bubble::Intermediate);
     let (last, _) = bubble(Bubble::Final);
     assert_eq!((between, last), (SURFACE, RAISED));
+    assert_eq!(bubble(Bubble::Step), (SURFACE, egui::Stroke::NONE));
+    assert_eq!(bubble(Bubble::Card), (GROUND, egui::Stroke::NONE));
     assert!(luminance(trail) < luminance(between) && luminance(between) < luminance(last));
     assert!(contrast(INK, last) >= 7.0, "ink reads on the top rung");
 }

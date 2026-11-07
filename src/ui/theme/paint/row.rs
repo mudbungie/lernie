@@ -12,7 +12,9 @@
 
 use egui::{Color32, Pos2, Rect, Response, Sense, Stroke, vec2};
 
-use super::super::{BRAND, INK_FAINT, INK_WEAK, RADIUS, RAISED, ROW, RULE, space};
+use super::super::{
+    BRAND, INK_FAINT, INK_WEAK, RADIUS, RAISED, ROW, RULE, State, accent, space, tint,
+};
 
 /// **One list row**: full width, [`ROW`] tall, its words at the left plus
 /// `indent` plus `M`, elided at the width it has, in `ink`. Bare ground at
@@ -97,8 +99,10 @@ pub struct Row {
     pub state: Option<Color32>,
     pub chosen: bool,
     pub indent: f32,
-    /// At the head's right end, `SMALL` in weak ink — a conversation's age.
-    pub aside: Option<String>,
+    /// At the head's right end, `SMALL` — in weak ink (a conversation's
+    /// age), or in a state's accent on that state's tint where it says one
+    /// (a call's exit badge, DESIGN §4.48 item 2).
+    pub aside: Option<(String, Option<State>)>,
     /// The lines beneath the head, aligned with its words.
     pub beneath: Vec<(String, Color32, egui::TextStyle)>,
     /// **At the last line beneath's right end**, `SMALL` in weak ink — the
@@ -198,12 +202,17 @@ impl Row {
                 right = door.rect.min.x - space::S;
                 door
             });
-        if let Some(aside) = &self.aside {
+        if let Some((aside, state)) = &self.aside {
+            let ink = state.map_or(INK_WEAK, accent);
             let small = egui::TextStyle::Small;
-            let galley = elided(ui, aside, 0, (INK_WEAK, INK_WEAK), &small, f32::INFINITY);
-            right -= galley.size().x;
+            let galley = elided(ui, aside, 0, (ink, ink), &small, f32::INFINITY);
+            right -= galley.size().x + state.map_or(0.0, |_| space::XS);
             let at = Pos2::new(right, middle - galley.size().y / 2.0);
-            ui.painter().galley(at, galley, INK_WEAK);
+            if let Some(state) = state {
+                let pill = Rect::from_min_size(at, galley.size()).expand2(vec2(space::XS, 1.0));
+                ui.painter().rect_filled(pill, RADIUS, tint(*state));
+            }
+            ui.painter().galley(at, galley, ink);
             right -= space::S;
         }
         let lead = said.len().saturating_sub(self.words.len());

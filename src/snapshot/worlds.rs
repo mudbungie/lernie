@@ -21,6 +21,8 @@ mod bar;
 mod column;
 /// The covered states — one world per pane that stands over the conversation.
 mod covered;
+/// A turn's shapes: settled under its answer, and running.
+mod turns;
 
 use column::{asked_world, docked, noticed, tabbed};
 use covered::{
@@ -251,5 +253,7 @@ pub(crate) fn all() -> Vec<World> {
         filling(),
         bar::opened(),
         bar::footed(),
+        turns::answered(),
+        turns::answering(),
     ]
 }

@@ -44,6 +44,12 @@ pub struct Row {
     /// **Whether this row belongs to the turn that has not settled** — what a
     /// trail's fold reads for its default (§4.45 item 5).
     pub live: bool,
+    /// **The exit code a call's result states**, where it states one — read
+    /// off the result's own first line on the committed route (litany's
+    /// envelope opens every result `Exit code: N`) and off the lane's own
+    /// field on the live one, never inferred from the failure flag. The
+    /// card's badge (DESIGN §4.48 item 2); `None` paints no badge.
+    pub exit: Option<i32>,
 }
 
 impl Row {
@@ -64,6 +70,7 @@ impl Row {
             pending: false,
             bubble: role::born(weight, Kind::Said),
             live: false,
+            exit: None,
         }
     }
 
@@ -89,12 +96,14 @@ impl Row {
         }
     }
 
-    /// **A result**, by the one word for how it ended.
+    /// **A result**, by the one word for how it ended, and the exit code it
+    /// states where it states one.
     pub(in crate::ui::chat) fn result(
         id: &str,
         said: String,
         failed: bool,
         fold: Option<Fold>,
+        exit: Option<i32>,
     ) -> Self {
         Self {
             entry: String::new(),
@@ -109,6 +118,7 @@ impl Row {
             pending: false,
             bubble: Bubble::Trail,
             live: false,
+            exit,
         }
     }
 }

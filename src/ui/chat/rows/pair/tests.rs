@@ -23,8 +23,8 @@ fn a_result_meets_its_call_and_the_unmet_stand_as_they_are() {
     let rows = met(vec![
         Row::call("bash", "", "a"),
         Row::call("read", "", "b"),
-        Row::result("a", "done".to_owned(), true, None),
-        Row::result("z", "orphan".to_owned(), false, None),
+        Row::result("a", "done".to_owned(), true, None, None),
+        Row::result("z", "orphan".to_owned(), false, None, None),
     ]);
     assert_eq!(rows.len(), 3, "{rows:?}");
     assert_eq!(rows[0].kind, Kind::Answered);

@@ -97,7 +97,7 @@ fn a_block_row_is_one_seat_over_every_line() {
                 state: None,
                 chosen: false,
                 indent: 0.0,
-                aside: Some("2m".to_owned()),
+                aside: Some(("2m".to_owned(), None)),
                 beneath: vec![("beneath".to_owned(), INK_FAINT, egui::TextStyle::Small)],
                 tail: None,
                 door: None,

@@ -13,12 +13,18 @@
 //! streaming at the end of the running turn, or **the model's own prose
 //! anywhere in the running turn** (bl-2101: *printed directly*, standing
 //! whole until the turn settles, whatever steps follow it) — stands whole. A
-//! finished step is compact: a call is its call line and ONE line of its
-//! output elided with `…` at the width it has, a preview and not the content;
-//! a finished thinking, or an intermediate prose once its turn settled, is
-//! one elided line. A settled turn's working is one line, the counts of what
-//! it hides by kind. Each compact step and the one line are doors that open
-//! what they hide in place.
+//! finished step is compact — its sub-bubble one line tall (DESIGN §4.48
+//! item 2): a call is its call line with its exit badge; a finished
+//! thinking, or an intermediate prose once its turn settled, is its first
+//! line elided. A settled turn's working is its bubble one line tall, the
+//! counts of what it hides by kind. Each compact step and the one line are
+//! doors that open what they hide in place.
+//!
+//! **The working is one bubble and each step a sub-bubble inside it**: the
+//! pane lays the working on the ground inside a hairline with `XXS` of air,
+//! and this lays each step on `SURFACE` with none, so a step's line — a row
+//! — fills its sub-bubble exactly and the eye reads *this is one step of
+//! that working*.
 //!
 //! **A toggle is remembered and the stages decide only where nobody toggled**:
 //! the working's default is open while any of its rows is live, and each
@@ -31,13 +37,13 @@
 
 use super::{Kind, Row, trail};
 use crate::settings::{Settings, Toggle};
-use crate::ui::theme::{self, Speaker, glyph};
+use crate::ui::theme::{self, Bubble, Speaker, glyph, space};
+use trail::is_call;
 
 /// What the working's line does, each way, and what a step is. The line is
 /// the one way back to what a settled turn hid, so its sentence says so.
 pub const UNFOLD_HELP: &str = "opens what the turn did — every step it hid: the calls, their results, the thoughts and the prose between";
 pub const FOLD_HELP: &str = "folds the working back to its one line";
-pub const STEP_HELP: &str = "one step of the working; its result stands elided beneath";
 
 /// **The working's one line** (bl-db54): what it hides, counted by kind in a
 /// fixed order — `tool calls`, `thoughts`, `intermediate responses`, `notes`
@@ -75,10 +81,6 @@ fn is_response(row: &Row) -> bool {
     row.kind == Kind::Said && row.weight == Speaker::Model
 }
 
-fn is_call(row: &Row) -> bool {
-    matches!(row.kind, Kind::Call | Kind::Answered | Kind::Result)
-}
-
 /// **Whether a step stands whole**: a call with no result yet; and in the
 /// turn that runs, the model's own prose wherever it stands (§4.45 item 5,
 /// the 2026-10-31 ruling) and the reasoning while it is the last row — still
@@ -90,9 +92,9 @@ fn in_flight(row: &Row, last: bool) -> bool {
 }
 
 /// **The working as one block**: its line as a door, then — while open —
-/// each step on its stem, whole or compact by its stage. Answers whether it
-/// stands open, which is what decides whether the `response` elbow after it
-/// is painted at all.
+/// each step on its sub-bubble, whole or compact by its stage. Answers
+/// whether it stands open, which is what decides whether the `response`
+/// elbow after it is painted at all.
 ///
 /// **With the `fold` knob off nothing folds itself** (DESIGN §4.46 item 4):
 /// the working and each finished step stand whole until clicked shut.
@@ -126,30 +128,23 @@ pub(super) fn working(ui: &mut egui::Ui, at: usize, steps: &[Row], settings: &Se
     if !open {
         return false;
     }
-    let x = ui.cursor().min.x + theme::space::S;
+    let bubbles = settings.on(Toggle::Bubbles);
     for (i, row) in steps.iter().enumerate() {
-        let top = ui.cursor().min.y;
+        ui.add_space(space::XXS);
         let last = i + 1 == steps.len();
-        ui.horizontal_top(|ui| {
-            ui.add_space(theme::space::L);
+        theme::paint::nested(ui, bubbles.then_some(Bubble::Step), 0.0, |ui| {
             if in_flight(row, last) {
-                trail::step(ui, at + i, row, false, settings.on(Toggle::Bubbles));
+                trail::step(ui, at + i, row, false, bubbles);
             } else {
                 finished(ui, at + i, row, settings);
             }
         });
-        let bottom = ui.min_rect().max.y;
-        let middle = top + theme::space::S;
-        theme::paint::elbow(ui, x, top, middle, x + theme::space::S);
-        if !last {
-            theme::paint::rail(ui, x, middle, bottom);
-        }
     }
     true
 }
 
 /// **A finished step**: compact by default, whole once opened, and a door
-/// either way — the compact row opens it, the name on the whole step shuts it.
+/// either way — its line opens it compact and shuts it whole.
 fn finished(ui: &mut egui::Ui, at: usize, row: &Row, settings: &Settings) {
     let id = ui.make_persistent_id(("step", at));
     let open = ui
@@ -158,54 +153,9 @@ fn finished(ui: &mut egui::Ui, at: usize, row: &Row, settings: &Settings) {
     let toggled = if open {
         trail::step(ui, at, row, true, settings.on(Toggle::Bubbles))
     } else {
-        compact(ui, row).clicked()
+        trail::line(row, false).paint(ui).clicked()
     };
     if toggled {
         ui.data_mut(|d| d.insert_temp(id, !open));
     }
-}
-
-/// **A finished step, compact** — the row idiom, which is one seat that
-/// lights under the pointer and elides at the width it has. A call is its
-/// line, marked with how it ended, and one line of its output beneath; a
-/// thinking or an intermediate prose is its name and its first line in one.
-fn compact(ui: &mut egui::Ui, row: &Row) -> egui::Response {
-    let red = theme::accent(theme::State::Error);
-    let first = row.said.lines().next().unwrap_or_default();
-    let weak = theme::INK_WEAK;
-    let (mark, words, beneath) = if is_call(row) {
-        let mark = if row.failed {
-            (glyph::FAILED, red)
-        } else {
-            (glyph::DONE, weak)
-        };
-        let beneath = if first.is_empty() {
-            Vec::new()
-        } else {
-            vec![(first.to_owned(), weak, egui::TextStyle::Body)]
-        };
-        (mark, row.who.clone(), beneath)
-    } else {
-        let mark = if row.weight == Speaker::Model && row.kind == Kind::Said {
-            glyph::MODEL
-        } else {
-            glyph::NOTE
-        };
-        let words = format!("{} {} {first}", row.who, glyph::NOTE);
-        ((mark, weak), words, Vec::new())
-    };
-    theme::paint::Row {
-        mark: (mark.0.to_owned(), mark.1),
-        words,
-        ink: if row.failed { red } else { weak },
-        state: row.failed.then_some(red),
-        chosen: false,
-        indent: 0.0,
-        aside: None,
-        beneath,
-        tail: None,
-        door: None,
-        help: STEP_HELP.to_owned(),
-    }
-    .paint(ui)
 }

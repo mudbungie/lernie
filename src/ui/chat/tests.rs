@@ -21,6 +21,9 @@ mod live;
 mod machinery;
 /// A toggle's memory is one conversation's (§4.45 item 5; bl-b83d).
 mod memory;
+/// The bubbles nested: the working's, its steps', a call's card, and the
+/// turn strip's `copy` door (§4.48 item 2).
+mod nested;
 /// A procedure run as a marker on the glass (§4.47).
 mod procedures;
 /// Each committed entry kind, projected (bl-f6b5).

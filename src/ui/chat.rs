@@ -12,9 +12,10 @@
 //! stands. A `response` line parts an open working from the prose that
 //! follows it, and a hairline parts one turn from the next. No block wears a
 //! side rule, and **every block stands on a bubble that says its role**
-//! (§4.45 item 7; `theme::bubble`): the operator's on the brand's tint, the
-//! working on the ground inside a hairline, intermediate prose on the
-//! surface inside it, the turn's final prose raised — the gutter glyph
+//! (§4.48 item 2; `theme::bubble`): the operator's on the brand's tint
+//! inside a hairline, the working on the ground inside a hairline with each
+//! step a sub-bubble on the surface inside it, the turn's final prose raised
+//! with the turn strip's `copy` door under it — the gutter glyph
 //! inside it, so who spoke is still the glyph, and weight is still the
 //! speaker's (`theme::speaker`) on the words that name them. Which bubble a
 //! row gets is the projection's call ([`rows`]), never this painter's.
@@ -123,9 +124,10 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) -> bool {
                         ui.add_space(theme::space::S);
                         let mut open = false;
                         let settings = &model.settings;
-                        theme::paint::bubbled(
+                        theme::paint::nested(
                             ui,
                             settings.on(Toggle::Bubbles).then_some(Bubble::Trail),
+                            theme::space::XXS,
                             |ui| {
                                 open = working::working(
                                     ui,
@@ -150,6 +152,9 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) -> bool {
                     ui.add_space(theme::space::S);
                     let bubble = model.settings.on(Toggle::Bubbles).then_some(row.bubble);
                     theme::paint::bubbled(ui, bubble, |ui| said(ui, at, row));
+                    if row.bubble == Bubble::Final && row.weight == theme::Speaker::Model {
+                        strip(ui, &row.said);
+                    }
                     opened = None;
                     at += 1;
                 }
@@ -158,6 +163,30 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) -> bool {
     scroll::note(ui.ctx(), shown.state.offset.y);
     false
 }
+
+/// **The turn strip** (DESIGN §4.48 item 2): under a settled turn's final
+/// prose, at the right end, the `copy` door that puts its words on the
+/// clipboard — the one act of the baseline's strip the seat performs
+/// without the wire. The baseline's time is not painted: no entry on the
+/// wire carries one, and a seat that guessed it would be inventing a fact.
+fn strip(ui: &mut egui::Ui, prose: &str) {
+    ui.add_space(theme::space::XS);
+    let width = ui.available_width();
+    ui.allocate_ui_with_layout(
+        egui::vec2(width, 0.0),
+        egui::Layout::right_to_left(egui::Align::Min),
+        |ui| {
+            ui.add_space(theme::space::M);
+            if theme::paint::link(ui, COPY, theme::INK_WEAK, COPY_HELP).clicked() {
+                ui.ctx().copy_text(prose.to_owned());
+            }
+        },
+    );
+}
+
+/// The strip's door, and what it does.
+pub const COPY: &str = "copy";
+pub const COPY_HELP: &str = "puts this answer's words on the clipboard";
 
 /// **The hairline between turns.**
 fn parting(ui: &mut egui::Ui) {

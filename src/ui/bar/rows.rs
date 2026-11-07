@@ -113,7 +113,7 @@ fn one(
         } else {
             0.0
         },
-        aside: open.then_some(age),
+        aside: open.then_some((age, None)),
         beneath,
         tail: name,
         door: open.then_some((theme::glyph::TRASH, convs::TRASH_HELP)),

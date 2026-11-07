@@ -85,18 +85,30 @@ pub fn ruled(ui: &mut egui::Ui, ink: Color32, body: impl FnOnce(&mut egui::Ui)) 
 /// **A bubbled block** (DESIGN §4.45 item 7; `docs/STYLE.md` §5, *a block*):
 /// whatever `body` paints, on the fill its `role` wears at [`RADIUS`], `S` of
 /// air inside, spanning the column — so the gutter glyph stands INSIDE the
-/// fill and the four roles read as one ramp down the pane rather than as
-/// four widths of speech balloon. The stroke is the role's too, and only the
-/// trail has one. **With no role the block stands on the ground** with the
-/// same air — the `bubbles` knob off (DESIGN §4.46 item 4) — so the layout
-/// is the same whichever way it is set.
+/// fill and the roles read as one ramp down the pane rather than as widths
+/// of speech balloon. The stroke is the role's too. **With no role the block
+/// stands on the ground** with the same air — the `bubbles` knob off
+/// (DESIGN §4.46 item 4) — so the layout is the same whichever way it is set.
 pub fn bubbled(ui: &mut egui::Ui, role: Option<super::Bubble>, body: impl FnOnce(&mut egui::Ui)) {
+    nested(ui, role, space::S, body);
+}
+
+/// **A bubble with `air` inside it** (DESIGN §4.48 item 2): [`bubbled`]'s
+/// shape at another inset — the working holds its steps `XXS` from its edge,
+/// and a step whose line is a row holds none, so the row's own wash fills
+/// the step exactly.
+pub fn nested(
+    ui: &mut egui::Ui,
+    role: Option<super::Bubble>,
+    air: f32,
+    body: impl FnOnce(&mut egui::Ui),
+) {
     let (fill, stroke) = role.map_or((Color32::TRANSPARENT, Stroke::NONE), super::bubble);
     egui::Frame::none()
         .fill(fill)
         .stroke(stroke)
         .rounding(RADIUS)
-        .inner_margin(space::S)
+        .inner_margin(air)
         .show(ui, |ui| {
             ui.set_min_width(ui.available_width());
             body(ui);

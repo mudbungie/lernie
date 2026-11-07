@@ -82,7 +82,7 @@ fn call(window: &Window) -> Vec<Row> {
     // failed, and it meets its call on one row the same way (`super::pair`).
     let landed = window
         .exit_code
-        .map(|code| Row::result(&window.tool_use, format!("exit {code}"), code != 0, None));
+        .map(|code| Row::result(&window.tool_use, String::new(), code != 0, None, Some(code)));
     parked.into_iter().chain(opened).chain(landed).collect()
 }
 

@@ -35,6 +35,7 @@ pub(super) fn met(rows: Vec<Row>) -> Vec<Row> {
                 call.said = row.said;
                 call.fold = row.fold;
                 call.failed = row.failed;
+                call.exit = row.exit;
             }
             None => out.push(row),
         }

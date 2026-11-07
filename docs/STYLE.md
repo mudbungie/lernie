@@ -141,6 +141,11 @@ row replaces it.
 
 ## 3. Ground, elevation, ink, accents — adopted verbatim
 
+*Amended by DESIGN §4.48 item 3 (bl-7942): the structure below stands and
+the neutrals are re-pitched softer against the Hermes Desktop baseline — a
+cool near-black ground, closer rungs, a more visible hairline, lighter weak
+ink, every tint at a lower alpha; the states' hues and the brand are kept.*
+
 The palette is the phone's, byte for byte (`src/ui/theme.rs`): `GROUND`,
 `SURFACE`, `RAISED`, `HAIRLINE`; `INK`, `INK_WEAK`, `INK_FAINT`; the six
 accents under `State`, with `Rest` wearing `INK_WEAK` on purpose and the

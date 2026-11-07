@@ -5122,6 +5122,12 @@ lift; the three `parity.toml` lines are gone.
 
 ### 4.42 The Hermes shape: one column, a rule, a prompt, and everything else an overlay (bl-7859)
 
+*Superseded for the layout by §4.48 (bl-7942): the Hermes this section aped
+is the terminal UI, and the one the operator meant is Hermes Desktop; items 1
+to 4 and the closing paragraphs on colour and frames are read through §4.48,
+and items 5 to 11 and the keyboard stand as written where §4.48 does not say
+otherwise.*
+
 Operator ruling 2026-10-12, in the operator's own terms: the window is
 *borderline unusable*, iterating toward a functional one has not worked, so
 *skip some steps and ape another* — the Hermes Agent terminal UI (Nous
@@ -5737,6 +5743,11 @@ a control's glyph may not lean on a face the box may not have.
 
 ### 4.44 The bar, the tabs, and the workspace that is not a choice made in the chat (bl-f772)
 
+*Amended by §4.48 item 5 (bl-7942): the open bar gains verb rows, a filter
+field, a pinned group and age separators above the rows; item 3's rule is
+the status bar of §4.48 item 4, with the model and effort selectors moved
+into the box.*
+
 Operator ruling 2026-10-13, verbatim: *"I think it's time to add the
 left-side bar. This bar is the pretty traditional list-of-chats view.
 Sessions, showing their name and title. Expand when you mouse over them,
@@ -6295,7 +6306,10 @@ changes.
    shape the tree cannot tell from prose, which is why the audit was by
    hand and the dock's line went through the door.
 
-7. **Four bubbles, by role** (`theme::bubble`, `chat`; bl-d50e). Under each
+7. *Amended by §4.48 item 2 (bl-7942): the bubbles nest — the working is one
+   bubble and each step inside it a sub-bubble, the operator's gains a
+   hairline, and a tool call's output is the baseline's command card.*
+   **Four bubbles, by role** (`theme::bubble`, `chat`; bl-d50e). Under each
    block of the transcript stands a filled block at `RADIUS` — the gutter
    glyph kept inside it, STYLE §5's *read by its gutter* standing — and
    the fill says the role: **the operator's turn** on the brand's tint (the
@@ -6478,7 +6492,11 @@ surface.
    fired. A slider that holds the keyboard wears the brand ring, as a row
    and a door do, and its trough is raised on the overlay's surface.
 
-4. **The settings pane, and the knobs are one table** (`src/settings.rs`,
+4. *Amended by §4.48 item 7 (bl-7942): the flat table becomes the pages of
+   one settings overlay with a navigation tree, and the six panes that are
+   settings by another word become its pages; the knobs and the place file
+   stand.*
+   **The settings pane, and the knobs are one table** (`src/settings.rs`,
    `src/ui/settings.rs`; `/settings`, Ctrl+,). **Everything on it is a
    fact about this seat** — REMOTE §7's *per-seat UI state*, the class the
    tuning pane (§4.17) is deliberately not — so it crosses no boundary and
@@ -6587,6 +6605,370 @@ for an eval — is a state the wire does not yet say (yog bl-ed70, lernie
 bl-e8b5). The rules view — what enter will do — is yog bl-20d2. A guard's
 `INJECTED` reaches the attention row by the server's own marks (litany
 bl-ef78), with the landed sentence as its reason once bl-8155 lands.
+
+### 4.48 The Desktop shape: the baseline was the GUI, and the window re-baselines on it (bl-7942; found in bl-9583)
+
+Operator ruling 2026-11-06, verbatim, on seeing the Hermes **Desktop** app
+driven on this box: *"That's what I was going after. Okay, things to lift:
+general layout, ui elements. Much of it, we're already doing. I like their
+chat bubbles, but I like our collapse interface model. Essentially wanna just
+do each layer that will eventually collapse as one bubble, with sub-bubbles
+inside, until eventually the whole thing in between a turn collapses to a
+single-line bubble. Our content is good, and even the color palette is good,
+but I appreciate their softer tones. Composer is nice, and feels like pure
+extension. Sidebar is good. The bots are an entire feature group to
+introduce, and I do want to. Settings panes are good to lift, I don't think
+we have a terribly cohesive answer on that at the moment. Interface modes
+sound very interesting, and is a really good way to expose the conversation
+branch and filesystem/context content. Yes, do redo the baseline based on
+the desktop app."*
+
+**§4.42 aped the wrong Hermes.** Its ruling (2026-10-12, *ape another*)
+named the Hermes Agent *terminal* UI because that was the Hermes on this box;
+the Hermes the operator meant is **Hermes Desktop** — the same agent behind a
+native window: an Electron shell, a React renderer built on an
+assistant-transcript library, and a headless gateway it talks to over a
+socket (`apps/desktop/` in the agent's repository, its own `DESIGN.md` the
+visual contract: *flat, not boxed; one primitive per concern; tokens, not
+literals; intent before automation; immediate feedback*). bl-9583 updated
+the source install, built the app, ran it on the probe display against this
+box's own Hermes home, drove every surface and one live tool-using turn, and
+the ruling above was taken over those captures. The captures are not shipped
+— they picture this box's own files, and the leak gate tracks no binary —
+so **the baseline is re-driven, not remembered**: a lane touching a surface
+below runs the app (`hermes desktop --skip-build`, Wayland variables
+stripped so it lands on the probe display, the host gateway restarted first
+— one gateway per host) and compares, as §4.42's lanes compared against the
+terminal.
+
+**What stands, and what this section replaces.** The ruling keeps the
+content and the collapse model and lifts the shape, so the model-side and
+content rulings of §4.42–§4.47 stand as written: the slash verbs and the
+menu (§4.42 item 5), the one-overlay-at-a-time rule (item 6, amended in 7
+below), the switcher as the keyboard's door (item 7), the ask above the box
+(item 8), the dock (item 9), the selectors' dropups and the diagnostics'
+facts (item 11, re-homed in 4 below), the bar (§4.44, extended in 5), the
+sent-message-on-the-glass rule, the three-stage fold and the hover wash
+(§4.45 items 4–6), every control told and keyed (§4.46 items 2–3), the
+procedure marker (§4.47). **§4.42's shape — items 1 to 4 and its closing
+paragraphs on colour and frames — is superseded for the layout by this
+section**, and §4.45 item 7's four bubbles and §4.46 item 4's flat knob
+table are amended below; each carries a line at its head saying so. Nothing
+here adds a fact the model does not hold: every item is a surface the wire's
+reads already feed, laid in the baseline's shape, except item 6, whose wire
+half is not minted and says so.
+
+**Terms, pinned before they are used.** *Baseline* is Hermes Desktop as
+driven in bl-9583. *The column* is the transcript, its head and the box, as
+§4.42 item 1 has it. *The bar* is §4.44's left panel. *A rail* is a pane
+docked beside the column rather than floated over it (item 8). *The status
+bar* is §4.42 item 11's rule, re-homed (item 4). *A Bot* is defined in item
+6 and nowhere else; the baseline's *profile*, *session*, *routine* and
+*group chat* are mapped there and the words are not used elsewhere.
+
+1. **The layout, whole.** Left to right and top to bottom, the baseline is
+   a sidebar, a column, and rails; the column is a head, the transcript, the
+   composer; a status bar runs the window's full width under all of them.
+   Here: **the bar** (§4.44) stands at the left; **the column** keeps its
+   head (§4.44 item 2: tabs, the mark at the right end), its transcript and
+   its box; **the rails** stand at the right only in the advanced mode
+   (item 8); and **the status bar takes the window's bottom edge across its
+   whole width** — under the bar as well as the column, where §4.45 item 3
+   laid it under the column alone — because its right end is the seat's
+   (the version, the dial state) and its left is the conversation's, and a
+   line that is partly about the seat belongs to the window, not the column.
+   The baseline's titlebar is not lifted: the head's row is where its
+   controls live here (the mark opens the settings, item 7; the mode's
+   toggle stands beside it, item 8), and the window's own chrome is the
+   platform's. **The empty column** — nothing selected, or a workspace with
+   nothing open — paints the baseline's shape: the seat's mark large and
+   centred with one line under it naming the ways in (`/help for commands ·
+   Ctrl+X for a conversation · Ctrl+N to begin`), and nothing else; §4.42
+   item 4's **seat panel** moves off the empty column onto the status bar's
+   right end and the switcher's head, where bl-4cac's dial sentences and
+   the waiting count already stand, so the facts lose no home. The
+   **conversation panel** at the head of a selected transcript stands as
+   written — the baseline has no such card, and the facts it carries (the
+   spine, the spend, where it hangs) have no other home on the glass.
+
+2. **Bubbles nest, and the collapse model is the operator's own** (amending
+   §4.45 item 7; `theme::bubble`, `chat::trail`). The ruling's sentence is
+   the design: *each layer that will eventually collapse is one bubble, with
+   sub-bubbles inside, until the whole thing between a turn collapses to a
+   single-line bubble.* The three stages of §4.45 item 5 stand — whole in
+   flight, compact when done, one counted line once the turn settles — and
+   this item says what each stage is a bubble of:
+   - **The operator's turn** is the baseline's prompt bubble: the words on
+     the brand's tint inside a hairline at `RADIUS`, the gutter glyph kept
+     (STYLE §5). It was tint alone; the hairline is lifted because the
+     baseline draws the one bubble a person wrote with a stroke and the
+     eye finds it before it reads it.
+   - **The working** is ONE bubble — the trail's fill, the ground inside a
+     hairline — from the operator's turn to the final prose, and every row
+     inside it is a **sub-bubble**: a tool call, a thought, an intermediate
+     prose, a note, each on `SURFACE` at `RADIUS` inset `XXS` from the
+     working's edge, so the eye reads *this is one step of that working*.
+     A tool call's sub-bubble holds its call line and, under it, its output
+     on the ground again in the monospace family — the baseline's command
+     card: the command, an **exit badge** at its right end (the exit code
+     in the attention accent for zero and the error accent otherwise, read
+     off the result's own words and never inferred), the output lines
+     beneath; the elapsed time stands on the call line in weak ink where
+     the trail's rows carry one. The ramp of §4.45 item 7 therefore reads
+     *inward* rather than by role: ground with a hairline for the layer that
+     will collapse, `SURFACE` for a step inside it, ground again for a
+     step's content — and the intermediate prose keeps `SURFACE` because it
+     is a step of the working, which is what the ramp said already.
+   - **A finished step** is its sub-bubble one line tall — the call line
+     with its badge, or a thought's or prose's first line elided — a door
+     that opens it whole in place; **a settled working** is the working's
+     bubble one line tall, carrying bl-db54's counted line (`+ 16 tool
+     calls · 13 thoughts · 4 intermediate responses`), a door that opens it
+     to its compact sub-bubbles. So the layer and its sub-layers collapse
+     to the same shape they stand open in, one line tall: a reader who
+     watched it run and one who arrived after see the same bubbles at
+     different heights, which is §4.45's principle, *state immediately
+     represented*, read for the shape of the fold.
+   - **The final prose** stays on `RAISED` as written. Under it, the
+     baseline's **turn strip** is lifted in part: the turn's time in weak
+     ink at the right end, and a `copy` door beside it that puts the
+     prose's words on the clipboard — the one act of the baseline's strip
+     the seat can perform without the wire; its fork, retry and read-aloud
+     are not lifted, each being an act the wire does not carry (§3: the
+     seat invents no op). The stripe stands only under a settled turn.
+   The *bubbles* knob (§4.46 item 4) keeps its meaning: off, every fill and
+   stroke above goes and the gutter glyphs alone say the role.
+
+3. **Softer tones** (amending STYLE §3's *adopted verbatim*; `theme`). The
+   palette's structure stands: the six-state accent ruling, the ground
+   ladder, the ink scale, the four properties `theme::tests` holds (the
+   ladder climbs, ink reads at 7:1 / 4.5:1 on every rung, no accent louder
+   than two-thirds saturated, an unknown word unstyled). What changes is
+   the **pitch** of the neutrals, read off the baseline's default theme
+   (its own name for it is a neutral chrome with one blue accent — GitHub's
+   dark chrome under a Nous blue): the ground is a cool near-black with no
+   violet in it where this seat's leans purple; the three rungs above it
+   are closer together, so a surface lifts rather than jumps; the hairline
+   is one step more visible, since it now draws bubbles and not only
+   frames; weak ink is a step lighter, so the counted line and the ages
+   read without being searched for; and every tint — the operator's
+   bubble, the hover wash, the chosen row — is laid at a lower alpha than
+   `TINT_ALPHA` gives today, which is the ruling's *softer* in one number.
+   The numbers are the lane's to set against the baseline on the probe
+   display, by eye and then by the tests; **the brand stays this seat's
+   blue** (§4.42's closing ruling, kept — the baseline's blue is its brand,
+   this one keeps its own), and the ladder's order and the states' hues
+   are untouched. A theme is not lifted: the baseline offers twelve
+   palettes and a light mode; this seat offers one look and the scale knob
+   (§4.46's closing principle, *a knob on each is a window with no look*).
+
+4. **The composer is a box, and the conversation's selectors stand in it**
+   (amending §4.42 items 3 and 11, §4.44 item 3; `src/ui/composer.rs`,
+   `status/selectors.rs`). The baseline's composer is a bordered field that
+   grows a line per line, a `+` at its leading end, and at its trailing end
+   the model pill, the effort pill, the microphone and a round send
+   button; the status bar under it carries the backend and the version. The
+   ruling calls it *pure extension*, and it is: the prompt line of §4.42
+   item 3 gains a hairline frame at `RADIUS` with `S` of air inside, keeps
+   its glyph, its hint, its growth, Enter and Shift+Enter, the slash menu
+   over it and the ask above it — and **the model and effort selectors
+   leave the rule for the box's trailing end**, as pills: the same two
+   doors (`Selector::Model`, `Selector::Effort`), the same words, the same
+   `⏶ ↻ ✔` marks, the same dropups opening upward — now from the box's
+   edge, over the transcript's foot — the same reads and picks, `/model`
+   and Ctrl+O unchanged. They are the conversation's two knobs an operator
+   reaches for mid-sentence, and the baseline puts them where the sentence
+   is. **A send door** stands last in the box, a round seat with the
+   prompt's glyph, wearing the `message` tag and firing what Enter fires —
+   *the field is the control* stands, and the door is the pointer's spelling
+   of it, as the bar's trashcan is `/delete`'s. **The `+` is not lifted**:
+   it is the baseline's attachment menu (files, folders, images, a URL,
+   prompt snippets), and this wire carries no attachment on a message
+   (REMOTE §3); the day it does, the `+` is where that act stands, and until
+   then a door that opens a menu of acts the seat cannot perform is a
+   promise it cannot keep. The microphone is not lifted for the same reason.
+   **The rule is the status bar** (item 1), what stays on it being what is
+   not in the box: `— provider ⏶ | priority ⏶ | <diagnostics> — <name>` at
+   the left, in weak ink, with item 11's notice rule, width rule and doors
+   as written; and at its right end, the seat's facts — the version, the
+   waiting count as the queue's door, the dial sentence in the error accent
+   while the aimed server will not dial (bl-4cac's reading, moved here from
+   the seat panel). The baseline's right-click menu choosing the bar's
+   segments is not lifted: the width rule decides, and a segment the
+   operator could hide is a fact the seat could not count on being seen.
+
+5. **The bar grows the baseline's sidebar in four places** (amending §4.44
+   item 1; `src/ui/bar.rs`). Everything §4.44 says stands — the two dragged
+   widths, the linger, the pin, the rows as `convs::` paints them, the foot
+   as the workspace's one door, the trashcan, the derived help. Lifted,
+   above the rows:
+   - **Verb rows under the head**: the baseline lists its pages under *New
+     session* with the chord beside it. Here the rows are **derived, not
+     authored**: `+ new · Ctrl+N` first, then every noun of the completion
+     menu whose pane is the seat's or the workspace's rather than the
+     conversation's — `attention` with its count in the attention accent,
+     `board`, `fleet`, `records`, `prices` — read off `crate::verbs::table`
+     by a flag the table already carries (a noun's pane opens on a standing
+     read keyed to the aim or to nothing; a conversation's nouns — `trail`,
+     `find` — key on the selection), each row a door firing its `/word`. A
+     pane added to the table appears on the bar with no second edit; a word
+     is a word (§4.46 item 3), so no row gains a chord for being a row.
+   - **A search field** between the verbs and the rows, the baseline's
+     *Search sessions*: typing narrows the bar's listing by the rows' own
+     words (`display`, `name`, the preview) on the seat, the listing
+     already in hand — **it is not `/find`**, which asks the server to
+     search content and answers in its own pane; the field's hint says
+     *filter* and not *search* so the two are not confused, and Esc in it
+     clears it. The switcher narrows the same way already (§4.42 item 5's
+     menu idiom), so the matcher is one function.
+   - **A pinned group** above the rows, the baseline's *Pinned · shift-click
+     a chat to pin*. **This pin is not §4.25's pin**: that one is the
+     wire's `/pin` by workspace rank, an assertion about the world; this one
+     is a per-seat arrangement of one listing, §4.39's class of fact, kept
+     in the place file as a list of root ids under the aim (`pinned`), set
+     and unset by Shift+click on a row and by a `pin` row on the row's
+     context menu (§4.23). The group paints the same `convs::` rows for
+     those ids, first, under a `PINNED` heading in the brand at the small
+     size, and the one-line hint in weak ink where it is empty; an id the
+     listing no longer knows leaves the group with it (bl-6dfd's rule). The
+     word is kept because the baseline's operator reaches for it; the help
+     sentence on the row says *keeps this conversation at the top of this
+     bar* so the two pins are told apart where it matters.
+   - **Age separators** in the listing: the baseline parts its rows by
+     month with a small-size heading over a hairline. Here the rows keep
+     the listing's own order and gain a separator wherever the age steps
+     across a boundary — *today*, *this week*, *this month*, then the month
+     name — read off `convs::age`'s own input, so a separator is a line
+     between two rows and never a second ordering.
+   The collapsed bar shows none of the four: a glyph column has no room for
+   a verb, a field or a heading, and the open bar is one pointer away.
+
+6. **Bots** (new; the wire half is not minted). In the baseline a **Bot is a
+   profile with a face**: a profile being an isolated configuration — model,
+   memory, skills, credentials, chat history — a Bot is that profile given a
+   name, an avatar, **one permanent conversation** (the row click always
+   lands in it; a reset compacts it rather than forking it), a roster row
+   showing its latest message and whether it is active, routines (scheduled
+   prompts filed under the Bot that runs them) and the ability to message
+   other Bots and sit in group chats. The sidebar's second tab is the
+   roster. The ruling wants the feature group; this section defines the
+   surface and names the primitive it needs, and **the seat lands the tab
+   when REMOTE carries the primitive** — the seat holds no world (§2), so a
+   Bot cannot be a thing this window invents. **The reframe, so the server
+   mints no new noun**: on this wire a *profile* is a **workspace** — its
+   own roles, providers, credentials and conversations, *an entirely
+   different yog backend* (§4.44's ruling) — so a Bot is **a workspace that
+   carries a persona and names one forever conversation**: a display name,
+   an avatar (a mark derived from the name, as `crate::mark` derives the
+   seat's; never an uploaded image, which the leak gate could not read), and
+   the root id of the conversation its row opens. Routines are the
+   procedures epic's scheduled runs (§4.47's markers are where their results
+   land); Bot-to-Bot messaging and group chats are a second ask and are not
+   designed here. **The surface**, once the row exists: `BOTS` beside
+   `SESSIONS` at the bar's head; one row per such workspace across every
+   server the seat reaches — the mark, the name, the forever conversation's
+   last line in weak ink, its age, the asking `?` where it asks — whose
+   click aims that workspace and selects that conversation in one act
+   (`Model::aim_at` then `Model::select`, the switcher's two doors); the
+   rows painted by `convs::` where they are conversation facts and by one
+   new painter where they are the persona's. The workspace foot stands
+   under both tabs. **The ask goes to yog as its own ball** (yog bl-d906, filed from
+   bl-7942): a persona on the workspace row and a `forever` root id, read
+   with the roster, written by an op the config pane's editors can spend.
+
+7. **One settings overlay, a tree of pages** (amending §4.46 item 4 and
+   §4.42 item 6; `src/ui/settings.rs`, `src/ui/overlay.rs`). The baseline's
+   Settings is one floating card: a navigation tree at the left (sections
+   that fold, subsections under them, the active path revealed), a
+   breadcrumb at the head of the page, a search field (Ctrl+K) that finds a
+   setting by its label, and pages of **rows** — a label, its help sentence
+   under it in weak ink, the control at the right end; a form that writes
+   to a backend has an `Apply` under it, a boolean is a toggle, a choice is
+   a select. The ruling's *not a terribly cohesive answer* is accurate:
+   this seat has `/settings` as one flat table of knobs, and beside it six
+   panes that are each a page of what a person would call settings —
+   `/roles` (the tuning), `/login`, `/config`, `/clients`, `/enroll`,
+   `/doctor` — each its own overlay with its own frame. **They become pages
+   of one overlay**, the tree being:
+   - **Seat** — *look* (scale, bubbles, fold, the tones' one knob if a
+     lane adds one), *input* (wheel, help, help delay, the chords read
+     only), *bar* (linger, ease, the two widths, pin, dock, confirm), the
+     mode (item 8);
+   - **Workspace** — *roles* (`/roles`), *providers* (`/login`), *config*
+     (`/config`), *clients* (`/clients`);
+   - **Servers** — *enrollment* (`/enroll`), *doctor* (`/doctor`), each
+     server's dial state as the seat panel said it.
+   **Every word stands**: `/roles` opens the overlay on its page, as does
+   each of the others, so the menu, the reach bound and PARITY's one-door
+   rule are unchanged; `/settings` and Ctrl+, open it on *Seat › look*; the
+   mark (bl-036a) opens it where it was last. The page's rows are
+   `settings::KNOBS`' rows painted in the baseline's shape — label, help
+   beneath, control at the right — and the six panes' existing controls are
+   re-laid as rows of their page, each keeping its tag, its standing read
+   and its `Apply` where it writes to the wire (the tuning's `model`,
+   `effort`, `priority`; the config pane's editors), so a page that crosses
+   the boundary says so with the button and a page that does not applies on
+   the next frame, as §4.46 item 4 has it. The search field finds a row by
+   its label or help across every page and jumps to it; the breadcrumb is
+   `Settings › Workspace › roles`. **The enrollment keeps §4.15's
+   whole-window cover** while its material is on the glass, and is a page
+   only for its door. The overlay rule of §4.42 item 6 stands, read with
+   one more clause: the settings overlay is one overlay whatever page it
+   shows, so one stands at a time still.
+
+8. **Interface modes: which panes stand beside the column** (new;
+   `src/ui/shell.rs`, `settings::Knob::mode`). The baseline's layout editor
+   offers two *interface modes* — *Simple: for talking; sidebar and chat, no
+   terminal, file or diff panes* and *Advanced: for developers; terminal,
+   files, diffs, statusbar and layouts as you set them* — and says of them
+   *changes what is shown, not what Hermes can do*. That sentence is the
+   whole of what is lifted. **A mode is a seat setting** (`mode`, `simple`
+   by default, the place file holding it only when set off the default)
+   with a chord (Ctrl+Shift+\, the baseline's) and a door in the head beside
+   the mark; **the simple mode is this window as §4.44 and §4.45 lay it**;
+   **the advanced mode docks two rails at the right**, each a pane this
+   seat already has, re-homed from a floating overlay to a docked column
+   while the mode is on:
+   - **the branch rail** — the conversation's spine and trail (§4.29,
+     §4.35, `/trail`): where this conversation hangs, its children, the
+     fan and the cut, standing beside the transcript so a branch is seen
+     while the prose is read, which is the ruling's *expose the
+     conversation branch*;
+   - **the context rail** — the workspace's files as the wire already lists
+     them: the config pane's files (§4.30, the policy a workspace is written
+     in) and the records' drill-ins (§4.32) — the ruling's *filesystem /
+     context content*, to the extent the wire carries it; a file tree of
+     the workspace's working directory is a read REMOTE does not offer, and
+     the rail paints what is answered rather than inventing a listing.
+   A pane re-homed is one pane with two homes decided by one query
+   (`mode`): in simple it floats as §4.42 item 6 lays it and in advanced it
+   is laid as a `SidePanel::right` with a dragged edge under §4.45 item 2's
+   clamping, its `Esc` meaning *collapse the rail* rather than *close the
+   pane*. The baseline's drag-panes-between-zones editor, its templates and
+   its terminal are not lifted: two modes answer the ruling, a terminal is
+   an executor and §3 forbids it, and a layout grid is the §4.39 drag
+   machinery §4.42 deleted. The snapshot matrix proves the column still
+   fits beside both rails at its three widths, which is the density
+   constraint (§4.32) read one more time.
+
+**The order it lands in**, each its own ball under bl-7942 and judged on
+the probe display beside the baseline: the tones (3) first, since every
+later capture is compared under them; then the bubbles (2); then the box and
+the status bar (4); then the bar (5); then the settings tree (7); then the
+modes (8); and the bots (6) when yog answers the ask.
+
+**What this does not solve, and the principle that answers it.** The
+baseline is a product with a hundred surfaces this seat does not have —
+voice, a browser pane, artifacts, messaging platforms, cron, a memory graph,
+a terminal, projects and worktrees, a quick-entry window — and the ruling
+names six things, not a hundred: the seat lifts a shape, not a feature list,
+and a feature the wire does not carry is an ask on the wire (§1), never a
+door that opens on nothing. A bubble inside a bubble inside a bubble is
+three hairlines deep at most — operator, working, step — and the step's
+output is the floor; a fourth layer would be a layer no stage collapses. The
+softer numbers are set by eye against the real thing and then held by the
+tests; a palette argued from a screenshot's pixels would be a copy of a
+rendering, not a reading of a design.
 
 ## 5. Module map
 

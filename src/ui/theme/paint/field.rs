@@ -9,7 +9,7 @@
 
 use egui::{Color32, Key, KeyboardShortcut, Modifiers, Response, Stroke};
 
-use super::super::{BRAND, RADIUS, SURFACE, space};
+use super::super::{BRAND, HAIRLINE, RADIUS, SURFACE, space};
 
 /// **A field that takes text**: `SURFACE` with no stroke at rest, the brand
 /// ring while it holds the caret, and `glow`'s tint under it where the pane
@@ -37,38 +37,15 @@ pub fn field(
     super::told(seat, help)
 }
 
-/// **The composer**: `rows` lines tall — [`COMPOSER_ROWS`](super::super::COMPOSER_ROWS)
-/// until the operator
-/// drags the panel's top edge (DESIGN §4.39) — the act inside it at the
-/// bottom right in the brand on a brand wash, and the glow where the field
-/// alone used to carry it. Enter is the caller's to read — the field breaks a
-/// line on **Shift+Enter** and consumes nothing else — so the one key that
-/// fires is decided beside the act, not here.
-///
-/// **`send` is a parameter because the box has two modes and not two shapes**
-/// (DESIGN §4.39): the deposit words it `send` and the start words it
-/// `start`, and the word is the whole of what differs between them — which is
-/// what makes *one composer* an assertion a test can read off the glass as a
-/// height rather than a claim in prose.
-///
-/// **The height is HANDED to the field and never read back off it.** A bottom
-/// panel
-/// remembers the rect its content took and lays the next frame out in it;
-/// a bottom-aligned layout given the whole of that rect places its items at
-/// its foot and reports the rect whole, so the panel grew by one row every
-/// frame, forever, and the transcript's tail walked off the glass under it.
-/// Bounding the child to the rows it asked for makes the height a fact of
-/// the content, and a draft longer than the rows still grows it — from the
-/// words, which is the one direction growth may come from.
-///
-/// The two responses are the box and the send, in that order: the caller
-/// reads focus off the first and the click off the second.
 /// **The prompt line** (`docs/STYLE.md` §5): the glyph in the brand at the
 /// left edge, the draft beside it a line per line typed, the hint in weak ink
-/// while it is empty; `SURFACE` under it, the brand ring while it holds the
+/// while it is empty; `SURFACE` under it inside a hairline at `RADIUS` with
+/// `S` of air (DESIGN §4.48 item 4), the brand ring while it holds the
 /// caret, the tint handed in while the conversation asks. As tall as its
-/// lines and never taller. **The field is the control**: there is nothing
-/// inside it to click, and Enter is read beside it by the composer.
+/// lines and never taller. **The field is the control**: Enter is read
+/// beside it by the composer, and what stands at its trailing end — the
+/// pills and the send door — is `trailing`, laid after the field in the
+/// width it names, so the Tab order is the reading order.
 pub fn prompt(
     ui: &mut egui::Ui,
     id: egui::Id,
@@ -76,39 +53,66 @@ pub fn prompt(
     hint: &str,
     glow: Option<Color32>,
     help: &str,
+    (reserve, trailing): (f32, impl FnOnce(&mut egui::Ui)),
 ) -> Response {
     // **A slash line keeps the caret through Tab**: the menu over the box reads
     // Tab as *complete the word* (`crate::ui::slash`), and a Tab that walked
     // the focus away would complete it into nothing.
     let lock = text.starts_with(crate::ui::slash::LEAD);
     let seat = frame(ui, id, glow, space::S)
+        .stroke(Stroke::new(1.0, ring(ui, id).unwrap_or(HAIRLINE)))
         .show(ui, |ui| {
-            ui.horizontal_top(|ui| {
-                ui.label(egui::RichText::new(super::super::glyph::PROMPT).color(BRAND));
-                ui.add(
-                    egui::TextEdit::multiline(text)
-                        .id(id)
-                        .frame(false)
-                        .desired_rows(1)
-                        .desired_width(ui.available_width())
-                        .hint_text(hint)
-                        .lock_focus(lock)
-                        .return_key(KeyboardShortcut::new(Modifiers::SHIFT, Key::Enter)),
-                )
-            })
-            .inner
+            // **The trailing end shares the field's line while the field
+            // keeps a third of the box**, and stands on its own line under
+            // it, at the right end, where it would not: a box narrower than
+            // its controls still lays every one of them on the glass.
+            let room = ui.available_width();
+            let beside = room - reserve >= room / 3.0;
+            let mut trailing = Some(trailing);
+            let field = ui
+                .horizontal_top(|ui| {
+                    ui.label(egui::RichText::new(super::super::glyph::PROMPT).color(BRAND));
+                    let leave = if beside { reserve } else { 0.0 };
+                    let field = ui.add(
+                        egui::TextEdit::multiline(text)
+                            .id(id)
+                            .frame(false)
+                            .desired_rows(1)
+                            .margin(MARGIN)
+                            .desired_width(ui.available_width() - leave - MARGIN.sum().x)
+                            .hint_text(hint)
+                            .lock_focus(lock)
+                            .return_key(KeyboardShortcut::new(Modifiers::SHIFT, Key::Enter)),
+                    );
+                    if let Some(trailing) = trailing.take_if(|_| beside) {
+                        trailing(ui);
+                    }
+                    field
+                })
+                .inner;
+            if let Some(trailing) = trailing {
+                ui.horizontal_wrapped(|ui| {
+                    ui.add_space((ui.available_width() - reserve).max(0.0));
+                    trailing(ui);
+                });
+            }
+            field
         })
         .inner;
     super::told(seat, help)
 }
 
+/// The air egui lays around a text edit's words, named so the width the
+/// trailing end leaves can count it.
+const MARGIN: egui::Margin = egui::Margin::symmetric(space::XS, space::XXS);
+
+/// The brand, while the field `id` holds the caret.
+fn ring(ui: &egui::Ui, id: egui::Id) -> Option<Color32> {
+    ui.memory(|memory| memory.has_focus(id)).then_some(BRAND)
+}
+
 fn frame(ui: &egui::Ui, id: egui::Id, glow: Option<Color32>, down: f32) -> egui::Frame {
-    let focused = ui.memory(|memory| memory.has_focus(id));
-    let ring = if focused {
-        Stroke::new(1.0, BRAND)
-    } else {
-        Stroke::NONE
-    };
+    let ring = ring(ui, id).map_or(Stroke::NONE, |ink| Stroke::new(1.0, ink));
     egui::Frame::none()
         .fill(glow.unwrap_or(SURFACE))
         .stroke(ring)

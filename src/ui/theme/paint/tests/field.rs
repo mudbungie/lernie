@@ -45,7 +45,15 @@ fn the_prompt_wears_its_glyph_and_shift_enter_breaks_a_line() {
     let mut text = String::new();
     let mut body = |ctx: &egui::Context| {
         egui::CentralPanel::default().show(ctx, |ui| {
-            prompt(ui, id, &mut text, "say it", None, "takes words");
+            prompt(
+                ui,
+                id,
+                &mut text,
+                "say it",
+                None,
+                "takes words",
+                (0.0, |_: &mut egui::Ui| {}),
+            );
         });
     };
     let output = window.frame(Vec::new(), &mut body);

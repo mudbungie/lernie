@@ -24,11 +24,14 @@ mod knob;
 mod mark;
 /// The list row, one line or a block of them.
 mod row;
+/// The round send door at the box's trailing end.
+mod send;
 
 pub use control::{button, seat, toggle};
 pub use knob::slider;
-pub use mark::{MARK, mark};
+pub use mark::{MARK, emblem, mark};
 pub use row::{Row, middle, row, row_width};
+pub use send::{SEND, send};
 
 /// **A control told** (DESIGN §4.46 item 2): `help` — one sentence that
 /// defines what the control does — rides the seat as its tooltip, shown

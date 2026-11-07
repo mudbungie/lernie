@@ -32,10 +32,8 @@ use crate::ui::{Model, theme};
 
 /// The line that founds a workspace and begins its first conversation.
 pub mod found;
-/// The acts that spend no words and are not offered every day: the strip
-/// behind the more control.
-/// The acts the conversation offers on its turn, and the control that opens
-/// the strip.
+/// The box's trailing end: the model and effort pills and the send door.
+pub mod pills;
 /// The half that begins a conversation rather than continuing one.
 pub mod start;
 
@@ -61,13 +59,16 @@ pub const BOX_HELP: &str =
     "the message to send, or a slash word; Enter sends, Shift+Enter breaks a line";
 pub const UNAIMED_HELP: &str =
     "takes a slash word; nothing is aimed, so a message has nowhere to go";
+/// What the send door does in the deposit (DESIGN §4.46 item 2).
+pub const SEND_HELP: &str = "sends what the box holds to this conversation, as Enter does";
 
 /// **The hint at the width the field has**: `lead`, then each of `parts` while
 /// the line still holds one line (bl-4e55) — dropped from the right as the
 /// rule drops its segments, because a hint that wrapped would be a field two
 /// lines tall before anything was typed, and one cut mid-word says a way in
-/// halfway.
-pub fn hint(ui: &egui::Ui, lead: &str, parts: &[&str]) -> String {
+/// halfway. `reserve` is what the box's trailing end takes
+/// ([`pills::Trail::width`]).
+pub fn hint(ui: &egui::Ui, lead: &str, parts: &[&str], reserve: f32) -> String {
     let font = egui::TextStyle::Body.resolve(ui.style());
     let wide = |text: &str| {
         ui.fonts(|fonts| {
@@ -79,7 +80,8 @@ pub fn hint(ui: &egui::Ui, lead: &str, parts: &[&str]) -> String {
     };
     let room = ui.available_width()
         - 2.0 * (theme::space::S + ui.spacing().item_spacing.x)
-        - wide(theme::glyph::PROMPT);
+        - wide(theme::glyph::PROMPT)
+        - reserve;
     let mut said = lead.to_owned();
     for part in parts {
         let more = format!("{said}{}{part}", crate::ui::chat::panel::PART);
@@ -123,9 +125,10 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
             ui,
             egui::Id::new(crate::ui::keys::BOX_ID),
             &mut model.draft,
-            &hint(ui, NOWHERE, &UNAIMED),
+            &hint(ui, NOWHERE, &UNAIMED, 0.0),
             None,
             UNAIMED_HELP,
+            (0.0, |_: &mut egui::Ui| {}),
         );
         return;
     };
@@ -153,11 +156,21 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     let wanted = model.filling().is_some();
     // While it asks, the field is where the answer goes, so it is where the
     // asking is said (`docs/STYLE.md` §2; `crate::ui::ask::hint`).
+    // **The send door stands down on a slash line**: Enter there fires the
+    // menu's row, and the menu's rows are the pointer's doors for it.
+    let send = pills::Send {
+        live: !model.draft.trim().is_empty(),
+        help: SEND_HELP,
+        ops: &[crate::verbs::MESSAGE.word],
+    };
+    let trail = pills::Trail::new(ui, model, true, (!slashed).then_some(send));
+    let reserve = trail.width(ui);
     let said = if asking {
         crate::ui::ask::hint(model)
     } else {
-        hint(ui, HINT, &parts())
+        hint(ui, HINT, &parts(), reserve)
     };
+    let mut clicks = pills::Clicks::default();
     let entry = theme::paint::prompt(
         ui,
         egui::Id::new(crate::ui::keys::BOX_ID),
@@ -165,9 +178,12 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         &said,
         asking.then(|| theme::tint(theme::State::Attention)),
         BOX_HELP,
+        (reserve, |ui: &mut egui::Ui| trail.paint(ui, &mut clicks)),
     );
-    // **The field is the control** (§4.42): there is no `send`, Enter fires
-    // it, and the tag rides the field.
+    let pressed = pills::spend(ui, model, clicks);
+    // **The field is the control** (§4.42): Enter fires it and the tag rides
+    // the field; the send door is the pointer's spelling of the same Enter
+    // (§4.48 item 4), wearing the same tag and firing the same deposit.
     crate::ui::act::tag(&entry, &[crate::verbs::MESSAGE.word]);
     // **Enter sends and Shift+Enter breaks a line**, and the hint says so.
     // The field consumes only the shifted key (`theme::paint::composer`), so
@@ -191,7 +207,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     if slashed {
         return;
     }
-    if entered(ui, &entry) {
+    if entered(ui, &entry) || pressed {
         fire(model, crate::verbs::message, &aim.address, &agent);
     }
 }

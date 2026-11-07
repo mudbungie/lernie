@@ -33,10 +33,11 @@ fn the_state_slot_follows_the_selection_and_the_notice() {
     assert_eq!(noted.ink, theme::accent(theme::State::Annotation));
 }
 
-/// **The rule's runs, left to right**: the four selectors, then the state —
-/// and nothing seat-wide, however many conversations are asking or servers
-/// are reached. The workspace is the bar's foot (DESIGN §4.44), and with
-/// nothing aimed no selector stands.
+/// **The status bar's runs, left to right**: the provider and the priority,
+/// then the state — the model and the effort are the box's pills (DESIGN
+/// §4.48 item 4) — and no seat-wide count among them: the waiting count is
+/// the right end's, once. The workspace is the bar's foot (DESIGN §4.44),
+/// and with nothing aimed no selector stands.
 #[test]
 fn the_runs_are_the_selectors_then_the_conversation() {
     let mut model = selecting();
@@ -48,21 +49,19 @@ fn the_runs_are_the_selectors_then_the_conversation() {
         });
     assert_eq!(
         texts(&model),
-        vec![
-            "housevendor",
-            "house-model-1",
-            "effort medium",
-            "priority off",
-            "quiescent · 42s",
-        ]
+        vec!["housevendor", "priority off", "quiescent · 42s"]
     );
-    assert_eq!(runs(&model).1, 2, "two never drop");
+    assert_eq!(runs(&model).1, 1, "the provider never drops");
+    let pills: Vec<String> = super::selectors::pills(&model)
+        .into_iter()
+        .map(|run| run.text)
+        .collect();
+    assert_eq!(pills, vec!["house-model-1", "effort medium"]);
     let none = texts(&Model::default());
     assert_eq!(none, vec![READY]);
     let glass = painted(&mut model);
-    for gone in ["2 waiting", "1 server"] {
-        assert!(!glass.contains(gone), "{gone:?} is the seat's:\n{glass}");
-    }
+    assert_eq!(glass.matches("2 waiting").count(), 1, "{glass}");
+    assert!(!glass.contains("1 server"), "{glass}");
 }
 
 /// **The right end**: the conversation, else the workspace, else the window.
@@ -191,9 +190,9 @@ fn the_plan_stands_on_the_rule_while_it_is_on() {
 }
 
 /// **The drop order at the matrix's three widths**: at the desk every run
-/// stands; narrower the diagnostics go first, then priority, then effort;
-/// at the phone the provider and model still stand — cut, never dropped —
-/// beside the name.
+/// stands; narrower the diagnostics go first, then priority; at the phone
+/// the provider still stands — cut, never dropped — beside the name. The
+/// box's pills are not the line's and stand at every width.
 #[test]
 fn the_drop_order_at_the_three_widths() {
     let mut model = selecting();
@@ -228,15 +227,16 @@ fn the_drop_order_at_the_three_widths() {
         );
     }
     let narrow = on(560.0, &model);
-    assert!(narrow.contains(&dropped("effort medium")), "{narrow:?}");
     assert!(!narrow.contains(&"context 50%".to_owned()), "{narrow:?}");
     let phone = on(400.0, &model);
+    for kept in ["house", "house-model", "effort"] {
+        assert!(
+            phone.iter().any(|run| run.starts_with(kept)),
+            "{kept:?}: {phone:?}"
+        );
+    }
     assert!(
-        phone.iter().any(|run| run.starts_with("house")),
-        "{phone:?}"
-    );
-    assert!(
-        !phone.iter().any(|run| run.starts_with("effort")),
+        !phone.iter().any(|run| run.starts_with("priority")),
         "{phone:?}"
     );
 }
@@ -244,25 +244,23 @@ fn the_drop_order_at_the_three_widths() {
 /// A notice longer than the rule.
 mod notice;
 
-/// **An aimed server that will not dial says so in the state slot**, in the
-/// error accent, its own sentence — and a notice still stands over it.
+/// **A server that will not dial says so at the right end** (DESIGN §4.48
+/// item 4), named and in its own sentence — the aimed one's where a
+/// workspace is aimed, else the first that says why — and never in the
+/// state slot, so the fact is said once.
 #[test]
-fn an_aimed_server_that_will_not_dial_says_so_in_the_slot() {
+fn a_server_that_will_not_dial_says_so_at_the_right_end() {
     let mut model = seated();
+    assert_eq!(super::seat::dial(&model), None);
     model.roster[0].held = crate::ui::Held::Unheld("nothing provisioned".to_owned());
-    let said = state(&model);
-    assert_eq!(
-        said.text,
-        format!("{}nothing provisioned", crate::ui::model::UNHELD)
+    let said = format!(
+        "(this box's own server) — {}nothing provisioned",
+        crate::ui::model::UNHELD
     );
-    assert_eq!(said.ink, theme::accent(theme::State::Error));
-    model.notice = Some(Notice::Said("landed".to_owned()));
-    assert_eq!(state(&model).text, "landed");
+    assert_eq!(super::seat::dial(&model), Some(said.clone()));
+    assert_ne!(state(&model).ink, theme::accent(theme::State::Error));
     model.aim = None;
-    model.notice = None;
-    assert_ne!(
-        state(&model).text,
-        "nothing provisioned",
-        "not aimed, not ours"
-    );
+    assert_eq!(super::seat::dial(&model), Some(said));
+    let glass = painted(&mut model);
+    assert!(glass.contains("nothing provisioned"), "{glass}");
 }

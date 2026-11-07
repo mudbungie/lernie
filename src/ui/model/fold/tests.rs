@@ -64,19 +64,17 @@ fn two_channels_dialling_one_address_fold_into_one_server() {
     assert_eq!(model.server_of("annex"), one.name());
 }
 
-/// **On the glass**: the seat card lists the server once, its names beside
-/// it, and the seat-wide count says two waiting, not four.
+/// **On the glass**: the switcher lists the server once, its names beside
+/// it, and the status bar's seat-wide count says two waiting, not four.
 #[test]
-fn the_seat_card_and_the_waiting_count_hold_one_server_once() {
+fn the_switcher_and_the_waiting_count_hold_one_server_once() {
     let mut model = doubled();
     let text = painted(&mut model);
-    assert!(
-        text.contains("1 workspace, 2 conversations, 2 waiting"),
-        "{text}"
-    );
-    assert_eq!(text.matches("1 workspace,").count(), 1, "{text}");
-    assert!(text.contains("2 waiting"), "{text}");
+    assert_eq!(text.matches("2 waiting").count(), 1, "{text}");
     assert!(!text.contains("4 waiting"), "{text}");
+    model.switching = true;
+    let text = painted(&mut model);
+    assert_eq!(text.matches(ALSO).count(), 1, "{text}");
 }
 
 /// **A reached name outranks a broken one**, and a fold none of whose names
@@ -156,9 +154,5 @@ fn the_open_queue_paints_each_asking_row_once() {
     model.begin_queue();
     let text = painted(&mut model);
     assert_eq!(text.matches("c-1").count(), 1, "{text}");
-    assert_eq!(
-        text.matches(ALSO).count(),
-        2,
-        "the card and one section: {text}"
-    );
+    assert_eq!(text.matches(ALSO).count(), 1, "one section: {text}");
 }

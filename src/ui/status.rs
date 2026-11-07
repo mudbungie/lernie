@@ -1,29 +1,29 @@
-//! **The status rule**: the conversation's own line, under the prompt at the
-//! window's bottom edge (DESIGN §4.42, item 11; §4.45 item 3 put it under
-//! the box; `docs/STYLE.md` §2).
+//! **The status bar**: the window's bottom edge across its whole width,
+//! under the bar as well as the column (DESIGN §4.48 items 1 and 4,
+//! re-homing §4.42 item 11's rule; `docs/STYLE.md` §2).
 //!
-//! Left to right: `— <provider> | <model> | <effort> | <priority> |
-//! <state> · <age> | <tokens> | <spend> | <context> — <name>`. The workspace
-//! is not on it: it is the bar's foot (DESIGN §4.44, `crate::ui::bar`).
-//! The first four are **selectors** ([`selectors`]): a click opens a dropup
-//! over the segment listing what this seat already holds and posts the read
-//! that refreshes it ([`dropup`]). The rest are the conversation's
+//! Left: `— <provider> | <priority> | <state> · <age> | <tokens> | <spend> |
+//! <context> — <name>`, the conversation's line. The workspace is the bar's
+//! foot (DESIGN §4.44), and the model and the effort are pills in the box
+//! (`crate::ui::composer::pills`). The two selectors open a dropup over
+//! their segment ([`dropup`]); the rest are the conversation's
 //! **diagnostics** in weak ink ([`diagnostics`]) — the state slot first,
-//! where the notice stands while there is one. The name at the right end is
-//! the switcher's door (bl-4e55). Nothing seat-wide stands here: the waiting
-//! and server counts are the seat panel's, the switcher's and `/attention`'s.
+//! where the notice stands while there is one. The name is the switcher's
+//! door (bl-4e55). Right: the seat's facts ([`seat`]) — the dial sentence,
+//! the waiting count as the queue's door, the version.
 //!
 //! **A notice too long for the line is never cut** (bl-7e3e; bl-3d0f ruled
 //! why: the half a cut sentence loses is the remedy) **and never costs a
-//! fact**: where it does not fit beside every run and the name, it stands
-//! whole on its own lines directly above the rule — under the box, since the
-//! rule is — wrapped, in its ink, until Esc; and the slot says what it says
-//! with no notice.
+//! fact**: where it does not fit beside every run, the name and the right
+//! end, it stands whole on its own lines directly above the line, wrapped,
+//! in its ink, until Esc; and the slot says what it says with no notice.
+//! The dial sentence keeps the same rule: inline at the right end where the
+//! provider stays whole beside it, else whole on its own lines above.
 //!
 //! **What runs out of width drops from the right** — the diagnostics, then
-//! priority, then effort — and the provider and model never drop:
-//! they elide inside an equal share of what is left, because a rule that lost
-//! them would say everything but what you are talking to.
+//! priority — and the provider never drops: it elides inside what is left,
+//! because a line that lost it would say everything but what you are
+//! talking to.
 
 use crate::ui::slash::Row;
 use crate::ui::{Model, Selector, theme};
@@ -32,12 +32,17 @@ use crate::ui::{Model, Selector, theme};
 pub mod diagnostics;
 /// A selector's list, floating over its segment.
 pub mod dropup;
+/// What fits the line: the widths, the cut and the drop.
+mod fit;
+/// The seat's facts at the right end.
+pub mod seat;
 /// The four selectors, and the workspace's run the bar's foot paints.
 pub mod selectors;
-/// The seat-wide waiting count, as the queue's door off the rule.
+/// The seat-wide waiting count, as the queue's door.
 pub mod waiting;
 
 pub use diagnostics::{READY, state};
+pub use fit::{elide, fits, fitting, width};
 pub use selectors::NO_MODEL;
 
 /// The glyph the rule opens with, and the one that parts the facts from the
@@ -113,76 +118,6 @@ pub fn runs(model: &Model) -> (Vec<Run>, usize) {
     (out, kept)
 }
 
-/// The width `text` takes at the rule's size.
-pub fn width(ui: &egui::Ui, text: &str) -> f32 {
-    let font = egui::TextStyle::Small.resolve(ui.style());
-    ui.fonts(|fonts| {
-        fonts
-            .layout_no_wrap(text.to_owned(), font, theme::INK)
-            .size()
-            .x
-    })
-}
-
-/// **`text` cut to `room`**, an ellipsis where it was cut.
-pub fn elide(ui: &egui::Ui, text: &str, room: f32) -> String {
-    let mut chars: Vec<char> = text.chars().collect();
-    let mut said = text.to_owned();
-    while width(ui, &said) > room && !chars.is_empty() {
-        chars.pop();
-        said = format!(
-            "{}{}",
-            chars.iter().collect::<String>(),
-            theme::glyph::ELIDED
-        );
-    }
-    said
-}
-
-/// One run's width with the mark inside it and the separator before it.
-fn cost(ui: &egui::Ui, run: &Run) -> f32 {
-    let gap = ui.spacing().item_spacing.x;
-    let mark = run
-        .mark
-        .map_or(0.0, |(glyph, _)| width(ui, &format!(" {glyph}")));
-    width(ui, SEP) + 2.0 * gap + width(ui, &run.text) + mark
-}
-
-/// **How the runs fit `room` beside a name `name` wide**: how many are shown
-/// (the `kept` never drop; the rest drop from the right), and the width each
-/// kept run's words are cut to where even they do not fit.
-pub fn fitting(ui: &egui::Ui, runs: &[Run], kept: usize, name: f32, room: f32) -> (usize, f32) {
-    let gap = ui.spacing().item_spacing.x;
-    let mut used = width(ui, LEAD) * 2.0 + name + 4.0 * gap;
-    let core: f32 = runs.iter().take(kept).map(|run| cost(ui, run)).sum();
-    if used + core > room {
-        // **Water-filled**: a short run keeps its words, and what is left is
-        // shared by the rest — one cut every longer run is held to.
-        let mut words: Vec<f32> = runs.iter().take(kept).map(|r| width(ui, &r.text)).collect();
-        words.sort_by(f32::total_cmp);
-        let mut left = room - used - (core - words.iter().sum::<f32>());
-        let mut n: f32 = words.iter().map(|_| 1.0).sum();
-        for said in words {
-            if said > left / n {
-                break;
-            }
-            left -= said;
-            n -= 1.0;
-        }
-        return (kept, (left / n).max(0.0));
-    }
-    used += core;
-    let mut shown = kept;
-    for run in runs.iter().skip(kept) {
-        used += cost(ui, run);
-        if used > room {
-            break;
-        }
-        shown += 1;
-    }
-    (shown, f32::INFINITY)
-}
-
 /// **What a door does**, one sentence (DESIGN §4.46 item 2): a menu row's
 /// is its own summary, a selector's is the selector's.
 fn help(door: Door) -> String {
@@ -217,27 +152,42 @@ pub(crate) fn paint(ui: &mut egui::Ui, run: &Run, words: &str) -> (bool, egui::R
     (seat.clicked(), seat.rect)
 }
 
-/// Paint the rule, and open what a click on one of its doors opens.
+/// Paint the status bar, and open what a click on one of its doors opens.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     let (mut runs, kept) = runs(model);
     let name = name(model);
     let room = ui.available_width();
     let named = elide(ui, &name.text, room / 4.0);
+    let gap = ui.spacing().item_spacing.x;
+    let reserve = width(ui, &named) + seat::width(ui, model) + gap;
+    let dial = seat::dial(model);
+    let beside = dial
+        .as_ref()
+        .map(|said| width(ui, said) + gap)
+        .filter(|w| fits(ui, &runs, kept, reserve + w, room));
+    let faint = |ui: &mut egui::Ui, text: &str| {
+        ui.label(egui::RichText::new(text).small().color(theme::INK_FAINT));
+    };
+    let wrapped = |ui: &mut egui::Ui, said: &str, ink| {
+        let words = egui::RichText::new(said).small().color(ink);
+        ui.add(egui::Label::new(words).wrap());
+    };
+    if let (Some(said), None) = (&dial, beside) {
+        wrapped(ui, said, theme::accent(theme::State::Error));
+    }
+    let reserve = reserve + beside.unwrap_or(0.0);
     let noticed = model.notice.as_ref().map(|_| state(model));
     if let Some(said) = noticed
-        && fitting(ui, &runs, kept, width(ui, &named), room).0 < runs.len()
+        && fitting(ui, &runs, kept, reserve, room).0 < runs.len()
     {
-        let words = egui::RichText::new(&said.text).small().color(said.ink);
-        ui.add(egui::Label::new(words).wrap());
+        wrapped(ui, &said.text, said.ink);
         if let Some(slot) = runs.iter_mut().find(|run| **run == said) {
             *slot = diagnostics::calm(model);
         }
     }
-    let (shown, cut) = fitting(ui, &runs, kept, width(ui, &named), room);
-    let faint = |ui: &mut egui::Ui, text: &str| {
-        ui.label(egui::RichText::new(text).small().color(theme::INK_FAINT));
-    };
+    let (shown, cut) = fitting(ui, &runs, kept, reserve, room);
     let mut fired = None;
+    let mut asked = false;
     ui.horizontal(|ui| {
         faint(ui, LEAD);
         for (at, run) in runs.iter().take(shown).enumerate() {
@@ -255,15 +205,19 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
             }
             fired = clicked.then_some(run.door).flatten().or(fired);
         }
+        faint(ui, LEAD);
+        fired = paint(ui, &name, &named)
+            .0
+            .then_some(name.door)
+            .flatten()
+            .or(fired);
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            fired = paint(ui, &name, &named)
-                .0
-                .then_some(name.door)
-                .flatten()
-                .or(fired);
-            faint(ui, LEAD);
+            asked = seat::render(ui, model, beside.and(dial.as_deref()));
         });
     });
+    if asked {
+        crate::ui::slash::fire(model, crate::ui::queue::WORD, "");
+    }
     match fired {
         Some(Door::Row(row)) => {
             crate::ui::slash::fire(model, row.word, "");

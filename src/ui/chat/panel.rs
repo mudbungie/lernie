@@ -1,22 +1,15 @@
-//! **The two panels at the head of the pane** (DESIGN §4.42, item 4): the
-//! conversation's facts over its transcript, and the seat's where nothing is
-//! selected — the baseline's session panel, with this seat's facts in it.
+//! **The panel at the head of a transcript** (DESIGN §4.42, item 4): the
+//! conversation's facts over its transcript.
 //!
 //! A framed card, one line a fact, in the ink scale: the conversation's name
 //! and the workspace and server it is on; the model that answered and what it has
 //! spent (§4.41's words); where it hangs where it hangs under anything
-//! (§4.29). The seat's card names each server this seat reaches with its dial
-//! state and what it holds, the seat's own version, and the ways in — the
-//! verbs, the conversation, the model and the provider, because those are
-//! what a window with nothing selected is for and none of them is on the
-//! glass until it is named (bl-4e55).
+//! (§4.29). The seat's card that stood where nothing is selected is gone
+//! (§4.48 item 1): its facts are the status bar's right end and the
+//! switcher's head, and the empty column is the mark and one line.
 
 use crate::ui::{Model, theme};
 
-/// The seat's line: its own name and version.
-pub fn version() -> String {
-    crate::cli::version()
-}
 /// **The ways in**, in the order they are dropped last to first where a
 /// line has no room for all of them (`crate::ui::composer::hint`): the verbs,
 /// what you talk in, what you talk to, and who pays for it.
@@ -28,16 +21,6 @@ pub const WAYS: [&str; 4] = [
 ];
 /// What parts one way from the next.
 pub const PART: &str = " · ";
-
-/// **The way to a workspace where there is none** (bl-673e): the switcher's row
-/// that founds one, named on the card because a fresh server holds nothing
-/// this seat is in and the card is the first thing it reads.
-pub const FOUNDING: &str = "Ctrl+X then + new workspace to found one";
-
-/// The ways in as one line, said once under the seat's card, where it wraps.
-pub fn ways_in() -> String {
-    format!("{}{PART}{FOUNDING}", WAYS.join(PART))
-}
 
 /// The card every panel is laid in.
 fn card(ui: &mut egui::Ui, body: impl FnOnce(&mut egui::Ui)) {
@@ -101,66 +84,6 @@ pub fn conversation(ui: &mut egui::Ui, model: &Model, id: &str) {
             line(ui, &path, theme::INK_WEAK);
         }
     });
-}
-
-/// **The seat's card**: each server with its dial state, the version, the
-/// queue's door while anything waits, and the ways in. Answers whether the
-/// door was clicked.
-pub fn seat(ui: &mut egui::Ui, model: &Model) -> bool {
-    let mut asked = false;
-    card(ui, |ui| {
-        line(ui, &version(), theme::INK);
-        // **One line a server, not a channel** (bl-13b9): two names for one
-        // address are one server, counted once (`crate::ui::model::fold`).
-        for server in model.folded() {
-            let header = server.header();
-            // **The dial state first** (bl-4cac): a channel that will not dial
-            // says the wire's own sentence, whole and in the error accent — as
-            // does a server that refused the roster (bl-693d) — and one not
-            // heard from yet says so. None has counts worth painting, because a
-            // count off workspaces nobody can reach reads as a healthy server.
-            let state = server.held();
-            if let Some(why) = state.said() {
-                line(
-                    ui,
-                    &format!("{header} — {why}"),
-                    theme::accent(theme::State::Error),
-                );
-                continue;
-            }
-            if state == crate::ui::Held::Unheard {
-                line(
-                    ui,
-                    &format!("{header} — {}", crate::ui::roster::NOT_ANSWERED),
-                    theme::INK_WEAK,
-                );
-                continue;
-            }
-            let held = server.workspaces();
-            let workspaces = held.len();
-            let conversations: u64 = held.iter().map(|workspace| workspace.agents).sum();
-            let asking: u64 = held.iter().map(|workspace| workspace.attention).sum();
-            let waiting = if asking > 0 {
-                format!(", {asking} waiting")
-            } else {
-                String::new()
-            };
-            let said = format!(
-                "{header} — {}, {}{waiting}",
-                crate::render::counted(workspaces as u64, "workspace"),
-                crate::render::counted(conversations, "conversation"),
-            );
-            let ink = if asking > 0 {
-                theme::accent(theme::State::Attention)
-            } else {
-                theme::INK_WEAK
-            };
-            line(ui, &said, ink);
-        }
-        asked = crate::ui::status::waiting::door(ui, model);
-        line(ui, &ways_in(), theme::INK_WEAK);
-    });
-    asked
 }
 
 #[cfg(test)]

@@ -61,9 +61,9 @@ that workspace, the selected one over a brand hairline, a faint `×` closing
 each. The baseline is the
 Hermes Agent terminal UI, aped part for part, with one order reversed
 (DESIGN §4.45, bl-4792): the transcript fills the window, the **prompt
-line** stands directly under it, and the one-line **status rule** stands at
-the bottom, under the prompt, so the words typed are beside the words they
-answer. Nothing else is on the glass until it is asked for, and it is asked
+line** stands directly under it, and the one-line **status bar** stands at
+the window's bottom edge across its whole width (DESIGN §4.48), so the words
+typed are beside the words they answer. Nothing else is on the glass until it is asked for, and it is asked
 for by a slash verb or a key — and comes as a framed box floating over the
 transcript, above the prompt. A width buys wrapping and nothing else; there is
 no shape and no yield; the one dragged edge is the bar's. **Every control tells** (DESIGN §4.46): rest the pointer on one for half a second and a sentence says what it does, and the chord that fires it where one is bound; the settings pane (`/settings`, Ctrl+,) tunes that delay with the rest of the seat's own knobs.
@@ -73,63 +73,33 @@ a dropup's check is green for the moment its list is fresh; the prompt line
 glows green while the selected conversation is asking; the switcher's asking
 rows wear `?` in green. A window with nothing waiting has nothing green on it.
 
-**The rule is the conversation's own line** (DESIGN §4.42, item 11; §4.44
-took the workspace off it). One line: `— provider ⏶ | model ⏶ | effort ⏶ |
-priority ⏶ | state · elapsed | tokens in · out | cost | context N% — name`.
-The four selectors
-come first, in body ink, each with `⏶` in faint ink inside its door, where a
-hand reaches to open it (the body font has no `▾`); a click opens a **dropup** — a small framed list over the
-segment, opening upward — showing what this seat holds at once and asking
-for it again, while the segment's mark is `↻` in the annotation accent
-(the palette has no yellow) and then `✔` in the attention accent once the
-answer has landed. After them, the conversation's diagnostics in weak ink,
-the state first in its state's ink — where the notice stands while there is
-one, and Esc puts it down; a notice longer than the line stands whole,
-wrapped, just above the rule. The name at the right end is the switcher's
-door. A selector or the name that holds the keyboard wears the brand ring,
-and Enter or Space opens it. Nothing seat-wide stands on the rule: how many conversations wait and
-how many servers answer are the seat panel's, the switcher's and
-`/attention`'s. What runs out of width drops from the right — diagnostics,
-then priority, then effort; provider and model never drop and are cut with
-`…` inside their share instead. What you talk to is changed where
-it is read.
-
-**The prompt is a line, not a form.** `›` in the brand (the body font has no `❯`), the draft after it,
-a line per line typed, the hint in weak ink while it is empty: *say it — Enter
-sends · /help for commands · Ctrl+X for a conversation · Ctrl+O for the model ·
-/login for a provider · Shift+Enter breaks a line*, its trailing parts dropped
-one by one where the line has no room — one line, never wrapped, never a part
-cut in half; *what this conversation is for — Enter begins it* and the same
-ways in, in start mode; *nothing is aimed · / for a verb · Ctrl+X for a
-conversation or a new workspace* with no workspace aimed; *anthropic holds no
-credential · /login or /config · pick another on the rule* — or *is on no row
-of this workspace* — on a workspace whose worker's provider holds no
-credential or is absent from the answered provider table (bl-7a77; bl-67aa),
-naming the provider the rule beneath shows because both read one query
-(bl-6ef6), where prose goes nowhere and the verbs that need no aim still fire; *it is asking — 1–6 answers, or say it — Enter sends* while it asks, the caret
-staying in the box (bl-1252). There is no send control and no row of controls under
-it: the field is the control, and the verbs are typed.
-
-**Navigation is typed.** `/` opens the completion menu — verb and summary,
-narrowed as you type, Tab takes the row — and the word is the pane's noun or
-the verb's word, exactly as the control it replaced read: `/records`,
-`/trail`, `/board`, `/fleet`, `/clients`, `/roles`, `/config`, `/prices`,
-`/login`, `/enroll`, `/doctor`, `/find`, `/attention`, `/help`, `/unmake`,
-`/refresh`, `/pin`, `/stop`, `/nudge`, `/flag`, `/delete`, and `/model`
-(Ctrl+O) for the role tuning by the word you reach for. Ctrl+X opens
-the switcher, the one list of servers, workspaces and conversations, with `+ new`
-under every workspace. A control that opens a pane does not exist; the word does.
+**The status bar is the conversation's line and the seat's** (DESIGN §4.42,
+item 11, re-homed by §4.48 item 4). One line across the window: `— provider ⏶
+| priority ⏶ | state · elapsed | tokens in · out | cost | context N% — name`
+at the left, and at the right end the dial sentence in red while the aimed
+server will not dial, `N waiting` in green while anything asks (the queue's
+door), and the version. The model and the effort are pills in the box. The
+two selectors come first, in body ink, each with `⏶` in faint ink inside its
+door; a click opens a **dropup** — a small framed list over the segment,
+opening upward — showing what this seat holds at once and asking for it
+again, while the segment's mark is `↻` in the annotation accent (the
+palette has no yellow) and then `✔` in the attention accent once the answer
+has landed. After them, the conversation's diagnostics in weak ink, the
+state first in its state's ink — where the notice stands while there is
+one, and Esc puts it down; a notice or a dial sentence longer than the line
+stands whole, wrapped, just above it. The name is the switcher's door. A
+selector or the name that holds the keyboard wears the brand ring, and Enter
+or Space opens it. What runs out of width drops from the right —
+diagnostics, then priority; the provider never drops and is cut with `…`
+instead. What you talk to is changed where it is read.
 
 **A conversation's facts are a card, then a rule.** At the head of its
 transcript, the conversation panel: a framed card with its name, server and
 workspace, model, spend and where it hangs, one line each, the long ones behind
-`▸` folds. With nothing selected the seat panel stands there: the servers this
-seat reaches, one row each with its dial state and counts — a server that
-will not dial says why in red in place of its counts, and while it is the
-aimed server the rule's state slot says the same in red — the queue's door
-`N waiting` in green while anything asks, the version, and
-the ways in: *the verbs, a conversation, the model, a provider*. Under the
-transcript, the prompt; under the prompt, the rule.
+`▸` folds. With nothing selected the column is empty but for the seat's
+mark, large and centred, and one line under it in `INK_WEAK` naming the ways
+in (`/help for commands · Ctrl+X for a conversation · Ctrl+N to begin`).
+Under the transcript, the prompt; under everything, the status bar.
 
 **A transcript is read by its gutter.** `❯` is the operator, `┊` the model,
 a tree of stems the working — `+ 2 tool calls · 1 thought` at rest, open
@@ -257,14 +227,15 @@ on the first line with *Enter deletes · Esc keeps* at the line's other end in
 the connector rails in `INK_FAINT` — the phone's L-shaped threading idiom —
 its first line in the row's tone and every line after it in `INK_WEAK`.
 
-**The status rule** (`status`): one line of `SMALL` runs parted by `|` in
-`INK_FAINT`, led by `—`; the five selectors in `INK` (a placeholder such as
-`model…` in `INK_WEAK`) each with its mark inside the same door — `⏶` in `INK_FAINT` at
+**The status bar** (`status`): one line of `SMALL` runs parted by `|` in
+`INK_FAINT`, led by `—`; the two selectors in `INK` (a placeholder such as
+`provider…` in `INK_WEAK`) each with its mark inside the same door — `⏶` in `INK_FAINT` at
 rest, `↻` in the annotation accent while its list reloads, `✔` in the
 attention accent once it has — then the state word in its state's ink and
-every other diagnostic in `INK_WEAK`, the name at the right end in `INK`.
-Diagnostics drop from the right first, then priority, then effort; the first
-three selectors are cut instead. **The selectors and the name are links**
+every other diagnostic in `INK_WEAK`, the name after them in `INK`; at the
+right end the version in `INK_WEAK`, the count in the attention accent and
+the dial sentence in the error accent. Diagnostics drop from the right
+first, then priority; the provider is cut instead. **The selectors and the name are links**
 (`theme::paint::link`): the same run at the same width, bare at rest,
 the hover wash under the pointer with the pointing hand — never a box, never a
 button, because a fact you can open is still a fact.
@@ -277,15 +248,20 @@ button — and lights (DESIGN §4.45 item 6).
 
 **A dropup** (`status::dropup`): the overlay's frame (`SURFACE`, the hairline,
 `RADIUS`) over a span of the window rather than across it, its left edge at
-the segment's, its foot on the rule; the keys in `INK_WEAK` at `SMALL` on the
+the segment's, its foot on the top edge of what it opens from — the box for
+a pill, the status bar for a segment; the keys in `INK_WEAK` at `SMALL` on the
 first line, then one row per choice in the row idiom, the row in force led by
 `•`, the cursor's row selected.
 
 **The prompt line** (`composer`): `›` in the brand at the left edge plus `M`,
 the draft in `INK` beside it at `BODY`, continuation lines indented to the
-draft's edge, the hint in `INK_WEAK`; `SURFACE` under it, the brand ring
-while it holds the caret, the attention tint while the conversation asks.
-It is as tall as its lines and never taller.
+draft's edge, the hint in `INK_WEAK`; `SURFACE` under it inside a
+`HAIRLINE` at `RADIUS` with `S` of air, the brand ring while it holds the
+caret, the attention tint while the conversation asks. At its trailing end
+the model and effort pills — the selector's link in a `HAIRLINE` seat at a
+full round — and the send door, a `ROW` disc in the brand (`INK_FAINT`
+while the box is empty) with `›` in `GROUND` on it. It is as tall as its
+lines and never taller.
 
 **An overlay** (`overlay`): a `SURFACE` box with a `HAIRLINE` frame and
 `RADIUS` corners over the transcript, `S` under the top of the pane and `L`

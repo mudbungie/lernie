@@ -16,7 +16,8 @@ mod drag;
 mod ease;
 /// The workspace at the foot, and its list.
 mod foot;
-/// The head's two doors, at the heading size with air inside the seat.
+/// The head's two doors, at the heading size with air inside the seat, and
+/// what the pin holds.
 mod head;
 /// The clock as a value: the linger from when the pointer left.
 mod linger;
@@ -51,11 +52,19 @@ pub(super) fn step(
     ctx.run(input, |ctx| crate::ui::render(ctx, model))
 }
 
-/// The runs the bar put on the glass: everything left of its open edge.
+/// The runs the bar put on the glass: everything left of its open edge and
+/// above the status bar, which runs under it (DESIGN §4.48 item 1) and
+/// whose line opens with its lead.
 pub(super) fn bar(output: &egui::FullOutput) -> Vec<Seen> {
-    seen_of(output)
-        .into_iter()
-        .filter(|run| run.shown.min.x < open_width(DESK))
+    let seen = seen_of(output);
+    let floor = seen
+        .iter()
+        .filter(|run| run.text == crate::ui::status::LEAD)
+        .map(|run| run.laid.min.y)
+        .reduce(f32::max)
+        .unwrap_or(f32::INFINITY);
+    seen.into_iter()
+        .filter(|run| run.shown.min.x < open_width(DESK) && run.laid.max.y <= floor)
         .collect()
 }
 
@@ -130,30 +139,6 @@ fn the_pointer_opens_it_and_it_lingers_after() {
         !open(&tick(&ctx, &mut model, 6.0, None)),
         "the pointer gone"
     );
-}
-
-/// **Pinned, it stands open whatever the pointer does**; the pin is one
-/// toggle wearing the act it would do, and the collapsed head shows its
-/// glyph alone.
-#[test]
-fn the_pin_holds_it_open_and_says_what_it_would_do() {
-    let window = Window::new();
-    let mut model = seated();
-    let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
-    let shut = window.text(&mut body);
-    assert!(shut.lines().any(|line| line == theme::glyph::PIN), "{shut}");
-    crate::test_support::window::click(&window, theme::glyph::PIN, &mut body);
-    assert!(model.bar.pinned);
-    let ctx = egui::Context::default();
-    let pinned = said(&tick(&ctx, &mut model, 0.0, None));
-    let unpin = theme::worded(theme::glyph::PIN, super::UNPIN);
-    assert!(pinned.contains(&unpin), "{pinned:?}");
-    assert!(pinned.contains(&ROW.to_owned()), "{pinned:?}");
-    model.bar.pinned = false;
-    model.bar.left_at = Some(0.0);
-    let open = said(&tick(&ctx, &mut model, 0.5, None));
-    let pin = theme::worded(theme::glyph::PIN, super::PIN);
-    assert!(open.contains(&pin), "{open:?}");
 }
 
 /// **An open row**: the glyph in its state's ink, the display in body ink

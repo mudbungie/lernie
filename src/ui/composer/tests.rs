@@ -6,6 +6,8 @@
 mod keys;
 /// What a refused act does to the box it came out of.
 mod refund;
+/// The send door at the box's trailing end.
+mod send;
 /// The box with nothing aimed: what it offers and what it refuses.
 mod unaimed;
 
@@ -226,7 +228,7 @@ fn the_field_glows_while_the_conversation_is_asking_and_the_glyph_wears_the_bran
         );
         let lead = crate::paint_probe::seen_of(&output)
             .into_iter()
-            .rfind(|run| run.text == glyph::PROMPT)
+            .find(|run| run.text == glyph::PROMPT)
             .expect("the glyph is on the glass");
         assert_eq!(lead.ink, crate::ui::theme::BRAND);
     }
@@ -242,9 +244,9 @@ fn the_hint_names_the_ways_in_and_drops_them_from_the_right() {
     let window = crate::paint_probe::frame::Window::new();
     window.frame(Vec::new(), |ctx| {
         egui::CentralPanel::default().show(ctx, |ui| {
-            wide = super::hint(ui, HINT, &super::parts());
+            wide = super::hint(ui, HINT, &super::parts(), 0.0);
             ui.allocate_ui(egui::vec2(40.0, 20.0), |ui| {
-                narrow = super::hint(ui, HINT, &super::parts());
+                narrow = super::hint(ui, HINT, &super::parts(), 0.0);
             });
         });
     });

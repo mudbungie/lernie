@@ -109,16 +109,18 @@ conversation's driver runs there, and the server's own target preamble is fired
 ahead of the goal. A directory named in the goal's prose is a request the
 agent's tools are free to ignore; the rung is not.
 
-**Bare `lernie` opens the window**: one column, shaped after the Hermes Agent
-terminal UI (`docs/DESIGN.md` §4.42). The transcript fills it; under the
-transcript a one-line status rule says where you are and what it costs; under
-the rule the prompt line, where Enter sends and Shift+Enter breaks a line.
-The rule's first five runs — workspace, provider, model, effort, priority —
-are dropups: a click lists what the seat holds and reloads it, and a pick
-aims the workspace or sets the worker role (`/model` and Ctrl+O open the model's);
-after them come this conversation's state, tokens, cost and context, and its
-name at the right end is a link to the switcher; the prompt's hint and the seat's card name the ways in —
-`/help`, Ctrl+X, `/roles`, `/login` for a provider's sign-in.
+**Bare `lernie` opens the window**: one column, shaped after Hermes Desktop
+(`docs/DESIGN.md` §4.48). The transcript fills it; under the transcript the
+prompt box, where Enter sends and Shift+Enter breaks a line, with the model
+and effort pills and a round send door at its trailing end; and across the
+window's whole bottom edge a one-line status bar. The pills and the bar's
+provider and priority are dropups: a click lists what the seat holds and
+reloads it, and a pick sets the worker role (`/model` and Ctrl+O open the
+model's; the workspace's is the bar's foot). After them the status bar says
+this conversation's state, tokens, cost and context, and its name is a link
+to the switcher; at its right end stand the version, the waiting count and,
+while the aimed server will not dial, why. With nothing selected the column
+is the seat's mark and one line naming the ways in.
 Nothing else is on the glass until it is asked for: `/` opens a completion
 menu of every verb this seat offers right now — `/records`, `/trail`,
 `/attention`, `/stop`, `/flag <reason>` and the rest — and the word is the

@@ -17,11 +17,25 @@ pub const HINT: &str = "new workspace: <name> <what it is for> — Enter founds 
 /// What the box does while founding.
 pub const BOX_HELP: &str =
     "the new workspace's name and purpose on one line; Enter founds it and begins";
+/// What the send door does while founding.
+pub const SEND_HELP: &str =
+    "founds the workspace the box names and begins its first conversation, as Enter does";
 
 /// Paint the founding box and take what it was given.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     let wanted = model.filling() == Some(Fill::Goal);
     let slashed = crate::ui::slash::parsed(&model.draft).is_some();
+    // **The start's two tokens**: the founding IS a start, whose `prepare`
+    // happens to name a workspace nobody has made yet.
+    let ops: &[&str] = &[crate::verbs::PREPARE, crate::verbs::PROMPT];
+    let send = super::pills::Send {
+        live: !model.draft.trim().is_empty(),
+        help: SEND_HELP,
+        ops,
+    };
+    let trail = super::pills::Trail::new(ui, model, false, (!slashed).then_some(send));
+    let reserve = trail.width(ui);
+    let mut clicks = super::pills::Clicks::default();
     let entry = crate::ui::theme::paint::prompt(
         ui,
         egui::Id::new(crate::ui::keys::BOX_ID),
@@ -29,17 +43,17 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         HINT,
         None,
         BOX_HELP,
+        (reserve, |ui: &mut egui::Ui| trail.paint(ui, &mut clicks)),
     );
-    // **The start's two tokens**: the founding IS a start, whose `prepare`
-    // happens to name a workspace nobody has made yet.
-    crate::ui::act::tag(&entry, &[crate::verbs::PREPARE, crate::verbs::PROMPT]);
+    let pressed = clicks.sent;
+    crate::ui::act::tag(&entry, ops);
     if wanted {
         entry.request_focus();
     }
     if slashed {
         return;
     }
-    if super::entered(ui, &entry) {
+    if super::entered(ui, &entry) || pressed {
         model.found();
     }
 }

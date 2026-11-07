@@ -1,6 +1,8 @@
-//! **The rule's four selectors** (DESIGN §4.42, item 11, as §4.44 amends
-//! it): provider, model, effort and priority, left to right — what this
-//! conversation talks to, each a dropup. The workspace left the rule for the
+//! **The conversation's four selectors** (DESIGN §4.42, item 11, as §4.44
+//! and §4.48 item 4 amend it): provider, model, effort and priority — what
+//! this conversation talks to, each a dropup. The provider and the priority
+//! stand on the status bar ([`selectors`]); the model and the effort stand
+//! in the box as pills ([`pills`]). The workspace left the rule for the
 //! bar's foot (`crate::ui::bar`), because a workspace is not a fact of a
 //! conversation; its run is still spelled here ([`workspace`]), once.
 //!
@@ -101,13 +103,13 @@ pub(crate) fn workspace(model: &Model) -> Run {
     selector(model, Selector::Workspace, workspace, NO_WORKSPACE)
 }
 
-/// **The selectors the rule offers, in order**, and how many of them never
-/// drop: with nothing aimed none stands; with a workspace aimed the provider and
+/// **The four selectors, in order** — provider, model, effort, priority —
+/// with nothing aimed none stands; with a workspace aimed the provider and
 /// the model, and effort and priority where the worker's row takes them.
-pub fn selectors(model: &Model) -> (Vec<Run>, usize) {
+fn all(model: &Model) -> Vec<Run> {
     let mut out = Vec::new();
     if model.aim.is_none() {
-        return (out, 0);
+        return out;
     }
     let worker = model.worker().cloned();
     out.push(selector(
@@ -122,7 +124,7 @@ pub fn selectors(model: &Model) -> (Vec<Run>, usize) {
         .or_else(|| answered_by(model));
     out.push(selector(model, Selector::Model, said, NO_MODEL));
     let Some(worker) = worker else {
-        return (out, 2);
+        return out;
     };
     let row = model.worker_row();
     if row.is_none_or(|row| row.effort) {
@@ -134,5 +136,31 @@ pub fn selectors(model: &Model) -> (Vec<Run>, usize) {
         let said = Some(format!("{PRIORITY} {}", crate::ui::lane(worker.priority)));
         out.push(selector(model, Selector::Priority, said, PRIORITY));
     }
-    (out, 2)
+    out
+}
+
+/// Whether `selector` stands in the box rather than on the status bar
+/// (DESIGN §4.48 item 4): the model and the effort, the two knobs reached
+/// for mid-sentence.
+pub fn boxed(selector: Selector) -> bool {
+    matches!(selector, Selector::Model | Selector::Effort)
+}
+
+/// Whether a selector's run stands in the box.
+fn pilled(run: &Run) -> bool {
+    matches!(run.door, Some(Door::Drop(selector)) if boxed(selector))
+}
+
+/// **The selectors the status bar offers, in order**, and how many of them
+/// never drop: the provider, which never drops, and the priority.
+pub fn selectors(model: &Model) -> (Vec<Run>, usize) {
+    let out: Vec<Run> = all(model).into_iter().filter(|run| !pilled(run)).collect();
+    let kept = out.len().min(1);
+    (out, kept)
+}
+
+/// **The box's pills, in order** (DESIGN §4.48 item 4): the model, then the
+/// effort where the worker's row takes it.
+pub fn pills(model: &Model) -> Vec<Run> {
+    all(model).into_iter().filter(pilled).collect()
 }

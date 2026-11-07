@@ -189,28 +189,17 @@ fn a_tab_reaches_new_and_space_on_it_begins_a_conversation() {
     );
 }
 
-/// One Shift+Tab: the key that walks the Tab order backward.
-fn back() -> egui::Event {
-    egui::Event::Key {
-        key: egui::Key::Tab,
-        physical_key: None,
-        pressed: true,
-        repeat: false,
-        modifiers: egui::Modifiers::SHIFT,
-    }
-}
-
-/// **A Shift+Tab off the box lands on the rule, ringed** (bl-8e3e), and
+/// **A Tab off the box lands on its model pill, ringed** (bl-8e3e), and
 /// Enter or Space there opens its dropup. The Tab order is the laying order,
-/// and the rule is laid before the box since it stands under it (DESIGN
-/// §4.45 item 3; `crate::ui::shell`): so the walk back from the box is the
-/// rule read right to left — the name, then priority, which is the second
-/// stop — and the walk on from it is the transcript.
+/// and the pills are laid after the field inside the box (DESIGN §4.48 item
+/// 4; `crate::ui::composer::pills`): so the walk on from the field is the
+/// box's trailing end read left to right — the model first.
 #[test]
-fn a_shift_tab_lands_on_a_ringed_selector_that_enter_and_space_open() {
+fn a_tab_lands_on_a_ringed_pill_that_enter_and_space_open() {
     for key in [egui::Key::Enter, egui::Key::Space] {
         let mut model = crate::test_support::window::selecting();
-        let (rings, _) = ringed_by(&mut model, vec![vec![back()], vec![back()]]);
+        let tab = || vec![press(egui::Key::Tab)];
+        let (rings, _) = ringed_by(&mut model, vec![tab()]);
         assert_eq!(
             rings.len(),
             1,
@@ -218,12 +207,12 @@ fn a_shift_tab_lands_on_a_ringed_selector_that_enter_and_space_open() {
         );
         let window = Window::new();
         let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
-        for events in [Vec::new(), vec![back()], vec![back()], vec![press(key)]] {
+        for events in [Vec::new(), tab(), vec![press(key)]] {
             window.frame(events, &mut body);
         }
         assert_eq!(
             model.dropup.map(|open| open.selector),
-            Some(crate::ui::Selector::Priority),
+            Some(crate::ui::Selector::Model),
             "{key:?} on the focused selector opens it"
         );
     }

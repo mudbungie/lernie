@@ -28,7 +28,7 @@ fn answered() -> Model {
 /// answered, else the door's own word — a dropup door every time.
 #[test]
 fn the_model_slot_is_the_worker_s_else_what_answered() {
-    let model_run = |model: &Model| runs(model).0.swap_remove(1);
+    let model_run = |model: &Model| crate::ui::status::selectors::pills(model).swap_remove(0);
     let said = model_run(&answered());
     assert_eq!(said.text, "model-a");
     assert_eq!(said.door, Some(Door::Drop(Selector::Model)));
@@ -45,8 +45,15 @@ fn the_model_slot_is_the_worker_s_else_what_answered() {
 /// them** — or where the providers read has not said.
 #[test]
 fn effort_and_priority_follow_the_provider_row() {
-    let words =
-        |model: &Model| -> Vec<String> { runs(model).0.into_iter().map(|r| r.text).collect() };
+    let words = |model: &Model| -> Vec<String> {
+        let pills = crate::ui::status::selectors::pills(model);
+        runs(model)
+            .0
+            .into_iter()
+            .chain(pills)
+            .map(|r| r.text)
+            .collect()
+    };
     let mut model = selecting();
     model.providers = None;
     assert!(words(&model).contains(&"effort medium".to_owned()));

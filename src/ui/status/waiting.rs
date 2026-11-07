@@ -1,6 +1,6 @@
-//! **The seat-wide waiting count, off the rule** (DESIGN §4.42, item 11):
-//! the queue's door where seat-wide facts stand — the seat panel and the
-//! switcher's head — beside `/attention` itself.
+//! **The seat-wide waiting count** (DESIGN §4.42, item 11; §4.48 item 4):
+//! the queue's door where seat-wide facts stand — the status bar's right
+//! end and the switcher's head — beside `/attention` itself.
 //!
 //! It counts only channels that dial (bl-4cac): a channel that will not keeps
 //! the workspaces it last answered, and a green read off them is a count nobody
@@ -21,19 +21,24 @@ pub fn waiting(model: &Model) -> u64 {
         .sum()
 }
 
-/// **The count as the queue's door**: `N waiting` in the attention accent,
-/// tagged as `/attention` is, and nothing while none is asking. Answers
-/// whether it was clicked; the caller fires the word.
 /// What the count does.
 pub const WAITING_HELP: &str = "opens the queue of every conversation that is asking";
 
+/// The count's words.
+pub fn said(asking: u64) -> String {
+    format!("{asking} waiting")
+}
+
+/// **The count as the queue's door**: `N waiting` in the attention accent,
+/// tagged as `/attention` is, and nothing while none is asking. Answers
+/// whether it was clicked; the caller fires the word.
 pub fn door(ui: &mut egui::Ui, model: &Model) -> bool {
     let asking = waiting(model);
     if asking == 0 {
         return false;
     }
     let ink = theme::accent(theme::State::Attention);
-    let seat = theme::paint::link(ui, &format!("{asking} waiting"), ink, WAITING_HELP);
+    let seat = theme::paint::link(ui, &said(asking), ink, WAITING_HELP);
     crate::ui::act::tag(&seat, &[crate::verbs::ATTENTION.word]);
     seat.clicked()
 }

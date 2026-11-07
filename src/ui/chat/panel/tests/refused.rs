@@ -1,6 +1,6 @@
 //! **The roster read refused** (bl-693d): a fresh server answers a fresh seat
-//! *registered in no workspace*, which is an answer — so the card and the
-//! switcher say it under the server, the bar does not, and the roster answer
+//! *registered in no workspace*, which is an answer — so the status bar's
+//! right end and the switcher say it, the notice does not, and the roster answer
 //! that follows a founding takes it off the glass with no Esc.
 
 use serde_json::json;
@@ -43,10 +43,10 @@ fn refused() -> Model {
     model
 }
 
-/// **On the card, in the bar's words, and not in the bar**: the server is
-/// not 'waiting to hear' — it answered.
+/// **On the status bar, in the switcher's words, and not as a notice**: the
+/// server is not 'waiting to hear' — it answered.
 #[test]
-fn a_refused_roster_is_said_on_the_card_and_not_in_the_bar() {
+fn a_refused_roster_is_said_on_the_status_bar_and_not_as_a_notice() {
     let mut model = refused();
     assert_eq!(model.notice, None, "the bar is not the channel's");
     let seen = glass(&mut model);

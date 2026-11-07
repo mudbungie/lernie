@@ -6826,6 +6826,44 @@ bar* is §4.42 item 11's rule, re-homed (item 4). *A Bot* is defined in item
    segments is not lifted: the width rule decides, and a segment the
    operator could hide is a fact the seat could not count on being seen.
 
+   **As built** (bl-8dd0), where the shape above met the code:
+   - **The box's trailing end is laid after the field**, in a width the
+     field leaves it (`composer::pills`), so the Tab order reads as the eye
+     does: field, model, effort, send. The pills are the status bar's own
+     runs in a hairline seat at a full round; the model's words are cut to
+     a quarter of the box's width, and **no pill drops at any width** —
+     they are controls, not facts, and the matrix lays every control on
+     the glass; the field's hint drops its ways in to make room instead.
+     On a box too narrow for the field to keep a third of it beside them,
+     the pills and the door stand on a line of their own under the field
+     at its right end, the next starting a line where one would run past
+     the edge — so a pinned bar on the phone's width still lays every
+     control on the glass. The founding line carries the send door and no
+     pills (its workspace has no worker yet); the line with nothing aimed
+     carries neither.
+   - **The send door is faint while the box is empty**, the brand while it
+     holds words, and **stands down on a slash line** — Enter there fires
+     the menu's row, and the menu's rows are the pointer's doors for it.
+   - **A dropup opens from the edge its door stands on**: a pill's from the
+     box's top edge, over the transcript's foot; the provider's and the
+     priority's from the status bar's top edge, over the box. Its room is
+     the window's width, since the status bar's segments stand under the
+     bar too.
+   - **The dial sentence left the state slot**, so it is said once, at the
+     right end. With nothing aimed it is the first server that says why it
+     is not reached (it will not dial, or it refused the roster), named by
+     the server's header — the first run with nothing provisioned is that
+     case, and the seat card that said it is gone. It keeps the notice's
+     rule: inline where the provider stays whole beside it, else whole on
+     its own wrapped lines above the line, never cut. The right end reads,
+     from the edge inward: the version, the count, the sentence.
+   - **What the seat card said and nothing else does** is now the
+     switcher's alone: a server not heard from yet (*waiting to hear*), the
+     per-server counts, and *Ctrl+X then + new workspace* (the switcher's
+     own `+ new workspace` row is that door).
+   - The status bar stands down under an overlay and the enrollment, as the
+     rule did (`crate::ui::shell`).
+
 5. **The bar grows the baseline's sidebar in four places** (amending §4.44
    item 1; `src/ui/bar.rs`). Everything §4.44 says stands — the two dragged
    widths, the linger, the pin, the rows as `convs::` paints them, the foot

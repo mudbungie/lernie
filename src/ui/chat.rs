@@ -20,8 +20,10 @@
 //! speaker's (`theme::speaker`) on the words that name them. Which bubble a
 //! row gets is the projection's call ([`rows`]), never this painter's.
 //!
-//! At the head of a transcript stands the conversation's panel, and where
-//! nothing is selected the seat's ([`panel`]). At its end stands each message
+//! At the head of a transcript stands the conversation's panel ([`panel`]);
+//! where nothing is selected the column is empty but for the seat's mark,
+//! large and centred, and the one line naming the ways in (DESIGN §4.48
+//! item 1; [`empty`]). At its end stands each message
 //! this seat sent that the committed transcript does not yet carry, its words
 //! in the pending ink until the server's receipt lands ([`rows::sent`];
 //! DESIGN §4.45 item 4).
@@ -33,8 +35,7 @@
 /// Fenced code in what was said, painted as code.
 pub mod code;
 pub mod fold;
-/// The two panels at the head of the pane: the conversation's facts, and the
-/// seat's where nothing is selected.
+/// The panel at the head of a transcript: the conversation's facts.
 pub mod panel;
 /// A procedure run as a marker on the entry it fired at (§4.47).
 pub mod procedures;
@@ -53,30 +54,34 @@ pub use rows::{Kind, Row, rows};
 use crate::settings::Toggle;
 use crate::ui::theme::{self, Bubble, glyph};
 
-/// The pane's word, kept for the seat panel's sentence.
-pub const HEADING: &str = "conversation";
-
-/// What the pane says with nothing selected, under the seat's panel.
-pub const NO_CONVERSATION: &str = "Ctrl+X picks a conversation, or begin one in the box below";
-/// **And with nothing aimed**, where the box below begins nothing: a start
-/// needs a workspace (bl-2cb0), so the sentence names the key that picks one.
-pub const NO_AIM: &str = "Ctrl+X picks a workspace to begin in, or a conversation";
+/// **The one line under the mark in the empty column** (DESIGN §4.48
+/// item 1): the ways in, and nothing else.
+pub const WAYS_IN: &str = "/help for commands · Ctrl+X for a conversation · Ctrl+N to begin";
 pub const LIVE: &str = "«live»";
 /// What parts an open working from the prose that follows it.
 pub const RESPONSE: &str = "response";
 
-/// Paint the transcript. Answers whether the seat panel's queue door was
-/// clicked.
-pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) -> bool {
+/// **The empty column** — nothing selected, or a workspace with nothing
+/// open (DESIGN §4.48 item 1): the seat's mark, a quarter of the column's
+/// narrower side and never under two rows, centred, with [`WAYS_IN`] under
+/// it in weak ink. The seat's facts are the status bar's right end and the
+/// switcher's head (`crate::ui::status::seat`).
+fn empty(ui: &mut egui::Ui) {
+    let room = ui.available_size();
+    let side = (room.x.min(room.y) / 4.0).max(2.0 * theme::ROW);
+    ui.vertical_centered(|ui| {
+        ui.add_space(((room.y - side) / 2.0 - theme::ROW).max(0.0));
+        theme::paint::emblem(ui, side);
+        ui.add_space(theme::space::M);
+        ui.add(egui::Label::new(egui::RichText::new(WAYS_IN).color(theme::INK_WEAK)).wrap());
+    });
+}
+
+/// Paint the transcript, or the empty column where nothing is selected.
+pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) {
     let Some(conversation) = model.conversation.as_ref() else {
-        let asked = panel::seat(ui, model);
-        let said = if model.aim.is_some() {
-            NO_CONVERSATION
-        } else {
-            NO_AIM
-        };
-        theme::paint::empty(ui, said);
-        return asked;
+        empty(ui);
+        return;
     };
     let shown = egui::ScrollArea::vertical()
         .id_salt(conversation)
@@ -161,7 +166,6 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) -> bool {
             })
         });
     scroll::note(ui.ctx(), shown.state.offset.y);
-    false
 }
 
 /// **The turn strip** (DESIGN §4.48 item 2): under a settled turn's final

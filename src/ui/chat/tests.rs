@@ -40,7 +40,7 @@ mod stages;
 /// What the weight at a block's edge says about who is speaking.
 mod weight;
 
-use super::{LIVE, NO_AIM, NO_CONVERSATION, Row, render, rows};
+use super::{LIVE, Row, WAYS_IN, render, rows};
 use crate::reply::transcript::{Block, Entry, EntryKind, Transcript, Usage};
 use crate::test_support::window::{pane, seated};
 use crate::ui::Model;
@@ -123,32 +123,45 @@ fn each_half_of_a_turn_in_flight_is_its_own_row_and_an_empty_one_is_none() {
     assert!(rows(&quiet, None).is_empty());
 }
 
-/// The pane says what it is waiting for rather than showing an empty box —
-/// and never offers a start in the box below where nothing is aimed, because
-/// there it begins nothing (bl-2cb0).
+/// **The empty column is the mark and one line** (DESIGN §4.48 item 1):
+/// with nothing aimed, and with a workspace aimed and nothing open, the one
+/// line naming the ways in is the only words on it — and the mark stands
+/// over it, centred, larger than the head's.
 #[test]
-fn the_pane_says_what_it_is_waiting_for() {
-    let mut nothing = Model::default();
-    let unaimed = pane(|ui| {
-        render(ui, &nothing);
-    });
-    assert!(unaimed.contains(NO_AIM), "{unaimed}");
-    assert!(!unaimed.contains(NO_CONVERSATION), "{unaimed}");
-    nothing = Model {
-        conversation: None,
-        ..seated()
-    };
-    assert!(
-        pane(|ui| {
-            render(ui, &nothing);
-        })
-        .contains(NO_CONVERSATION)
-    );
-    nothing = seated();
+fn the_empty_column_is_the_mark_and_one_line() {
+    for nothing in [
+        Model::default(),
+        Model {
+            conversation: None,
+            ..seated()
+        },
+    ] {
+        let window = crate::paint_probe::frame::Window::sized(900.0, 700.0);
+        let output = window.frame(Vec::new(), |ctx| {
+            egui::CentralPanel::default().show(ctx, |ui| render(ui, &nothing));
+        });
+        let seen = crate::paint_probe::seen_of(&output);
+        let words: Vec<&str> = seen.iter().map(|run| run.text.as_str()).collect();
+        assert_eq!(words.join(" "), WAYS_IN, "{words:?}");
+        let line = &seen[0].laid;
+        assert!((line.center().x - 450.0).abs() < 2.0, "centred: {line:?}");
+        let mark = output
+            .shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Circle(circle) => Some(circle.center),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert!(!mark.is_empty(), "the mark is painted");
+        assert!(mark.iter().all(|at| at.y < line.min.y), "over the line");
+    }
+    let shown = seated();
     let painted = pane(|ui| {
-        render(ui, &nothing);
+        render(ui, &shown);
     });
     assert!(painted.contains("port it"), "{painted}");
+    assert!(!painted.contains(WAYS_IN), "{painted}");
 }
 
 /// **The committed path obeys the live path's rule, because there is one rule.**

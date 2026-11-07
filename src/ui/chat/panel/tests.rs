@@ -1,7 +1,6 @@
-//! The two panels: the conversation's facts over its transcript, and the
-//! seat's where nothing is selected.
+//! The conversation's panel over its transcript, and where the seat's facts
+//! went when its card did (DESIGN §4.48 item 1).
 
-use super::{WAYS, version, ways_in};
 use crate::test_support::window::{painted, recorded, seated};
 use crate::ui::Model;
 
@@ -22,41 +21,28 @@ fn the_conversation_s_card_carries_its_facts() {
     assert!(text.contains("120 tokens"), "{text}");
 }
 
-/// **The seat's card** stands where nothing is selected: the version, each
-/// server with what it holds, and the ways in — the conversation, the
-/// model and the provider among them (bl-4e55).
+/// **The seat's facts stand at the status bar's right end** (DESIGN §4.48
+/// item 1), selected or not: the version and the queue's door while
+/// anything asks — and the card that carried them, with its per-server
+/// counts, is gone from the empty column.
 #[test]
-fn the_seat_s_card_stands_where_nothing_is_selected() {
-    let mut model = Model {
-        conversation: None,
-        ..seated()
-    };
-    model.roster[0].workspaces[0].attention = 2;
-    let text = painted(&mut model);
-    for word in [
-        version().as_str(),
-        "(this box's own server) — 1 workspace, 2 conversations, 2 waiting",
-        "Ctrl+X for a conversation",
-        "Ctrl+O for the model",
-        "/login for a provider",
-        super::FOUNDING,
-    ] {
-        assert!(text.contains(word), "{word:?}:\n{text}");
+fn the_seat_s_facts_stand_on_the_status_bar_and_no_card_does() {
+    let version = crate::cli::version();
+    for conversation in [None, seated().conversation] {
+        let mut model = Model {
+            conversation,
+            ..seated()
+        };
+        model.roster[0].workspaces[0].attention = 2;
+        let text = painted(&mut model);
+        for word in [version.as_str(), "2 waiting"] {
+            assert!(text.contains(word), "{word:?}:\n{text}");
+        }
+        assert!(!text.contains("1 workspace,"), "{text}");
     }
-    let mut quiet = seated();
-    let text = painted(&mut quiet);
-    assert!(!text.contains(&version()), "{text}");
-    assert!(WAYS.iter().all(|way| ways_in().contains(way)));
-    let mut one = Model {
-        conversation: None,
-        ..seated()
-    };
-    one.roster[0].workspaces[0].agents = 1;
-    let text = painted(&mut one);
-    assert!(text.contains("1 workspace, 1 conversation"), "{text}");
 }
 
-/// The dial state on the card and the rule.
+/// The dial state at the status bar's right end.
 mod held;
-/// The roster read refused: on the card and the switcher, never the bar.
+/// The roster read refused: on the status bar and the switcher.
 mod refused;

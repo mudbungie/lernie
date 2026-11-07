@@ -58,10 +58,15 @@ pub fn goal(workspace: &str, plan: bool) -> String {
 
 /// **The doors the hint names after what is missing** (bl-7a77), dropped
 /// from the right where the line has no room, as the goal's ways are.
-pub const DOORS: [&str; 2] = ["/login or /config", "pick another on the rule"];
+pub const DOORS: [&str; 2] = ["/login or /config", "pick another on the status bar"];
 /// What the box does while it is the start.
 pub const START_HELP: &str =
     "the first message of a new conversation on this workspace; Enter begins it";
+/// What the send door does while the box is the start.
+pub const SEND_HELP: &str =
+    "begins a conversation on this workspace with what the box holds, as Enter does";
+/// The start's two tokens, on the field and on the send door alike.
+const OPS: &[&str] = &[crate::verbs::PREPARE, crate::verbs::PROMPT];
 
 /// **What stands between the aimed workspace's worker and a model, named**
 /// (bl-7a77; bl-6ef6) — or nothing, where the goal is the right question.
@@ -140,14 +145,23 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
     // from no widget at all. A walk over the accessibility tree can only ever
     // see the control that begins the pair, so both tokens ride it.
     let slashed = crate::ui::slash::parsed(&model.draft).is_some();
+    let send = super::pills::Send {
+        live: !model.draft.trim().is_empty(),
+        help: SEND_HELP,
+        ops: OPS,
+    };
+    let trail = super::pills::Trail::new(ui, model, true, (!slashed).then_some(send));
+    let reserve = trail.width(ui);
     let said = match missing(model) {
-        Some(lack) => super::hint(ui, &lack, &DOORS),
+        Some(lack) => super::hint(ui, &lack, &DOORS, reserve),
         None => super::hint(
             ui,
             &goal(&aim.address, model.plan),
             &crate::ui::chat::panel::WAYS,
+            reserve,
         ),
     };
+    let mut clicks = super::pills::Clicks::default();
     let entry = crate::ui::theme::paint::prompt(
         ui,
         egui::Id::new(crate::ui::keys::BOX_ID),
@@ -155,8 +169,10 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
         &said,
         None,
         START_HELP,
+        (reserve, |ui: &mut egui::Ui| trail.paint(ui, &mut clicks)),
     );
-    crate::ui::act::tag(&entry, &[crate::verbs::PREPARE, crate::verbs::PROMPT]);
+    let pressed = super::pills::spend(ui, model, clicks);
+    crate::ui::act::tag(&entry, OPS);
     // **The `+` on a server's row lands the caret here** (§4.39): the control
     // is on the other column and the box is this one, so what crosses between
     // them is a request the frame that paints the box answers.
@@ -168,7 +184,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
     if slashed {
         return;
     }
-    if super::entered(ui, &entry) {
+    if super::entered(ui, &entry) || pressed {
         model.stage(&aim.address);
     }
 }

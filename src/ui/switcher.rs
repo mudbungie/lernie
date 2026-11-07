@@ -35,7 +35,8 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     }
     crate::ui::overlay::name(ui, HEADING);
     // **The queue's door stands at its head** (§4.42, item 11): the count
-    // left the rule, and the switcher is the other seat-wide list.
+    // stands at the status bar's right end too, and the switcher is the
+    // other seat-wide list.
     if crate::ui::status::waiting::door(ui, model) {
         model.close_switcher();
         crate::ui::slash::fire(model, crate::ui::queue::WORD, "");

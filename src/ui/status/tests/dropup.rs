@@ -154,10 +154,10 @@ fn it_closes_on_esc_elsewhere_and_under_what_floats() {
     assert!(model.dropup.is_none(), "the ladder's first rung");
 }
 
-/// **The waiting count left the rule for the seat panel and the switcher's
-/// head**, where it is the queue's door.
+/// **The waiting count stands at the status bar's right end and the
+/// switcher's head** (DESIGN §4.48 item 4), the queue's door in both.
 #[test]
-fn the_waiting_count_is_the_queue_s_door_off_the_rule() {
+fn the_waiting_count_is_the_queue_s_door() {
     let asking = || {
         let mut model = crate::test_support::window::seated();
         model.conversation = None;
@@ -170,7 +170,7 @@ fn the_waiting_count_is_the_queue_s_door_off_the_rule() {
     });
     assert!(
         model.showing(crate::ui::Listing::Queue),
-        "from the seat panel"
+        "from the status bar"
     );
     let mut model = Model {
         conversation: crate::test_support::window::seated().conversation,
@@ -213,45 +213,51 @@ fn a_long_model_id_stands_whole_at_the_desk() {
     assert_eq!(row.text, long, "cut: {:?}", row.text);
 }
 
-/// **The list's foot stands on the rule and the list floats over the box**
-/// (DESIGN §4.45 item 3), at the desk and at the phone: every row of it
-/// stands above the rule's line, and the lowest of them below the box's top
-/// — the rows cover the box, not the transcript's foot.
+/// **A list opens upward from where its door stands** (DESIGN §4.48 item
+/// 4), at the desk and at the phone: the model pill's from the box's top
+/// edge, its rows over the transcript's foot and none over the box; the
+/// priority's from the status bar's top edge, its rows over the box. The
+/// keys' hint stands over the rows in both.
 #[test]
-fn the_list_stands_on_the_rule_over_the_box() {
+fn a_list_stands_on_the_edge_it_opens_from() {
     for (w, h) in [(1400.0, 900.0), (400.0, 800.0)] {
-        let mut model = selecting();
-        model.drop_up(Selector::Model);
-        let window = Window::sized(w, h);
-        window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
-        let seen = glass(&window, &mut model);
-        let lowest = |pick: &dyn Fn(&crate::paint_probe::Seen) -> bool| {
-            seen.iter()
-                .filter(|run| pick(run))
+        for (selector, rows, boxed) in [
+            (Selector::Model, ["• house-model-1", "house-model-2"], true),
+            (Selector::Priority, ["• off", "on"], false),
+        ] {
+            let mut model = selecting();
+            model.drop_up(selector);
+            let window = Window::sized(w, h);
+            window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
+            let seen = glass(&window, &mut model);
+            let lowest = |pick: &dyn Fn(&crate::paint_probe::Seen) -> bool| {
+                seen.iter()
+                    .filter(|run| pick(run))
+                    .map(|run| run.laid)
+                    .max_by(|a, b| a.min.y.total_cmp(&b.min.y))
+            };
+            let at = format!("{selector:?} at {w}");
+            let rule = lowest(&|run| run.text == crate::ui::status::LEAD).expect("the bar");
+            let prompt = lowest(&|run| run.text == theme::glyph::PROMPT && run.ink == theme::BRAND)
+                .expect("the box");
+            let laid: Vec<_> = seen
+                .iter()
+                .filter(|run| rows.contains(&run.text.as_str()))
                 .map(|run| run.laid)
-                .max_by(|a, b| a.min.y.total_cmp(&b.min.y))
-        };
-        let rule = lowest(&|run| run.text == crate::ui::status::LEAD).expect("the rule");
-        let prompt = lowest(&|run| run.text == theme::glyph::PROMPT && run.ink == theme::BRAND)
-            .expect("the box");
-        let rows: Vec<_> = seen
-            .iter()
-            .filter(|run| run.text == "• house-model-1" || run.text == "house-model-2")
-            .map(|run| run.laid)
-            .collect();
-        assert_eq!(rows.len(), 2, "at {w}: both rows are on the glass");
-        for row in &rows {
+                .collect();
+            assert_eq!(laid.len(), 2, "{at}: both rows are on the glass: {seen:?}");
+            let foot = laid.iter().map(|row| row.max.y).fold(0.0, f32::max);
+            assert!(foot <= rule.min.y + 1.0, "{at}: the rows are above the bar");
+            assert_eq!(
+                foot <= prompt.min.y + 1.0,
+                boxed,
+                "{at}: {foot} vs {prompt:?}"
+            );
+            let hint = lowest(&|run| run.text == super::super::dropup::HINT).expect("the hint");
             assert!(
-                row.max.y <= rule.min.y + 1.0,
-                "at {w}: the row is above the rule"
+                hint.max.y <= laid[0].min.y + 1.0,
+                "{at}: the keys over the rows"
             );
         }
-        let foot = rows.iter().map(|row| row.max.y).fold(0.0, f32::max);
-        assert!(foot > prompt.min.y, "at {w}: the list covers the box");
-        let hint = lowest(&|run| run.text == super::super::dropup::HINT).expect("the hint");
-        assert!(
-            hint.max.y <= rows[0].min.y + 1.0,
-            "at {w}: the keys stand over the rows"
-        );
     }
 }

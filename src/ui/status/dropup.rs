@@ -1,13 +1,14 @@
-//! **A selector's dropup** (DESIGN §4.42, item 11): the list a click on a
-//! rule segment opens, standing over that segment and opening upward. The
+//! **A selector's dropup** (DESIGN §4.42, item 11; §4.48 item 4): the list a
+//! click on a pill in the box or a status-bar segment opens, standing over
+//! it and opening upward. The
 //! workspace's stands over the bar's foot instead (§4.44), on a layer of its
 //! own laid by `crate::ui::bar` — the same box over a different span.
 //!
 //! It is the overlay's frame over a span of the pane rather than across it
 //! (`crate::ui::overlay::float_at`), **laid on a foreground layer whose foot
-//! is the rule's top edge** (§4.45 item 3): the rule stands under the box
-//! now, so a list opening upward from its segment floats over the box, as the
-//! workspace's floats over the bar's rows — and only while it stands. It is a
+//! is the top edge of what it opens from** (§4.45 item 3): a pill's list
+//! floats over the transcript's foot, a status-bar segment's over the box,
+//! as the workspace's floats over the bar's rows — and only while it stands. It is a
 //! child region and not an `egui::Area`, for the overlay's own reason: a
 //! fresh area paints nothing on its first frame. It lists what
 //! [`Model::choices`] holds at once, ↑↓ walk it, Enter or a click picks, Esc
@@ -95,17 +96,22 @@ pub fn keys(ctx: &egui::Context, model: &mut Model) {
     }
 }
 
-/// **Paint the open list over its rule segment, its foot on `foot`** — the
-/// rule's top edge — on a layer above the column `ui` is: every selector's
-/// list but the workspace's, which stands at the bar's foot
-/// (`crate::ui::bar`). The room is the column run down to `foot`, so the
-/// list keeps the column's margins and covers the box between.
+/// **Paint the open list over its segment, its foot on `foot`** — the box's
+/// top edge for a pill, the status bar's for the bar's selectors — on a
+/// layer above the column `ui` is: every selector's list but the
+/// workspace's, which stands at the bar's foot (`crate::ui::bar`). The room
+/// is the window's width from the column's top down to `foot`, because the
+/// status bar runs under the bar too (§4.48 item 1) and a list over its
+/// provider stands where the provider does.
 pub fn render(ui: &egui::Ui, model: &mut Model, foot: f32) {
     if footed(model) {
         return;
     }
-    let column = ui.max_rect();
-    let room = egui::Rect::from_min_max(column.left_top(), egui::pos2(column.right(), foot));
+    let (column, window) = (ui.max_rect(), ui.ctx().screen_rect());
+    let room = egui::Rect::from_min_max(
+        egui::pos2(window.left(), column.top()),
+        egui::pos2(window.right(), foot),
+    );
     let id = egui::Id::new(LAYER);
     let mut ui = egui::Ui::new(
         ui.ctx().clone(),

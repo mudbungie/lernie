@@ -14,8 +14,9 @@ pub const READY: &str = "ready";
 /// `/plan` holds it (§4.42 item 3; bl-6f3f).
 pub const PLAN: &str = "plan";
 
-/// **The state slot**: the notice, else why the aimed server will not dial,
-/// else the selected conversation's state and age, else `ready`.
+/// **The state slot**: the notice, else the selected conversation's state
+/// and age, else `ready`. Why the aimed server will not dial is the status
+/// bar's right end (DESIGN §4.48 item 4; `super::seat`), said once.
 pub fn state(model: &Model) -> super::Run {
     if let Some(notice) = &model.notice {
         let ink = match notice {
@@ -24,15 +25,12 @@ pub fn state(model: &Model) -> super::Run {
         };
         return run(notice.line(), ink);
     }
-    match down(model) {
-        Some(why) => run(why, theme::accent(theme::State::Error)),
-        None => calm(model),
-    }
+    calm(model)
 }
 
 /// **Why the server this conversation is on will not dial**, where it will
-/// not (bl-4cac): the one dial-state fact about THIS conversation, so it
-/// stays on the rule while the seat-wide count of servers left it.
+/// not (bl-4cac): the one dial-state fact about THIS conversation, said at
+/// the status bar's right end (`super::seat`) and read by the ask.
 pub fn down(model: &Model) -> Option<String> {
     let aim = model.aim.as_ref()?;
     model

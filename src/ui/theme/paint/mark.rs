@@ -26,6 +26,13 @@ pub fn mark(ui: &mut egui::Ui, help: &str) -> Response {
     told(seat.on_hover_cursor(egui::CursorIcon::PointingHand), help)
 }
 
+/// **The mark as a picture, `side` across** (DESIGN §4.48 item 1): the
+/// empty column's, which opens nothing — the same walk at another size.
+pub fn emblem(ui: &mut egui::Ui, side: f32) {
+    let (rect, _) = ui.allocate_exact_size(vec2(side, side), Sense::hover());
+    paint(ui.painter(), rect);
+}
+
 /// Paint the walk into `rect`. The unit square it works in maps to the
 /// largest centred square `rect` holds — the mark is round, and a stretched
 /// one is a different picture.

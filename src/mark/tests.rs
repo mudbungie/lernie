@@ -93,7 +93,7 @@ fn every_shape_is_one_element_and_the_order_is_the_icon_s() {
         .collect();
     assert_eq!(elements.len(), icon().len());
     assert_eq!(
-        elements[0], "  <circle cx=\"500.0\" cy=\"500.0\" r=\"500.0\" fill=\"#0a080f\"/>",
+        elements[0], "  <circle cx=\"500.0\" cy=\"500.0\" r=\"500.0\" fill=\"#0d1015\"/>",
         "the ground is the void, round, and under everything"
     );
     assert!(
@@ -101,7 +101,7 @@ fn every_shape_is_one_element_and_the_order_is_the_icon_s() {
         "{source}"
     );
     assert!(
-        elements.last().unwrap().contains(" Z\" fill=\"#0a080f\""),
+        elements.last().unwrap().contains(" Z\" fill=\"#0d1015\""),
         "the pupil is last"
     );
     assert!(source.ends_with("</svg>\n"), "{source}");

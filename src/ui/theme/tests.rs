@@ -152,11 +152,12 @@ fn a_speaker_is_told_by_weight() {
 }
 
 /// **The symbol's pair is black on white whatever the window is**: a camera
-/// reads it, not an operator.
+/// reads it, not an operator, and the pair reads at the most a pair can.
 #[test]
 fn the_symbol_keeps_paper_and_ink() {
     assert_eq!(QR_PAPER, Color32::WHITE);
     assert_eq!(QR_INK, Color32::BLACK);
+    assert!((contrast(QR_PAPER, QR_INK) - 21.0).abs() < 1e-9);
 }
 
 /// **Dark, with no light face, and no outline on anything at rest**: the

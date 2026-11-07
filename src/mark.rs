@@ -91,7 +91,7 @@ pub type Hue = [u8; 3];
 /// restated here because the walk is pure and links no toolkit. `tests`
 /// holds the two spellings to one another.
 const HYDRA: Hue = [110, 222, 148];
-const VOID_DEEP: Hue = [10, 8, 15];
+const VOID_DEEP: Hue = [13, 16, 21];
 
 /// Arms, and the degrees between them — the triskele's three-fold turn.
 const ARMS: u8 = 3;

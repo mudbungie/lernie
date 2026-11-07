@@ -139,17 +139,26 @@ every block stands on a faint bubble that says its role (§5), and a
 message this seat sent stands at the end in `INK_WEAK` until the server's
 row replaces it.
 
-## 3. Ground, elevation, ink, accents — adopted verbatim
+## 3. Ground, elevation, ink, accents — the phone's structure, re-pitched
 
 *Amended by DESIGN §4.48 item 3 (bl-7942): the structure below stands and
 the neutrals are re-pitched softer against the Hermes Desktop baseline — a
 cool near-black ground, closer rungs, a more visible hairline, lighter weak
 ink, every tint at a lower alpha; the states' hues and the brand are kept.*
 
-The palette is the phone's, byte for byte (`src/ui/theme.rs`): `GROUND`,
-`SURFACE`, `RAISED`, `HAIRLINE`; `INK`, `INK_WEAK`, `INK_FAINT`; the six
-accents under `State`, with `Rest` wearing `INK_WEAK` on purpose and the
-brand being the working blue. The four properties the phone asserts are
+The palette's structure and its six accents are the phone's, byte for byte
+(`src/ui/theme.rs`): `GROUND`, `SURFACE`, `RAISED`, `HAIRLINE`; `INK`,
+`INK_WEAK`, `INK_FAINT`; the six accents under `State`, with `Rest` wearing
+`INK_WEAK` on purpose and the brand being the working blue. **The neutrals
+are this seat's own** (bl-4f67), set by eye against the baseline's default
+theme on the probe display: the ladder is `13,16,21` → `20,24,31` →
+`28,33,42` with a `44,52,66` hairline — the ground is the baseline's column
+ground to the byte, each rung lifts rather than jumps, and the hairline is a
+step more visible because it draws bubbles; the inks are `230,232,236` /
+`160,166,176` / `96,102,112`, cooled to the ground's hue and the weak one a
+step lighter; and `TINT_ALPHA` is `0.12` where it was `0.16`, read off the
+baseline's chosen row, so the operator's bubble (half a tint), the hover
+wash (three quarters) and the chosen row (one tint) all soften together. The four properties the phone asserts are
 asserted here too (`theme::tests`): the ladder climbs, ink reads on every
 rung at 7:1 / 4.5:1, no accent is louder than two-thirds saturated, and an
 unknown wire word is unstyled rather than restyled.

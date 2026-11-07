@@ -1,9 +1,11 @@
 //! **The visual language's tokens**, and the one home for every colour, size
 //! and gap the window spends (bl-73d2; `docs/STYLE.md` is the prose).
 //!
-//! The language's home is the phone seat (yog-android `docs/STYLE.md`) and
-//! this file carries its bytes verbatim plus the desktop's own deltas, each
-//! named where it is declared. Three rules govern it and `docs/STYLE.md`
+//! The language's home is the phone seat (yog-android `docs/STYLE.md`): this
+//! file carries its structure and its accents verbatim, the neutrals re-pitched
+//! against the Hermes Desktop baseline (DESIGN §4.48 item 3, bl-4f67), plus the
+//! desktop's own deltas, each named where it is declared. Three rules govern
+//! it and `docs/STYLE.md`
 //! states them at length: **colour means state** (six states, six accents, no
 //! seventh — operator ruling 2026-09-06), **no outlines** (a block is raised by
 //! a tint, never boxed), and **one module** (no pane spells a colour;
@@ -35,21 +37,23 @@ pub use fonts::{FALLBACKS, fonts};
 pub use visuals::{install, visuals, wheel};
 
 /// **The ground ladder** — each rung brighter than the one before, asserted.
+/// Pitched on the baseline's column ground (a cool near-black, measured off the
+/// probe display), the rungs a step apart so a surface lifts rather than jumps.
 /// The glass; every pane's body; a row and a control at rest.
-pub const GROUND: Color32 = Color32::from_rgb(10, 8, 15);
+pub const GROUND: Color32 = Color32::from_rgb(13, 16, 21);
 /// Elevation one: a field, a popup's body.
-pub const SURFACE: Color32 = Color32::from_rgb(22, 20, 30);
+pub const SURFACE: Color32 = Color32::from_rgb(20, 24, 31);
 /// Elevation two: a control while pressed or open, a selected row's tint.
-pub const RAISED: Color32 = Color32::from_rgb(36, 33, 48);
+pub const RAISED: Color32 = Color32::from_rgb(28, 33, 42);
 /// The most a boundary may be: one point between rows or panes.
-pub const HAIRLINE: Color32 = Color32::from_rgb(48, 44, 62);
+pub const HAIRLINE: Color32 = Color32::from_rgb(44, 52, 66);
 
 /// **The ink scale.** Primary text.
-pub const INK: Color32 = Color32::from_rgb(232, 230, 238);
+pub const INK: Color32 = Color32::from_rgb(230, 232, 236);
 /// Secondary: a stamp, a count, a hint, a resting row.
-pub const INK_WEAK: Color32 = Color32::from_rgb(152, 148, 168);
+pub const INK_WEAK: Color32 = Color32::from_rgb(160, 166, 176);
 /// A placeholder, a disabled control's words.
-pub const INK_FAINT: Color32 = Color32::from_rgb(98, 94, 114);
+pub const INK_FAINT: Color32 = Color32::from_rgb(96, 102, 112);
 
 const ATTENTION: Color32 = Color32::from_rgb(110, 222, 148);
 const WORKING: Color32 = Color32::from_rgb(96, 168, 255);
@@ -111,8 +115,9 @@ pub fn tint(state: State) -> Color32 {
     accent(state).gamma_multiply(TINT_ALPHA)
 }
 
-/// How much of an accent a tint is: a wash, not a fill.
-const TINT_ALPHA: f32 = 0.16;
+/// How much of an accent a tint is: a wash, not a fill. The baseline's chosen
+/// row measures about this much of its blue over its ground (§4.48 item 3).
+const TINT_ALPHA: f32 = 0.12;
 
 /// **What a pickable thing wears under the pointer** (DESIGN §4.44 item 5):
 /// the selection's brand wash at three quarters, lifting the glass and a

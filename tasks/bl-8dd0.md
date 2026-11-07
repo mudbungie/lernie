@@ -1,7 +1,8 @@
 +++
 title = "Window: the composer box with model and effort pills and a send door; the rule becomes the full-width status bar (DESIGN 4.48 items 1, 4)"
 created = 1794034643
-updated = 1794034643
+updated = 1794036018
+claimant = "Pillar"
 parent = "bl-7942"
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["ui"]

@@ -1,7 +1,8 @@
 +++
 title = "Window: interface modes — simple vs advanced, the branch rail and the context rail (DESIGN 4.48 item 8)"
 created = 1794034645
-updated = 1794034645
+updated = 1794104130
+claimant = "Mode"
 parent = "bl-7942"
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["ui"]

@@ -48,7 +48,7 @@ use std::path::{Path, PathBuf};
 use serde_json::{Value, json};
 
 use crate::settings::{self, Settings};
-use crate::ui::{Aim, Servers};
+use crate::ui::{Aim, Servers, Tab};
 
 /// The file, under the state root. One name, so there is nothing to configure.
 const FILE: &str = "place.json";
@@ -62,6 +62,11 @@ const OPENED: &str = "opened";
 const AIMED: &str = "aimed";
 /// Whether the bar is pinned open (DESIGN §4.44).
 const PINNED: &str = "pinned";
+/// **The conversations kept at the bar's top** (DESIGN §4.48 item 5), each
+/// its workspace's two words and its root id — `kept` and not `pinned`,
+/// which is the bar's own pin above.
+const KEPT: &str = "kept";
+const ROOT_ID: &str = "root_id";
 /// **The settings set off their defaults** (DESIGN §4.46 item 4), one
 /// object — **written only where set**, so a seat that touched nothing
 /// writes nothing and reads the table's defaults (`crate::settings`).
@@ -88,6 +93,8 @@ pub struct Place {
     /// **Whether the bar is pinned open** (DESIGN §4.44): where the bar
     /// stands is a layout the operator chose, so it outlives the run.
     pub pinned: bool,
+    /// **The conversations kept at the bar's top** (DESIGN §4.48 item 5).
+    pub kept: Vec<Tab>,
     /// **The knobs** (DESIGN §4.46 item 4), the bar's two dragged widths
     /// among them.
     pub settings: Settings,
@@ -102,6 +109,7 @@ impl Place {
             aim: model.aim.clone(),
             servers: model.servers.clone(),
             pinned: model.bar.pinned,
+            kept: model.bar.kept.clone(),
             settings: model.settings.clone(),
         }
     }
@@ -127,6 +135,7 @@ pub fn read(root: &Path) -> Place {
             aimed: table(&held, AIMED, |held| held.as_str().map(str::to_owned)),
         },
         pinned: held.get(PINNED).and_then(Value::as_bool).unwrap_or(false),
+        kept: kept(&held),
         // A key that is absent, null or some other shape entirely is absence
         // per knob, which is rung 4 read on this box's own file — and there
         // absence is the table's own default rather than a missing number.
@@ -134,10 +143,31 @@ pub fn read(root: &Path) -> Place {
     }
 }
 
+/// **The kept conversations**, dropping every entry this build cannot read
+/// whole — rung 3 per entry, as [`table`] has it per row.
+fn kept(held: &Value) -> Vec<Tab> {
+    held.get(KEPT)
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|entry| {
+            Some(Tab {
+                aim: aim_in(entry)?,
+                root_id: entry.get(ROOT_ID)?.as_str()?.to_owned(),
+            })
+        })
+        .collect()
+}
+
 /// The aim, where the file carries a whole one. A half-written aim is no aim:
 /// an address with no channel names nothing this seat can resolve.
 fn aimed(held: &Value) -> Option<Aim> {
-    let text = |key| held.get(AIM)?.get(key)?.as_str().map(str::to_owned);
+    aim_in(held.get(AIM)?)
+}
+
+/// A workspace's two words, read off one object.
+fn aim_in(held: &Value) -> Option<Aim> {
+    let text = |key| held.get(key)?.as_str().map(str::to_owned);
     Some(Aim {
         channel: current(&text(CHANNEL)?),
         address: text(ADDRESS)?,
@@ -186,6 +216,11 @@ pub fn write(root: &Path, place: &Place) -> Result<(), String> {
         OPENED: place.servers.opened,
         AIMED: place.servers.aimed,
         PINNED: place.pinned,
+        KEPT: place
+            .kept
+            .iter()
+            .map(|tab| json!({ CHANNEL: tab.aim.channel, ADDRESS: tab.aim.address, ROOT_ID: tab.root_id }))
+            .collect::<Vec<_>>(),
     });
     let knobs = settings::to_json(&place.settings);
     if let Some(keys) = body.as_object_mut().filter(|_| knobs != json!({})) {

@@ -158,11 +158,14 @@ fn workspace_rows(pinned: bool, out: &mut Vec<Row>) {
         said(verbs::LINEAGES.word),
         &[verbs::LINEAGES.word],
     ));
-    out.push(Row::new(
-        crate::ui::fleet::WORD,
-        "the fleet: run this workspace's balls and watch them",
-        &[verbs::SCIENCE.word, verbs::WORK_DIFF.word],
-    ));
+    out.push(
+        Row::new(
+            crate::ui::fleet::WORD,
+            "the fleet: run this workspace's balls and watch them",
+            &[verbs::SCIENCE.word, verbs::WORK_DIFF.word],
+        )
+        .paged(),
+    );
     out.push(Row::new(
         crate::ui::unmake::WORD,
         verbs::DELETE_WORKSPACE.summary,
@@ -179,11 +182,14 @@ fn window_rows(out: &mut Vec<Row>) {
         said(verbs::WORKSPACES.word),
         &[verbs::WORKSPACES.word],
     ));
-    out.push(Row::new(
-        crate::ui::queue::WORD,
-        said(verbs::ATTENTION.word),
-        &[verbs::ATTENTION.word],
-    ));
+    out.push(
+        Row::new(
+            crate::ui::queue::WORD,
+            said(verbs::ATTENTION.word),
+            &[verbs::ATTENTION.word],
+        )
+        .paged(),
+    );
     out.push(Row::new(
         crate::ui::commands::WORD,
         verbs::HELP.summary,
@@ -199,26 +205,35 @@ fn window_rows(out: &mut Vec<Row>) {
         crate::ui::settings::SUMMARY,
         &[],
     ));
-    out.push(Row::new(
-        crate::ui::trail::WORD,
-        crate::verbs::doors::OPS.summary,
-        &[verbs::OPS],
-    ));
-    out.push(Row::new(
-        crate::ui::board::WORD,
-        "the balls every server holds, and this workspace's",
-        &[
-            verbs::BALLS.word,
-            verbs::BOARD.word,
-            verbs::WORKSPACE_BALLS.word,
-            verbs::MARKS.word,
-        ],
-    ));
-    out.push(Row::new(
-        crate::ui::prices::WORD,
-        said(verbs::PRICES.word),
-        &[verbs::PRICES.word, verbs::PROVIDERS.word],
-    ));
+    out.push(
+        Row::new(
+            crate::ui::trail::WORD,
+            crate::verbs::doors::OPS.summary,
+            &[verbs::OPS],
+        )
+        .paged(),
+    );
+    out.push(
+        Row::new(
+            crate::ui::board::WORD,
+            "the balls every server holds, and this workspace's",
+            &[
+                verbs::BALLS.word,
+                verbs::BOARD.word,
+                verbs::WORKSPACE_BALLS.word,
+                verbs::MARKS.word,
+            ],
+        )
+        .paged(),
+    );
+    out.push(
+        Row::new(
+            crate::ui::prices::WORD,
+            said(verbs::PRICES.word),
+            &[verbs::PRICES.word, verbs::PROVIDERS.word],
+        )
+        .paged(),
+    );
     out.push(Row::new(
         crate::ui::find::WORD,
         said(verbs::SEARCH.word),

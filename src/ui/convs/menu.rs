@@ -140,6 +140,18 @@ pub fn show(response: &egui::Response, model: &mut Model, aim: &Aim, row: &ConvR
             }
         }
         ui.separator();
+        // **Keeping it at the bar's top** (DESIGN §4.48 item 5): this seat's
+        // arrangement, spent on the frame and never on the wire.
+        let keeping = model.kept().contains(&row.root_id);
+        let (word, help) = if keeping {
+            (super::UNKEEP, super::UNKEEP_HELP)
+        } else {
+            (super::KEEP, super::KEEP_HELP)
+        };
+        if theme::paint::button(ui, word, true, help).clicked() {
+            model.toggle_kept(&row.root_id);
+            chose = true;
+        }
         // **The reads this gesture reaches** (§4.18), tagged exactly as the
         // composer's own control is: opening the pane is what makes this seat
         // read the conversation's steps and files, and the reads have no

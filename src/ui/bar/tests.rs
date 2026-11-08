@@ -23,6 +23,8 @@ mod head;
 mod linger;
 /// The trashcan on a row under the pointer, and the confirmation it opens.
 mod trash;
+/// The open bar's pages, filter, kept group and age separators.
+mod verbs;
 
 /// **One frame at `time` on the input clock**, the pointer at `at` (or gone),
 /// on a desk-sized window — what the bar's clock is steered by.

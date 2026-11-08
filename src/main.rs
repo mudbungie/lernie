@@ -130,6 +130,7 @@ fn window(root: &std::path::Path) -> Verdict {
         servers: place.servers,
         bar: lernie::ui::bar::Bar {
             pinned: place.pinned,
+            kept: place.kept,
             ..Default::default()
         },
         settings: place.settings,

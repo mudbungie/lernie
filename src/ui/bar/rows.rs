@@ -23,6 +23,14 @@
 //! before deleting — the confirmation on the box (`super::confirm`) — and
 //! with Ctrl held it deletes at once; both go through `Model::post_delete`,
 //! the one door `/delete` goes through too (§4.42 item 5).
+//!
+//! **Open, the listing is laid in two parts and parted by age** (DESIGN
+//! §4.48 item 5): the conversations kept at the top under `PINNED` — Shift+
+//! click on a row keeps it or lets it go, as the row's menu does — then the
+//! rest in the listing's own order, a small heading over a hairline wherever
+//! a root's age crosses onto another stretch of the calendar
+//! (`convs::epoch`). Both parts answer to the filter (`super::verbs`); the
+//! collapsed bar is the listing whole, none of the four.
 
 use crate::reply::convs::ConvRow;
 use crate::ui::{Model, convs, theme};
@@ -32,9 +40,25 @@ use crate::ui::{Model, convs, theme};
 pub const EMPTY: &str = "no conversations here yet — + new begins one";
 /// What the bar says, open, with nothing aimed: the foot is where one is.
 pub const NOTHING_AIMED: &str = "pick a workspace below";
+/// The kept group's heading, the baseline's word.
+pub const KEPT: &str = "PINNED";
+/// What the kept group says while it keeps nothing.
+pub const KEPT_HINT: &str = "shift-click a conversation to pin";
+/// What the listing says when the filter leaves nothing.
+pub const NOTHING_MATCHES: &str = "nothing matches";
+/// What Shift on a row's click does, said after its own sentence.
+pub const SHIFT_KEEPS: &str = "; Shift+click keeps it at the top of this bar";
 
-/// **Paint the rows**, scrolled where they outrun the bar, and select the
-/// one clicked — `Model::select`, the one door.
+/// What a frame's rows were asked to do.
+#[derive(Default)]
+struct Asked {
+    picked: Option<String>,
+    kept: Option<String>,
+    trashed: Option<(String, bool)>,
+}
+
+/// **Paint the rows**, scrolled where they outrun the bar, and do what was
+/// clicked — `Model::select`, the one door, or the keeping.
 pub(super) fn render(ui: &mut egui::Ui, model: &mut Model, open: bool) {
     let rows = model.rows();
     if rows.is_empty() {
@@ -48,32 +72,118 @@ pub(super) fn render(ui: &mut egui::Ui, model: &mut Model, open: bool) {
         }
         return;
     }
-    let mut picked = None;
-    let mut trashed = None;
+    let kept = model.kept();
+    let sift = model.bar.sift.clone();
+    let (top, rest): (Vec<&ConvRow>, Vec<&ConvRow>) = rows
+        .iter()
+        .filter(|row| !open || super::verbs::sifted(row, &sift))
+        .partition(|row| open && kept.contains(&row.root_id));
+    let now = convs::epoch::now();
+    let mut asked = Asked::default();
     egui::ScrollArea::vertical()
         .id_salt("bar")
         .auto_shrink(false)
         .show(ui, |ui| {
-            for row in &rows {
-                let (seat, trash) = one(ui, model, row, open);
-                if seat.clicked() {
-                    picked = Some(row.root_id.clone());
+            if open {
+                heading(ui, KEPT, theme::BRAND);
+                if kept.is_empty() {
+                    inset(ui, KEPT_HINT, theme::INK_WEAK);
                 }
-                if trash.is_some_and(|door| door.clicked()) {
-                    let at_once = ui.input(|i| i.modifiers.command);
-                    trashed = Some((row.root_id.clone(), at_once));
+                for row in &top {
+                    listed(ui, model, row, open, &mut asked);
+                }
+                ui.add_space(theme::space::S);
+                if rest.is_empty() && !sift.trim().is_empty() {
+                    theme::paint::empty(ui, NOTHING_MATCHES);
                 }
             }
+            let mut last = None;
+            for row in &rest {
+                if open && row.depth == 0 {
+                    let epoch = convs::epoch::epoch(now, row.age_secs);
+                    if last.as_ref() != Some(&epoch) {
+                        parting(ui, &epoch);
+                        last = Some(epoch);
+                    }
+                }
+                listed(ui, model, row, open, &mut asked);
+            }
         });
-    if let Some(id) = picked {
+    if let Some(id) = asked.picked {
         model.select(&id);
     }
-    if let Some((id, at_once)) = trashed {
+    if let Some(id) = asked.kept {
+        model.toggle_kept(&id);
+    }
+    if let Some((id, at_once)) = asked.trashed {
         if at_once {
             model.post_delete(&id);
         } else {
             model.begin_deleting(&id);
         }
+    }
+}
+
+/// **A heading at the small size**, in `ink`, standing over the rows' glyphs.
+fn heading(ui: &mut egui::Ui, word: &str, ink: egui::Color32) {
+    inset(ui, &word.to_uppercase(), ink);
+}
+
+/// **A line inset to where a row's glyph stands**: past its state rule and
+/// the air after it (`theme::paint::Row`), at the small size in `ink`,
+/// wrapped at the bar's width so no line of it widens the bar.
+///
+/// **Painted, not laid as a widget**: a widget takes the next of the
+/// panel's ids, so a heading laid above the rows would hand every row a
+/// new one as the bar opens — and the row a pointer opened the bar on would
+/// no longer be the row under it.
+fn inset(ui: &mut egui::Ui, words: &str, ink: egui::Color32) {
+    let left = theme::RULE + theme::space::M;
+    let font = egui::TextStyle::Small.resolve(ui.style());
+    let galley = ui.painter().layout(
+        words.to_owned(),
+        font,
+        ink,
+        (ui.available_width() - left).max(0.0),
+    );
+    let tall = galley.size().y;
+    ui.painter()
+        .galley(ui.cursor().min + egui::vec2(left, 0.0), galley, ink);
+    ui.add_space(tall + ui.spacing().item_spacing.y);
+}
+
+/// **An age separator**: the stretch's words over a hairline, a line between
+/// two rows and never a second ordering — painted, for [`inset`]'s reason.
+fn parting(ui: &mut egui::Ui, epoch: &str) {
+    ui.add_space(theme::space::XS);
+    heading(ui, epoch, theme::INK_WEAK);
+    let at = ui.cursor().min;
+    ui.painter().hline(
+        at.x..=at.x + ui.available_width(),
+        at.y,
+        egui::Stroke::new(1.0, theme::HAIRLINE),
+    );
+    ui.add_space(1.0 + ui.spacing().item_spacing.y);
+}
+
+/// **One row of the listing and what its click asked**: a click selects it,
+/// Shift held keeps it or lets it go, the trashcan deletes; its menu hangs
+/// off it as the roster's does (§4.23).
+fn listed(ui: &mut egui::Ui, model: &mut Model, row: &ConvRow, open: bool, asked: &mut Asked) {
+    let (seat, trash) = one(ui, model, row, open);
+    if seat.clicked() {
+        if ui.input(|i| i.modifiers.shift) {
+            asked.kept = Some(row.root_id.clone());
+        } else {
+            asked.picked = Some(row.root_id.clone());
+        }
+    }
+    if trash.is_some_and(|door| door.clicked()) {
+        let at_once = ui.input(|i| i.modifiers.command);
+        asked.trashed = Some((row.root_id.clone(), at_once));
+    }
+    if let Some(aim) = model.aim.clone() {
+        convs::menu::show(&seat, model, &aim, row);
     }
 }
 
@@ -117,7 +227,7 @@ fn one(
         beneath,
         tail: name,
         door: open.then_some((theme::glyph::TRASH, convs::TRASH_HELP)),
-        help: convs::help(row),
+        help: convs::help(row) + if open { SHIFT_KEEPS } else { "" },
     }
     .paint_doored(ui);
     crate::ui::act::tag(

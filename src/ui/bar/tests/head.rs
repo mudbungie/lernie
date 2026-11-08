@@ -1,6 +1,7 @@
 //! **The bar's head is a comfortable target** (DESIGN §4.44 item 1;
-//! bl-bc9d): the pin and `+ new` are doors at the heading size with `S` of
-//! air inside the seat, collapsed and open alike.
+//! bl-bc9d): the pin is a door at the heading size with `S` of air inside
+//! the seat, collapsed and open alike; `+ new` is the first row under it
+//! (§4.48 item 5), a whole row's seat.
 
 use super::{ROW, bar, said, tick};
 use crate::paint_probe::fills_of;
@@ -14,23 +15,26 @@ fn heading(ctx: &egui::Context) -> f32 {
     ctx.fonts(|fonts| fonts.row_height(&font))
 }
 
-/// **The head's doors are at least a heading line tall, and their seats
-/// hold `S` of air besides**: collapsed, the pin's glyph and the `+` are
-/// laid at the heading size; open and under the pointer, the wash that
-/// fills the pin's seat stands the heading line plus the air each side.
+/// **The pin is at least a heading line tall, and its seat holds `S` of
+/// air besides**: collapsed, its glyph is laid at the heading size, and `+`
+/// stands under it; open and under the pointer, the wash that fills the
+/// pin's seat stands the heading line plus the air each side.
 #[test]
-fn the_pin_and_new_are_heading_sized_with_air_inside_the_seat() {
+fn the_pin_is_heading_sized_with_air_inside_the_seat() {
     let ctx = egui::Context::default();
     let mut model = seated();
     let shut = bar(&tick(&ctx, &mut model, 0.0, None));
     let tall = heading(&ctx);
-    for door in [theme::glyph::PIN, super::super::PLUS] {
-        let run = shut
-            .iter()
-            .find(|run| run.text == door)
-            .unwrap_or_else(|| panic!("{door:?} in {shut:?}"));
-        assert!(run.laid.height() >= tall, "{door:?}: {:?}", run.laid);
-    }
+    let pin = shut
+        .iter()
+        .find(|run| run.text == theme::glyph::PIN)
+        .unwrap_or_else(|| panic!("the pin in {shut:?}"));
+    assert!(pin.laid.height() >= tall, "{:?}", pin.laid);
+    let plus = shut
+        .iter()
+        .find(|run| run.text == super::super::PLUS)
+        .unwrap_or_else(|| panic!("+ in {shut:?}"));
+    assert!(plus.laid.min.y >= pin.laid.max.y, "+ stands under the pin");
     model.bar.pinned = true;
     let unpin = theme::worded(theme::glyph::PIN, super::super::UNPIN);
     let at = bar(&tick(&ctx, &mut model, 1.0, None))

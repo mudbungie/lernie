@@ -7,8 +7,11 @@
 //!
 //! It is a second painter of one listing and not a second listing: its rows
 //! are [`Model::rows`], the switcher's under the aimed workspace, spelled by
-//! `crate::ui::convs` ([`rows`]). Its head is the pin and `+ new`; its foot is
-//! the workspace, the one place on the glass a workspace is chosen ([`foot`]).
+//! `crate::ui::convs` ([`rows`]). Its head is the pin (and `+`, collapsed);
+//! open, the pages and `+ new` stand under it as rows, then the filter
+//! ([`verbs`]; §4.48 item 5), then the kept group and the rows parted by age
+//! ([`rows`]). Its foot is the workspace, the one place on the glass a
+//! workspace is chosen ([`foot`]).
 //! A row under the pointer offers its trashcan, and the confirmation that
 //! click opens stands on the box ([`confirm`]; bl-e837).
 //!
@@ -24,8 +27,10 @@ pub mod confirm;
 pub mod drag;
 /// The workspace at the bar's foot, and its list opening upward.
 mod foot;
-/// The conversations, one row each.
+/// The conversations, one row each: the kept group, then the rest by age.
 mod rows;
+/// The pages and `+ new` as rows under the head, and the filter under them.
+pub mod verbs;
 
 pub use rows::{EMPTY, NOTHING_AIMED};
 
@@ -48,17 +53,25 @@ pub const UNPIN_HELP: &str = "lets the bar shut again once the pointer leaves it
 /// What `+ new` does.
 pub const NEW_HELP: &str =
     "begins a conversation on this workspace; the box takes its first message";
-/// The collapsed `+ new`.
+/// The `+ new` row's glyph, which is the whole of it collapsed.
 pub const PLUS: &str = "+";
 
 /// **The bar between frames**: the pin the operator chose (`Place::pinned`),
-/// when the pointer was last over it, and the drag in hand. The widths it
+/// when the pointer was last over it, the drag in hand, the conversations
+/// kept at its top (`Place::kept`) and the filter typed. The widths it
 /// stands at are the settings' (`crate::settings::Settings::bar_shut`,
 /// `bar_open`), which a drag writes.
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Bar {
     /// Pinned open, whatever the pointer does.
     pub pinned: bool,
+    /// **The conversations kept at the bar's top** (DESIGN §4.48 item 5), by
+    /// workspace and root id: a per-seat arrangement of one listing, §4.39's
+    /// class of fact — not §4.25's pin, which is the wire's.
+    pub kept: Vec<crate::ui::Tab>,
+    /// **What the filter holds**: the listing narrowed on the seat, by the
+    /// rows' own words — not `/find`, which asks the server.
+    pub sift: String,
     /// **The input-clock instant the pointer was last over the bar**, or
     /// `None` once the linger after it has lapsed.
     pub left_at: Option<f64>,
@@ -157,6 +170,14 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
                 let seat = foot::render(ui, model);
                 ui.with_layout(egui::Layout::top_down(egui::Align::Min), |ui| {
                     head(ui, model, open);
+                    verbs::new(ui, model, open);
+                    // **In a scope of its own**, which takes none of the
+                    // panel's ids: the rows under it keep the ids they had
+                    // collapsed, so the row a pointer opened the bar on is
+                    // still the row under it.
+                    if open {
+                        ui.scope(|ui| verbs::render(ui, model));
+                    }
                     rows::render(ui, model, open);
                 });
                 foot::list(ui, model, seat);
@@ -165,8 +186,8 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
         });
 }
 
-/// **The head**: the pin at the left, `+ new` at the right while a workspace is
-/// aimed and the box can take the caret. **Both are doors at the heading
+/// **The head**: the pin. `+ new` is the first row under it, `+` alone while
+/// the bar is collapsed ([`verbs::new`]). **Both are doors at the heading
 /// size with `S` of air inside the seat** (bl-bc9d; operator: *the + and
 /// pin buttons are too small*), so the head is a comfortable target
 /// collapsed and open, and stands a row taller than a body line for it.
@@ -187,34 +208,6 @@ fn head(ui: &mut egui::Ui, model: &mut Model, open: bool) {
         if theme::paint::heading_link(ui, &said, theme::INK_WEAK, &help).clicked() {
             model.bar.pinned = !model.bar.pinned;
         }
-        let Some(aim) = model.aim.clone() else {
-            return;
-        };
-        if model.covered() && !model.switching {
-            return;
-        }
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            // **`+ new` is clipped to the room right of the pin** — in paint
-            // and in the hit test alike, since egui interacts within the
-            // clip. The open head is wider than the collapsed column, and
-            // on the frame the ease begins the open words stand in the
-            // collapsed width (§4.44 item 1: *what it holds switches at
-            // once*): laid right-to-left in no room, `+ new` would stand
-            // over the pin and take its click.
-            ui.set_clip_rect(ui.max_rect().intersect(ui.clip_rect()));
-            let said = if open {
-                crate::ui::roster::workspace::NEW
-            } else {
-                PLUS
-            };
-            let help = crate::ui::keys::cited(NEW_HELP, &[crate::ui::keys::Act::New]);
-            let seat = theme::paint::heading_link(ui, said, theme::INK_WEAK, &help);
-            crate::ui::act::tag(&seat, &[crate::verbs::PREPARE, crate::verbs::PROMPT]);
-            if seat.clicked() {
-                model.begin_at(&aim);
-                model.chose();
-            }
-        });
     });
 }
 

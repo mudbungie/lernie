@@ -48,6 +48,8 @@ pub const DELIVER_ID: &str = "the delivery's arming box";
 
 /// **The id a staged proposal's arming box wears** (`crate::ui::config::proposals`).
 pub const VERDICT_ID: &str = "the proposal's arming box";
+/// The bar's filter (DESIGN §4.48 item 5).
+pub const FILTER_ID: &str = "the bar's filter";
 
 /// **Every box on the glass that takes text, so the gate can name them all**
 /// (bl-dbc9).
@@ -61,7 +63,7 @@ pub const VERDICT_ID: &str = "the proposal's arming box";
 /// `wants_keyboard_input` — which answers *is anything focused*, buttons
 /// included — and this is the whole list of what it compares against. A fourth
 /// box belongs here in the commit that paints it.
-pub const BOXES: [&str; 11] = [
+pub const BOXES: [&str; 12] = [
     BOX_ID,
     CONFIG_ID,
     WORKFLOW_ID,
@@ -73,6 +75,7 @@ pub const BOXES: [&str; 11] = [
     NOTE_ID,
     DELIVER_ID,
     VERDICT_ID,
+    FILTER_ID,
 ];
 
 /// Whether a box that takes text holds the keyboard right now.

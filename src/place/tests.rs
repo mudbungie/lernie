@@ -4,7 +4,7 @@
 use super::{Place, at, read, write};
 use crate::settings::Settings;
 use crate::test_support::Scratch;
-use crate::ui::{Aim, Servers};
+use crate::ui::{Aim, Servers, Tab};
 
 /// The workspace a window was aimed at.
 fn aimed() -> Aim {
@@ -20,6 +20,7 @@ fn pointed() -> Place {
         aim: Some(aimed()),
         servers: Servers::default(),
         pinned: false,
+        kept: Vec::new(),
         settings: Settings::default(),
     }
 }
@@ -54,6 +55,10 @@ fn the_accordion_comes_back_with_the_aim() {
                 .collect(),
         },
         pinned: true,
+        kept: vec![Tab {
+            aim: aimed(),
+            root_id: "20260830T051200Z-a1b2".to_owned(),
+        }],
         settings: Settings::default(),
     };
     write(scratch.path(), &arranged).expect("written");
@@ -167,10 +172,13 @@ fn a_row_this_build_cannot_read_costs_one_row_and_not_the_table() {
     std::fs::write(
         at(scratch.path()),
         r#"{"opened": {"lab": 7, "home": "whenever"},
-            "aimed": {"lab": "bench", "home": 3}}"#,
+            "aimed": {"lab": "bench", "home": 3},
+            "kept": [{"channel": "lab", "address": "bench"}, 3,
+                     {"channel": "lab", "root_id": "r"}]}"#,
     )
     .expect("write");
     let held = read(scratch.path());
+    assert!(held.kept.is_empty());
     assert_eq!(
         held.servers.opened,
         [("lab".to_owned(), 7)].into_iter().collect()
@@ -211,6 +219,8 @@ fn the_place_is_a_projection_of_the_model_and_not_a_stored_copy() {
     assert_eq!(held.servers, model.servers);
     model.settings.bar_open = Some(430.0);
     assert_eq!(Place::of(&model).settings, model.settings);
+    model.toggle_kept("20260830T051200Z-a1b2");
+    assert_eq!(Place::of(&model).kept, model.bar.kept);
 }
 
 /// **A write answers its refusal rather than swallowing it**: by the time it

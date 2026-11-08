@@ -6910,6 +6910,48 @@ bar* is §4.42 item 11's rule, re-homed (item 4). *A Bot* is defined in item
    The collapsed bar shows none of the four: a glyph column has no room for
    a verb, a field or a heading, and the open bar is one pointer away.
 
+   **As built** (bl-435a), where the shape above met the code:
+   - **The flag is the completion menu's, not the wire table's.**
+     `crate::verbs::table` is the wire's verbs and carries no pane, so the
+     one field went onto the menu's row (`slash::Row::page`), filled for
+     every row, and the bar lists the rows the menu offers right now with
+     it raised. **The list above swapped two words**: `trail` is `ops`,
+     asked of every server and keyed to nothing, so it is a page; `records`
+     keys on the selection, so it is the conversation's and is not. The
+     pages are therefore `fleet` (the aim's, so only while one is aimed),
+     `attention`, `trail`, `board`, `prices`, in the menu's order. The
+     panes item 7 moves into the settings overlay (`roles`, `login`,
+     `config`, `clients`, `enroll`, `doctor`, `settings`) are not pages,
+     nor are `find` (a needle, asked once), `help`, the switcher, `model`
+     (a dropup) or `unmake` (an act). Each row is `/` and the word, its
+     summary as its help; `attention` wears the waiting count
+     (`status::waiting`) in the attention accent on its tint while non-zero.
+   - **`+ new` is the first row under the pin in both states**: `+ new`
+     with `Ctrl+N` at its right end open, `+` alone collapsed, one seat
+     under one id — so a pointer that opens the bar on it is still on it.
+     The head is the pin alone.
+   - **The filter narrows the open bar only**, through
+     `slash::narrows` — a word of the row's `display`, `name` or preview
+     starting with what was typed, case aside — which the menu's word now
+     goes through too. The keyboard walk and the switcher read the listing
+     whole. It is a box of the keyboard's gate (`keys::FILTER_ID`).
+   - **The place file's key is `kept`**, not `pinned`, which already names
+     the bar's own pin; each entry is the workspace's two words and the
+     root id. The model's word is `kept` throughout (`Model::kept`,
+     `toggle_kept`); the glass keeps the baseline's `PINNED`, `pin` and
+     `unpin`, with the help sentences saying *this bar*. The hint reads
+     `shift-click a conversation to pin`. **The bar's rows now carry the
+     row's menu** (§4.23), which they had not, so `pin` is reachable there
+     and on the switcher's rows alike.
+   - **A kept row leaves the listing below** rather than standing twice.
+   - **The separators** are the stretch's words in capitals at the small
+     size in weak ink over a hairline, laid only above a root (a child
+     stays under its root whatever its age), on UTC's calendar — the seat
+     carries no time zone — with another year's month carrying its year.
+     They and the `PINNED` heading are painted rather than laid as
+     widgets, so they take none of the panel's ids and a row keeps its id
+     as the bar opens over it.
+
 6. **Bots** (new; the wire half is not minted). In the baseline a **Bot is a
    profile with a face**: a profile being an isolated configuration — model,
    memory, skills, credentials, chat history — a Bot is that profile given a

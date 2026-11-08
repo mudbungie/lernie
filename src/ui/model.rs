@@ -53,6 +53,8 @@ mod fold;
 mod gone;
 /// **What the window holds between frames** — the struct itself.
 mod held;
+/// The conversations kept at the bar's top, per seat.
+mod kept;
 /// The three panes that are pure listings, and the field that says which is up.
 mod listing;
 /// The login pane between frames: what it asks about, and the acts it spends.

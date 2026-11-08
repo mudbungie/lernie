@@ -109,6 +109,7 @@ impl Model {
                 self.answered = self.aim.clone();
                 self.resolve();
                 self.prune_tabs();
+                self.prune_kept();
             }
             // Filed whether or not the pane is open: the read stands only while
             // it is, so a frame after it closed is the last one in flight.

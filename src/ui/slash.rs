@@ -65,18 +65,34 @@ pub const REFRESH: &str = "refresh";
 /// wire, the word the composer's strip carried on the glass.
 pub const DELETE: &str = "delete";
 
-/// **One row of the menu**: the word typed, what it does, and the ops its
-/// firing spends — which are its `act:` tags.
+/// **One row of the menu**: the word typed, what it does, the ops its
+/// firing spends — which are its `act:` tags — and whether the bar lists it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Row {
     pub word: &'static str,
     pub summary: &'static str,
     pub ops: &'static [&'static str],
+    /// **A page** (DESIGN §4.48 item 5): a noun whose pane stands on a read
+    /// of what is happening, keyed to the aim or to nothing — never to the
+    /// selection, and never a setting (§4.48 item 7). The bar lists these as
+    /// its verb rows (`crate::ui::bar::verbs`), so a page added here is on
+    /// the bar with no second edit.
+    pub page: bool,
 }
 
 impl Row {
     const fn new(word: &'static str, summary: &'static str, ops: &'static [&'static str]) -> Row {
-        Row { word, summary, ops }
+        Row {
+            word,
+            summary,
+            ops,
+            page: false,
+        }
+    }
+
+    /// The same row, as a page.
+    const fn paged(self) -> Row {
+        Row { page: true, ..self }
     }
 
     /// The row as one run of text: the word, then its summary.
@@ -100,8 +116,22 @@ pub fn matching(model: &Model, draft: &str) -> Vec<Row> {
     };
     rows(model)
         .into_iter()
-        .filter(|row| row.word.starts_with(word))
+        .filter(|row| narrows(row.word, word))
         .collect()
+}
+
+/// **Whether `typed` narrows to `said`** — the one matcher every typed
+/// narrowing on this seat uses: the menu's word, the bar's filter over a
+/// row's words (DESIGN §4.48 item 5). A word of `said` starts with what was
+/// typed, case aside; nothing typed narrows to everything.
+pub fn narrows(said: &str, typed: &str) -> bool {
+    let (said, typed) = (said.to_lowercase(), typed.trim().to_lowercase());
+    let mut after_gap = true;
+    said.char_indices().any(|(at, c)| {
+        let starts = after_gap && said.get(at..).is_some_and(|rest| rest.starts_with(&typed));
+        after_gap = !c.is_alphanumeric();
+        starts
+    })
 }
 
 /// Where the menu keeps which row is chosen — the toolkit's memory, as a

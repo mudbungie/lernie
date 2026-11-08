@@ -35,6 +35,8 @@
 use crate::reply::convs::ConvRow;
 use crate::ui::{Aim, Model, theme};
 
+/// Where a row's age stands on the calendar: the bar's separators.
+pub mod epoch;
 /// The row's own acts, on the menu a secondary click opens.
 pub mod menu;
 /// **One row on the glass**: its words, the lines under it, its subtree
@@ -61,6 +63,16 @@ pub const NOT_ANSWERED: &str = "waiting to hear about this workspace";
 pub const UNCERTAIN: &str = "?";
 /// What the bar row's trashcan does.
 pub const TRASH_HELP: &str = "deletes this conversation; Ctrl+click skips the question";
+/// **The kept group's two words on a row's menu** — the baseline's, which
+/// the operator reaches for; the help sentences below tell them from §4.25's.
+pub const KEEP: &str = "pin";
+pub const UNKEEP: &str = "unpin";
+/// **What keeping a row does** (DESIGN §4.48 item 5) — the bar's arrangement
+/// on this seat, which is not §4.25's `/pin` on the wire, so the sentence
+/// names the bar.
+pub const KEEP_HELP: &str = "keeps this conversation at the top of this bar";
+/// And what the second time does.
+pub const UNKEEP_HELP: &str = "lets this conversation go back to its place in this bar";
 
 /// **The conversations that stand under the aimed workspace**, and the sentence
 /// that stands there when it holds none.

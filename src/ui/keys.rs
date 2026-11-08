@@ -71,8 +71,8 @@ mod boxes;
 pub use bindings::{Act, BINDINGS, Binding, Chord, Keyed, chord_for, cited, cited_word};
 
 pub use boxes::{
-    BODY_ID, BOX_ID, BOXES, CONFIG_ID, DELIVER_ID, FAN_GOAL_ID, NOTE_ID, PROJECT_ID, SUMMARY_ID,
-    TITLE_ID, VERDICT_ID, WORKFLOW_ID,
+    BODY_ID, BOX_ID, BOXES, CONFIG_ID, DELIVER_ID, FAN_GOAL_ID, FILTER_ID, NOTE_ID, PROJECT_ID,
+    SUMMARY_ID, TITLE_ID, VERDICT_ID, WORKFLOW_ID,
 };
 
 /// **Take this frame's keys.** Called at the top of the frame, so what a key

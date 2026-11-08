@@ -235,7 +235,7 @@ fn every_opener_opens_what_its_word_names() {
         (crate::ui::commands::WORD, Model::commanding),
         (crate::ui::doctor::WORD, Model::doctoring),
         (crate::ui::settings::WORD, |m: &Model| {
-            m.lookup == Some(crate::ui::Lookup::Settings)
+            m.lookup == Some(crate::ui::Lookup::Settings(crate::ui::Page::default()))
         }),
         (crate::ui::trail::WORD, Model::trailing),
         (crate::ui::board::WORD, Model::boarding),

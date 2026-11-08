@@ -37,7 +37,9 @@ pub fn fire(model: &mut Model, word: &str, rest: &str) -> bool {
         w if w == crate::ui::queue::WORD => model.begin_queue(),
         w if w == crate::ui::commands::WORD => model.begin_commands(),
         w if w == crate::ui::doctor::WORD => model.begin_doctor(),
-        w if w == crate::ui::settings::WORD => model.lookup = Some(crate::ui::Lookup::Settings),
+        w if w == crate::ui::settings::WORD => {
+            model.lookup = Some(crate::ui::Lookup::Settings(crate::ui::Page::default()));
+        }
         w if w == crate::ui::trail::WORD => model.begin_trail(),
         w if w == crate::ui::board::WORD => model.begin_board(),
         w if w == crate::ui::prices::WORD => model.begin_prices(),

@@ -64,8 +64,6 @@ pub mod run;
 
 /// **The word typed after the slash** that opens it (`crate::ui::slash`).
 pub const WORD: &str = "login";
-/// The pane's own heading.
-pub const HEADING: &str = "sign in";
 /// What it says for a workspace nobody has been answered about yet.
 pub const NOT_ANSWERED: &str = "waiting to hear what this workspace can sign in to";
 /// What it says for a workspace that answered and can sign in to nothing. A
@@ -97,15 +95,19 @@ pub const LOOPBACK: &str = "if the sign-in opens a web page, that page expects \
                             a browser on the server's box: finish it there, or \
                             forward the port by hand";
 
-/// Paint the pane and take the clicks on it. Answers whether there was one to
-/// paint, so the shell knows whether the conversation still stands.
+/// Paint the page's rows and take the clicks on them. Answers whether there
+/// was a page to paint — the overlay scrolls it (`crate::ui::settings`).
 pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     if model.login.is_none() {
         return false;
     }
-    crate::ui::overlay::name(ui, HEADING);
+    // **A page of the settings overlay** (§4.48 item 7): the breadcrumb is
+    // the overlay's, and the workspace it is open on heads the rows.
     if let Some(aim) = model.aim.clone() {
-        ui.label(format!("on {} — {}", aim.address, aim.channel));
+        ui.colored_label(
+            theme::INK_WEAK,
+            format!("on {} — {}", aim.address, aim.channel),
+        );
     }
     // **Both sentences hang off one fact and are said once**, above the rows
     // rather than on each: where the server is, is a property of the workspace.
@@ -120,17 +122,10 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         Some(rows) if rows.is_empty() => {
             ui.label(NO_PROVIDERS);
         }
-        // The list scrolls and the heading above it does not — the shape every
-        // list in this window keeps (bl-e5d2).
         Some(rows) => {
-            egui::ScrollArea::vertical()
-                .id_salt(HEADING)
-                .auto_shrink(false)
-                .show(ui, |ui| {
-                    for row in &rows {
-                        provider(ui, model, row);
-                    }
-                });
+            for row in &rows {
+                provider(ui, model, row);
+            }
         }
     }
     true

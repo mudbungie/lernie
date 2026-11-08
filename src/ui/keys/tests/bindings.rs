@@ -112,7 +112,10 @@ fn the_chords_open_the_switcher_the_model_the_dock_the_settings_and_help() {
     assert!(model.dropup.is_some(), "Ctrl+O opens the model's dropup");
     model.escape();
     fire(&window, &mut model, Act::Settings);
-    assert_eq!(model.lookup, Some(Lookup::Settings));
+    assert_eq!(
+        model.lookup,
+        Some(Lookup::Settings(crate::ui::Page::default()))
+    );
     fire(&window, &mut model, Act::Help);
     assert_eq!(model.lookup, Some(Lookup::Commands));
     model.escape();

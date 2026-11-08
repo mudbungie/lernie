@@ -1,7 +1,7 @@
 //! What the doctor pane says in every state it can be in, and the control that
 //! opens it driven through the real window.
 
-use super::{HEADING, NO_CHECKS, NOT_ANSWERED, WORD, render};
+use super::{NO_CHECKS, NOT_ANSWERED, WORD, render};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{checked, doctored, escape, own, pane, seated};
 use crate::ui::{Diagnosis, Lookup, Model};
@@ -13,7 +13,7 @@ fn a_shut_pane_paints_nothing_and_reports_it() {
     let mut stood = true;
     let painted = pane(|ui| stood = render(ui, &mut model));
     assert!(!stood, "a shut pane reports that it painted nothing");
-    assert!(!painted.contains(HEADING), "{painted}");
+    assert!(painted.trim().is_empty(), "{painted}");
 }
 
 /// **One row per check, in each ok state**: a check that holds says so and
@@ -43,7 +43,7 @@ fn every_check_paints_its_state_its_fact_and_the_remedy_where_there_is_one() {
 #[test]
 fn every_empty_state_is_its_own_sentence() {
     let unanswered = Model {
-        lookup: Some(Lookup::Doctor),
+        lookup: Some(Lookup::Settings(crate::ui::Page::Doctor)),
         ..seated()
     };
     let quiet = Model {

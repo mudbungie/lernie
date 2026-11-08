@@ -1,9 +1,7 @@
 //! What the config pane says: the destinations it offers, the two views of one
 //! read, and the judgement that is the server's.
 
-use super::{
-    HEADING, NO_BYTES, NO_LINEAGES, NO_SETTINGS, NOT_ANSWERED, NOT_READ, NOTHING_PICKED, render,
-};
+use super::{NO_BYTES, NO_LINEAGES, NO_SETTINGS, NOT_ANSWERED, NOT_READ, NOTHING_PICKED, render};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, configured, escape, lineage, pane, seated};
 use crate::ui::{Configuring, Model};
@@ -17,7 +15,7 @@ fn a_shut_pane_paints_nothing_and_reports_it() {
     let mut stood = true;
     let painted = pane(|ui| stood = render(ui, &mut model));
     assert!(!stood, "a shut pane reports that it painted nothing");
-    assert!(!painted.contains(HEADING), "{painted}");
+    assert!(painted.trim().is_empty(), "{painted}");
 }
 
 /// **Three empty states and each is its own sentence**: a workspace nobody has been

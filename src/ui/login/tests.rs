@@ -1,8 +1,8 @@
 //! What the login pane says, what it offers, and what one click on it composes.
 
 use super::{
-    ELSEWHERE, HEADING, LOOPBACK, NO_PROVIDERS, NOT_ANSWERED, NOT_OFFERED, OFFERS, OFFERS_NOTHING,
-    SIGN_IN, WORD, render,
+    ELSEWHERE, LOOPBACK, NO_PROVIDERS, NOT_ANSWERED, NOT_OFFERED, OFFERS, OFFERS_NOTHING, SIGN_IN,
+    WORD, render,
 };
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, pane, provider, seated, signing};
@@ -17,7 +17,7 @@ fn a_shut_pane_paints_nothing_and_reports_it() {
     let mut stood = true;
     let painted = pane(|ui| stood = render(ui, &mut model));
     assert!(!stood, "a shut pane reports that it painted nothing");
-    assert!(!painted.contains(HEADING), "{painted}");
+    assert!(painted.trim().is_empty(), "{painted}");
 }
 
 /// **Three states, and the first two are different sentences.** A workspace
@@ -193,7 +193,12 @@ fn the_roster_control_opens_the_pane_and_the_pane_covers_the_conversation() {
     assert!(crate::ui::slash::fire(&mut model, WORD, ""));
     assert_eq!(model.login, Some(Login::default()));
     let painted = window.text(|ctx| crate::ui::render(ctx, &mut model));
-    assert!(painted.lines().any(|line| line == HEADING), "{painted}");
+    assert!(
+        painted
+            .lines()
+            .any(|line| line == crate::ui::Page::Providers.label()),
+        "{painted}"
+    );
     assert!(
         !painted.contains(crate::ui::composer::HINT),
         "the composer stands down under it:\n{painted}"

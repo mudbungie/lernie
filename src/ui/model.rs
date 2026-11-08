@@ -61,6 +61,8 @@ mod listing;
 mod login;
 /// What the seat last heard that was not content, and how the shell says it.
 mod notice;
+/// The settings overlay's pages, and which one stands (§4.48 item 7).
+mod page;
 /// What a frame composed, and what a lost reply would mean for it.
 mod posted;
 /// The prices pane between frames: each channel's table and the acts' draft.
@@ -111,6 +113,7 @@ pub use held::Model;
 pub use listing::Listing;
 pub use login::Login;
 pub use notice::{CONFIG_DOOR, Notice};
+pub use page::{Group, Page, Seeking};
 pub use posted::Posted;
 pub use pricing::{Pricing, Table as PriceTable};
 pub use queue::{Asking, Section};

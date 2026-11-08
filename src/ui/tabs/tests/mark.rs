@@ -55,7 +55,10 @@ fn a_click_on_the_mark_opens_the_settings() {
     let mut harness = crate::snapshot::seat(seated(), 1400.0, 900.0);
     harness.get_by_label(MARK).click();
     harness.run();
-    assert_eq!(harness.state().lookup, Some(crate::ui::Lookup::Settings));
+    assert_eq!(
+        harness.state().lookup,
+        Some(crate::ui::Lookup::Settings(crate::ui::Page::default()))
+    );
     assert!(harness.state().covered());
 }
 

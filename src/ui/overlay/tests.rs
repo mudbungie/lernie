@@ -47,7 +47,7 @@ fn escape_puts_the_pane_down() {
 #[test]
 fn a_standing_pane_takes_the_keyboard_first() {
     let mut model = seated();
-    model.lookup = Some(crate::ui::Lookup::Settings);
+    model.lookup = Some(crate::ui::Lookup::Settings(crate::ui::Page::default()));
     let window = crate::paint_probe::frame::Window::new();
     let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
     window.frame(Vec::new(), &mut body);

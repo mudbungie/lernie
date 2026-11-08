@@ -43,7 +43,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
         let help = crate::ui::keys::cited(MARK_HELP, &[crate::ui::keys::Act::Settings]);
         if theme::paint::mark(ui, &help).clicked() {
-            crate::ui::slash::fire(model, crate::ui::settings::WORD, "");
+            model.reopen_settings();
         }
         ui.vertical(|ui| strip(ui, model));
     });

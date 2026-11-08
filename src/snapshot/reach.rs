@@ -59,8 +59,8 @@
 //! set the question is about.
 
 use crate::ui::{
-    Model, board, clients, commands, config, doctor, enroll, find, fleet, keys, login, prices,
-    queue, records, theme, trail, tuning, unmake,
+    Model, Page, board, clients, commands, config, doctor, enroll, find, fleet, keys, login,
+    prices, queue, records, theme, trail, tuning, unmake,
 };
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
@@ -102,7 +102,7 @@ const PANES: [Covered; 15] = [
     },
     Covered {
         word: tuning::WORD,
-        heading: tuning::HEADING,
+        heading: Page::Roles.label(),
     },
     Covered {
         word: enroll::WORD,
@@ -110,7 +110,7 @@ const PANES: [Covered; 15] = [
     },
     Covered {
         word: login::WORD,
-        heading: login::HEADING,
+        heading: Page::Providers.label(),
     },
     Covered {
         word: fleet::WORD,
@@ -134,7 +134,7 @@ const PANES: [Covered; 15] = [
     },
     Covered {
         word: doctor::WORD,
-        heading: doctor::HEADING,
+        heading: Page::Doctor.label(),
     },
     Covered {
         word: find::WORD,
@@ -150,11 +150,11 @@ const PANES: [Covered; 15] = [
     },
     Covered {
         word: clients::WORD,
-        heading: clients::HEADING,
+        heading: Page::Clients.label(),
     },
     Covered {
         word: config::WORD,
-        heading: config::HEADING,
+        heading: Page::Config.label(),
     },
 ];
 

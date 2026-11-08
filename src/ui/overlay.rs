@@ -150,11 +150,15 @@ pub fn stand(ui: &mut egui::Ui, model: &mut Model) {
     ui.ctx().data_mut(|d| d.insert_temp(first, wants));
     float(ui, "the overlay", ceiling(ui), |ui| {
         use crate::ui::{
-            board, clear, clients, commands, config, doctor, find, fleet, login, prices, queue,
-            records, settings, switcher, trail, tuning, unmake,
+            board, clear, commands, find, fleet, prices, queue, records, settings, switcher, trail,
+            unmake,
         };
+        // **The settings overlay answers for seven of the panes** (§4.48
+        // item 7): the tuning, the login, the config, the clients, the
+        // doctor and the knob table are pages of it, and it paints whichever
+        // stands under its tree.
         let _ = switcher::render(ui, model)
-            || tuning::render(ui, model)
+            || settings::render(ui, model)
             || records::render(ui, model)
             || queue::render(ui, model)
             || trail::render(ui, model)
@@ -162,13 +166,8 @@ pub fn stand(ui: &mut egui::Ui, model: &mut Model) {
             || board::render(ui, model)
             || fleet::render(ui, model)
             || commands::render(ui, model)
-            || doctor::render(ui, model)
             || find::render(ui, model)
             || prices::render(ui, model)
-            || login::render(ui, model)
-            || clients::render(ui, model)
-            || config::render(ui, model)
-            || settings::render(ui, model)
             || unmake::render(ui, model);
     });
     // A pane with no control leaves the flag standing; nothing after the

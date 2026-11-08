@@ -14,7 +14,10 @@ fn a_word_fired_under_the_switcher_puts_the_switcher_down() {
     assert!(model.switching);
     assert!(fire(&mut model, crate::ui::settings::WORD, ""));
     assert!(!model.switching, "the switcher is down");
-    assert_eq!(model.lookup, Some(Lookup::Settings));
+    assert_eq!(
+        model.lookup,
+        Some(Lookup::Settings(crate::ui::Page::default()))
+    );
 }
 
 /// **A pane opened by its word from under another pane stands alone**, the
@@ -37,7 +40,10 @@ fn nothing_fires_under_the_enrollment() {
     assert!(model.enroll.is_some());
     assert!(!fire(&mut model, crate::ui::settings::WORD, ""));
     assert!(model.enroll.is_some(), "the enrollment stands");
-    assert_ne!(model.lookup, Some(Lookup::Settings));
+    assert_ne!(
+        model.lookup,
+        Some(Lookup::Settings(crate::ui::Page::default()))
+    );
     model.uncover();
     assert!(model.enroll.is_some(), "uncover never touches it");
 }

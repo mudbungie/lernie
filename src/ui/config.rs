@@ -50,8 +50,6 @@ use crate::verbs::Where;
 
 /// **The word typed after the slash** that opens it (`crate::ui::slash`).
 pub const WORD: &str = "config";
-/// The pane's own heading.
-pub const HEADING: &str = "config";
 /// The hint the workflow name box wears, and the control beside it.
 pub const WORKFLOW: &str = "workflow";
 /// How wide that box is — the composer's own arming width, because a workflow
@@ -74,8 +72,8 @@ pub const NO_BYTES: &str = "this file has no bytes yet";
 /// What it says for a file whose destination has no schema at all.
 pub const NO_SETTINGS: &str = "this file has no fields to edit one by one — edit its text instead";
 
-/// Paint the pane and take the clicks on it. Answers whether there was one to
-/// paint, so the shell knows whether the conversation still stands.
+/// Paint the page's rows and take the clicks on them. Answers whether there
+/// was a page to paint — the overlay scrolls it (`crate::ui::settings`).
 ///
 /// **The pane is about the aimed workspace**, so it stands only where there is
 /// one: it opens only on an aim and the aim is never withdrawn, and taking
@@ -84,18 +82,17 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     let (Some(_), Some(aim)) = (&model.configuring, model.aim.clone()) else {
         return false;
     };
-    crate::ui::overlay::name(ui, HEADING);
-    ui.label(format!("on {} — {}", aim.address, aim.channel));
-    egui::ScrollArea::vertical()
-        .id_salt(HEADING)
-        .auto_shrink(false)
-        .show(ui, |ui| {
-            destinations(ui, model, &aim);
-            ui.separator();
-            proposals::render(ui, model);
-            ui.separator();
-            file(ui, model);
-        });
+    // **A page of the settings overlay** (§4.48 item 7): the breadcrumb is
+    // the overlay's, and the workspace it is open on heads the rows.
+    ui.colored_label(
+        theme::INK_WEAK,
+        format!("on {} — {}", aim.address, aim.channel),
+    );
+    destinations(ui, model, &aim);
+    ui.separator();
+    proposals::render(ui, model);
+    ui.separator();
+    file(ui, model);
     true
 }
 

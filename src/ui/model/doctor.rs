@@ -37,7 +37,7 @@ impl Model {
     /// not. Nothing gates it: the seat most likely to be asking is the one
     /// with nothing to aim at.
     pub fn begin_doctor(&mut self) {
-        self.lookup = Some(Lookup::Doctor);
+        self.lookup = Some(Lookup::Settings(super::Page::Doctor));
         self.diagnoses.clear();
         let named = self.aim.as_ref().map(|aim| aim.address.clone());
         self.outbox
@@ -46,7 +46,7 @@ impl Model {
 
     /// **Whether that pane is the one standing.**
     pub fn doctoring(&self) -> bool {
-        self.lookup == Some(Lookup::Doctor)
+        self.lookup == Some(Lookup::Settings(super::Page::Doctor))
     }
 
     /// File one channel's checks, replacing what that channel last said and

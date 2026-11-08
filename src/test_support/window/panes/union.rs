@@ -222,7 +222,7 @@ pub(crate) fn checked(check: &str, ok: bool) -> crate::reply::doctor::Check {
 /// row can carry.
 pub(crate) fn doctored() -> Model {
     Model {
-        lookup: Some(crate::ui::Lookup::Doctor),
+        lookup: Some(crate::ui::Lookup::Settings(crate::ui::Page::Doctor)),
         diagnoses: vec![crate::ui::Diagnosis {
             channel: own().channel,
             rows: vec![checked("listener", true), checked("address", false)],

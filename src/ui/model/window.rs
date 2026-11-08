@@ -81,12 +81,12 @@ pub enum Lookup {
     /// two are mutually exclusive by construction: one is opened from the
     /// other, and the way out of it re-opens the one it came from.
     Clearing,
-    /// **Whether the box is wired** (`crate::ui::doctor`; bl-9bbb) — a member
-    /// on the verb table's terms, its read posted when the pane opens.
-    Doctor,
-    /// **The seat's own knobs** (`crate::ui::settings`; DESIGN §4.46 item
-    /// 4) — the one pane that posts nothing, because every row is this box's.
-    Settings,
+    /// **The settings overlay, on one of the pages with no state of its own**
+    /// (`crate::ui::settings`; DESIGN §4.48 item 7): the seat's three knob
+    /// pages, the enrollment's door and the doctor (bl-9bbb), whose read is
+    /// posted when its page opens. The four workspace pages never ride here —
+    /// each stands on its own field, and `Model::page` reads them first.
+    Settings(super::Page),
 }
 
 /// **One channel's answer to *what do you answer to***, and the channel it

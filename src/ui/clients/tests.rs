@@ -1,7 +1,7 @@
 //! What the clients pane says: the three empty states, the two lifetimes on a
 //! row, and the consent said on every tool.
 
-use super::{HEADING, NO_SUBJECT, NONE_REGISTERED, NOT_ANSWERED, OFFERS_NOTHING, SUBJECT, render};
+use super::{NO_SUBJECT, NONE_REGISTERED, NOT_ANSWERED, OFFERS_NOTHING, SUBJECT, render};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{escape, machine, machines, pane, seated};
 use crate::ui::Model;
@@ -14,7 +14,7 @@ fn a_shut_pane_paints_nothing_and_reports_it() {
     let mut stood = true;
     let painted = pane(|ui| stood = render(ui, &mut model));
     assert!(!stood, "a shut pane reports that it painted nothing");
-    assert!(!painted.contains(HEADING), "{painted}");
+    assert!(painted.trim().is_empty(), "{painted}");
 }
 
 /// **Three states, and the first two are different sentences.** A workspace nobody

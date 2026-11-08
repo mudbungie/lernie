@@ -252,7 +252,7 @@ pub(super) fn dropped() -> World {
 /// sliders, its checks and `defaults` are on.
 pub(super) fn settings() -> World {
     let mut model = crate::test_support::window::seated();
-    model.lookup = Some(crate::ui::Lookup::Settings);
+    model.lookup = Some(crate::ui::Lookup::Settings(crate::ui::Page::default()));
     World {
         name: "settings",
         model,

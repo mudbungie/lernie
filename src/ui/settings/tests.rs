@@ -1,24 +1,29 @@
-//! The pane: opened by its word and its chord, every knob painted, a slider
-//! and a check writing the field, the pin on the bar's own fact, and the
-//! defaults link.
+//! The overlay: the breadcrumb, the tree as a column and as a select, every
+//! knob a row of its page, the pin, the defaults, the search, and the
+//! enrollment's door.
 
-use super::{DEFAULTS, HEADING, PINNED, WORD, render};
+use super::rows::{DEFAULTS, PINNED};
+use super::{DOOR, HEADING, WORD, render};
 use crate::paint_probe::frame::Window;
 use crate::settings::{KNOBS, Settings};
 use crate::test_support::window::{click, pane, seated};
-use crate::ui::{Lookup, Model};
+use crate::ui::{Lookup, Model, Page};
+use egui_kittest::kittest::Queryable;
 
-/// A seat with the pane standing.
-fn open() -> Model {
+/// The knobs' rows, the search and the select.
+mod rows;
+
+/// A seat with the overlay standing on `page`.
+pub(super) fn open(page: Page) -> Model {
     Model {
-        lookup: Some(Lookup::Settings),
+        lookup: Some(Lookup::Settings(page)),
         ..seated()
     }
 }
 
-/// A closed pane paints nothing and says so.
+/// A closed overlay paints nothing and says so.
 #[test]
-fn a_shut_pane_paints_nothing_and_reports_it() {
+fn a_shut_overlay_paints_nothing_and_reports_it() {
     let mut model = seated();
     let mut stood = true;
     let painted = pane(|ui| stood = render(ui, &mut model));
@@ -26,30 +31,92 @@ fn a_shut_pane_paints_nothing_and_reports_it() {
     assert!(!painted.contains(HEADING), "{painted}");
 }
 
-/// **Every knob is a row**: its label and its sentence, the pin's row and the
-/// defaults link beside them — the table painted, with no list kept here.
+/// **The breadcrumb heads every page, each word its own**, and the tree
+/// stands beside the page as a column at the desk size with every group and
+/// every page on it.
 #[test]
-fn every_knob_is_painted_with_its_sentence() {
-    let mut model = open();
-    let mut stood = false;
-    let painted = pane(|ui| stood = render(ui, &mut model));
-    assert!(stood);
-    for word in [HEADING, PINNED, DEFAULTS] {
-        assert!(painted.contains(word), "{word:?}:\n{painted}");
-    }
-    for knob in KNOBS {
-        assert!(painted.contains(knob.label), "{}:\n{painted}", knob.key);
-        assert!(painted.contains(knob.help), "{}:\n{painted}", knob.key);
+fn the_breadcrumb_and_the_tree_stand_on_every_page() {
+    for page in Page::ALL {
+        let harness = crate::snapshot::seat(open(page), 1400.0, 900.0);
+        for word in [HEADING, page.group().label(), page.label()] {
+            assert!(
+                harness.query_all_by_label(word).next().is_some(),
+                "{word:?} on {page:?}"
+            );
+        }
+        for leaf in Page::ALL {
+            assert!(
+                harness.query_all_by_label(leaf.label()).next().is_some(),
+                "{leaf:?} in the tree on {page:?}"
+            );
+        }
     }
 }
 
-/// **The word and the chord open it, and Esc puts it down** — the one pane
-/// on the menu that posts nothing.
+/// **A row of the tree turns the overlay to its page**, and the page last
+/// shown is remembered for the mark.
 #[test]
-fn the_word_and_the_chord_open_it_and_escape_closes_it() {
+fn a_tree_row_turns_the_overlay_and_the_page_is_remembered() {
+    let mut harness = crate::snapshot::seat(open(Page::default()), 1400.0, 900.0);
+    harness.get_by_label(Page::Clients.label()).click();
+    harness.run();
+    assert_eq!(harness.state().page(), Some(Page::Clients));
+    harness.run();
+    assert_eq!(harness.state().visited, Page::Clients);
+    harness.get_by_label(Page::Doctor.label()).click();
+    harness.run();
+    assert_eq!(harness.state().page(), Some(Page::Doctor));
+}
+
+/// **A page whose word is off the menu is dark**: with nothing aimed the
+/// workspace's rows take no click.
+#[test]
+fn a_page_not_offered_takes_no_click() {
+    let bare = Model {
+        lookup: Some(Lookup::Settings(Page::default())),
+        ..Model::default()
+    };
+    let mut harness = crate::snapshot::seat(bare, 1400.0, 900.0);
+    harness.get_by_label(Page::Roles.label()).click();
+    harness.run();
+    assert_eq!(harness.state().page(), Some(Page::default()));
+}
+
+/// **Every knob is a row of its page**: its label and its sentence on that
+/// page and on no other, the pin on the bar's, the defaults link on each.
+#[test]
+fn every_knob_is_a_row_of_its_page_with_its_sentence() {
+    for seat in crate::settings::Page::ALL {
+        let mut model = open(Page::Seat(seat));
+        let mut stood = false;
+        let painted = pane(|ui| stood = render(ui, &mut model));
+        assert!(stood);
+        assert!(painted.contains(DEFAULTS), "{painted}");
+        assert_eq!(painted.contains(PINNED), seat == crate::settings::Page::Bar);
+        for knob in KNOBS {
+            assert_eq!(
+                painted.contains(knob.label),
+                knob.page == seat,
+                "{}:\n{painted}",
+                knob.key
+            );
+            assert_eq!(
+                painted.contains(knob.help),
+                knob.page == seat,
+                "{}:\n{painted}",
+                knob.key
+            );
+        }
+    }
+}
+
+/// **The word and the chord open it on *Seat › look*, and Esc puts it down**
+/// — the one page on the menu that posts nothing.
+#[test]
+fn the_word_and_the_chord_open_look_and_escape_closes_it() {
     let mut model = seated();
     assert!(crate::ui::slash::fire(&mut model, WORD, ""));
-    assert_eq!(model.lookup, Some(Lookup::Settings));
+    assert_eq!(model.page(), Some(Page::default()));
     assert!(model.covered());
     assert!(model.outbox.is_empty(), "nothing crosses the boundary");
     model.escape();
@@ -63,7 +130,7 @@ fn the_word_and_the_chord_open_it_and_escape_closes_it() {
         modifiers: egui::Modifiers::COMMAND,
     };
     window.frame(vec![chord], |ctx| crate::ui::render(ctx, &mut model));
-    assert_eq!(model.lookup, Some(Lookup::Settings), "Ctrl+, opens it");
+    assert_eq!(model.page(), Some(Page::default()), "Ctrl+, opens it");
     assert!(
         crate::ui::slash::rows(&model)
             .iter()
@@ -72,82 +139,52 @@ fn the_word_and_the_chord_open_it_and_escape_closes_it() {
     );
 }
 
-/// **A check writes its field and the pin's row writes the bar's**: one fact,
-/// two doors, and the defaults link puts the knobs back and leaves the pin,
-/// which is not a knob. The pin is clicked last: pinned, the bar eases open
-/// on the clock, and a click aimed on one frame lands beside what moved.
+/// **The enrollment's page is its door**: offered on an aim, it opens the
+/// whole-window cover and the overlay stands down under it.
 #[test]
-fn a_check_writes_the_field_the_pin_row_writes_the_bar_and_defaults_reset() {
+fn the_enrollment_page_is_a_door_to_the_cover() {
+    let mut harness = crate::snapshot::seat(open(Page::Enrollment), 1400.0, 900.0);
+    harness.get_by_label(DOOR).click();
+    harness.run();
+    assert!(harness.state().enroll.is_some());
+    assert_eq!(harness.state().page(), None);
+    let bare = Model {
+        lookup: Some(Lookup::Settings(Page::Enrollment)),
+        ..Model::default()
+    };
+    let mut harness = crate::snapshot::seat(bare, 1400.0, 900.0);
+    harness.get_by_label(DOOR).click();
+    harness.run();
+    assert!(harness.state().enroll.is_none(), "dark with nothing aimed");
+}
+
+/// **The Servers pages say the dial state the seat panel says**, where a
+/// server will not dial — on the enrollment's page and the doctor's.
+#[test]
+fn the_servers_pages_say_the_dial_state() {
+    for page in [Page::Enrollment, Page::Doctor] {
+        let mut model = open(page);
+        model.roster[0].held = crate::ui::Held::Unheld("nothing provisioned".to_owned());
+        let painted = pane(|ui| {
+            render(ui, &mut model);
+        });
+        assert!(
+            painted.contains("nothing provisioned"),
+            "{page:?}:\n{painted}"
+        );
+    }
+}
+
+/// **The defaults link puts the knobs back and leaves the pin**, which is
+/// not a knob.
+#[test]
+fn defaults_reset_the_knobs_and_leave_the_pin() {
     let window = Window::new();
-    let mut model = open();
-    window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
-    click(&window, "bubbles", |ctx| crate::ui::render(ctx, &mut model));
-    assert!(
-        !model.settings.on(crate::settings::Toggle::Bubbles),
-        "the check flipped the field"
-    );
+    let mut model = open(Page::Seat(crate::settings::Page::Bar));
     model.settings.wheel = 200.0;
+    model.bar.pinned = true;
     window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
     click(&window, DEFAULTS, |ctx| crate::ui::render(ctx, &mut model));
     assert_eq!(model.settings, Settings::default());
-    click(&window, PINNED, |ctx| crate::ui::render(ctx, &mut model));
-    assert!(model.bar.pinned, "the pin's row is the bar's own fact");
-}
-
-/// **A slider writes its field through the row's setter**, and the arrow
-/// keys move the one that holds the keyboard — how the pane is worked with
-/// no pointer (DESIGN §4.46 item 3).
-#[test]
-fn a_slider_moves_on_the_arrows_and_writes_its_field() {
-    let window = Window::new();
-    let mut model = open();
-    window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
-    // **The trough stands left of its number**: the slider lays its run,
-    // then the value, then the label, so a point left of the value's run by
-    // more than the gap is on the trough — a press there moves the knob to
-    // where the pointer landed and hands the slider the keyboard.
-    let shown = format!("{} pt", crate::settings::WHEEL);
-    let value = crate::paint_probe::frame::locate_in(&window, &shown, |ctx| {
-        crate::ui::render(ctx, &mut model);
-    })
-    .expect("the wheel's number is on the glass");
-    let trough = egui::pos2(value.x - 60.0, value.y);
-    crate::paint_probe::frame::click(&window, trough, |ctx| crate::ui::render(ctx, &mut model));
-    let pressed = model.settings.wheel;
-    assert!(
-        (pressed - crate::settings::WHEEL).abs() > f32::EPSILON,
-        "{pressed}"
-    );
-    let right = egui::Event::Key {
-        key: egui::Key::ArrowRight,
-        physical_key: None,
-        pressed: true,
-        repeat: false,
-        modifiers: egui::Modifiers::NONE,
-    };
-    window.frame(vec![right], |ctx| crate::ui::render(ctx, &mut model));
-    assert!(
-        (model.settings.wheel - pressed).abs() > f32::EPSILON,
-        "{pressed} -> {}",
-        model.settings.wheel
-    );
-}
-
-/// **A row whose kind and value disagree paints no control**: the table is
-/// judged before any pane paints it (`crate::settings::tests`), so the arm
-/// exists to refuse a control that lies rather than to be reached.
-#[test]
-fn a_row_whose_kind_and_value_disagree_paints_no_control() {
-    let lying = crate::settings::Knob {
-        key: "lying",
-        label: "a knob that lies",
-        help: "its kind says a toggle and its value is a number",
-        kind: crate::settings::Kind::Toggle,
-        get: |_| crate::settings::Knobbed::At(1.0),
-        set: |_, _| {},
-    };
-    let mut settings = Settings::default();
-    let painted = pane(|ui| super::row(ui, &mut settings, &lying));
-    assert!(painted.contains(lying.help), "{painted}");
-    assert!(!painted.contains(lying.label), "no control:\n{painted}");
+    assert!(model.bar.pinned);
 }

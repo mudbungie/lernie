@@ -23,42 +23,39 @@ use crate::ui::{Model, theme};
 
 /// **The word typed after the slash** that opens it (`crate::ui::slash`).
 pub const WORD: &str = "doctor";
-/// The pane's own heading.
-pub const HEADING: &str = "is this box wired";
 /// What it says before any channel has answered.
 pub const NOT_ANSWERED: &str = "waiting to hear whether this box is wired";
 /// What a section says for a server that answered and ran no check — a fact
 /// about that server, and the one empty state here that is not a wait.
 pub const NO_CHECKS: &str = "this server ran no check";
 
-/// Paint the pane and take the clicks on it. Answers whether there was one to
-/// paint, so the shell knows whether the conversation still stands.
+/// Paint the page's rows. Answers whether there was a page to paint — the
+/// overlay scrolls it (`crate::ui::settings`).
 pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     if !model.doctoring() {
         return false;
     }
-    crate::ui::overlay::name(ui, HEADING);
+    // **A page of the settings overlay** (§4.48 item 7), under the dial
+    // state the seat panel says.
+    if let Some(dial) = crate::ui::status::seat::dial(model) {
+        ui.colored_label(theme::INK_WEAK, dial);
+    }
     let diagnoses = model.diagnoses.clone();
     if diagnoses.is_empty() {
         ui.label(NOT_ANSWERED);
         return true;
     }
-    egui::ScrollArea::vertical()
-        .id_salt(HEADING)
-        .auto_shrink(false)
-        .show(ui, |ui| {
-            for section in &diagnoses {
-                ui.separator();
-                ui.label(crate::ui::roster::header(&section.channel));
-                if section.rows.is_empty() {
-                    ui.label(NO_CHECKS);
-                    continue;
-                }
-                for row in &section.rows {
-                    check(ui, row);
-                }
-            }
-        });
+    for section in &diagnoses {
+        ui.separator();
+        ui.label(crate::ui::roster::header(&section.channel));
+        if section.rows.is_empty() {
+            ui.label(NO_CHECKS);
+            continue;
+        }
+        for row in &section.rows {
+            check(ui, row);
+        }
+    }
     true
 }
 

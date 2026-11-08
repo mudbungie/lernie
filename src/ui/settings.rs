@@ -1,121 +1,155 @@
-//! **The settings pane** (DESIGN §4.46 item 4): the knob table painted, one
-//! row per knob, and nothing decided here.
+//! **The settings overlay: one frame, a tree of pages** (DESIGN §4.48 item
+//! 7, amending §4.46 item 4 and §4.42 item 6).
 //!
-//! Every row is a fact about THIS seat — yog's `docs/REMOTE.md` §7's
-//! per-seat UI state — so the pane posts nothing and has no standing read:
-//! a change lands in `Model::settings` on the frame it is made, every reader
-//! reads it on the next, and the place file writes it at exit
-//! (`crate::place`). The tuning pane (§4.17) is the workspace's settings and this
-//! is the box's, and the two never meet.
+//! The baseline's Settings is one floating card: a navigation tree at the
+//! left, a breadcrumb at the head of the page, a search field, and pages of
+//! rows. This seat had `/settings` as one flat table of knobs and six panes
+//! beside it that were each a page of what a person would call settings.
+//! **They are pages of this one overlay now**: *Seat* (the knob table's three
+//! pages, `crate::settings::Page`), *Workspace* (`/roles`, `/login`,
+//! `/config`, `/clients`) and *Servers* (the enrollment's door, `/doctor`).
 //!
-//! **The table is the pane**: a knob added to `crate::settings::KNOBS` is a
-//! row here with no edit, painted as the kind its row names — a number is a
-//! slider, a toggle a check — over its help sentence in weak ink, which is
-//! also what it says under the pointer. The pin is the thirteenth row,
-//! painted on the same fact the bar's head toggles (`Place::pinned`), because
-//! one fact with two doors is still one fact.
+//! **Every word stands.** A page is opened by its word where it has one
+//! (`crate::ui::Page::word`), so the menu, the reach bound and the standing
+//! reads are untouched; `/settings` and Ctrl+, open *Seat › look*; the mark
+//! reopens the page last shown (`Model::reopen_settings`). Which page stands
+//! is `Model::page`, derived from the panes' own fields — this file keeps no
+//! state about it.
+//!
+//! **The tree is a column where there is room and a select where there is
+//! not** (`tree`): the overlay floats in the column, and at the matrix size
+//! the column is narrower than a tree and a page side by side.
+//!
+//! **The knob pages are rows in the baseline's shape** — label, help beneath
+//! in weak ink, control at the right end (`rows`) — and a change lands on the
+//! frame it is made (§4.46 item 4). The four workspace pages keep their
+//! wrapped layouts, because their control groups do not fit at the right end
+//! of a 320-point page: each keeps its tags, its standing read and its own
+//! `set` or `write` where it crosses the wire.
 
-use crate::settings::{KNOBS, Kind, Knob, Knobbed, Settings};
-use crate::ui::{Lookup, Model, theme};
+use crate::ui::{Model, Page, overlay, theme};
 
-/// **The word typed after the slash** that opens it (`crate::ui::slash`),
-/// and the chord Ctrl+, fires (`crate::ui::keys`).
+/// **The word typed after the slash** that opens it on *Seat › look*
+/// (`crate::ui::slash`), and the chord Ctrl+, fires (`crate::ui::keys`).
 pub const WORD: &str = "settings";
 /// What the menu says beside the word.
-pub const SUMMARY: &str = "this seat's own knobs — the wheel, the bar, the help, the look — Ctrl+,";
-/// The pane's own heading.
-pub const HEADING: &str = "this seat's settings";
-/// The pin's row: the same fact as the bar's head.
-pub const PINNED: &str = "bar pinned open";
-/// What the pin's row does.
-pub const PINNED_HELP: &str = "keeps the bar open whatever the pointer does — the pin at its head";
-/// The link at the foot that puts every knob back, and what it does.
-pub const DEFAULTS: &str = "defaults";
-pub const DEFAULTS_HELP: &str = "puts every knob above back to its default; the pin stays";
+pub const SUMMARY: &str =
+    "this seat's settings: its own knobs, the workspace's, the servers' — Ctrl+,";
+/// The breadcrumb's root.
+pub const HEADING: &str = "Settings";
+/// The enrollment's row, its door, and what the door does.
+pub const ENROLL: &str = "a new box";
+pub const DOOR: &str = "enroll…";
+pub const ENROLL_HELP: &str =
+    "opens the enrollment over the whole window: a name, a grade, and the key shown once";
 
-/// Paint the pane and take what changed on it. Answers whether there was one
-/// to paint, so the shell knows whether the conversation still stands.
+/// **The overlay's inner width at which the tree stands as a column**: the
+/// tree's width and a page as wide as the matrix size's window. Narrower,
+/// the tree is a select above the page.
+pub const WIDE: f32 = tree::WIDTH + 400.0;
+
+/// Paint the overlay on whichever page stands, and take what changed on it.
+/// Answers whether there was one to paint.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
-    if model.lookup != Some(Lookup::Settings) {
+    let Some(page) = model.page() else {
         return false;
+    };
+    model.visited = page;
+    breadcrumb(ui, page);
+    if search::render(ui, model) {
+        return true;
     }
-    crate::ui::overlay::name(ui, HEADING);
-    egui::ScrollArea::vertical()
-        .id_salt(HEADING)
-        .auto_shrink(false)
-        .show(ui, |ui| {
-            for knob in KNOBS {
-                row(ui, &mut model.settings, knob);
-            }
-            theme::paint::toggle(ui, &mut model.bar.pinned, PINNED, PINNED_HELP);
-            sentence(ui, PINNED_HELP);
-            ui.add_space(theme::space::S);
-            if theme::paint::link(ui, DEFAULTS, theme::INK_WEAK, DEFAULTS_HELP).clicked() {
-                model.settings = Settings::default();
-            }
+    if ui.available_width() >= WIDE {
+        ui.horizontal_top(|ui| {
+            tree::column(ui, model, page);
+            ui.separator();
+            ui.vertical(|ui| body(ui, model, page));
         });
+    } else {
+        tree::select(ui, model, page);
+        body(ui, model, page);
+    }
     true
 }
 
-/// **One knob's row**: its control by its kind, then its sentence. A slider
-/// edits a copy and writes it back through the row's own setter, so the
-/// typed field and the table cannot disagree about what a number means.
-fn row(ui: &mut egui::Ui, settings: &mut Settings, knob: &Knob) {
-    match (knob.kind, (knob.get)(settings)) {
-        (Kind::Toggle, Knobbed::On(mut on)) => {
-            let seat = theme::paint::toggle(ui, &mut on, knob.label, knob.help);
-            written(settings, knob, seat.changed(), Knobbed::On(on));
-        }
-        (
-            Kind::Number {
-                unit,
-                floor,
-                ceiling,
-                step,
+/// **`Settings › Workspace › roles`**: each word its own label, so a word is
+/// a thing the walk can find, with the way out at the line's other end.
+fn breadcrumb(ui: &mut egui::Ui, page: Page) {
+    // The hint takes the right end first, and the path wraps in what is
+    // left — so at the matrix size the two never cross.
+    ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
+        ui.label(
+            egui::RichText::new(overlay::HINT)
+                .small()
+                .color(theme::INK_WEAK),
+        );
+        // Laid left to right by name: a wrapped row inside a right-to-left
+        // parent would run the other way.
+        ui.allocate_ui_with_layout(
+            egui::vec2(ui.available_width(), theme::ROW),
+            egui::Layout::left_to_right(egui::Align::Center).with_main_wrap(true),
+            |ui| {
+                ui.label(egui::RichText::new(HEADING).color(theme::INK));
+                for word in [page.group().label(), page.label()] {
+                    ui.label(egui::RichText::new(theme::glyph::PROMPT).color(theme::INK_FAINT));
+                    ui.label(egui::RichText::new(word).color(theme::INK_WEAK));
+                }
             },
-            Knobbed::At(mut at),
-        ) => {
-            ui.horizontal(|ui| {
-                ui.label(knob.label);
-                // **The scale knob cites its chords** (§4.46 item 3).
-                let help = if knob.key == crate::settings::SCALE_KEY {
-                    crate::ui::keys::cited(
-                        knob.help,
-                        &[
-                            crate::ui::keys::Act::ScaleUp,
-                            crate::ui::keys::Act::ScaleDown,
-                            crate::ui::keys::Act::ScaleReset,
-                        ],
-                    )
-                } else {
-                    knob.help.to_owned()
-                };
-                let seat = theme::paint::slider(ui, &mut at, (floor, ceiling, step), unit, &help);
-                written(settings, knob, seat.changed(), Knobbed::At(at));
-            });
-        }
-        // **A row whose kind and value disagree is a table fault**, judged
-        // by `crate::settings::tests` before any pane paints it; nothing is
-        // painted for one rather than a control that lies.
-        _ => {}
-    }
-    sentence(ui, knob.help);
+        );
+    });
     ui.add_space(theme::space::XS);
 }
 
-/// **Write `value` through the row's own setter** where the control said it
-/// changed, so the typed field and the table cannot disagree about what a
-/// number means.
-fn written(settings: &mut Settings, knob: &Knob, changed: bool, value: Knobbed) {
-    if changed {
-        (knob.set)(settings, value);
-    }
+/// The page's own rows, scrolled: the knob table's for a seat page, and the
+/// pane's for the rest — each pane still answering for its own field.
+fn body(ui: &mut egui::Ui, model: &mut Model, page: Page) {
+    use crate::ui::{clients, config, doctor, login, tuning};
+    egui::ScrollArea::vertical()
+        .id_salt(WORD)
+        .auto_shrink(false)
+        .show(ui, |ui| match page {
+            Page::Seat(seat) => rows::page(ui, model, seat),
+            Page::Roles => {
+                tuning::render(ui, model);
+            }
+            Page::Providers => {
+                login::render(ui, model);
+            }
+            Page::Config => {
+                config::render(ui, model);
+            }
+            Page::Clients => {
+                clients::render(ui, model);
+            }
+            Page::Enrollment => enrollment(ui, model),
+            Page::Doctor => {
+                doctor::render(ui, model);
+            }
+        });
 }
 
-/// The help sentence under a row, in weak ink, wrapped.
-fn sentence(ui: &mut egui::Ui, help: &str) {
-    ui.add(egui::Label::new(egui::RichText::new(help).color(theme::INK_WEAK)).wrap());
+/// **The enrollment's page is its door** — the enrollment itself covers the
+/// window (§4.15) — under the server's dial state as the seat panel says it.
+fn enrollment(ui: &mut egui::Ui, model: &mut Model) {
+    if let Some(dial) = crate::ui::status::seat::dial(model) {
+        ui.colored_label(theme::INK_WEAK, dial);
+    }
+    let offered = crate::ui::slash::rows(model)
+        .iter()
+        .any(|row| row.word == crate::ui::enroll::WORD);
+    rows::row(ui, ENROLL, ENROLL_HELP, |ui| {
+        if theme::paint::button(ui, DOOR, offered, ENROLL_HELP).clicked() {
+            crate::ui::slash::fire(model, crate::ui::enroll::WORD, "");
+        }
+    });
 }
+
+/// The knob pages' rows, and the row shape every page's are laid in.
+pub mod rows;
+/// The box at the head that finds a row across every page.
+pub mod search;
+/// The tree: a column of sections and pages, or a select.
+pub mod tree;
 
 #[cfg(test)]
 mod tests;

@@ -7025,6 +7025,48 @@ bar* is §4.42 item 11's rule, re-homed (item 4). *A Bot* is defined in item
    one more clause: the settings overlay is one overlay whatever page it
    shows, so one stands at a time still.
 
+   **As built** (bl-73dc), where the shape above met the code, and the two
+   places it bent:
+   - **Which page stands is derived, not kept.** The four workspace pages
+     stand exactly while their own fields do — `tuning`, `login`,
+     `configuring`, the clients listing — which is also what their standing
+     reads key on (§4.17's `Standing`, unchanged: a read stands while its
+     page shows because the page IS the field). The five with no state of
+     their own (the three Seat pages, the enrollment's door, the doctor)
+     ride in `Lookup::Settings(page)`, the one variant that replaced
+     `Lookup::Settings` and `Lookup::Doctor`. `Model::page` is the query;
+     the mark's *where it was last* is the one field added (`visited`), and
+     it is a memory, not the open state. A tree row is a door to its word
+     (`Model::turn_to` fires `/roles` as the box would), so a page whose
+     word is off the menu — the workspace's four with nothing aimed — is
+     faint and takes no click, which is the menu's own answer.
+   - **The tree is a column at `tree::WIDTH` (150 points) where the
+     overlay's inner width is at least that plus the matrix window's 400,
+     and a select above the page where it is not.** A select rather than a
+     glyph column because the pages have words and no glyphs. Its sections
+     fold on the toolkit's own collapsing state; the active section cannot
+     fold, which is how the path is revealed.
+   - **Rows stack under 400 points.** A row is label, sentence, control at
+     the right end down to `rows::STACK`; narrower — the matrix size with
+     the bar open — the control stands under the sentence, because a
+     200-point slider beside a sentence has no page to stand on at 288.
+   - **The knob pages and the enrollment's door are in the row shape; the
+     four workspace pages keep their wrapped layouts.** Their control groups
+     (four effort seats and a toggle; two buttons; a row of picks) do not
+     fit at the right end of a 288-point page, so each keeps its label,
+     its weak line and its controls beneath, its tags, its standing read
+     and its `set` or `write` where it crosses the wire; the effort seats
+     and the priority toggle post on the click as they did. `Apply` is not
+     a word the seat uses: `set` and `write` are its spellings.
+   - **The search reads the table**: the knob rows, the pin and the pages
+     by label and help, lower-cased. The workspace pages' rows are the
+     wire's and are not indexed. A hit replaces the page while the box
+     holds text; picking one clears the box, turns to the page and scrolls
+     the row into view. No chord: a box in the overlay is enough.
+   - **The breadcrumb's words are each their own label** — `Settings`,
+     `›`, `Workspace`, `›`, `roles` — so the reach walk finds a page by
+     its own word at every size, and the hint keeps the right end.
+
 8. **Interface modes: which panes stand beside the column** (new;
    `src/ui/shell.rs`, `settings::Knob::mode`). The baseline's layout editor
    offers two *interface modes* — *Simple: for talking; sidebar and chat, no

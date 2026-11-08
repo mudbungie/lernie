@@ -143,11 +143,53 @@ pub enum Knobbed {
     At(f32),
 }
 
+/// **The three pages of the seat's own settings** (DESIGN §4.48 item 7):
+/// which of them a knob is a row of. One field on the row rather than a
+/// second list, so a knob added to the table is on a page with no other edit
+/// — and the overlay's tree (`crate::ui::settings::tree`) lays these three
+/// under its *Seat* section.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Page {
+    /// How the window is drawn: the scale, the bubbles, the fold.
+    #[default]
+    Look,
+    /// How the hands reach it: the wheel, the hover help and its delay.
+    Input,
+    /// The bar: its linger, its ease, its two widths, its pin, the dock
+    /// and the confirm.
+    Bar,
+}
+
+impl Page {
+    /// The three, in the tree's order.
+    pub const ALL: [Self; 3] = [Self::Look, Self::Input, Self::Bar];
+
+    /// The word on the tree's row and in the breadcrumb.
+    pub(crate) const fn label(self) -> &'static str {
+        match self {
+            Self::Look => "look",
+            Self::Input => "input",
+            Self::Bar => "bar",
+        }
+    }
+
+    /// What the page is about, for the row's help and the search.
+    pub(crate) const fn help(self) -> &'static str {
+        match self {
+            Self::Look => "how the window is drawn: the scale, the bubbles, the fold",
+            Self::Input => "how the hands reach it: the wheel and the hover help",
+            Self::Bar => "the bar: how long it lingers, how it eases, its widths and its pin",
+        }
+    }
+}
+
 /// **One row of the table.**
 #[derive(Debug, Clone, Copy)]
 pub struct Knob {
     /// The key it is written under, and the word a reader of the file sees.
     pub key: &'static str,
+    /// The page it is a row of.
+    pub page: Page,
     /// The label on the pane.
     pub label: &'static str,
     /// **What it does**, in the operator's terms (§4.46 item 2).

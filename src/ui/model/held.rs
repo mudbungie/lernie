@@ -219,6 +219,11 @@ pub struct Model {
     pub standing: Option<super::Stand>,
     /// **Everything this seat is set to** (`crate::settings`; §4.46 item 4).
     pub settings: crate::settings::Settings,
+    /// **The settings page the overlay last showed** (§4.48 item 7): where
+    /// the mark reopens it. Not where it is open — that is [`Model::page`].
+    pub visited: super::Page,
+    /// The settings overlay's search box, and the row a hit jumps to.
+    pub seeking: super::Seeking,
     /// **Whether the switcher stands** (`crate::ui::switcher`; DESIGN §4.42):
     /// the one list of servers, workspaces and conversations, asked for by Ctrl+X
     /// and put down by a choice or Esc. A navigation the operator performed,

@@ -2,8 +2,8 @@
 //! composes.
 
 use super::{
-    ASSIGN, CANCEL, HEADING, MODEL_HINT, NO_ROLES, NOT_ANSWERED, PRIORITY, PROVIDER_HINT, SET,
-    WORD, render, unseated,
+    ASSIGN, CANCEL, MODEL_HINT, NO_ROLES, NOT_ANSWERED, PRIORITY, PROVIDER_HINT, SET, WORD, render,
+    unseated,
 };
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, pane, role, seated, tuned};
@@ -18,7 +18,7 @@ fn a_shut_pane_paints_nothing_and_reports_it() {
     let mut stood = true;
     let painted = pane(|ui| stood = render(ui, &mut model));
     assert!(!stood, "a shut pane reports that it painted nothing");
-    assert!(!painted.contains(HEADING), "{painted}");
+    assert!(painted.trim().is_empty(), "{painted}");
 }
 
 /// **Three states, and the first two are different sentences.** A workspace nobody
@@ -224,7 +224,12 @@ fn the_roster_control_opens_the_pane_and_the_pane_covers_the_conversation() {
     assert!(crate::ui::slash::fire(&mut model, WORD, ""));
     assert_eq!(model.tuning, Some(Tuning::Rows));
     let painted = window.text(|ctx| crate::ui::render(ctx, &mut model));
-    assert!(painted.lines().any(|line| line == HEADING), "{painted}");
+    assert!(
+        painted
+            .lines()
+            .any(|line| line == crate::ui::Page::Roles.label()),
+        "{painted}"
+    );
     assert!(
         !painted.contains(crate::ui::composer::HINT),
         "the composer stands down under it:\n{painted}"

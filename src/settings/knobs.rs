@@ -2,7 +2,7 @@
 //! them. Each is three strings and two accessors; the help sentence says
 //! what the knob does in the operator's terms and never the toolkit's.
 
-use super::{BAR_OPEN, BAR_SHUT, Kind, Knob, Knobbed, Toggle, points, seconds};
+use super::{BAR_OPEN, BAR_SHUT, Kind, Knob, Knobbed, Page, Toggle, points, seconds};
 
 /// **Every knob.** Keys are the file's words; the pin is not here because it
 /// is the place file's own key (`crate::place::Place::pinned`), painted on
@@ -10,6 +10,7 @@ use super::{BAR_OPEN, BAR_SHUT, Kind, Knob, Knobbed, Toggle, points, seconds};
 pub const KNOBS: &[Knob] = &[
     Knob {
         key: "wheel",
+        page: Page::Input,
         label: "wheel step",
         help: "how far one notch of the wheel scrolls, and a swipe of the touchpad with it",
         kind: points(20.0, 1000.0, 10.0),
@@ -22,6 +23,7 @@ pub const KNOBS: &[Knob] = &[
     },
     Knob {
         key: "help",
+        page: Page::Input,
         label: "hover help",
         help: "whether a control says what it does when the pointer rests on it",
         kind: Kind::Toggle,
@@ -34,6 +36,7 @@ pub const KNOBS: &[Knob] = &[
     },
     Knob {
         key: "help_delay",
+        page: Page::Input,
         label: "hover help delay",
         help: "how long the pointer rests on a control before it says what it does",
         kind: seconds(3.0, 0.1),
@@ -46,6 +49,7 @@ pub const KNOBS: &[Knob] = &[
     },
     Knob {
         key: super::SCALE_KEY,
+        page: Page::Look,
         label: "scale",
         help: "how large everything is drawn: text, air and controls alike",
         kind: Kind::Number {
@@ -63,6 +67,7 @@ pub const KNOBS: &[Knob] = &[
     },
     Knob {
         key: "linger",
+        page: Page::Bar,
         label: "bar linger",
         help: "how long the bar stays open after the pointer leaves it",
         kind: seconds(5.0, 0.05),
@@ -75,6 +80,7 @@ pub const KNOBS: &[Knob] = &[
     },
     Knob {
         key: "ease",
+        page: Page::Bar,
         label: "bar ease",
         help: "how long the bar's edge takes to slide between its two widths; 0 snaps",
         kind: seconds(1.0, 0.01),
@@ -87,6 +93,7 @@ pub const KNOBS: &[Knob] = &[
     },
     Knob {
         key: "bar_shut",
+        page: Page::Bar,
         label: "bar width, shut",
         help: "how wide the bar stands while it is shut — what dragging its edge shut sets",
         kind: points(40.0, 400.0, 1.0),
@@ -99,6 +106,7 @@ pub const KNOBS: &[Knob] = &[
     },
     Knob {
         key: "bar_open",
+        page: Page::Bar,
         label: "bar width, open",
         help: "how wide the bar stands while it is open — what dragging its edge open sets",
         kind: points(100.0, 1000.0, 10.0),
@@ -111,6 +119,7 @@ pub const KNOBS: &[Knob] = &[
     },
     Knob {
         key: "bubbles",
+        page: Page::Look,
         label: "bubbles",
         help: "whether each block of the transcript stands on a faint fill saying who said it",
         kind: Kind::Toggle,
@@ -123,6 +132,7 @@ pub const KNOBS: &[Knob] = &[
     },
     Knob {
         key: "fold",
+        page: Page::Look,
         label: "fold the working",
         help: "whether a turn's working folds to one line once its answer stands",
         kind: Kind::Toggle,
@@ -135,6 +145,7 @@ pub const KNOBS: &[Knob] = &[
     },
     Knob {
         key: "confirm",
+        page: Page::Bar,
         label: "confirm a delete",
         help: "whether the trashcan asks before deleting; off, it deletes at once",
         kind: Kind::Toggle,
@@ -147,6 +158,7 @@ pub const KNOBS: &[Knob] = &[
     },
     Knob {
         key: "dock",
+        page: Page::Bar,
         label: "dock unfolded",
         help: "whether the dock of running conversations stands unfolded when the window opens",
         kind: Kind::Toggle,

@@ -37,8 +37,6 @@ use crate::ui::{Model, theme};
 
 /// **The word typed after the slash** that opens it (`crate::ui::slash`).
 pub const WORD: &str = "clients";
-/// The pane's own heading.
-pub const HEADING: &str = "machines";
 /// What it says for a workspace nobody has been answered about yet.
 pub const NOT_ANSWERED: &str = "waiting to hear which machines this workspace holds";
 /// What it says for a workspace that answered and holds no registration at all — a
@@ -53,15 +51,19 @@ pub const SUBJECT: &str = "runs where the caller says";
 /// mistaken for a fact nobody asked about.
 pub const NO_SUBJECT: &str = "runs only where that box stands";
 
-/// Paint the pane and take the clicks on it. Answers whether there was one to
-/// paint, so the shell knows whether the conversation still stands.
+/// Paint the page's rows. Answers whether there was a page to paint — the
+/// overlay scrolls it (`crate::ui::settings`).
 pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     if !model.showing(crate::ui::Listing::Clients) {
         return false;
     }
-    crate::ui::overlay::name(ui, HEADING);
+    // **A page of the settings overlay** (§4.48 item 7): the breadcrumb is
+    // the overlay's, and the workspace it is open on heads the rows.
     if let Some(aim) = model.aim.clone() {
-        ui.label(format!("on {} — {}", aim.address, aim.channel));
+        ui.colored_label(
+            theme::INK_WEAK,
+            format!("on {} — {}", aim.address, aim.channel),
+        );
     }
     match model.machines.clone() {
         None => {
@@ -70,17 +72,10 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         Some(rows) if rows.is_empty() => {
             ui.label(NONE_REGISTERED);
         }
-        // The list scrolls and the heading above it does not — the shape every
-        // list in this window keeps (bl-e5d2).
         Some(rows) => {
-            egui::ScrollArea::vertical()
-                .id_salt(HEADING)
-                .auto_shrink(false)
-                .show(ui, |ui| {
-                    for row in &rows {
-                        client(ui, row);
-                    }
-                });
+            for row in &rows {
+                client(ui, row);
+            }
         }
     }
     true

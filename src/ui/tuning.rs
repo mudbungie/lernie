@@ -48,8 +48,6 @@ pub const WORD: &str = "roles";
 /// Ctrl+O): since bl-d74b it opens the model pill's dropup rather than this
 /// pane (`crate::ui::status::dropup`), and the chord fires it.
 pub const MODEL: &str = "model";
-/// The pane's own heading.
-pub const HEADING: &str = "role tuning";
 /// What it says for a workspace nobody has been answered about yet.
 pub const NOT_ANSWERED: &str = "waiting to hear what this workspace's roles are";
 /// What it says for a workspace that answered, and declares no role. A fact about
@@ -75,15 +73,19 @@ pub const PROVIDER_HINT: &str = "provider";
 /// The second of them.
 pub const MODEL_HINT: &str = "model id";
 
-/// Paint the pane and take the clicks on it. Answers whether there was one to
-/// paint, so the shell knows whether the conversation still stands.
+/// Paint the page's rows and take the clicks on them. Answers whether there
+/// was a page to paint — the overlay scrolls it (`crate::ui::settings`).
 pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     if model.tuning.is_none() {
         return false;
     }
-    crate::ui::overlay::name(ui, HEADING);
+    // **A page of the settings overlay** (§4.48 item 7): the breadcrumb is
+    // the overlay's, and the workspace it is open on heads the rows.
     if let Some(aim) = model.aim.clone() {
-        ui.label(format!("on {} — {}", aim.address, aim.channel));
+        ui.colored_label(
+            theme::INK_WEAK,
+            format!("on {} — {}", aim.address, aim.channel),
+        );
     }
     match model.roles.clone() {
         None => {
@@ -97,14 +99,9 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         // with a dozen roles is longer than a pane at any width this seat opens
         // at, and a pane cut off mid-row says nothing about having been cut.
         Some(rows) => {
-            egui::ScrollArea::vertical()
-                .id_salt(HEADING)
-                .auto_shrink(false)
-                .show(ui, |ui| {
-                    for row in &rows {
-                        role(ui, model, row);
-                    }
-                });
+            for row in &rows {
+                role(ui, model, row);
+            }
         }
     }
     true

@@ -1,6 +1,7 @@
 //! **The overlay**: the one frame every pane that used to cover the
 //! conversation now floats in (DESIGN §4.42, item 6; `docs/STYLE.md` §5, *an
-//! overlay*).
+//! overlay*) — every pane but the three the advanced mode docks beside the
+//! column instead (`crate::ui::rail`; §4.48 item 8).
 //!
 //! A pane keeps its content and loses its own chrome: the box, its name line
 //! and the hint line under it are painted here, once, and the pane paints
@@ -124,15 +125,26 @@ pub fn name(ui: &mut egui::Ui, word: &str) {
 /// **The name line with what the pane is open ON beside it**, one step
 /// weaker — the subject on the name's line rather than under it, for the
 /// same reason the hint is.
+///
+/// **The hint takes the right end first, and the subject is cut to what is
+/// left** (§4.48 item 8): on a rail a conversation's id is wider than the
+/// line, and a subject laid before the hint ran under it.
 pub fn about(ui: &mut egui::Ui, word: &str, subject: Option<&str>) {
-    ui.horizontal(|ui| {
-        ui.label(egui::RichText::new(word).color(theme::INK));
-        if let Some(subject) = subject {
-            ui.label(egui::RichText::new(subject).color(theme::INK_WEAK));
-        }
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            ui.label(egui::RichText::new(HINT).small().color(theme::INK_WEAK));
-        });
+    ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
+        ui.label(egui::RichText::new(HINT).small().color(theme::INK_WEAK));
+        // One row tall, laid left to right by name: a child in a
+        // right-to-left parent would otherwise claim the pane's height.
+        ui.allocate_ui_with_layout(
+            egui::vec2(ui.available_width(), theme::ROW),
+            egui::Layout::left_to_right(egui::Align::Center),
+            |ui| {
+                ui.label(egui::RichText::new(word).color(theme::INK));
+                if let Some(subject) = subject {
+                    let subject = egui::RichText::new(subject).color(theme::INK_WEAK);
+                    ui.add(egui::Label::new(subject).truncate());
+                }
+            },
+        );
     });
     ui.add_space(theme::space::XS);
 }
@@ -157,12 +169,16 @@ pub fn stand(ui: &mut egui::Ui, model: &mut Model) {
         // item 7): the tuning, the login, the config, the clients, the
         // doctor and the knob table are pages of it, and it paints whichever
         // stands under its tree.
+        // **The three re-homed panes float only while they are not docked**
+        // (§4.48 item 8; `crate::ui::rail` paints them otherwise) — the
+        // config pane through the settings overlay, which answers for it
+        // only then (`Model::page`).
+        let floating = !model.docked();
         let _ = switcher::render(ui, model)
             || settings::render(ui, model)
-            || records::render(ui, model)
+            || (floating && records::render(ui, model))
             || queue::render(ui, model)
-            || trail::render(ui, model)
-            || clear::render(ui, model)
+            || (floating && (trail::render(ui, model) || clear::render(ui, model)))
             || board::render(ui, model)
             || fleet::render(ui, model)
             || commands::render(ui, model)

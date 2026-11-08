@@ -1,4 +1,4 @@
-//! **The panes that are pure listings** — the three that hold no question of
+//! **The panes that are pure listings** — the two that hold no question of
 //! their own, and the one field that says which of them is standing.
 //!
 //! # One field, because three flags make two of them open at once representable
@@ -14,22 +14,21 @@
 //!
 //! # What makes one a LISTING rather than a pane with state
 //!
-//! Every pane in this window covers the conversation; what these three have in
-//! common is that they hold nothing of their own. `super::tuning` holds a
-//! draft, `super::login` holds two questions, `super::unmake` holds an arming
-//! and a subject, `super::window`'s find pane holds a needle. The records pane,
-//! the decision queue and the clients pane hold **only what the server
-//! answered** — so *which one is up* is the entire state, and the answer to
-//! that is one word.
+//! Every pane here covers the conversation; what these two have in common is
+//! that they hold nothing of their own. `super::tuning` holds a draft,
+//! `super::login` holds two questions, `super::unmake` holds an arming and a
+//! subject, `super::window`'s find pane holds a needle. The decision queue
+//! and the clients pane hold **only what the server answered** — so *which
+//! one is up* is the entire state, and the answer to that is one word. The
+//! records pane was the third until it gained a second home (DESIGN §4.48
+//! item 8): docked beside the column it stands while one of these floats,
+//! so it is the context rail's word now (`super::rail`).
 
 use super::Model;
 
 /// Which listing pane is standing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Listing {
-    /// **The records pane** — the selected conversation's steps and files
-    /// (`super::records`; DESIGN §4.18).
-    Records,
     /// **The decision queue** — everything asking for the operator, anywhere
     /// (`super::queue`; DESIGN §4.19).
     Queue,

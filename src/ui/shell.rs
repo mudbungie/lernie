@@ -15,9 +15,12 @@
 //! else is on the glass until it is asked for — by a slash verb
 //! ([`crate::ui::slash`]) or Ctrl+X ([`crate::ui::switcher`]) — and what is
 //! asked for floats in the overlay's frame ([`crate::ui::overlay`]) over the
-//! transcript. There is no side column, no column bar, no narrow and broad
-//! shape and no dragged edge but the bar's: a width buys wrapping and nothing
-//! else, and the phone-shaped viewport is the same window narrower.
+//! transcript — or, in the advanced mode, stands docked at the right as a
+//! rail ([`crate::ui::rail`]; §4.48 item 8), the one query `Model::docked`
+//! deciding which. There is no column bar, no narrow and broad shape and no
+//! dragged edge but the bar's and the rails': a width buys wrapping and
+//! nothing else, and the phone-shaped viewport is the same window narrower,
+//! its panes floating whatever the mode.
 //!
 //! **The Tab order is the laying order**: the status bar's doors, the bar,
 //! the dock, the box — its field, its pills, its send door — the ask, then
@@ -34,7 +37,7 @@
 //! pane that does, because what it holds must not be legible beside anything.
 
 use crate::ui::{
-    Model, ask, bar, chat, composer, dock, enroll, keys, overlay, slash, status, tabs, theme,
+    Model, ask, bar, chat, composer, dock, enroll, keys, overlay, rail, slash, status, tabs, theme,
 };
 
 /// Paint one frame of the whole window.
@@ -46,6 +49,9 @@ use crate::ui::{
 /// nothing.
 pub fn render(ctx: &egui::Context, model: &mut Model) {
     theme::install(ctx, &model.settings);
+    // **The window's room is read first** (§4.48 item 8), so the keys and
+    // every door below decide the panes' home off this frame's width.
+    model.housed(rail::room(ctx, model));
     // **The keys come first**, so what one changed is what this frame paints.
     // Nothing here is a control of its own: every binding calls the door the
     // click beneath it calls (`crate::ui::keys`).
@@ -64,6 +70,9 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
     // **The bar is laid next** (DESIGN §4.44), so it stands the window's
     // height above the status bar and the column fits beside it.
     bar::render(ctx, model);
+    // **The rails are laid next** (§4.48 item 8), so they stand the window's
+    // height above the status bar and the box stays the column's.
+    rail::render(ctx, model);
     // **Bottom panels stack upward in the order they are laid** (§4.45 item
     // 3): the dock stands on the status bar while anything runs, the box on
     // those, and the ask on the box.

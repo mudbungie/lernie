@@ -78,11 +78,12 @@ pub fn page(ui: &mut egui::Ui, model: &mut Model, seat: crate::settings::Page) {
     }
 }
 
-/// A knob's control as its row paints it: a check, or a slider with its
-/// unit and bounds.
+/// A knob's control as its row paints it: a check, a slider with its unit
+/// and bounds, or a seat per word of a choice.
 enum Control {
     On(bool),
     At(f32, &'static str, (f32, f32, f32)),
+    Word(&'static str, &'static [(&'static str, &'static str)]),
 }
 
 /// **One knob's row**: its control by its kind, writing a copy back through
@@ -110,6 +111,7 @@ pub fn knob(
             },
             Knobbed::At(at),
         ) => Control::At(at, unit, (floor, ceiling, step)),
+        (Kind::Choice { words }, Knobbed::Word(at)) => Control::Word(at, words),
         _ => return,
     };
     // **The scale knob cites its chords** (§4.46 item 3).
@@ -146,6 +148,19 @@ pub fn knob(
                     }
                 },
             );
+        }
+        // **A choice is a seat per word, each over the sentence that says
+        // what it is for** (§4.48 item 8: the baseline's two modes, told in
+        // its words), the chosen one wearing the open fill.
+        Control::Word(at, words) => {
+            ui.vertical(|ui| {
+                for (word, says) in words {
+                    if theme::paint::seat(ui, at == *word, word, says).clicked() {
+                        written = Some(Knobbed::Word(word));
+                    }
+                    ui.label(egui::RichText::new(*says).small().color(theme::INK_WEAK));
+                }
+            });
         }
     });
     if let Some(value) = written {

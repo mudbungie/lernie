@@ -7102,6 +7102,73 @@ bar* is §4.42 item 11's rule, re-homed (item 4). *A Bot* is defined in item
    fits beside both rails at its three widths, which is the density
    constraint (§4.32) read one more time.
 
+   **As built** (bl-baa6), where the shape above met the code, and the
+   three places it bent:
+   - **The query is `docked`, and it reads the mode AND the room**
+     (`Model::docked`, `src/ui/model/rail.rs`; `rail::room`). The sentence
+     above left the narrow window to the lane — a rail collapsing to a
+     glyph strip, or standing down with its reason on the status bar — and
+     the lane took a third answer: **where the window has no room for two
+     rails at their floor beside the bar and the column's floor, the panes
+     float as the simple mode lays them.** Nothing is invented for the
+     narrow case and nothing is lost in it: the pane an operator asked for
+     is on the glass either way, the reach walk holds at every size in
+     both modes, and a glyph strip would have been a third home with a
+     legend of its own. The room is read once per frame off the window's
+     width, with the bar counted open only while pinned so a hover never
+     moves the rails (`Model::housed`, the bar's `left_at` class of fact),
+     and asked for two rails whatever stands so that opening the second
+     never changes the answer. The matrix's phone size has no room; its
+     narrow size has exactly enough (two rails of 180 in 360).
+   - **Esc closes the rail's pane, and that is the rail collapsing.** There
+     is no collapsed strip: a rail with nothing on it is not laid, the
+     pane's answers stay filed as a close always kept them, and `/trail`
+     opens it again. A strip would have been a second state for one fact.
+     The ladder reads the overlays first and the rails after — the context
+     rail, being about what is selected, before the branch — so Esc under
+     a floating settings takes the settings and leaves the rails standing.
+   - **The branch rail is `/trail` whole**: the ops trail at both its
+     depths, the rows and the place a trail is cut in. The spine (§4.29)
+     stays with the records on the context rail, because the records pane
+     is one pane and the rail paints panes, never halves of them; the
+     sentence above that put the spine on the branch rail is amended by
+     this one.
+   - **The config pane has two names for one home**: floating, it is the
+     settings overlay's *Workspace › config* page (item 7); docked, it is
+     the context rail's pane under its own name line, and the overlay
+     answers for it only while it floats (`Model::page`). The tree's row
+     keeps firing `/config`, which docked opens the rail and leaves the
+     overlay — one word, wherever the pane stands.
+   - **The three panes left the shared fields.** `Lookup` held the trail
+     and `Listing` the records because no two of theirs ever stood
+     together; a docked pane stands beside whatever floats, so the trail
+     is `Model::trail` (`Trailing::Reading | Clearing`) and the context
+     rail's two occupants are one field, `Model::context`
+     (`Context::Config(Configuring) | Records`), exclusive on the rail as
+     they were as overlays. `Model::covered` is the floating set; the
+     standing question set is a set now (`state::Standing::open`), every
+     shown pane's read in it wherever it is shown.
+   - **A rail's width is the toolkit's memory for the run, not a knob**:
+     each is a resizable panel opened at half the allowance — the bar's
+     two-fifths ceiling, short of the column's floor (`rail::COLUMN`, what
+     the phone size leaves beside the shut bar) — and dragged between
+     `rail::FLOOR` and what the other rail leaves, so the two never exceed
+     it between them. A lone rail still opens at half: the baseline's
+     rails are each a third of its chat, and a rail at two fifths of the
+     window is a second column.
+   - **The door is the mode's own word** in weak ink beside the mark, not
+     a glyph: the word says which mode this is, and switches to the other;
+     its help is the other mode's sentence with the chord. The chord is
+     Ctrl+Shift+\ (`keys::Act::Mode`); the page is *Seat › mode*, one row
+     whose kind is the table's new `Choice` — a seat per word over its
+     sentence, the baseline's two, with *changes what is shown, not what
+     the seat can do* as the row's sentence — written as its word under
+     `mode` in the place file only when set off `simple`.
+   - **The matrix renders every world in both modes** (`worlds::all`, the
+     label `<world>+<mode>`), and the blank assertion learned what the
+     clipped one knew: a run a rail's box scrolled past its edge stands on
+     the image with nothing painted, by the scroll's design.
+
 **The order it lands in**, each its own ball under bl-7942 and judged on
 the probe display beside the baseline: the tones (3) first, since every
 later capture is compared under them; then the bubbles (2); then the box and
@@ -7136,8 +7203,9 @@ rendering, not a reading of a design.
 | `src/cli/text.rs` | what this binary says about itself: the version line, and the usage whose verb section is derived. | ~75 |
 | `src/paths.rs` | the two roots — what the operator carried here, and what the seat generates about itself — from one ladder and no knob of its own. Neither variable set is a refusal, never a guess. | ~130 |
 | `src/place.rs` | where the seat was pointed and how its servers were arranged, remembered between runs (§4.13, §4.39): the aim, the open server, what each server's last opening ranks as, the workspace last aimed under each, the bar's pin (§4.44) and the settings set off their defaults (§4.46 item 4). Every way the file can be wrong is absence, per field. | ~190 |
-| `src/settings.rs` | **the knob table** (§4.46 item 4): every seat-local setting as one row — key, label, help sentence, kind with its unit and bounds, default — the typed `Settings` the readers read, and the two projections, from the table's JSON and to it, writing only what is off its default. | ~250 |
-| `src/ui/settings.rs` | the settings pane (`/settings`, Ctrl+,): the knob table painted, a slider per number and a check per toggle, each over its sentence, and `defaults` at the foot. Paints the table; decides nothing. | ~150 |
+| `src/settings.rs` | **the knob table** (§4.46 item 4): every seat-local setting as one row — key, label, help sentence, kind with its unit and bounds or its words, default — the typed `Settings` the readers read, and the two projections, from the table's JSON and to it, writing only what is off its default. | ~300 |
+| `src/settings/mode.rs` | the interface mode (§4.48 item 8): the two words, the baseline's sentence for each, the other one, and the choice as the table spells it. | ~60 |
+| `src/ui/settings.rs` | the settings overlay (`/settings`, Ctrl+,; §4.48 item 7): the breadcrumb, the tree beside the page or a select above it, and the page's rows — the knob table's, a slider per number, a check per toggle, a seat per word of a choice, each with its sentence. Paints the table; decides nothing. | ~150 |
 | `src/envelope.rs` | the gesture envelope from the seat's side: is it one, which workspace does it name, did the last reply say ok. **One table, not two** — the read answers through the write. | ~150 |
 | `src/seat.rs` | one gesture spent: routed, asked, and answered as this seat's product. | ~100 |
 | `src/seat/route.rs` | which channel a gesture goes down, what it carries there, and what this box calls the channel it chose (§4.7). | ~190 |
@@ -7240,7 +7308,7 @@ rendering, not a reading of a design.
 | `src/ui/model/pricing.rs` | the prices pane between frames: the per-channel tables, the four draft boxes, the roster check and the four acts. | ~180 |
 | `src/ui/commands.rs` | the commands pane (§4.21): what this window takes first — the menu's rows and the keys read off `keys::BINDINGS` (§4.46 item 3) — then one section per channel of what that server answers to, each row's line, sentence, page and classification. | ~110 |
 | `src/ui/find.rs` | the find pane (§4.21): the needle, the act that is disabled until there is one, the hits, and the standing sentence saying why none of them can be aimed at (yog bl-ef16). | ~150 |
-| `src/ui/model/window.rs` | the window's two panes between frames — which one stands as one field rather than two flags, the per-channel filing both share, the needle that is not spent on firing, and the roster refresh. | ~175 |
+| `src/ui/model/window.rs` | the window's own panes between frames — which one stands as one field rather than a flag apiece, the per-channel filing they share, the needle that is not spent on firing, and the roster refresh. The trail left for a field of its own at §4.48 item 8. | ~200 |
 | `src/reply/doctor.rs` | whether this box is wired (§4.21): one row per check — three required fields and the remedy, optional and verbatim — the headline both faces paint, and the count of failing rows that is the only tally. | ~75 |
 | `src/verbs/doctor.rs` | the doctor's envelope (§4.21) — a door, because its one workspace is optional: bare it fans, named it is routed. | ~35 |
 | `src/ui/doctor.rs` | the doctor pane (§4.21): one section per channel, one row per check in the colour of its state, the remedy under a row that does not hold. | ~95 |
@@ -7251,7 +7319,8 @@ rendering, not a reading of a design.
 | `src/verbs/help.rs` | the two rosters and one word's page, answered with no server up. | ~110 |
 | `src/ui.rs` | the window's module list and what a frame may not do. | small |
 | `src/ui/model.rs` | the model's module list and re-export surface. Four pieces split out at the cap onto seams this row used to name: the door a reply comes in through (`model/absorb.rs`), the aim (`model/aim.rs`), the accordion (`model/servers.rs`), the records pane's seven answers held as one value (`model/records.rs`'s `Records`), and the struct itself (`model/held.rs`). | ~95 |
-| `src/ui/model/held.rs` | **what the window holds between frames** — the snapshot a frame reads, and every field documented where it is declared. | ~285 |
+| `src/ui/model/held.rs` | **what the window holds between frames** — the snapshot a frame reads, and every field documented where it is declared. | ~300 |
+| `src/ui/model/rail.rs` | **one pane, two homes** (§4.48 item 8): the two rails, the context rail's one field, the `docked` query, the floating set (`covered`), and the room written at the top of the frame. | ~130 |
 | `src/ui/model/held/asked.rs` | the two questions asked of the model that no pane owns: how many rows the composer's field stands at (§4.39), and whether a keyboard walk owes its selection a place on the glass — which since the fold asks no pane, there being one list. Split from the file above at the cap when the drag added the second — a field is what a pane learned to hold, a question is what two panes need one answer to. | ~35 |
 | `src/ui/model/aim.rs` | which workspace the window is aimed at — the address every composed gesture is built from — and the two readings taken of its channel: the one a gesture goes down, and whether this box holds one by that name at all. | ~50 |
 | `src/ui/model/fold.rs` | **one server, every name it is held under** (§4.6, bl-13b9): the roster folded by the address each channel dials — the server the seat card, the switcher and the seat-wide waiting count read, its lead, its workspaces once each, and which channel a gesture at a workspace goes down. A query over the roster, never a second one. | ~140 |
@@ -7312,8 +7381,8 @@ rendering, not a reading of a design.
 | `src/ui/fleet/candidates.rs` | the n-attempt path on the listing that already names every value it takes (§4.36): which act a row earns, the two words and the count the three spend, and the acceptance addressed down one channel. | ~180 |
 | `src/ui/fleet/rows.rs` | the words a fleet row wears — the receipt that names its op, an attempt's lines and no others, and the churn read off the shape. | ~125 |
 | `src/ui/model/fleet.rs` | the fleet pane between frames (§4.33) — three words for its own acts and two more for the candidates' (§4.36), the receipt filed under the op that earned it, and the retirement that takes the pane and both its answers with the workspace. | ~175 |
-| `src/ui/model/trail.rs` | the trail between frames — a flag and the per-channel filing, on the queue's own terms, with the read standing because a trail is what is happening (§4.27). | ~70 |
-| `src/ui/model/records.rs` | the records pane between frames: **the seven answers as one value** (`Records`), its open/close acts, the retirement with its subject, and the one `covered` question every pane shares. | ~140 |
+| `src/ui/model/trail.rs` | the trail between frames — its own field at two depths (`Trailing`), the per-channel filing on the queue's own terms, with the read standing because a trail is what is happening (§4.27), and two homes (§4.48 item 8). | ~130 |
+| `src/ui/model/records.rs` | the records pane between frames: **the seven answers as one value** (`Records`), its open/close acts as the context rail's word, and the retirement with its subject. | ~160 |
 | `src/ui/model/spine.rs` | the pane's one draft (§4.29) — the two words a fork is composed from, why the goal is spent on firing and the role is not, and the act that spends them. | ~85 |
 | `src/ui/model/deep.rs` | the one read this pane posts rather than stands, and why the answer's own `seq` is the whole of what says which row it belongs to (§4.32). | ~55 |
 | `src/reply/config.rs` | one config file as the typed thing it is: the bytes, the settings the schema found in them, and the bounds that ride a control (§4.30). | ~130 |
@@ -7337,10 +7406,11 @@ rendering, not a reading of a design.
 | `src/ui/model/config/draft.rs` | the box and the two readings it takes against the server's answer: is there anything to write, and did the file go somewhere neither end of this box put it (§4.30). | ~75 |
 | `src/ui/model/config/proposal.rs` | the staged proposals between frames — which row is named, the depth the standing read is asked at (the named id while the listing still carries it), the arming, and the verdict it composes (§4.30). | ~140 |
 | `src/ui/model/clients.rs` | the clients pane between frames — the aim that gates it, and what it retires with (§4.28). | ~55 |
-| `src/ui/model/listing.rs` | the three panes that are pure listings, and the one field that says which is standing (§4.28). | ~70 |
+| `src/ui/model/listing.rs` | the two panes that are pure listings, and the one field that says which is standing (§4.28); the records pane left it for the context rail's field (§4.48 item 8). | ~65 |
 | `src/ui/model/login.rs` | the login pane between frames — two questions rather than two modes — the three acts its controls spend, and where the server is, read off the channel stamp. | ~165 |
 | `src/state.rs` | **the link** (§4.12): what the frame and the off-frame threads say to each other, and the crate's one lock. `settle` is the frame's whole side of it, and it publishes two projections — what to ask, and what to keep (§4.13). Its second tenant is what worked for an entry this run — held lines, endpoints, the punch port (§4.40). | ~235 |
-| `src/state/traffic.rs` | what crosses the lock — a worker's report in its kinds — among them a routed gesture's reply stamped with the op it answers (§4.26) and a `models` answer stamped with the provider row asked (§4.17) — and the standing question set the frame publishes, whose open pane is one field rather than a flag apiece (§4.12). | ~205 |
+| `src/state/traffic.rs` | what crosses the lock — a worker's report in its kinds — among them a routed gesture's reply stamped with the op it answers (§4.26) and a `models` answer stamped with the provider row asked (§4.17). | ~120 |
+| `src/state/traffic/standing.rs` | the standing question set the frame publishes (§4.12), whose open panes are a set since a docked one stands beside a floating one (§4.48 item 8). | ~200 |
 | `src/offframe.rs` | the four off-frame threads (§4.12): the one leg both fanning workers share, the filing every answer goes through, and the pump that is a cadence rather than a timeout. | ~120 |
 | `src/offframe/asker.rs` | one pass of the standing set, in two halves: the reads whose subject is every channel, the nest under the focus, and the channel that costs only itself (§4.12). The selected conversation's reads lead every leg they have not yet been asked at (bl-1f22). The seam is the wire's own, so a pane asking at both widths appears in both halves rather than as a case (§4.31). | ~190 |
 | `src/offframe/asker/workspace.rs` | the second half, split out at the design-time budget: every question that names one workspace, asked of the aimed workspace. It is where six panes' pane-keyed reads nest, so it is the half that grows. | ~150 |
@@ -7372,13 +7442,15 @@ rendering, not a reading of a design.
 | `src/ui/chat/fold.rs` | what a machine's answer hides when it is folded, and the two counts a reader chooses between. | ~90 |
 | `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects, and the one read of Enter both of the box's modes share (§4.39); a slash line is the menu's and not the deposit's (§4.42); a deposit is recorded as sent the frame it is composed (§4.45 item 4). | ~200 |
 | `src/ui/slash.rs` | **the slash verbs** (§4.42): the rows this seat offers right now — the conversation's, the workspace's, the window's — each the word its control carried; what a typed line parses to; what firing a word does; and the completion menu over the box, a window of rows around the chosen one. | ~300 |
-| `src/ui/overlay.rs` | **the one frame every pane floats in** (§4.42): the box at the bottom of the pane it is called in, the name line with the subject and *Esc closes* on it, and the order the panes are tried in. A child region, never an `Area`. | ~135 |
+| `src/ui/overlay.rs` | **the one frame every pane floats in** (§4.42): the box at the bottom of the pane it is called in, the name line with the subject and *Esc closes* on it, and the order the panes are tried in — the three re-homed ones only while they are not docked (§4.48 item 8). A child region, never an `Area`. | ~180 |
+| `src/ui/rail.rs` | **the rails** (§4.48 item 8): the branch and the context laid as resizable panels at the window's right while `Model::docked`, each painting its pane whole and scrolled; the allowance, the floor, the column's floor, and the room read before the frame. | ~145 |
 | `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one — the deposit's own field at the deposit's own rows, with `start` inside it (§4.39). | ~90 |
 | `src/ui/keys.rs` | the keyboard: the table below run first, then the one cursor track's walk, which is the selection — over three kinds of row since the fold (§4.39) — and the one binding that is not a walk, Enter on the row the cursor stands on (a server's, or a begin), fired only while no control holds the keyboard. There is no `Pane`: one list needs no field saying which. The registry of boxes that take text split out at the cap (`keys/boxes.rs`). | ~200 |
-| `src/ui/keys/bindings.rs` | **the bindings table** (§4.46 item 3): every key the window binds as one row — a *fired* row is a chord and the act it fires, run here from anywhere; a *told* row is a key read where it is read, in the table so the printed list is whole. `run` fires the rows, `/help` prints them, and `cited` writes a chord after a control's sentence. | ~280 |
+| `src/ui/keys/bindings.rs` | **the bindings table** (§4.46 item 3): every key the window binds as one row — a *fired* row is a chord and the act it fires, run here from anywhere; a *told* row is a key read where it is read, in the table so the printed list is whole. `run` fires the rows, `/help` prints them, and `cited` writes a chord after a control's sentence. | ~240 |
+| `src/ui/keys/bindings/chord.rs` | a chord: a key on a modifier plane, its spelling on the glass, and whether this frame pressed exactly it. Split from the table at the cap. | ~80 |
 | `src/ui/keys/acts.rs` | what each fired row does: one arm per act, each naming a door a control already fires — the tab step, the scroll ask, the scale knob moved through its own row. Split from the table at the cap. | ~110 |
 | `src/ui/keys/boxes.rs` | **every box on the glass that takes text**, by the id it wears, and the gate that asks whether one of them holds the keyboard right now — a comparison against a named list and never egui's *is anything focused at all* (§4.23). | ~100 |
-| `src/ui/shell.rs` | the layout: the bar, then one column (§4.42, §4.44, §4.45) — the transcript, the prompt directly under it, the dock and the rule under the prompt, the menu and the overlay over it, and what stands down under what. | ~60 |
+| `src/ui/shell.rs` | the layout: the room read, the status bar, the bar, the rails (§4.48 item 8), then one column (§4.42, §4.44, §4.45) — the transcript, the prompt directly under it, the dock and the rule under the prompt, the menu and the overlay over it, and what stands down under what. | ~150 |
 | `src/ui/bar.rs`, `bar/drag.rs`, `bar/rows.rs`, `bar/foot.rs`, `bar/confirm.rs` | **the bar** (§4.44 item 1; §4.45 items 1–2): the left panel listing the aimed workspace's conversations, a glyph column until the pointer is over it, lingering 0.75 s after it leaves, pinned by its head, `+ new` beside the pin; its two widths, each dragged at its right edge (`drag.rs`: the seat, the floor and the ceiling, which width a drag writes held from its first frame) and remembered in the place; the aimed workspace's conversations as `convs::` spells them, each row's trashcan under the pointer (`rows.rs`; bl-e837) and the confirmation its click opens on the box (`confirm.rs`: `keep` and `delete`, Esc and Enter); and the workspace at its foot, with the workspace's dropup standing inside it. | ~215, ~130, ~110, ~60, ~85 |
 | `src/ui/status.rs` | **the status rule** (§4.42): the state slot — the notice, the selected conversation's word and age, or `ready` — the facts between it and the name, which facts fit at a width, and the name at the right end; the model and the name as doors, each the menu row it fires (item 10). | ~250 |
 | `src/ui/status/selectors.rs`, `status/diagnostics.rs`, `status/dropup.rs` | **the rule's line** (§4.42 item 11, §4.44 item 3): the four selectors and their marks, the workspace's run the bar's foot paints, this conversation's diagnostics and the aimed server's dial sentence, and a selector's dropup — its list over the segment, its keys and its picks. | ~120 each |
@@ -7386,7 +7458,7 @@ rendering, not a reading of a design.
 | `src/ui/model/dropup.rs` | **a dropup between frames**: which selector is open, its cursor, whether its read has landed, the read it posts and what a pick fires (`dropup/choices.rs`: what each lists). | ~200 |
 | `src/ui/switcher.rs` | **the switcher** (§4.42): the roster as an overlay, opened by Ctrl+X or `/conversations`, kept open by the walk and closed by a choice — the paint; its acts are `model/walk.rs`'s. | ~45 |
 | `src/ui/model/walk.rs` | **the keyboard walk between frames** (§4.42 item 7, §4.44 item 2; bl-5b49): `Walk` — the reveal the list owes its selection, and the selection the switcher stood over — and the switcher's four acts: open, preview (the select without the tab), choose (the tab) and leave (the preview put down). Split from `held.rs` at the cap on the seam the walk draws. | ~110 |
-| `src/ui/tabs.rs` | **the tabs** (§4.44): the strip over the transcript, one tab per conversation opened in the aimed workspace, filled by `Model::select` alone, each with its close. | ~110 |
+| `src/ui/tabs.rs` | **the head** (§4.44): the mark as the settings' door, the mode's door beside it (§4.48 item 8), and the strip — one tab per conversation opened in the aimed workspace, filled by `Model::select` alone, each with its close. | ~135 |
 | `src/ui/theme.rs` | **the visual language's tokens** (§4.38, `docs/STYLE.md`): the ground ladder, the ink scale, the six states and their accents, the wire's states read onto them, the speaker weights, and the spacing and type scales — every byte once. | ~250 |
 | `src/ui/theme/bubble.rs` | the four bubbles by role (§4.45 item 7): the operator's the brand at half a tint, the trail on the ground inside a hairline, intermediate prose on the surface, final prose raised — derived from the palette, no literal. | ~50 |
 | `src/ui/theme/glyph.rs` | the glyph an act or a gutter wears: every character a control or a transcript row spells, asserted to have a glyph in the body font. | ~60 |
@@ -7411,10 +7483,10 @@ rendering, not a reading of a design.
 | `src/snapshot.rs` | **the seat rendered off-screen**: the matrix's sizes, where a shot lands, and the one settled frame. Every size is judged — the width gate went with bl-dfda, the policy now answering at every width. `cfg(test)`. | ~120 |
 | `src/snapshot/worlds/column.rs` | the column's own states — the ask, the dock, the tabs, the notice — split from `worlds.rs` at the cap. `cfg(test)`. | ~60 |
 | `src/snapshot/worlds/covered.rs` | the covered states, one world per pane that stands over the conversation, each answered because an unanswered pane offers no control at all and `PARITY.md` §5 reads unproven as red. `cfg(test)`. | ~175 |
-| `src/snapshot/worlds.rs` | the named world states the matrix photographs — the shapes the window takes with nothing covering it, the covered ones being `worlds/covered.rs`'s; built from the window fixtures rather than from a second set — the first-run one seeded the way `src/main.rs` seeds a roster, because an empty `Vec` of channels is a state no box reaches and no pane has a sentence for, and the accordion's one photographing a seat with one server open and another closed, which a one-server seat never is. The whole screen set is part of the parity instrument, which is why every pane's world is here and why each is answered. `cfg(test)`. | ~160 |
+| `src/snapshot/worlds.rs` | the named world states the matrix photographs, each in both modes (§4.48 item 8) — the shapes the window takes with nothing covering it, the covered ones being `worlds/covered.rs`'s; built from the window fixtures rather than from a second set — the first-run one seeded the way `src/main.rs` seeds a roster, because an empty `Vec` of channels is a state no box reaches and no pane has a sentence for, and the accordion's one photographing a seat with one server open and another closed, which a one-server seat never is. The whole screen set is part of the parity instrument, which is why every pane's world is here and why each is answered. `cfg(test)`. | ~160 |
 | `src/snapshot/reach.rs` | assertion (a): the walk to each of the seat's seven covered panes and back, asked of the accessibility tree. Two legs per pane, and three in the narrow shape — the length is the bound, and the bound is a fact about the shape. `cfg(test)`. | ~175 |
-| `src/snapshot/blank.rs` | assertion (b): every rectangle the layout put content in, read off the rendered glass. `cfg(test)`. | ~145 |
-| `src/snapshot/clipped.rs` | assertion (c): no control laid out wholly off the window, and none offered without a rectangle. `cfg(test)`. | ~70 |
+| `src/snapshot/blank.rs` | assertion (b): every rectangle the layout put content in, read off the rendered glass — a run under a box with words, or scrolled past its box's edge, left unjudged. `cfg(test)`. | ~155 |
+| `src/snapshot/clipped.rs` | assertion (c): no control laid out wholly off the window, and none offered without a rectangle; the boxes a pane scrolls in — the overlay's and each rail's — read once for it and for (b). `cfg(test)`. | ~130 |
 | `src/snapshot/told.rs` | assertion (e): every painted control tells (§4.46 item 2) — the pointer put at its centre and held still past the delay, and egui asked whether that seat's tooltip opened. `cfg(test)`. | ~100 |
 | `src/snapshot/lit.rs` | assertion (d): every painted control lights under the pointer (§4.45 item 6; the subject widened from the tagged set by §4.46 item 2) — the pointer put at its centre, the fills inside its rectangle read off the one paint walk and compared with the frame at rest; what is not judged is a fact the tree or egui states. `cfg(test)`. | ~135 |
 | `src/snapshot/parity.rs` | **the interface-parity gate** (yog's `docs/PARITY.md` §5): the `act:` tags read off the same accessibility tree, and the four assertions over roster, inventory and ledger. `cfg(test)`. | ~125 |

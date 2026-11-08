@@ -38,6 +38,26 @@ pub(crate) struct World {
     pub(crate) model: Model,
 }
 
+impl World {
+    /// **The same world in the advanced mode** (DESIGN §4.48 item 8) — the
+    /// mode is a dimension of the matrix, not a second matrix: every world
+    /// is rendered in both, because the head's door and the three re-homed
+    /// panes differ by it and every control has to be laid in each.
+    fn advanced(&self) -> Self {
+        let mut model = self.model.clone();
+        model.settings.mode = crate::settings::Mode::Advanced;
+        Self {
+            name: self.name,
+            model,
+        }
+    }
+
+    /// The name with its mode: what the file and a complaint say.
+    pub(crate) fn label(&self) -> String {
+        format!("{}+{}", self.name, self.model.settings.mode.word())
+    }
+}
+
 /// **The window with nothing in it**: no channel heard from, no workspace, no
 /// conversation. It is the first thing a new operator sees, and the state in
 /// which every pane has to say what it has instead of showing it.
@@ -214,8 +234,20 @@ fn filling() -> World {
     }
 }
 
-/// Every world the matrix renders, in the order it renders them.
+/// Every world the matrix renders, in the order it renders them — each in
+/// both modes, the simple first.
 pub(crate) fn all() -> Vec<World> {
+    simple()
+        .into_iter()
+        .flat_map(|world| {
+            let advanced = world.advanced();
+            [world, advanced]
+        })
+        .collect()
+}
+
+/// The worlds, each in the simple mode.
+fn simple() -> Vec<World> {
     vec![
         unprovisioned(),
         working(),

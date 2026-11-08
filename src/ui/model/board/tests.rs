@@ -32,12 +32,21 @@ fn the_pane_opens_with_nothing_aimed_at_and_closes_again() {
 
 /// **It stands in the same field the other channel-wide panes do**, which is
 /// what makes *two of them open at once* unrepresentable rather than merely
-/// unreachable.
+/// unreachable — and a word fired over it stands it down (`Model::uncover`),
+/// the trail's included, which is a field of its own (DESIGN §4.48 item 8).
 #[test]
 fn opening_another_channel_wide_pane_stands_the_board_down() {
     let mut model = Model::default();
     model.begin_board();
-    model.begin_trail();
+    model.begin_commands();
+    assert!(!model.boarding());
+    assert!(model.commanding());
+    model.begin_board();
+    assert!(crate::ui::slash::fire(
+        &mut model,
+        crate::ui::trail::WORD,
+        ""
+    ));
     assert!(!model.boarding());
     assert!(model.trailing());
 }

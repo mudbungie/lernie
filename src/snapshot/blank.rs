@@ -46,6 +46,13 @@
 //! under it — the toolkit lays both on one layer — so the question is put to
 //! the paint order (`crate::paint_probe::covered`), which is where *over* is
 //! decided.
+//!
+//! Nor a run a box scrolled past its own edge (`super::clipped::scrolled`):
+//! the overlay's box ends at the window's bottom, so a run scrolled under it
+//! is off the image and never asked; a rail's ends above the status bar
+//! (DESIGN §4.48 item 8), so a run scrolled under it stands on the image
+//! with nothing painted — by the scroll's design, which is the same fact
+//! the clipped assertion reads for a control.
 
 use crate::ui::Model;
 use egui_kittest::Harness;
@@ -133,6 +140,7 @@ fn words(node: &egui_kittest::kittest::Node<'_>) -> Option<String> {
 /// is at the bottom. Judging the leaf names the thing that is missing rather
 /// than the box around it.
 pub(crate) fn complaints(at: &str, image: &RgbaImage, harness: &Harness<'_, Model>) -> Vec<String> {
+    let clips = super::clipped::clips(harness);
     harness
         .query_all(by())
         .filter(|node| !node.is_hidden())
@@ -143,7 +151,9 @@ pub(crate) fn complaints(at: &str, image: &RgbaImage, harness: &Harness<'_, Mode
             let bounds = (bounds.x0, bounds.y0, bounds.x1, bounds.y1);
             // Named in full: the rule that confines forks to one file reads a
             // bare `.output()` as a child's, and this is the frame's.
-            if crate::paint_probe::covered(Harness::output(harness), bounds) {
+            if crate::paint_probe::covered(Harness::output(harness), bounds)
+                || super::clipped::scrolled(bounds, &clips)
+            {
                 return None;
             }
             let rect = visible(bounds, image.width(), image.height())?;

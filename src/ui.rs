@@ -72,6 +72,8 @@ pub mod overlay;
 pub mod prices;
 /// The decision queue: everything waiting on the operator, anywhere.
 pub mod queue;
+/// The rails: the branch and the context, docked beside the column (§4.48 item 8).
+pub mod rail;
 /// The records pane: what a conversation's loop did, and what it touched.
 pub mod records;
 /// The window's one list: the servers, their workspaces, and the aimed workspace's
@@ -100,10 +102,10 @@ pub mod unmake;
 
 pub(crate) use model::lane;
 pub use model::{
-    Aim, Armed, Asking, Authoring, Bindings, Channel, Choice, Chunk, Columns, Configuring,
+    Aim, Armed, Asking, Authoring, Bindings, Channel, Choice, Chunk, Columns, Configuring, Context,
     Diagnosis, Dropup, Edit, Enrolling, Fill, Fleet, Forking, Grade, Group, Held, Hits, Listing,
-    Login, Lookup, Model, Notice, Page, Pages, Pick, Posted, PriceTable, Pricing, Proposing,
-    Records, Reload, Seeking, Selector, Sent, Servers, Shown, Stand, Tab, Trail, Tuning, Unmaking,
-    WORKER,
+    Login, Lookup, Model, Notice, Page, Pages, Pick, Posted, PriceTable, Pricing, Proposing, Rail,
+    Records, Reload, Seeking, Selector, Sent, Servers, Shown, Stand, Tab, Trail, Trailing, Tuning,
+    Unmaking, WORKER,
 };
 pub use shell::render;

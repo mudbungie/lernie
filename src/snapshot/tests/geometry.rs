@@ -7,19 +7,25 @@ use super::toy;
 use crate::ui::Model;
 use egui_kittest::HarnessBuilder;
 
-/// **A control scrolled past the overlay's clip is not a fault**, and one
-/// beside the box or with no box to scroll is judged as before.
+/// **A control scrolled past a box's clip is not a fault** — the overlay's
+/// or a rail's — and one beside every box or with no box to scroll is
+/// judged as before.
 #[test]
 fn a_control_scrolled_past_the_overlay_s_clip_is_not_a_fault() {
-    let clip = Some(egui::Rect::from_min_max(
+    let clip = [egui::Rect::from_min_max(
         egui::pos2(16.0, 100.0),
         egui::pos2(384.0, 790.0),
+    )];
+    assert!(clipped::scrolled((20.0, 800.0, 200.0, 820.0), &clip));
+    assert!(clipped::scrolled((20.0, 10.0, 200.0, 90.0), &clip));
+    assert!(!clipped::scrolled((20.0, 300.0, 200.0, 320.0), &clip));
+    assert!(!clipped::scrolled((390.0, 800.0, 500.0, 820.0), &clip));
+    assert!(!clipped::scrolled((20.0, 800.0, 200.0, 820.0), &[]));
+    let rail = egui::Rect::from_min_max(egui::pos2(400.0, 0.0), egui::pos2(600.0, 700.0));
+    assert!(clipped::scrolled(
+        (420.0, 800.0, 500.0, 820.0),
+        &[clip[0], rail]
     ));
-    assert!(clipped::scrolled((20.0, 800.0, 200.0, 820.0), clip));
-    assert!(clipped::scrolled((20.0, 10.0, 200.0, 90.0), clip));
-    assert!(!clipped::scrolled((20.0, 300.0, 200.0, 320.0), clip));
-    assert!(!clipped::scrolled((390.0, 800.0, 500.0, 820.0), clip));
-    assert!(!clipped::scrolled((20.0, 800.0, 200.0, 820.0), None));
 }
 
 #[test]

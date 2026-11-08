@@ -133,10 +133,7 @@ fn the_records_item_selects_the_row_and_opens_the_pane_on_it() {
         model.conversation.as_deref(),
         Some(asking().root_id.as_str())
     );
-    assert!(
-        model.showing(crate::ui::Listing::Records),
-        "the pane is open"
-    );
+    assert!(model.recording(), "the pane is open");
     assert!(model.outbox.is_empty(), "opening a pane composes nothing");
 }
 

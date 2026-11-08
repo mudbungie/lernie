@@ -111,9 +111,9 @@ fn the_caret_comes_back_to_the_box() {
 /// one conversation's row — so a walk from nothing held crosses them first.
 const BAR: usize = 4;
 /// **The column's head is laid after the box** (§4.44 item 2; bl-036a), so
-/// the first Tab from the caret lands on its mark before the walk rounds to
-/// the bar.
-const HEAD: usize = 1;
+/// the first Tab from the caret lands on its mark, the second on the mode's
+/// door beside it (§4.48 item 8), before the walk rounds to the bar.
+const HEAD: usize = 2;
 
 /// A window on one server holding two workspaces, which is the shape both beats
 /// below Tab their way down.

@@ -183,7 +183,7 @@ pub(crate) fn trailing() -> Model {
         ..trailed("bz login", "quarantined")
     };
     Model {
-        lookup: Some(crate::ui::Lookup::Trailing),
+        trail: Some(crate::ui::Trailing::Reading),
         trails: vec![crate::ui::Trail {
             channel: own().channel,
             rows: vec![
@@ -202,7 +202,7 @@ pub(crate) fn trailing() -> Model {
 /// would reach and its act is the only control on the glass that destroys.
 pub(crate) fn clearing() -> Model {
     Model {
-        lookup: Some(crate::ui::Lookup::Clearing),
+        trail: Some(crate::ui::Trailing::Clearing),
         ..trailing()
     }
 }

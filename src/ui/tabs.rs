@@ -5,8 +5,12 @@
 //! **The mark is a door, not a decoration** (bl-036a): it opens the seat's
 //! settings pane (`/settings`, Ctrl+, — `crate::ui::settings`), the desktop's
 //! counterpart of the phone seat's configuration surface, which its mark is
-//! the door to. It stands whether or not a tab does, so the head is always
-//! [`theme::ROW`] tall; the strip stands only while a tab stands.
+//! the door to. **Beside it stands the mode's door** (DESIGN §4.48 item 8):
+//! the mode's own word in weak ink, which switches to the other — the
+//! baseline's layout toggle, as a word rather than a glyph because the word
+//! says which mode this is. Both stand whether or not a tab does, so the
+//! head is always [`theme::ROW`] tall; the strip stands only while a tab
+//! stands.
 //!
 //! Each tab is the conversation's name — the asking `?` in the attention
 //! accent before it while it asks (`crate::ui::convs::mark`), the selected one
@@ -27,6 +31,15 @@ pub const CLOSE_HELP: &str = "closes this tab; the conversation stays";
 /// What the mark does — the chord is cited beside it (`keys::cited`).
 pub const MARK_HELP: &str = "opens this seat's settings";
 
+/// **What the mode's door does**: the other mode, in the baseline's words.
+pub fn mode_help(mode: crate::settings::Mode) -> String {
+    let other = mode.other();
+    crate::ui::keys::cited(
+        &format!("switches to the {} mode: {}", other.word(), other.says()),
+        &[crate::ui::keys::Act::Mode],
+    )
+}
+
 /// What a tab is called: the row's name where the seat holds the row (the
 /// listing's, or a start's claim before the listing knows it), else its id.
 fn row_of(model: &Model, root_id: &str) -> Option<ConvRow> {
@@ -45,6 +58,11 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         if theme::paint::mark(ui, &help).clicked() {
             model.reopen_settings();
         }
+        let mode = model.settings.mode;
+        if theme::paint::tab(ui, mode.word(), theme::INK_WEAK, &mode_help(mode)).clicked() {
+            model.settings.mode = mode.other();
+        }
+        ui.add_space(theme::space::XS);
         ui.vertical(|ui| strip(ui, model));
     });
 }

@@ -1,5 +1,5 @@
 //! **The settings overlay's pages, and which one stands** (DESIGN §4.48
-//! item 7). One overlay, a tree of pages: three sections, nine pages, and
+//! item 7). One overlay, a tree of pages: three sections, ten pages, and
 //! every page that used to be an overlay of its own is a page of this one.
 //!
 //! **The page is derived, not kept.** Four of the pages are the panes that
@@ -52,10 +52,10 @@ impl Group {
     }
 }
 
-/// **The nine pages.**
+/// **The ten pages.**
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Page {
-    /// The knob table's three pages (`crate::settings::Page`).
+    /// The knob table's four pages (`crate::settings::Page`).
     Seat(crate::settings::Page),
     /// `/roles` (`crate::ui::tuning`).
     Roles,
@@ -80,11 +80,12 @@ impl Default for Page {
 }
 
 impl Page {
-    /// The nine, in the tree's order.
-    pub const ALL: [Self; 9] = [
+    /// The ten, in the tree's order.
+    pub const ALL: [Self; 10] = [
         Self::Seat(crate::settings::Page::Look),
         Self::Seat(crate::settings::Page::Input),
         Self::Seat(crate::settings::Page::Bar),
+        Self::Seat(crate::settings::Page::Mode),
         Self::Roles,
         Self::Providers,
         Self::Config,
@@ -154,14 +155,16 @@ pub struct Seeking {
 
 impl Model {
     /// **Which page the settings overlay shows**, or none where it is down.
-    /// A ladder over fields no two of which stand together
+    /// A ladder over fields no two of which float together
     /// ([`Model::covered`]), so the order is never spent.
     pub fn page(&self) -> Option<Page> {
         if self.tuning.is_some() {
             Some(Page::Roles)
         } else if self.login.is_some() {
             Some(Page::Providers)
-        } else if self.configuring.is_some() {
+        } else if self.configuring().is_some() && !self.docked() {
+            // **Docked, the config pane is the context rail's** (§4.48 item
+            // 8), not a page of this overlay.
             Some(Page::Config)
         } else if self.showing(Listing::Clients) {
             Some(Page::Clients)

@@ -58,7 +58,7 @@ mod proposal;
 pub use draft::Draft;
 pub use proposal::Proposing;
 
-use super::Model;
+use super::{Context, Model};
 use crate::verbs::Where;
 
 /// The config pane, while it is open.
@@ -93,22 +93,41 @@ impl Model {
     /// and a workspace is what an aim is.
     pub fn begin_configuring(&mut self) {
         if self.aim.is_some() {
-            self.configuring = Some(Configuring::default());
+            self.context = Some(Context::Config(Configuring::default()));
         }
     }
 
-    /// **Close it.** The answers stay, for the reason the roles do: the next
-    /// open on the same workspace is about the same files, and the standing reads
-    /// replace them anyway.
+    /// **The pane, while it is open** — the context rail's word where that
+    /// word is this one (`super::rail`).
+    pub fn configuring(&self) -> Option<&Configuring> {
+        match &self.context {
+            Some(Context::Config(pane)) => Some(pane),
+            _ => None,
+        }
+    }
+
+    /// The same, to write into.
+    pub(super) fn configuring_mut(&mut self) -> Option<&mut Configuring> {
+        match &mut self.context {
+            Some(Context::Config(pane)) => Some(pane),
+            _ => None,
+        }
+    }
+
+    /// **Close it, and only it.** The answers stay, for the reason the roles
+    /// do: the next open on the same workspace is about the same files, and
+    /// the standing reads replace them anyway.
     pub fn close_configuring(&mut self) {
-        self.configuring = None;
+        if self.configuring().is_some() {
+            self.context = None;
+        }
     }
 
     /// **The destination the file read is standing on**, if any — the pane's
     /// own question, asked once so the pane and the standing set cannot
     /// disagree about which file is up.
     pub fn configured(&self) -> Option<Where> {
-        self.configuring.as_ref()?.at.clone()
+        self.configuring()?.at.clone()
     }
 
     /// **Point the pane at one file**, dropping whatever the last one
@@ -119,7 +138,7 @@ impl Model {
     /// asked — so a listing left standing under a new question would be
     /// unattributable, exactly as the login pane's offering is.
     pub fn read_config(&mut self, at: &Where) {
-        let Some(pane) = self.configuring.as_mut() else {
+        let Some(pane) = self.configuring_mut() else {
             return;
         };
         pane.at = Some(at.clone());
@@ -131,7 +150,7 @@ impl Model {
     /// against every answer after.** Called by the frame that paints it, which
     /// is the one place that holds the server's answer and the box at once.
     pub fn draft_config(&mut self, answered: &str) {
-        let Some(pane) = self.configuring.as_mut() else {
+        let Some(pane) = self.configuring_mut() else {
             return;
         };
         match pane.draft.as_mut() {
@@ -144,35 +163,34 @@ impl Model {
     /// which the house rules permit for an internal accessor: a box is written
     /// by the widget and there is nothing to hand back by value.
     pub(crate) fn draft_box(&mut self) -> Option<&mut String> {
-        Some(&mut self.configuring.as_mut()?.draft.as_mut()?.text)
+        Some(&mut self.configuring_mut()?.draft.as_mut()?.text)
     }
 
     /// **The workflow name box, to paint into** — [`Self::draft_box`]'s shape
     /// for the one destination addressed by a name rather than picked.
     pub(crate) fn workflow_box(&mut self) -> Option<&mut String> {
-        Some(&mut self.configuring.as_mut()?.workflow)
+        Some(&mut self.configuring_mut()?.workflow)
     }
 
     /// **The workflow name as a destination would carry it**, trimmed —
     /// leading and trailing space is typing, never part of a file's name, and
     /// the empty string is the pane holding no fourth destination at all.
     pub fn workflow_named(&self) -> String {
-        self.configuring
-            .as_ref()
+        self.configuring()
             .map(|pane| pane.workflow.trim().to_owned())
             .unwrap_or_default()
     }
 
     /// **The draft as a value**, for the frame's own readings.
     pub fn drafted(&self) -> Option<Draft> {
-        self.configuring.as_ref()?.draft.clone()
+        self.configuring()?.draft.clone()
     }
 
     /// **Put the server's answer back in the box** — the way out of an edit,
     /// and the way to take another writer's file over your own draft. It is
     /// one gesture for both because it is one act: the box becomes the file.
     pub fn revert_config(&mut self, answered: &str) {
-        let Some(pane) = self.configuring.as_mut() else {
+        let Some(pane) = self.configuring_mut() else {
             return;
         };
         pane.draft = Some(Draft::of(answered));
@@ -203,7 +221,7 @@ impl Model {
     /// It is `super::login::Model::retire_login`'s rule one noun over, and
     /// sharper: a destination carries the aim's own workspace inside it.
     pub(super) fn retire_configuring(&mut self) {
-        self.configuring = None;
+        self.close_configuring();
         self.config = None;
         self.lineages = None;
         self.proposals = None;

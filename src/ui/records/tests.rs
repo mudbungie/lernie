@@ -54,7 +54,7 @@ fn the_answered_pane_paints_both_halves_whole() {
 #[test]
 fn every_empty_state_is_its_own_sentence() {
     let unanswered = Model {
-        listing: Some(crate::ui::Listing::Records),
+        context: Some(crate::ui::Context::Records),
         ..seated()
     };
     let quiet = Model {
@@ -139,7 +139,7 @@ fn a_preview_paints_in_each_of_its_four_classes() {
 fn the_done_control_closes_the_pane() {
     let mut model = recorded();
     model.escape();
-    assert!(!model.showing(crate::ui::Listing::Records));
+    assert!(!model.recording());
     assert!(model.records.steps.is_some(), "the answers stay");
 }
 
@@ -195,7 +195,7 @@ fn the_quiet_rows_say_nothing_and_the_half_absences_read_right() {
 fn the_open_control_stands_the_pane_up_from_the_composer() {
     let mut model = seated();
     assert!(crate::ui::slash::fire(&mut model, WORD, ""));
-    assert!(model.showing(crate::ui::Listing::Records), "the pane is up");
+    assert!(model.recording(), "the pane is up");
     assert!(model.outbox.is_empty(), "a look composes nothing");
 }
 

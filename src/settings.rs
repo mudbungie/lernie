@@ -22,6 +22,10 @@ use std::collections::BTreeSet;
 
 use serde_json::{Map, Value, json};
 
+/// The interface mode: simple or advanced (DESIGN §4.48 item 8).
+mod mode;
+pub use mode::Mode;
+
 /// **The defaults, each named once** — cited by the readers that used to
 /// hold them (`crate::ui::bar`) so the number has one home.
 /// Points scrolled per wheel notch — and, over [`SWIPE`], the factor on a
@@ -73,6 +77,8 @@ pub struct Settings {
     pub bar_open: Option<f32>,
     /// The switches that are on.
     pub on: BTreeSet<Toggle>,
+    /// Where the re-homed panes stand (§4.48 item 8).
+    pub mode: Mode,
 }
 
 /// **The five switches.**
@@ -117,6 +123,7 @@ impl Default for Settings {
             bar_shut: None,
             bar_open: None,
             on: [Toggle::Help, Toggle::Bubbles, Toggle::Fold, Toggle::Confirm].into(),
+            mode: Mode::default(),
         }
     }
 }
@@ -134,19 +141,25 @@ pub enum Kind {
         ceiling: f32,
         step: f32,
     },
+    /// One word of a closed set, each with the sentence that says what it
+    /// is for: a row of seats.
+    Choice {
+        words: &'static [(&'static str, &'static str)],
+    },
 }
 
-/// A knob's value, read or written: the one shape both kinds share.
+/// A knob's value, read or written: the one shape the kinds share.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Knobbed {
     On(bool),
     At(f32),
+    Word(&'static str),
 }
 
-/// **The three pages of the seat's own settings** (DESIGN §4.48 item 7):
-/// which of them a knob is a row of. One field on the row rather than a
+/// **The four pages of the seat's own settings** (DESIGN §4.48 items 7 and
+/// 8): which of them a knob is a row of. One field on the row rather than a
 /// second list, so a knob added to the table is on a page with no other edit
-/// — and the overlay's tree (`crate::ui::settings::tree`) lays these three
+/// — and the overlay's tree (`crate::ui::settings::tree`) lays these four
 /// under its *Seat* section.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Page {
@@ -158,11 +171,13 @@ pub enum Page {
     /// The bar: its linger, its ease, its two widths, its pin, the dock
     /// and the confirm.
     Bar,
+    /// The interface mode: simple or advanced (§4.48 item 8).
+    Mode,
 }
 
 impl Page {
-    /// The three, in the tree's order.
-    pub const ALL: [Self; 3] = [Self::Look, Self::Input, Self::Bar];
+    /// The four, in the tree's order.
+    pub const ALL: [Self; 4] = [Self::Look, Self::Input, Self::Bar, Self::Mode];
 
     /// The word on the tree's row and in the breadcrumb.
     pub(crate) const fn label(self) -> &'static str {
@@ -170,6 +185,7 @@ impl Page {
             Self::Look => "look",
             Self::Input => "input",
             Self::Bar => "bar",
+            Self::Mode => "mode",
         }
     }
 
@@ -179,6 +195,7 @@ impl Page {
             Self::Look => "how the window is drawn: the scale, the bubbles, the fold",
             Self::Input => "how the hands reach it: the wheel and the hover help",
             Self::Bar => "the bar: how long it lingers, how it eases, its widths and its pin",
+            Self::Mode => "simple or advanced: whether the branch and the context stand as rails",
         }
     }
 }
@@ -244,6 +261,12 @@ pub fn from_json(held: &Value) -> Settings {
             // **Through serde, never a cast** — `f64 as f32` is the one
             // narrowing the lint set denies (`crate::place::width`).
             Kind::Number { .. } => serde_json::from_value(value.clone()).ok().map(Knobbed::At),
+            // **The word read back is the table's own**, so a reader holds a
+            // static and a word the table does not spell is the default.
+            Kind::Choice { words } => value
+                .as_str()
+                .and_then(|said| words.iter().find(|(word, _)| *word == said))
+                .map(|(word, _)| Knobbed::Word(word)),
         };
         if let Some(read) = read {
             (knob.set)(&mut out, read);
@@ -265,6 +288,7 @@ pub fn to_json(settings: &Settings) -> Value {
         let value = match held {
             Knobbed::On(on) => json!(on),
             Knobbed::At(at) => json!(at),
+            Knobbed::Word(word) => json!(word),
         };
         out.insert(knob.key.to_owned(), value);
     }

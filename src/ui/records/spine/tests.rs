@@ -157,7 +157,7 @@ fn the_fork_control_waits_for_the_draft_and_then_carries_its_own_commit() {
 #[test]
 fn a_shut_pane_paints_no_spine() {
     let mut model = Model {
-        listing: None,
+        context: None,
         ..recorded()
     };
     let text = painted(&mut model);

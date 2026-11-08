@@ -195,26 +195,31 @@ impl Model {
             self.close_tuning();
         } else if self.authoring.is_some() {
             self.close_authoring();
-        } else if self.showing(super::Listing::Records) {
-            self.close_records();
         } else if self.showing(super::Listing::Queue) {
             self.close_queue();
         } else if self.showing(super::Listing::Clients) {
             self.close_clients();
-        } else if self.configuring.is_some() {
-            self.close_configuring();
         } else if self.fleet.is_some() {
             self.close_fleet();
-        } else if self.clearing() {
-            // Back to the trail it was opened from, which is what the pane's
-            // own way out did (`crate::ui::clear`).
-            self.close_clearing();
         } else if self.lookup.is_some() {
             self.close_lookup();
         } else if self.login.is_some() {
             self.close_login();
         } else if self.unmaking.is_some() {
             self.close_unmaking();
+        // **The three re-homed panes last among the panes** (DESIGN §4.48
+        // item 8): floating they are exclusive with the rest, so the order
+        // is never spent; docked they stand beside whatever floats, and Esc
+        // reaches them once nothing does — the context rail first, being
+        // about what is selected, then the branch.
+        } else if self.context.is_some() {
+            self.context = None;
+        } else if self.clearing() {
+            // Back to the trail it was opened from, which is what the pane's
+            // own way out did (`crate::ui::clear`).
+            self.close_clearing();
+        } else if self.trail.is_some() {
+            self.close_trail();
         } else if self.founding.is_some() {
             self.founding = None;
         } else {

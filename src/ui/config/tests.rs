@@ -29,7 +29,7 @@ fn the_three_empty_states_say_three_different_things() {
         (Some(vec![lineage("default")]), "default"),
     ] {
         let mut model = Model {
-            configuring: Some(Configuring::default()),
+            context: Some(crate::ui::Context::Config(Configuring::default())),
             lineages,
             ..seated()
         };
@@ -146,7 +146,7 @@ fn the_close_control_puts_the_pane_down() {
     let window = Window::new();
     let mut model = configured();
     escape(&window, |ctx| crate::ui::render(ctx, &mut model));
-    assert_eq!(model.configuring, None);
+    assert_eq!(model.configuring(), None);
 }
 
 /// **The workflow destination is a box and then a control**, and an empty name

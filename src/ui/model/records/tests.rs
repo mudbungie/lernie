@@ -13,15 +13,12 @@ fn the_pane_opens_only_on_a_selected_conversation() {
         ..seated()
     };
     adrift.begin_records();
-    assert!(
-        !adrift.showing(crate::ui::Listing::Records),
-        "no subject, no pane"
-    );
+    assert!(!adrift.recording(), "no subject, no pane");
     let mut model = seated();
     model.begin_records();
-    assert!(model.showing(crate::ui::Listing::Records));
+    assert!(model.recording());
     model.close_records();
-    assert!(!model.showing(crate::ui::Listing::Records));
+    assert!(!model.recording());
 }
 
 /// **The records go with the conversation they answer.** Selecting another
@@ -31,7 +28,7 @@ fn the_pane_opens_only_on_a_selected_conversation() {
 fn selecting_another_conversation_retires_the_pane_and_its_answers() {
     let mut model = recorded();
     model.select("20260830T051200Z-zzzz");
-    assert!(!model.showing(crate::ui::Listing::Records));
+    assert!(!model.recording());
     assert_eq!(model.records.steps, None);
     assert_eq!(model.records.files, None);
     let mut model = recorded();
@@ -45,7 +42,7 @@ fn selecting_another_conversation_retires_the_pane_and_its_answers() {
 fn aiming_elsewhere_retires_the_records_too() {
     let mut model = recorded();
     model.aim_at("(this box's own server)", "elsewhere");
-    assert!(!model.showing(crate::ui::Listing::Records));
+    assert!(!model.recording());
     assert_eq!(model.records.steps, None);
     assert_eq!(model.records.files, None);
 }
@@ -57,10 +54,7 @@ fn escape_closes_the_records_pane_before_reaching_the_notice() {
     let mut model = recorded();
     model.notice = Some(crate::ui::Notice::Refused("no".to_owned()));
     model.escape();
-    assert!(
-        !model.showing(crate::ui::Listing::Records),
-        "the pane went down"
-    );
+    assert!(!model.recording(), "the pane went down");
     assert!(model.notice.is_some(), "the notice did not");
     model.escape();
     assert_eq!(model.notice, None, "the next escape reaches it");

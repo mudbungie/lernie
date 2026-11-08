@@ -13,9 +13,9 @@ fn one_field_holds_which_listing_is_standing() {
     assert!(!model.showing(Listing::Queue));
     model.stand(Listing::Queue);
     assert!(model.showing(Listing::Queue));
-    assert!(!model.showing(Listing::Records), "and only that one");
-    model.stand(Listing::Records);
-    assert!(model.showing(Listing::Records), "standing one replaces it");
+    assert!(!model.showing(Listing::Clients), "and only that one");
+    model.stand(Listing::Clients);
+    assert!(model.showing(Listing::Clients), "standing one replaces it");
 }
 
 /// **A close control names its own pane**, so a stale one cannot take down the
@@ -24,7 +24,7 @@ fn one_field_holds_which_listing_is_standing() {
 fn putting_one_down_leaves_another_standing() {
     let mut model = Model::default();
     model.stand(Listing::Clients);
-    model.put_down(Listing::Records);
+    model.put_down(Listing::Queue);
     assert!(
         model.showing(Listing::Clients),
         "the wrong word does nothing"

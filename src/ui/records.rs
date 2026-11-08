@@ -96,7 +96,7 @@ pub const TRUNCATED: &str = "…and more — the listing was cut short";
 /// Paint the pane and take the clicks on it. Answers whether there was one to
 /// paint, so the shell knows whether the conversation still stands.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
-    if !model.showing(crate::ui::Listing::Records) {
+    if !model.recording() {
         return false;
     }
     // **The heading, then one line carrying the subject and the way out**

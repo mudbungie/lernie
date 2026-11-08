@@ -69,6 +69,8 @@ mod posted;
 pub(crate) mod pricing;
 /// The decision queue between frames: what is asking, and the acts on a row.
 mod queue;
+/// One pane, two homes: the rails, and the query that decides (§4.48 item 8).
+mod rail;
 /// The records pane between frames: open or not, and what its two reads filed.
 mod records;
 /// What this seat sent and has not yet seen come back as the server's row.
@@ -117,13 +119,14 @@ pub use page::{Group, Page, Seeking};
 pub use posted::Posted;
 pub use pricing::{Pricing, Table as PriceTable};
 pub use queue::{Asking, Section};
+pub use rail::{Context, Rail};
 pub use records::Records;
 pub use sent::Sent;
 pub use servers::Servers;
 pub use spine::Forking;
 pub use start::{Phase, Spread, Start};
 pub use tabs::Tab;
-pub use trail::Trail;
+pub use trail::{Trail, Trailing};
 pub use tuning::{Edit, Tuning};
 pub use unmake::Unmaking;
 pub use walk::Walk;

@@ -11,14 +11,14 @@ use crate::verbs::Where;
 fn the_pane_opens_only_where_the_window_is_aimed_at_a_workspace() {
     let mut nowhere = Model::default();
     nowhere.begin_configuring();
-    assert_eq!(nowhere.configuring, None);
+    assert_eq!(nowhere.configuring(), None);
     let mut model = seated();
     model.begin_configuring();
-    assert_eq!(model.configuring, Some(Configuring::default()));
+    assert_eq!(model.configuring(), Some(&Configuring::default()));
     assert!(model.covered(), "it covers the conversation");
     assert_eq!(model.configured(), None, "and points at nothing yet");
     model.close_configuring();
-    assert_eq!(model.configuring, None);
+    assert_eq!(model.configuring(), None);
 }
 
 /// **Picking a file points the pane at it and drops the last answer**: the
@@ -54,11 +54,11 @@ fn a_pick_with_no_pane_open_points_at_nothing() {
 fn escape_puts_it_down_and_a_new_aim_retires_it() {
     let mut model = configured();
     model.escape();
-    assert_eq!(model.configuring, None);
+    assert_eq!(model.configuring(), None);
     assert!(model.config.is_some(), "the answers are the server's");
     let mut moved = configured();
     moved.aim_at("(this box's own server)", "elsewhere");
-    assert_eq!(moved.configuring, None);
+    assert_eq!(moved.configuring(), None);
     assert_eq!(moved.config, None);
     assert_eq!(moved.lineages, None);
 }

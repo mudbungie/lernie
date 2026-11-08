@@ -1,14 +1,15 @@
 //! **The records pane between frames** (bl-2cf7): open or not, and the acts
 //! that open and close it.
 //!
-//! # A flag, because the pane has one state
+//! # One state, so it is a word of the context rail's field
 //!
 //! The tuning pane is a two-state enum because an assignment can be mid-edit;
 //! this pane's own state is one draft and no mode — every row on it is the
 //! server's answer, filed on [`Model`] beside the roles whether or not the
 //! pane is open, and the fork's two words are a bare field (`super::spine`).
-//! So `records` is a `bool`, and a struct here would be a state machine with
-//! one state.
+//! So the pane is [`Context::Records`], the bare word of the field it shares
+//! with the config pane (`super::rail`), and a struct here would be a state
+//! machine with one state.
 //!
 //! # It follows the tuning pane's whole shape, one noun over
 //!
@@ -21,7 +22,7 @@
 //! *the selected conversation* left open over a new selection would paint one
 //! conversation's records under another's name for a beat.
 
-use super::{Listing, Model};
+use super::{Context, Model};
 
 /// **What the records pane has been answered** — its seven reads, held
 /// together.
@@ -58,25 +59,6 @@ pub struct Records {
 }
 
 impl Model {
-    /// **Whether a pane covers the conversation** — the enrollment, the
-    /// tuning pane, one of the three listings (`super::listing`), the window's
-    /// own FOUR, the login pane, the config pane, the fleet pane, or an
-    /// unmaking. The question
-    /// the shell and every pane-opening control share, asked once so thirteen
-    /// panes cannot stand on one glass: a control that opened a second cover
-    /// would replace what is standing without saying so.
-    pub fn covered(&self) -> bool {
-        self.enroll.is_some()
-            || self.switching
-            || self.tuning.is_some()
-            || self.listing.is_some()
-            || self.lookup.is_some()
-            || self.login.is_some()
-            || self.configuring.is_some()
-            || self.fleet.is_some()
-            || self.unmaking.is_some()
-    }
-
     /// **The selected conversation's own row — where the read answered THAT
     /// conversation** (bl-3b46). The read is filed for whatever it answered,
     /// and nothing retires it when the selection is cleared for a start or an
@@ -97,22 +79,31 @@ impl Model {
     /// conversation is what an address is.
     pub fn begin_records(&mut self) {
         if self.conversation.is_some() {
-            self.stand(Listing::Records);
+            self.context = Some(Context::Records);
         }
     }
 
-    /// **Close it.** The answers stay, for the same reason the roles do: the
-    /// next open on the same conversation is about the same records, and the
-    /// standing read replaces them anyway.
+    /// **Whether the records pane is standing** — on the context rail or
+    /// floating (`super::rail`).
+    pub fn recording(&self) -> bool {
+        self.context == Some(Context::Records)
+    }
+
+    /// **Close it, and only it**: a stale close cannot take down the config
+    /// pane that replaced it on the rail. The answers stay, for the same
+    /// reason the roles do: the next open on the same conversation is about
+    /// the same records, and the standing read replaces them anyway.
     pub fn close_records(&mut self) {
-        self.put_down(Listing::Records);
+        if self.recording() {
+            self.context = None;
+        }
     }
 
     /// **The records go with the conversation they answer** — called by the
     /// two acts that move the subject, so the pane and its rows never outlive
     /// what they are about.
     pub(super) fn retire_records(&mut self) {
-        self.put_down(Listing::Records);
+        self.close_records();
         // **One assignment, because the answers are one value** ([`Records`]):
         // a pane whose reads are retired field by field is a pane with a read
         // somebody will forget.

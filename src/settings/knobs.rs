@@ -2,7 +2,7 @@
 //! them. Each is three strings and two accessors; the help sentence says
 //! what the knob does in the operator's terms and never the toolkit's.
 
-use super::{BAR_OPEN, BAR_SHUT, Kind, Knob, Knobbed, Page, Toggle, points, seconds};
+use super::{BAR_OPEN, BAR_SHUT, Kind, Knob, Knobbed, Mode, Page, Toggle, points, seconds};
 
 /// **Every knob.** Keys are the file's words; the pin is not here because it
 /// is the place file's own key (`crate::place::Place::pinned`), painted on
@@ -166,6 +166,23 @@ pub const KNOBS: &[Knob] = &[
         set: |s, v| {
             if let Knobbed::On(on) = v {
                 s.set(Toggle::Dock, on);
+            }
+        },
+    },
+    Knob {
+        key: "mode",
+        page: Page::Mode,
+        label: "interface mode",
+        help: "changes what is shown, not what the seat can do",
+        kind: Kind::Choice {
+            words: Mode::CHOICE,
+        },
+        get: |s| Knobbed::Word(s.mode.word()),
+        set: |s, v| {
+            if let Knobbed::Word(word) = v
+                && let Some(mode) = Mode::of(word)
+            {
+                s.mode = mode;
             }
         },
     },

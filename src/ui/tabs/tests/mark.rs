@@ -62,6 +62,29 @@ fn a_click_on_the_mark_opens_the_settings() {
     assert!(harness.state().covered());
 }
 
+/// **The mode's door stands beside the mark and switches the mode** (DESIGN
+/// §4.48 item 8): it reads the mode's word, its help names the other mode
+/// with the chord, and a click is the chord's act.
+#[test]
+fn the_mode_s_door_reads_the_mode_and_switches_it() {
+    let mut harness = crate::snapshot::seat(seated(), 1400.0, 900.0);
+    let help = tabs::mode_help(crate::settings::Mode::Simple);
+    assert!(
+        help.contains("advanced") && help.contains("Ctrl+Shift+\\"),
+        "{help}"
+    );
+    harness.get_by_label("simple").click();
+    harness.run();
+    assert_eq!(
+        harness.state().settings.mode,
+        crate::settings::Mode::Advanced
+    );
+    harness.run();
+    harness.get_by_label("advanced").click();
+    harness.run();
+    assert_eq!(harness.state().settings.mode, crate::settings::Mode::Simple);
+}
+
 /// **The mark's help cites the chord**, and the strip's tab is still the
 /// strip's: opening the settings by the mark keeps the selection.
 #[test]

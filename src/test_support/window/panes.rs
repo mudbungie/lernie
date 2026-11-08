@@ -167,7 +167,7 @@ pub(crate) fn lineage(name: &str) -> crate::reply::lineages::Lineage {
 /// are on the glass.
 pub(crate) fn configured() -> Model {
     Model {
-        configuring: Some(crate::ui::Configuring {
+        context: Some(crate::ui::Context::Config(crate::ui::Configuring {
             at: Some(crate::verbs::Where::Brazen {
                 workspace: "home".to_owned(),
             }),
@@ -176,7 +176,7 @@ pub(crate) fn configured() -> Model {
                 ..crate::ui::Proposing::default()
             }),
             ..crate::ui::Configuring::default()
-        }),
+        })),
         lineages: Some(vec![lineage("default")]),
         proposals: Some(crate::reply::proposals::Proposals {
             rows: vec![proposed(PROPOSED, true)],

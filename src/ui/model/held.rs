@@ -13,9 +13,9 @@
 mod asked;
 
 use super::{
-    Aim, Asking, Authoring, Bindings, Chunk, Columns, Configuring, Diagnosis, Dropup, Enrolling,
-    Fill, Fleet, Forking, Hits, Listing, Login, Lookup, Notice, Pages, Posted, Pricing, Records,
-    Servers, Start, Trail, Tuning, Unmaking,
+    Aim, Asking, Authoring, Bindings, Chunk, Columns, Context, Diagnosis, Dropup, Enrolling, Fill,
+    Fleet, Forking, Hits, Listing, Login, Lookup, Notice, Pages, Posted, Pricing, Records, Servers,
+    Start, Trail, Trailing, Tuning, Unmaking,
 };
 use crate::reply::{convs::ConvRow, stream::Stream, transcript::Transcript};
 
@@ -51,22 +51,18 @@ pub struct Model {
     /// row, because the reply names none (bl-b7d9). A row with no entry has
     /// said nothing, and nothing is concluded from it.
     pub offers: std::collections::BTreeMap<String, Vec<String>>,
-    /// **Which of the three LISTING panes is standing**, if any — the records
-    /// pane, the decision queue, or the clients pane (`listing`). One field
-    /// rather than a flag each: they hold nothing of their own, no two ever
-    /// stand together, and three bools would make *two of them open at once* a
-    /// state only the derivation order resolves — the reframe clippy's
-    /// `struct_excessive_bools` names, taken rather than suppressed.
+    /// **Which of the two LISTING panes is standing**, if any — the decision
+    /// queue or the clients pane (`listing`). One field rather than a flag
+    /// each: they hold nothing of their own and no two ever stand together.
     pub listing: Option<Listing>,
+    /// **What stands on the context rail, or floats as the simple mode lays
+    /// it** (`rail`; DESIGN §4.48 item 8): the config pane with the file it
+    /// is pointed at (`config`; §4.30), or the records pane (`records`).
+    pub context: Option<Context>,
     /// **The machines registered in the aimed workspace**, or `None`
     /// while nobody has been answered about it — the one-option reading
     /// [`Self::roles`] gets, one noun over (`clients`).
     pub machines: Option<Vec<crate::reply::clients::ClientRow>>,
-    /// **The config pane, while it is open** — the eleventh covering pane, and
-    /// the fourth whose subject is the aimed workspace (`config`; DESIGN §4.30). A
-    /// struct rather than a flag because it holds one question of its own:
-    /// which file it is pointed at.
-    pub configuring: Option<Configuring>,
     /// **One config file's bytes and the settings its schema found**, or
     /// `None` while nobody has been answered about the file the pane points at
     /// — the one-option reading [`Self::roles`] gets (`config`).
@@ -94,22 +90,19 @@ pub struct Model {
     /// the login pane's held read, and [`Self::live`]'s shape one noun over
     /// (`login`).
     pub signin: Option<crate::reply::login::Signin>,
-    /// **Which of the window's own three panes is standing**, if any — the
-    /// sixth, seventh and tenth covering panes, and the three whose subject is
-    /// every channel and which are opened from the roster's own ops row
-    /// (`window`, `trail`; bl-40ec, bl-4c48). One field rather than three
-    /// flags, because no two panes ever stand together and a set of bools
-    /// would make *all three* representable — which is also the reframe
-    /// clippy's `struct_excessive_bools` asks for by name, taken rather than
-    /// suppressed.
-    ///
-    /// It is a second field beside [`Self::listing`] and not one with it,
-    /// because the two name different axes: these three are the WINDOW's own —
-    /// reached from the ops row, about every channel, and one of them holds a
-    /// needle — while a listing is a pane about one thing on the glass that
-    /// holds nothing at all. DESIGN §4.28 records the fold that would make
+    /// **Which of the window's own panes is standing**, if any — the panes
+    /// whose subject is every channel, and the settings overlay's stateless
+    /// pages (`window`; bl-40ec, bl-d2af). One field rather than a flag
+    /// each, because no two ever stand together and a set of bools would
+    /// make *all of them* representable — the reframe clippy's
+    /// `struct_excessive_bools` asks for by name, taken rather than
+    /// suppressed. A second field beside [`Self::listing`] because the two
+    /// name different axes; DESIGN §4.28 records the fold that would make
     /// them one.
     pub lookup: Option<Lookup>,
+    /// **The trail pane, at either of its depths** (`trail`; bl-4c48): its
+    /// own field because it has two homes (`rail`; §4.48 item 8).
+    pub trail: Option<Trailing>,
     /// **An unmaking, while it stands** — the fifth covering pane, and the only
     /// one this window has whose act cannot be undone by doing the other thing
     /// (`unmake`; DESIGN §4.20). It carries the workspace it was opened on rather
@@ -219,6 +212,9 @@ pub struct Model {
     pub standing: Option<super::Stand>,
     /// **Everything this seat is set to** (`crate::settings`; §4.46 item 4).
     pub settings: crate::settings::Settings,
+    /// **Whether the window has room for the rails** (`rail`; §4.48 item 8),
+    /// written at the top of each frame — the bar's `left_at` class of fact.
+    pub room: bool,
     /// **The settings page the overlay last showed** (§4.48 item 7): where
     /// the mark reopens it. Not where it is open — that is [`Model::page`].
     pub visited: super::Page,

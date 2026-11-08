@@ -220,16 +220,16 @@ fn every_opener_opens_what_its_word_names() {
             crate::ui::queue::WORD,
             (|m: &Model| m.showing(crate::ui::Listing::Queue)) as fn(&Model) -> bool,
         ),
-        (crate::ui::records::WORD, |m: &Model| {
-            m.showing(crate::ui::Listing::Records)
-        }),
+        (crate::ui::records::WORD, |m: &Model| m.recording()),
         (crate::ui::tuning::WORD, |m: &Model| m.tuning.is_some()),
         (crate::ui::tuning::MODEL, |m: &Model| m.dropup.is_some()),
         (crate::ui::login::WORD, |m: &Model| m.login.is_some()),
         (crate::ui::clients::WORD, |m: &Model| {
             m.showing(crate::ui::Listing::Clients)
         }),
-        (crate::ui::config::WORD, |m: &Model| m.configuring.is_some()),
+        (crate::ui::config::WORD, |m: &Model| {
+            m.configuring().is_some()
+        }),
         (crate::ui::fleet::WORD, |m: &Model| m.fleet.is_some()),
         (crate::ui::unmake::WORD, |m: &Model| m.unmaking.is_some()),
         (crate::ui::commands::WORD, Model::commanding),

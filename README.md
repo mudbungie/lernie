@@ -140,7 +140,13 @@ with its sentence beneath and its slider or check at the right, remembered
 in the place file only where set off its default; *Workspace* is `/roles`,
 `/login`, `/config` and `/clients`, and *Servers* the enrollment's door and
 `/doctor`, each word opening the overlay on its page, with a box at the head
-that finds a row on any page (`docs/DESIGN.md` §4.48 item 7). All of it is painted from a snapshot and fires
+that finds a row on any page (`docs/DESIGN.md` §4.48 item 7). The *Seat › mode*
+page, the word beside the mark and Ctrl+Shift+\ switch the **interface mode**:
+*simple* is the window as described, every pane floating; *advanced* docks two
+rails at the right wherever the window has room for them beside the bar and the
+chat — the branch rail (`/trail`) and the context rail (`/config`, `/records`)
+— the same panes, their standing reads keyed on being shown wherever shown, Esc
+closing a rail once nothing floats (§4.48 item 8). All of it is painted from a snapshot and fires
 gestures through the same doors the command line spends. The prompt speaks to
 the conversation that is selected and **begins one** where none is, holding
 the staged body between the start's two acts — so the window can start a
@@ -154,7 +160,7 @@ Tab moves focus between the controls and Space fires the focused one — and wha
 Tab cannot make *usable* is a list, so the arrows walk the switcher's one
 list — server rows, the open server's workspaces, and the aimed one's
 conversations, in the order the glass paints them — and Escape puts an
-overlay, then a notice, down. Enter or Space on a server's row opens it;
+overlay, then a rail, then a notice, down. Enter or Space on a server's row opens it;
 Enter on a selected conversation chooses it. Moving in the list **selects**,
 so the cursor and the selection are one thing and the highlight the pointer
 paints is where the keyboard is. Every binding calls the same door the click

@@ -34,9 +34,9 @@ fn the_matrix_renders_every_world_at_every_size_and_the_frame_holds() {
         for (size, width, height) in SIZES {
             let mut harness = seat(world.model.clone(), width, height);
             let image = renderer.render(&harness);
-            let file = into.join(name(world.name, size));
+            let file = into.join(name(&world.label(), size));
             image.save(&file).expect("the shot is writable");
-            let at = format!("{} at {size}", world.name);
+            let at = format!("{} at {size}", world.label());
             println!(
                 "{at}: {}x{} -> {}",
                 image.width(),
@@ -76,7 +76,8 @@ fn the_matrix_renders_every_world_at_every_size_and_the_frame_holds() {
     );
 }
 
-/// **Assertion (a)**, at every size the matrix renders.
+/// **Assertion (a)**, at every size the matrix renders, in both modes
+/// (DESIGN §4.48 item 8: a pane docked is the same two gestures away).
 ///
 /// The main screen is the seated one: an unprovisioned window is aimed at no
 /// workspace, so it offers no enrollment to reach and says so in words instead.
@@ -87,13 +88,17 @@ fn the_matrix_renders_every_world_at_every_size_and_the_frame_holds() {
 #[test]
 fn the_covered_pane_is_one_gesture_away_at_every_size() {
     let mut complaints = Vec::new();
-    for (size, width, height) in SIZES {
-        let mut harness = seat(seated(), width, height);
-        complaints.extend(reach::complaints(
-            &format!("seated at {size}"),
-            &mut harness,
-            &reach::walk(),
-        ));
+    for mode in crate::settings::Mode::ALL {
+        for (size, width, height) in SIZES {
+            let mut model = seated();
+            model.settings.mode = mode;
+            let mut harness = seat(model, width, height);
+            complaints.extend(reach::complaints(
+                &format!("seated+{} at {size}", mode.word()),
+                &mut harness,
+                &reach::walk(),
+            ));
+        }
     }
     assert!(
         complaints.is_empty(),

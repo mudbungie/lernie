@@ -20,70 +20,9 @@
 
 use crate::ui::Model;
 
-/// **A key on a modifier plane.** `ctrl` is egui's `command`, which on this
-/// seat's platforms is the Ctrl key.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Chord {
-    pub key: egui::Key,
-    pub ctrl: bool,
-    pub shift: bool,
-}
-
-impl Chord {
-    /// The key alone.
-    pub const fn plain(key: egui::Key) -> Self {
-        Self {
-            key,
-            ctrl: false,
-            shift: false,
-        }
-    }
-
-    /// The key under Ctrl.
-    pub const fn ctrl(key: egui::Key) -> Self {
-        Self {
-            key,
-            ctrl: true,
-            shift: false,
-        }
-    }
-
-    /// **How the chord is written** on the glass: `Ctrl+B`, `PageDown`,
-    /// `Ctrl+,`. egui's own names, except where the name is a word for a
-    /// mark an operator reads as the mark.
-    pub fn spell(self) -> String {
-        let key = match self.key {
-            egui::Key::Comma => ",",
-            egui::Key::Equals => "=",
-            egui::Key::Minus => "-",
-            egui::Key::Escape => "Esc",
-            key => key.name(),
-        };
-        let ctrl = if self.ctrl { "Ctrl+" } else { "" };
-        let shift = if self.shift { "Shift+" } else { "" };
-        format!("{ctrl}{shift}{key}")
-    }
-
-    /// **Whether this frame pressed exactly this chord** — the key on this
-    /// plane and no other, so `PageDown` is not also `Ctrl+PageDown`.
-    pub fn pressed(self, ctx: &egui::Context) -> bool {
-        ctx.input(|i| {
-            i.events.iter().any(|event| {
-                matches!(
-                    event,
-                    egui::Event::Key {
-                        key,
-                        pressed: true,
-                        modifiers,
-                        ..
-                    } if *key == self.key
-                        && modifiers.command == self.ctrl
-                        && modifiers.shift == self.shift
-                )
-            })
-        })
-    }
-}
+/// The chord: a key on a modifier plane, its spelling and its press.
+mod chord;
+pub use chord::Chord;
 
 /// **What a fired row does**, named so a control can cite its chord.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -116,6 +55,8 @@ pub enum Act {
     ScaleUp,
     ScaleDown,
     ScaleReset,
+    /// The other interface mode (§4.48 item 8).
+    Mode,
 }
 
 /// A row's key: fired here, or told and read where it is read.
@@ -167,7 +108,7 @@ pub const BINDINGS: &[Binding] = &[
     Binding::told("Up, Down", "walk whatever is open"),
     Binding::told(
         "Esc",
-        "closes a dropup, then the overlay, then the menu, then the notice",
+        "closes a dropup, then the overlay, then the menu, then a rail, then the notice",
     ),
     Binding::told("1 to 6", "answers the question it is asking, by its number"),
     Binding::fired(
@@ -225,6 +166,11 @@ pub const BINDINGS: &[Binding] = &[
         Chord::ctrl(Key::Num0),
         Act::ScaleReset,
         "puts the scale back to 1",
+    ),
+    Binding::fired(
+        Chord::ctrl_shift(Key::Backslash),
+        Act::Mode,
+        "the other mode: rails beside the chat, or the panes floating",
     ),
     Binding::fired(
         Chord::plain(Key::F1),

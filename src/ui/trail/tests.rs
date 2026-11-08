@@ -24,7 +24,7 @@ fn the_word_opens_the_pane() {
 #[test]
 fn each_emptiness_says_which_one_it_is() {
     let mut unheard = Model {
-        lookup: Some(crate::ui::Lookup::Trailing),
+        trail: Some(crate::ui::Trailing::Reading),
         ..seated()
     };
     let glass = painted(&mut unheard);
@@ -176,7 +176,7 @@ fn the_watermark_is_one_control_and_it_fans() {
 #[test]
 fn the_watermark_is_dead_where_no_row_has_crossed() {
     let mut model = Model {
-        lookup: Some(crate::ui::Lookup::Trailing),
+        trail: Some(crate::ui::Trailing::Reading),
         trails: vec![Trail {
             channel: own().channel,
             rows: Vec::new(),

@@ -10,7 +10,7 @@ use crate::ui::keys::{Act, BINDINGS, Binding, Chord, Keyed, chord_for, cited, ci
 use crate::ui::{Lookup, Model};
 
 /// Every act the table can name.
-const ACTS: [Act; 17] = [
+const ACTS: [Act; 18] = [
     Act::Switch,
     Act::Model,
     Act::Dock,
@@ -28,6 +28,7 @@ const ACTS: [Act; 17] = [
     Act::ScaleUp,
     Act::ScaleDown,
     Act::ScaleReset,
+    Act::Mode,
 ];
 
 /// Press one chord on a real window, then rest a frame.
@@ -67,6 +68,7 @@ fn every_act_has_a_row_and_the_chords_spell_as_the_operator_types_them() {
     assert_eq!(chord_for(Act::ScaleReset), "Ctrl+0");
     assert_eq!(chord_for(Act::PageDown), "PageDown");
     assert_eq!(chord_for(Act::Help), "F1");
+    assert_eq!(chord_for(Act::Mode), "Ctrl+Shift+\\");
     let shifted = Chord {
         key: egui::Key::Enter,
         ctrl: false,
@@ -78,6 +80,10 @@ fn every_act_has_a_row_and_the_chords_spell_as_the_operator_types_them() {
     // evaluation, so the builder's count reads them as lines that ran.
     let row = Binding::fired(Chord::ctrl(egui::Key::B), Act::Pin, "pins");
     assert_eq!(row.says(), "Ctrl+B");
+    assert_eq!(
+        Chord::ctrl_shift(egui::Key::Backslash).spell(),
+        "Ctrl+Shift+\\"
+    );
     assert_eq!(Binding::told("Enter", "sends").says(), "Enter");
     let told: Vec<String> = BINDINGS
         .iter()
@@ -122,6 +128,18 @@ fn the_chords_open_the_switcher_the_model_the_dock_the_settings_and_help() {
     let before = crate::ui::dock::unfolded(window.ctx(), false);
     fire(&window, &mut model, Act::Dock);
     assert_ne!(crate::ui::dock::unfolded(window.ctx(), false), before);
+}
+
+/// **Ctrl+Shift+\ is the head's door from the keyboard** (DESIGN §4.48
+/// item 8): the other mode, and back.
+#[test]
+fn the_mode_chord_switches_the_mode_and_back() {
+    let window = Window::new();
+    let mut model = seated();
+    fire(&window, &mut model, Act::Mode);
+    assert_eq!(model.settings.mode, crate::settings::Mode::Advanced);
+    fire(&window, &mut model, Act::Mode);
+    assert_eq!(model.settings.mode, crate::settings::Mode::Simple);
 }
 
 #[test]

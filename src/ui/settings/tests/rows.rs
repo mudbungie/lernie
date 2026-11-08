@@ -81,6 +81,34 @@ fn a_slider_moves_on_the_arrows_and_writes_its_field() {
     );
 }
 
+/// **A choice's seat writes its word** (DESIGN §4.48 item 8): the mode page
+/// paints a seat per mode over its sentence, and a click on the other one
+/// sets it.
+#[test]
+fn a_choice_s_seat_writes_its_word() {
+    let window = Window::new();
+    let mut model = open(Page::Seat(crate::settings::Page::Mode));
+    window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
+    let painted = crate::paint_probe::text_of(
+        &window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model)),
+    );
+    for word in [
+        crate::settings::Mode::Simple.says(),
+        crate::settings::Mode::Advanced.says(),
+        "changes what is shown, not what the seat can do",
+    ] {
+        assert!(painted.contains(word), "{word:?}:\n{painted}");
+    }
+    crate::test_support::window::click(&window, "advanced", |ctx| {
+        crate::ui::render(ctx, &mut model);
+    });
+    assert_eq!(model.settings.mode, crate::settings::Mode::Advanced);
+    crate::test_support::window::click(&window, "simple", |ctx| {
+        crate::ui::render(ctx, &mut model);
+    });
+    assert_eq!(model.settings.mode, crate::settings::Mode::Simple);
+}
+
 /// **A row whose kind and value disagree paints nothing**: the table is
 /// judged before any page paints it (`crate::settings::tests`), so the arm
 /// exists to refuse a control that lies rather than to be reached.

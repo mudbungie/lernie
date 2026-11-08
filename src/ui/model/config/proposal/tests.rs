@@ -61,7 +61,7 @@ fn the_read_stands_at_the_named_depth_only_while_the_row_is_staged() {
     assert_eq!(standing.named(), Some(PROPOSED.to_owned()));
     assert_eq!(
         standing.open,
-        Some(Open::Config(standing.at(), Some(PROPOSED.to_owned())))
+        vec![Open::Config(standing.at(), Some(PROPOSED.to_owned()))]
     );
     model.proposals.as_mut().expect("fixture").rows.clear();
     assert_eq!(model.proposing(), None, "gone from the listing");

@@ -20,16 +20,41 @@ fn the_pane_opens_with_nothing_aimed_at_and_closes_again() {
     assert!(!model.trailing());
 }
 
-/// **It is the same field the other two channel-wide panes stand in**, which
-/// is what makes *two of them open at once* unrepresentable rather than merely
-/// unreachable.
+/// **Floating, a word fired over it stands it down** (`Model::uncover`);
+/// **docked, it stands beside the pane the word opened** (DESIGN §4.48 item
+/// 8) — the one field, read through the one query.
 #[test]
-fn opening_another_channel_wide_pane_stands_the_trail_down() {
+fn another_pane_stands_the_trail_down_floating_and_beside_it_docked() {
     let mut model = Model::default();
     model.begin_trail();
-    model.begin_commands();
+    assert!(crate::ui::slash::fire(
+        &mut model,
+        crate::ui::commands::WORD,
+        ""
+    ));
     assert!(!model.trailing());
     assert!(model.commanding());
+    let mut docked = Model {
+        room: true,
+        ..Model::default()
+    };
+    docked.settings.mode = crate::settings::Mode::Advanced;
+    docked.begin_trail();
+    assert!(!docked.covered(), "a docked pane is not a cover");
+    assert!(crate::ui::slash::fire(
+        &mut docked,
+        crate::ui::commands::WORD,
+        ""
+    ));
+    assert!(docked.trailing() && docked.commanding());
+    assert!(docked.covered());
+    docked.escape();
+    assert!(
+        docked.trailing() && !docked.commanding(),
+        "Esc closed the overlay first"
+    );
+    docked.escape();
+    assert!(!docked.trailing(), "then the rail");
 }
 
 /// **Nothing on the glass can invalidate it**, because nothing on the glass is

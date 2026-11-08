@@ -9,7 +9,7 @@ use crate::ui::Model;
 #[test]
 fn the_conversation_s_card_carries_its_facts() {
     let mut model = recorded();
-    model.listing = None;
+    model.context = None;
     let text = painted(&mut model);
     for word in [
         "port the paint probe",

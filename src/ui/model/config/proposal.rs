@@ -59,7 +59,7 @@ impl Model {
     /// so a diff left standing under a new name would be unattributable — the
     /// rule [`Model::read_config`] keeps one read over.
     pub fn name_proposal(&mut self, id: &str) {
-        let Some(pane) = self.configuring.as_mut() else {
+        let Some(pane) = self.configuring_mut() else {
             return;
         };
         pane.proposal = Some(Proposing {
@@ -72,7 +72,7 @@ impl Model {
     /// **Put it down** — the way out, and it settles nothing: the proposal
     /// stays staged and the read goes back to the bare listing.
     pub fn unname_proposal(&mut self) {
-        if let Some(pane) = self.configuring.as_mut() {
+        if let Some(pane) = self.configuring_mut() {
             pane.proposal = None;
         }
         self.unwhole();
@@ -80,12 +80,12 @@ impl Model {
 
     /// **The named row, as the pane holds it.**
     pub fn named_proposal(&self) -> Option<Proposing> {
-        self.configuring.as_ref()?.proposal.clone()
+        self.configuring()?.proposal.clone()
     }
 
     /// **The arming box, to paint into** — [`Model::draft_box`]'s shape.
     pub(crate) fn verdict_box(&mut self) -> Option<&mut String> {
-        Some(&mut self.configuring.as_mut()?.proposal.as_mut()?.typed)
+        Some(&mut self.configuring_mut()?.proposal.as_mut()?.typed)
     }
 
     /// **The row the server's last listing holds under `id`**, or `None` where
@@ -116,8 +116,7 @@ impl Model {
             return;
         };
         let Some(held) = self
-            .configuring
-            .as_mut()
+            .configuring_mut()
             .and_then(|pane| pane.proposal.as_mut())
             .filter(|held| live && held.armed())
         else {

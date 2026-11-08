@@ -5,8 +5,8 @@
 //!
 //! `ops` names no workspace, so its subject is every channel this box holds
 //! and no aim or selection can invalidate it. Everything follows from that and
-//! all of it is [`super::queue`]'s already: the pane holds nothing of its own,
-//! it opens from an unaimed seat, it survives
+//! all of it is [`super::queue`]'s already: the pane holds nothing of its own
+//! but its depth ([`Trailing`]), it opens from an unaimed seat, it survives
 //! [`Model::aim_at`] and [`Model::select`], and one channel's answer replaces
 //! **its own** section and leaves every other standing — REMOTE §8.2's *"a
 //! refusal is one entry's, never the set's"*.
@@ -20,9 +20,22 @@
 //! under an operator who is looking at it — so it stands while the pane is
 //! open, on the decision queue's own terms and for the same reason.
 
-use super::{Lookup, Model};
+use super::Model;
 use crate::reply::ops::OpRow;
 use crate::ui::Channel;
+
+/// **The trail pane, while it is open**: reading the rows, or at the place
+/// a trail is cut in (`crate::ui::clear`; bl-b8f7). One field for the two
+/// because they are one pane at two depths — the cut is opened from the
+/// rows and its way out re-opens them — and the pane's own field rather
+/// than a member of [`super::Lookup`] because it has two homes (DESIGN
+/// §4.48 item 8; `super::rail`): docked, it stands beside whichever of the
+/// window's panes floats.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Trailing {
+    Reading,
+    Clearing,
+}
 
 /// **One channel's trail** — the rows, and the channel they came down as the
 /// client's own stamp.
@@ -36,18 +49,19 @@ impl Model {
     /// **Open the trail pane.** It takes no subject, so nothing gates it:
     /// *what has this box been doing* is answerable from an unaimed,
     /// unselected seat, and that is the seat most likely to be asking it.
-    ///
-    /// It sets the window's one *which channel-wide pane is standing* field
-    /// rather than a flag of its own ([`Lookup`]), so what closes it is
-    /// [`Model::close_lookup`](super::Model) — one door for all three, and for
-    /// Escape as well.
     pub fn begin_trail(&mut self) {
-        self.lookup = Some(Lookup::Trailing);
+        self.trail = Some(Trailing::Reading);
     }
 
-    /// **Whether the trail is the pane standing.**
+    /// **Whether the trail's rows are standing** — the reading, at which its
+    /// read stands (`crate::state::Open::Trail`).
     pub fn trailing(&self) -> bool {
-        self.lookup == Some(Lookup::Trailing)
+        self.trail == Some(Trailing::Reading)
+    }
+
+    /// **Close it**, at either depth: Esc's door, and the rail's.
+    pub fn close_trail(&mut self) {
+        self.trail = None;
     }
 
     /// **Acknowledge every alarm, on every channel this box holds.**
@@ -66,12 +80,12 @@ impl Model {
     /// reading of it). It stands the trail down, being the same field, and
     /// [`Model::close_clearing`] is what brings it back.
     pub fn begin_clearing(&mut self) {
-        self.lookup = Some(Lookup::Clearing);
+        self.trail = Some(Trailing::Clearing);
     }
 
     /// **Whether that place is the pane standing.**
     pub fn clearing(&self) -> bool {
-        self.lookup == Some(Lookup::Clearing)
+        self.trail == Some(Trailing::Clearing)
     }
 
     /// **The way out, which cuts nothing** — it re-opens the trail rather than

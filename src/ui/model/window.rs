@@ -1,6 +1,6 @@
-//! **The window's own panes between frames** (bl-40ec, bl-4c48, bl-d2af;
-//! DESIGN §4.21, §4.27, §4.31): the server's verb table, what a needle found,
-//! the trail, and the balls.
+//! **The window's own panes between frames** (bl-40ec, bl-d2af; DESIGN
+//! §4.21, §4.27, §4.31): the server's verb table, what a needle found, and
+//! the balls.
 //!
 //! # Neither has a subject anything on the glass can move
 //!
@@ -24,11 +24,11 @@
 //! that asks it, `crate::offframe::poster` fans it over every channel, and the
 //! answers replace one channel's section at a time.
 //!
-//! **The trail is the exception and it is the queue's reason** (bl-4c48): a
-//! trail is what is happening, so its read stands while its pane is open. It
-//! shares this field because *which channel-wide pane is standing* is one
-//! fact; it does not share the cadence, and `crate::state::Open` is where the
-//! cadence is decided.
+//! **The trail was the exception** (bl-4c48) — a trail is what is happening,
+//! so its read stands while its pane is open — and it shared this field
+//! until it gained a second home (DESIGN §4.48 item 8): docked beside the
+//! column it stands while one of these floats, so it is a field of its own
+//! now (`super::trail`).
 //!
 //! # The needle is never spent on firing
 //!
@@ -58,29 +58,16 @@ use crate::ui::Channel;
 /// family; the other two name the aimed workspace and are that pane's own section
 /// rather than a second pane (`super::board`).
 ///
-/// **The trail joined them rather than bringing a flag of its own** (bl-4c48).
-/// Its subject is every channel this box holds, which is §4.21's whole
-/// definition of this family, so a tenth field would have been a second
-/// representation of *which channel-wide pane is standing*. What it does not
-/// share is the read's cadence — see the section above, and
-/// `crate::state::Open::Trail`, which is where that difference lives.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Lookup {
     /// The servers' own verb tables (`crate::ui::commands`).
     Commands,
     /// Text found across everything they can see (`crate::ui::find`).
     Finding,
-    /// Everything that crossed their boundaries (`crate::ui::trail`).
-    Trailing,
     /// The balls they hold, in their columns (`crate::ui::board`; bl-d2af).
     Board,
     /// **The world's price table and ceiling** (`crate::ui::prices`; bl-9111).
     Pricing,
-    /// **The place a trail is cut in** (`crate::ui::clear`; bl-b8f7). It is a
-    /// member of THIS field rather than a pane beside the trail because the
-    /// two are mutually exclusive by construction: one is opened from the
-    /// other, and the way out of it re-opens the one it came from.
-    Clearing,
     /// **The settings overlay, on one of the pages with no state of its own**
     /// (`crate::ui::settings`; DESIGN §4.48 item 7): the seat's three knob
     /// pages, the enrollment's door and the doctor (bl-9bbb), whose read is

@@ -185,7 +185,7 @@ fn tuning(
     for ask in &asks {
         aimed(link, root, channel, ask);
     }
-    let Some(Open::Tuning(providers)) = &standing.open else {
+    let Some(providers) = standing.tuned() else {
         return;
     };
     for provider in providers {

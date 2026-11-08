@@ -79,11 +79,12 @@ pub const NO_SETTINGS: &str = "this file has no fields to edit one by one — ed
 /// one: it opens only on an aim and the aim is never withdrawn, and taking
 /// both here hands every reader below the workspace rather than a second question.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
-    let (Some(_), Some(aim)) = (&model.configuring, model.aim.clone()) else {
+    let (Some(_), Some(aim)) = (model.configuring(), model.aim.clone()) else {
         return false;
     };
-    // **A page of the settings overlay** (§4.48 item 7): the breadcrumb is
-    // the overlay's, and the workspace it is open on heads the rows.
+    // **A page of the settings overlay, or the context rail's pane** (§4.48
+    // items 7 and 8): the name line is the home's, and the workspace it is
+    // open on heads the rows.
     ui.colored_label(
         theme::INK_WEAK,
         format!("on {} — {}", aim.address, aim.channel),

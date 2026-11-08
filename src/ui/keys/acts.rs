@@ -40,6 +40,9 @@ pub fn fire(act: Act, ctx: &egui::Context, model: &mut Model) {
         Act::ScaleUp => scale(model, 1.0),
         Act::ScaleDown => scale(model, -1.0),
         Act::ScaleReset => scale(model, 0.0),
+        // **The head's door, from the keyboard** (`crate::ui::tabs`): one
+        // fact, two doors.
+        Act::Mode => model.settings.mode = model.settings.mode.other(),
     }
 }
 

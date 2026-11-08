@@ -185,7 +185,7 @@ pub(crate) fn recorded() -> Model {
         ..step("002")
     };
     Model {
-        listing: Some(crate::ui::Listing::Records),
+        context: Some(crate::ui::Context::Records),
         records: crate::ui::Records {
             steps: Some(crate::reply::steps::Steps {
                 rows: vec![step("001"), wounded],

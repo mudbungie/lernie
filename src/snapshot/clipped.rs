@@ -54,19 +54,35 @@ pub(crate) fn fault(
 /// Hidden nodes are skipped, and that is not a loosening: `is_hidden` is the
 /// tree's own statement that the node is not currently offered to anybody, so
 /// judging it would be judging a control that is not on the window.
-/// **Whether a control is scrolled past the overlay's clip** rather than laid
-/// off the glass (DESIGN §4.42, item 6): it stands within the box's columns
-/// and wholly above or below the box's rows. Such a control is reachable by
-/// scrolling the pane it is in — a Tab onto it brings it on — which is a
-/// different thing from a pane that grew a control past the window with
-/// nothing to scroll.
-pub(crate) fn scrolled(bounds: (f64, f64, f64, f64), clip: Option<egui::Rect>) -> bool {
-    let Some(clip) = clip else {
-        return false;
-    };
+/// **Whether a control is scrolled past a box's clip** rather than laid off
+/// the glass (DESIGN §4.42, item 6) — the overlay's box, or a rail's (§4.48
+/// item 8): it stands within the box's columns and wholly above or below
+/// the box's rows. Such a control is reachable by scrolling the pane it is
+/// in — a Tab onto it brings it on — which is a different thing from a pane
+/// that grew a control past the window with nothing to scroll.
+pub(crate) fn scrolled(bounds: (f64, f64, f64, f64), clips: &[egui::Rect]) -> bool {
     let (x0, y0, x1, y1) = bounds;
-    let within = x0 >= f64::from(clip.min.x) - 1.0 && x1 <= f64::from(clip.max.x) + 1.0;
-    within && (y0 >= f64::from(clip.max.y) || y1 <= f64::from(clip.min.y))
+    clips.iter().any(|clip| {
+        let within = x0 >= f64::from(clip.min.x) - 1.0 && x1 <= f64::from(clip.max.x) + 1.0;
+        within && (y0 >= f64::from(clip.max.y) || y1 <= f64::from(clip.min.y))
+    })
+}
+
+/// **The boxes a pane scrolls in**, as the frame wrote them down: the
+/// overlay's, and each rail's that stands (`crate::ui::rail::clip`).
+pub(crate) fn clips(harness: &Harness<'_, Model>) -> Vec<egui::Rect> {
+    [
+        crate::ui::overlay::BOX,
+        crate::ui::rail::clip(crate::ui::Rail::Branch),
+        crate::ui::rail::clip(crate::ui::Rail::Context),
+    ]
+    .into_iter()
+    .filter_map(|id| {
+        harness
+            .ctx
+            .data(|d| d.get_temp::<egui::Rect>(egui::Id::new(id)))
+    })
+    .collect()
 }
 
 pub(crate) fn complaints(
@@ -75,9 +91,7 @@ pub(crate) fn complaints(
     height: f32,
     harness: &Harness<'_, Model>,
 ) -> Vec<String> {
-    let clip = harness
-        .ctx
-        .data(|d| d.get_temp::<egui::Rect>(egui::Id::new(crate::ui::overlay::BOX)));
+    let clips = clips(harness);
     harness
         .query_all(by())
         .filter(|node| !node.is_hidden() && (node.is_clickable() || node.is_focusable()))
@@ -94,7 +108,7 @@ pub(crate) fn complaints(
             let bounds = node
                 .bounding_box()
                 .map(|rect| (rect.x0, rect.y0, rect.x1, rect.y1));
-            if bounds.is_some_and(|bounds| scrolled(bounds, clip)) {
+            if bounds.is_some_and(|bounds| scrolled(bounds, &clips)) {
                 return None;
             }
             fault(bounds, width, height).map(|why| {

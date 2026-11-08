@@ -1,7 +1,8 @@
 //! The table's invariants, and the two projections round-tripping.
 
 use super::{
-    BAR_OPEN, BAR_SHUT, KNOBS, Kind, Knobbed, Settings, Toggle, WHEEL, from_json, knob, to_json,
+    BAR_OPEN, BAR_SHUT, KNOBS, Kind, Knobbed, Mode, Settings, Toggle, WHEEL, from_json, knob,
+    to_json,
 };
 use serde_json::{Value, json};
 
@@ -32,10 +33,27 @@ fn every_knob_is_distinct_and_its_default_is_inside_its_bounds() {
                 assert!(step > 0.0 && floor < ceiling, "{}", row.key);
                 assert!(!unit.is_empty(), "{} has no unit", row.key);
             }
+            (Kind::Choice { words }, Knobbed::Word(at)) => {
+                assert!(
+                    words.iter().any(|(word, _)| *word == at),
+                    "{at} is off the set"
+                );
+                assert!(
+                    words
+                        .iter()
+                        .all(|(word, says)| !word.is_empty() && !says.is_empty()),
+                    "{}",
+                    row.key
+                );
+            }
             (kind, value) => panic!("{} is {kind:?} but reads {value:?}", row.key),
         }
     }
-    assert_eq!(KNOBS.len(), 12, "DESIGN §4.46 item 4's table");
+    assert_eq!(
+        KNOBS.len(),
+        13,
+        "DESIGN §4.46 item 4's table, and §4.48 item 8's mode"
+    );
     // **The two shapes the rows are spelled with**, run rather than only
     // folded into the table at compile time.
     assert_eq!(
@@ -72,12 +90,25 @@ fn a_value_of_the_other_kind_writes_nothing() {
     for row in KNOBS {
         let mut held = Settings::default();
         let wrong = match row.kind {
-            Kind::Toggle => Knobbed::At(1.0),
+            Kind::Toggle | Kind::Choice { .. } => Knobbed::At(1.0),
             Kind::Number { .. } => Knobbed::On(false),
         };
         (row.set)(&mut held, wrong);
         assert_eq!(held, rest, "{}", row.key);
     }
+    // **A word off the set writes nothing either**, and the mode's own
+    // spellings round-trip through the table.
+    let mode = knob("mode").expect("a knob");
+    let mut held = Settings::default();
+    (mode.set)(&mut held, Knobbed::Word("wide"));
+    assert_eq!(held, rest);
+    (mode.set)(&mut held, Knobbed::Word("advanced"));
+    assert_eq!(held.mode, Mode::Advanced);
+    assert_eq!((mode.get)(&held), Knobbed::Word("advanced"));
+    assert_eq!(Mode::of("simple"), Some(Mode::Simple));
+    assert_eq!(Mode::of("other"), None);
+    assert_eq!(Mode::Simple.other(), Mode::Advanced);
+    assert_eq!(Mode::Advanced.other(), Mode::Simple);
 }
 
 /// **The two widths read as the policy's defaults until set**, and a set
@@ -109,9 +140,11 @@ fn only_what_is_off_its_default_is_written_and_all_of_it_comes_back() {
         bar_shut: Some(64.5),
         bar_open: Some(430.0),
         on: [Toggle::Dock].into(),
+        mode: Mode::Advanced,
     };
     let written = to_json(&set);
-    assert_eq!(written.as_object().map(serde_json::Map::len), Some(12));
+    assert_eq!(written.as_object().map(serde_json::Map::len), Some(13));
+    assert_eq!(written.get("mode"), Some(&json!("advanced")));
     assert_eq!(from_json(&written), set);
     let one = Settings {
         linger: 2.0,
@@ -136,6 +169,7 @@ fn every_wrong_value_is_the_default_and_costs_only_itself() {
         "help_delay": true,
         "fold": 0,
         "dock": true,
+        "mode": "wide",
         "ease": 0.5
     });
     let mut expected = Settings { ease: 0.5, ..rest };

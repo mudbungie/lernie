@@ -1,7 +1,8 @@
 +++
 title = "Window: one settings overlay with a page tree; roles, login, config, clients, enroll and doctor become its pages (DESIGN 4.48 item 7)"
 created = 1794034644
-updated = 1794034644
+updated = 1794103552
+claimant = "Sable"
 parent = "bl-7942"
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["ui"]

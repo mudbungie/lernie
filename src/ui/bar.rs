@@ -111,11 +111,8 @@ pub fn open_width(window: f32) -> f32 {
 }
 
 /// **Paint the bar** at the window's left edge, before every other panel, so
-/// it stands the window's full height. Nothing paints under the enrollment.
+/// it stands the window's full height.
 pub fn render(ctx: &egui::Context, model: &mut Model) {
-    if model.enroll.is_some() {
-        return;
-    }
     let now = ctx.input(|i| i.time);
     let screen = ctx.screen_rect();
     let (shut, wide) = drag::shown(&model.settings, screen.width(), drag::floor(ctx));

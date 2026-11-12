@@ -90,7 +90,7 @@ fn the_menu_with_nothing_aimed_lists_only_the_window_verbs() {
         assert!(words.contains(&offered), "{offered} is offered: {words:?}");
     }
     for withheld in [
-        crate::ui::enroll::WORD,
+        crate::ui::offers::WORD,
         crate::ui::fleet::WORD,
         crate::ui::login::WORD,
         crate::ui::tuning::WORD,

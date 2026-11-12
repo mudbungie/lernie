@@ -1,8 +1,7 @@
 //! **`answer`'s grammar** — the one word on this surface whose tail is a
 //! closed set of words the wire requires and the operator may leave off.
 //!
-//! Its own file for [`super::enroll`]'s reason, which is yog's own line
-//! reader's: *a verb whose grammar is more than words is its own file*.
+//! Its own file for the reason yog's own line reader gives: *a verb whose grammar is more than words is its own file*.
 //!
 //! # Why the word is not simply a fourth parameter
 //!
@@ -18,7 +17,7 @@
 //! # And why a typo is read here
 //!
 //! The scope is a closed set of three the boundary defines and this binary
-//! already holds, exactly as `enroll`'s grade is a closed set of two. So a
+//! already holds, exactly as `offer`'s grade is a closed set of two. So a
 //! misspelling is decided entirely by what was typed: it is the caller's typo,
 //! it earns the usage, and it costs no connection — where falling through to
 //! the table would spend a round trip to be told `unknown scope "conversaton"`,

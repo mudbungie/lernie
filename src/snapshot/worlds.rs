@@ -13,7 +13,7 @@
 //! fixture that stops compiling, and two of them is two places to fill it in.
 
 use crate::test_support::window::{pinned, seated, workspace};
-use crate::ui::{Channel, Chunk, Enrolling, Model, Unmaking};
+use crate::ui::{Channel, Chunk, Model, Unmaking};
 
 /// The bar open, and its foot's list.
 mod bar;
@@ -105,19 +105,13 @@ fn beginning() -> World {
     }
 }
 
-/// **The window with the enrollment open** — the one pane in this seat that
-/// covers another, and so the one state where what is on the glass is not what
-/// the layout underneath it says.
-fn enrolling() -> World {
-    let mut model = seated();
-    let aim = model
-        .aim
-        .clone()
-        .unwrap_or_else(|| panic!("the seated fixture is aimed at a workspace"));
-    model.enroll = Some(Enrolling::at(aim));
+/// **The offers page with an offer minted and three pending** — one of each
+/// state, so the dark `approve` and the live one are both on the glass
+/// (DESIGN §4.51).
+fn offering() -> World {
     World {
-        name: "enrolling",
-        model,
+        name: "offering",
+        model: crate::ui::offers::tests::offering(),
     }
 }
 
@@ -252,7 +246,7 @@ fn simple() -> Vec<World> {
         unprovisioned(),
         working(),
         beginning(),
-        enrolling(),
+        offering(),
         tuning(),
         assigning(),
         records(),

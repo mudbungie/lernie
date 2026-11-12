@@ -47,6 +47,8 @@ mod fleet;
 mod login;
 /// The three questions, and how each waits for the last to have an answer.
 mod nesting;
+/// The pending offers, which stand on the offers page.
+mod offers;
 mod records;
 /// The selection, read at the next leg and ahead of the fan.
 mod selection;

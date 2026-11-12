@@ -50,6 +50,10 @@ pub enum Open {
     /// it was answered (REMOTE §5), so a row that said *not connected* says
     /// otherwise on the next beat with nothing asked again.
     Clients,
+    /// **The offers page** — the aimed workspace's pending offers, standing
+    /// for the clients pane's reason: a row moves from open to claimed to
+    /// proved on the server with nothing asked here (DESIGN §4.51).
+    Offers,
     /// **The config pane** — the aimed workspace's seventh question: the lineages
     /// it holds, the file the pane is pointed at (bl-5c53), and the staged
     /// proposals at the depth of the one it has named (bl-a1d6). Both ride
@@ -95,6 +99,9 @@ impl Open {
         }
         if model.showing(crate::ui::Listing::Clients) {
             open.push(Self::Clients);
+        }
+        if model.showing(crate::ui::Listing::Offers) {
+            open.push(Self::Offers);
         }
         if model.configuring().is_some() {
             open.push(Self::Config(model.configured(), model.proposing()));

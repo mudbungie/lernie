@@ -33,25 +33,27 @@ pub const CLAIMING: &str = "claiming the offer…";
 /// another screen.
 pub const WORD: &str = crate::seat::register::WORD_LINE;
 
-/// The field's width in points — fixed, so the button keeps its place on the
-/// row at the widths the window opens at (`crate::ui::unmake`'s reason).
-const FIELD: f32 = 320.0;
+/// What the field says under the pointer.
+pub const URL_HELP: &str =
+    "the registration URL the offer showed, whole — it carries no key, and works once";
+const URL_BOX: &str = "the registration URL box";
 
 /// Paint the page and take what is typed and clicked on it.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     ui.add(egui::Label::new(egui::RichText::new(ABOUT).color(theme::INK_WEAK)).wrap());
     ui.add_space(theme::space::S);
-    ui.horizontal_wrapped(|ui| {
-        ui.add(
-            egui::TextEdit::singleline(&mut model.registering.url)
-                .desired_width(FIELD.min(ui.available_width()))
-                .hint_text(HINT),
-        );
-        let ready = model.registering.ready();
-        if theme::paint::button(ui, REGISTER, ready, REGISTER_HELP).clicked() {
-            model.register();
-        }
-    });
+    theme::paint::field(
+        ui,
+        egui::Id::new(URL_BOX),
+        &mut model.registering.url,
+        HINT,
+        None,
+        URL_HELP,
+    );
+    let ready = model.registering.ready();
+    if theme::paint::button(ui, REGISTER, ready, REGISTER_HELP).clicked() {
+        model.register();
+    }
     ui.add_space(theme::space::S);
     match &model.registering.phase {
         Claim::Idle => {}

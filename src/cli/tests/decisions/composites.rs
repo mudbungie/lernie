@@ -3,9 +3,8 @@
 //!
 //! Split from [`super`] at the 300-line cap on the seam the surface itself
 //! has: every other word in the table decides one `Ask` or one `Fanned`, and
-//! these decide something else. `start` holds a local between two acts,
-//! `model` spends a second row before it writes, and `enroll` draws its answer
-//! instead of printing it. Each earns an arm of its own in
+//! these decide something else. `start` holds a local between two acts, and
+//! `model` spends a second row before it writes. Each earns an arm of its own in
 //! [`crate::cli::run`], and each is asserted here.
 
 use super::super::super::{Decided, run};
@@ -22,132 +21,6 @@ fn the_start_word_carries_a_workspace_and_a_goal() {
     };
     assert_eq!(address, "home");
     assert_eq!(goal, "do the thing");
-}
-
-/// **`--into <dir>` is read here**, in the pure function, because a destination
-/// on this box is decided entirely by what was typed (bl-1554).
-#[test]
-fn the_enrollment_carries_the_destination_it_was_given() {
-    let Decided::Enroll { into, asking, .. } = run(argv(&[
-        "enroll",
-        "ops",
-        "box-1",
-        "foot",
-        crate::cli::INTO,
-        "/home/u/carry",
-    ])) else {
-        panic!("`enroll` with a destination is still an enrollment");
-    };
-    assert_eq!(into.as_deref(), Some("/home/u/carry"));
-    assert_eq!(asking.grade, "foot");
-}
-
-/// **`--at <host>:<port>` is read here too** (bl-971c) — the route the enrolled
-/// box will dial, which is a fact about that box and so decided entirely by
-/// what was typed. It is independent of `--into`: a foot behind an alias needs
-/// it whether or not the material is being written down.
-#[test]
-fn the_enrollment_carries_the_route_the_new_box_will_dial() {
-    let Decided::Enroll { asking, into, .. } = run(argv(&[
-        "enroll",
-        "ops",
-        "alpha2",
-        "foot",
-        crate::cli::AT,
-        "host.containers.internal:7773",
-    ])) else {
-        panic!("`enroll` with a route is still an enrollment");
-    };
-    assert_eq!(asking.at.as_deref(), Some("host.containers.internal:7773"));
-    assert_eq!(into, None, "the route says nothing about writing files");
-}
-
-/// **Both words, in either order, each read on its own.** The order is the
-/// operator's because neither word means anything to the other — one addresses
-/// the far box and one addresses this terminal.
-#[test]
-fn the_two_optional_words_are_independent_and_unordered() {
-    for tail in [
-        vec![
-            "enroll",
-            "ops",
-            "alpha2",
-            "foot",
-            crate::cli::AT,
-            "alias:7773",
-            crate::cli::INTO,
-            "/home/u/carry",
-        ],
-        vec![
-            "enroll",
-            "ops",
-            "alpha2",
-            "foot",
-            crate::cli::INTO,
-            "/home/u/carry",
-            crate::cli::AT,
-            "alias:7773",
-        ],
-    ] {
-        let Decided::Enroll { asking, into, .. } = run(argv(&tail)) else {
-            panic!("{tail:?} is an enrollment");
-        };
-        assert_eq!(
-            (asking.at.as_deref(), into.as_deref()),
-            (Some("alias:7773"), Some("/home/u/carry")),
-            "{tail:?}"
-        );
-    }
-}
-
-/// A tail that is anything else refuses **naming both words it takes**, rather
-/// than earning the verb table's arity sentence about three arguments. A word
-/// with no value, a word twice, a word that is neither and a bare value are
-/// one event to the operator — *that is not a tail `enroll` takes* — so they
-/// earn one sentence, and it is the sentence that teaches the grammar.
-#[test]
-fn a_tail_that_is_not_the_two_words_refuses_and_names_them() {
-    for tail in [
-        vec!["enroll", "ops", "box-1", "foot", "/home/u/carry"],
-        vec!["enroll", "ops", "box-1", "foot", "--out", "/home/u/carry"],
-        vec!["enroll", "ops", "box-1", "foot", crate::cli::INTO],
-        vec!["enroll", "ops", "box-1", "foot", crate::cli::AT],
-        vec![
-            "enroll",
-            "ops",
-            "box-1",
-            "foot",
-            crate::cli::INTO,
-            "/home/u/carry",
-            "extra",
-        ],
-        vec![
-            "enroll",
-            "ops",
-            "box-1",
-            "foot",
-            crate::cli::AT,
-            "alias:7773",
-            crate::cli::AT,
-            "other:7773",
-        ],
-        vec![
-            "enroll",
-            "ops",
-            "box-1",
-            "foot",
-            crate::cli::INTO,
-            "/home/u/carry",
-            crate::cli::INTO,
-            "/home/u/again",
-        ],
-    ] {
-        let refused = said(&tail);
-        assert_eq!(refused.code, REFUSED, "{tail:?}");
-        for word in [crate::cli::AT, crate::cli::INTO] {
-            assert!(refused.text.contains(word), "{tail:?}: {}", refused.text);
-        }
-    }
 }
 
 /// **A third word is the work target** (bl-4371), and its absence is the bare

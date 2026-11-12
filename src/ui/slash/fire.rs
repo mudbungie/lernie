@@ -12,11 +12,7 @@ pub fn fire(model: &mut Model, word: &str, rest: &str) -> bool {
     }
     // **One overlay stands at a time** (bl-8c80; `Model::uncover`): a word
     // that opens a pane opens it alone, whichever chord reached it from
-    // under the switcher or another pane. Nothing fires under the
-    // enrollment, which only its own gesture leaves.
-    if model.enroll.is_some() {
-        return false;
-    }
+    // under the switcher or another pane.
     model.uncover();
     if let Some(fired) = conversation(model, word, rest) {
         return fired;
@@ -26,7 +22,7 @@ pub fn fire(model: &mut Model, word: &str, rest: &str) -> bool {
         REFRESH => model.refresh_roster(),
         w if w == crate::verbs::PIN.word => model.post_pin(true),
         w if w == crate::verbs::UNPIN.word => model.post_pin(false),
-        w if w == crate::ui::enroll::WORD => model.begin_enrollment(),
+        w if w == crate::ui::offers::WORD => model.begin_offers(),
         w if w == crate::ui::tuning::WORD => model.begin_tuning(),
         w if w == crate::ui::tuning::MODEL => model.drop_up(crate::ui::Selector::Model),
         w if w == crate::ui::login::WORD => model.begin_login(),

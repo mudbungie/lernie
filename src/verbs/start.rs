@@ -58,7 +58,7 @@
 //! **A path this seat does not check.** The directory is the SERVER's box, not
 //! this one — a seat dials a server and may hold no such path at all — so a
 //! path that is not there is refused by the server, in its own words, which is
-//! the same division §4.10 draws for `enroll`'s grade in the other direction.
+//! the same division §4.10 draws for `offer`'s grade in the other direction.
 //!
 //! # The prepared body is handed back, and re-addressed on the way
 //!

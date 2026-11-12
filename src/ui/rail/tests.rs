@@ -1,6 +1,6 @@
 //! The rails on a real window: laid docked and not floating, the pane whole
-//! on each, the allowance and the room, the two together under the ceiling,
-//! and nothing under the enrollment.
+//! on each, the allowance and the room, and the two together under the
+//! ceiling.
 
 use super::{COLUMN, FLOOR, allowance, clip, room};
 use crate::settings::Mode;
@@ -113,13 +113,4 @@ fn the_allowance_is_the_bars_ceiling_short_of_the_columns_floor() {
             .query_by_label(crate::ui::theme::paint::SEND)
             .is_none()
     );
-}
-
-/// Nothing is laid under the enrollment.
-#[test]
-fn nothing_is_laid_under_the_enrollment() {
-    let mut model = trailing();
-    model.begin_enrollment();
-    let harness = docked(model, 1400.0);
-    assert!(laid(&harness, Rail::Branch).is_none());
 }

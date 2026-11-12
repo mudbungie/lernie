@@ -18,15 +18,12 @@ mod decided;
 
 /// `answer`'s own grammar: three words and the optional reach of the fourth.
 mod answer;
-/// `enroll`'s own grammar: three words and two optional ones.
-mod enroll;
 /// `price` and `ceiling`: numbers, or the word that deletes.
 mod prices;
 /// `start`'s own grammar: the rung's positional word, and the role's written one.
 mod start;
 
-pub use decided::{Asking, Decided};
-pub use enroll::{AT, INTO};
+pub use decided::Decided;
 pub use prices::ON;
 pub use text::{usage, version};
 pub use verdict::{Stream, Verdict};
@@ -128,10 +125,18 @@ pub fn run(args: Vec<String>) -> Decided {
         // falls through to `typed`, where its arity does.
         ["price", provider, model, tail @ ..] => prices::price(provider, model, tail, form),
         ["ceiling", tail @ ..] => prices::ceiling(tail, form),
-        // Ahead of the typed table, and only because of what the answer
-        // carries: the row is the same row, and the envelope is built from it.
-        ["enroll", workspace, name, grade, tail @ ..] => {
-            enroll::enroll(workspace, name, grade, tail, form)
+        // **`offer`'s grade is read here** (bl-07b9, kept from the `enroll`
+        // it replaces): whether the word is one of the two is decided by
+        // what was typed, so a typo earns both words and costs no connection.
+        // A grade that is one falls through to the table like any row.
+        [word, _, _, grade]
+            if *word == crate::verbs::OFFER.word && !crate::verbs::GRADES.contains(grade) =>
+        {
+            Decided::Say(Verdict::refused(format!(
+                "unknown grade {grade:?} — `lernie offer` takes {:?} or {:?}",
+                crate::verbs::GRADES[0],
+                crate::verbs::GRADES[1]
+            )))
         }
         // **This box registering itself** (REMOTE §15.1): one URL, read whole
         // by the act. Any other arity falls to `typed`, where the door row
@@ -148,7 +153,7 @@ pub fn run(args: Vec<String>) -> Decided {
 /// earns.
 ///
 /// Read here, in the pure function, for exactly the reason [`ask`]'s body and
-/// [`enroll`]'s grade are: whether `max` is a number is decided entirely by
+/// `offer`'s grade are: whether `max` is a number is decided entirely by
 /// what was typed, so it is the caller's typo, it earns the usage, and it
 /// costs no connection. The wire would refuse it too, in its own words
 /// (`non-integer field "max"`), a round trip later.

@@ -262,7 +262,7 @@ pub const HELP: Door = Door {
     summary: "what a word takes and what it answers with",
     detail: "With no argument, the usage and every word this binary answers. \
              With one, that word's own page — a gesture verb or one of the \
-             four doors alike, because a page an operator is offered has to be \
+             doors alike, because a page an operator is offered has to be \
              reachable for every word the list names. Its subject is this \
              binary rather than a world, so it answers with no server up and \
              no channel provisioned. `--help` and `-h` are the same word.",

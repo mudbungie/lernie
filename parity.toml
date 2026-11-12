@@ -177,3 +177,16 @@
 # channel's section carries `price` on its write and on every row's delete and
 # `ceiling` on its set and its lift — each addressed down that one channel,
 # never fanned. All three rows are gone from here.
+
+# The offer's four arrived at edition 26 (yog bl-9ea6, REMOTE §15.1; PROTOCOL
+# still 19) and bl-1f57 landed them in the same commit as the re-vendor: the
+# offers page (DESIGN §4.51) tags `offers` on the `/offers` row that opens it,
+# `offer` on the mint, and `approve` and `decline` on every pending row. No
+# line was ever written here for them.
+#
+# `enroll` is the one line, and it is a retirement rather than a debt: the
+# offer replaces the carried envelope (REMOTE §15.4), this seat deleted the act
+# with bl-1f57, and upstream's own deletion of the op is yog bl-7a14. The
+# roster still classes it `control` until that lands; when the re-vendor after
+# it drops the row, this line rots and is deleted.
+enroll = "retired by the offer (REMOTE §15.4): deleted here in bl-1f57, and the op leaves the roster with yog bl-7a14"

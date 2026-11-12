@@ -72,7 +72,7 @@ impl Unmaking {
 impl Model {
     /// **Open an unmaking on the workspace the window is aimed at**, or do nothing
     /// where it is aimed at none — the aim is the gate exactly as it is for the
-    /// enrollment and the tuning pane, because the gesture carries a workspace
+    /// offers page and the tuning pane, because the gesture carries a workspace
     /// and a workspace is what an aim is.
     pub fn begin_unmaking(&mut self) {
         if let Some(aim) = self.aim.clone() {

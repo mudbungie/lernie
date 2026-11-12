@@ -54,8 +54,6 @@ pub mod convs;
 pub mod dock;
 /// The doctor pane: whether this box is wired, one row per check.
 pub mod doctor;
-/// The enrollment pane: a name, a grade, and the symbol that comes back.
-pub mod enroll;
 /// The find pane: text found across everything these servers can see.
 pub mod find;
 /// The fleet pane: running a workspace's balls, watching them, and what they did.
@@ -66,6 +64,8 @@ pub mod keys;
 pub mod login;
 /// What the window holds between frames, and how a reply becomes part of it.
 pub mod model;
+/// The offers page: mint an offer for a new device, approve or decline the pending.
+pub mod offers;
 /// The overlay: the one frame every pane floats in (§4.42).
 pub mod overlay;
 /// The prices pane: each server's price table, its ceiling, and the two acts.
@@ -105,9 +105,9 @@ pub mod unmake;
 pub(crate) use model::lane;
 pub use model::{
     Aim, Armed, Asking, Authoring, Bindings, Channel, Choice, Chunk, Claim, Columns, Configuring,
-    Context, Diagnosis, Dropup, Edit, Enrolling, Fill, Fleet, Forking, Grade, Group, Held, Hits,
-    Listing, Login, Lookup, Model, Notice, Page, Pages, Pick, Posted, PriceTable, Pricing,
-    Proposing, Rail, Records, Registering, Reload, Seeking, Selector, Sent, Servers, Shown, Stand,
-    Tab, Trail, Trailing, Tuning, Unmaking, WORKER,
+    Context, Diagnosis, Dropup, Edit, Fill, Fleet, Forking, Grade, Group, Held, Hits, Listing,
+    Login, Lookup, Model, Notice, Page, Pages, Pick, Posted, PriceTable, Pricing, Proposing, Rail,
+    Records, Registering, Reload, Seeking, Selector, Sent, Servers, Stand, Tab, Trail, Trailing,
+    Tuning, Unmaking, WORKER,
 };
 pub use shell::render;

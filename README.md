@@ -77,6 +77,11 @@ lernie                  # open the window
 lernie --json <verb>…   # the reply frames as they crossed, instead of rendered
 lernie entries          # every channel this box holds, without dialling any
 lernie register <url>   # join a server: claim a one-time offer with a key made here
+
+lernie offer <workspace> <name> <grade>   # let a new device join: a one-time URL, as text and QR
+lernie offers <workspace>                 # the pending offers, each with its state and word
+lernie approve <workspace> <name>         # seat the device whose screen shows that row's word
+lernie decline <workspace> <name>         # void an offer
 lernie ask <envelope>   # the same gestures, written out as JSON
 lernie help [<verb>]    # what a verb takes — answered with no server up
 ```
@@ -139,8 +144,8 @@ and how wide it stands, the scale, whether the transcript's blocks wear
 fills, whether a working folds itself, whether a delete asks — each a row
 with its sentence beneath and its slider or check at the right, remembered
 in the place file only where set off its default; *Workspace* is `/roles`,
-`/login`, `/config` and `/clients`, and *Servers* the enrollment's door and
-`/doctor`, each word opening the overlay on its page, with a box at the head
+`/login`, `/config` and `/clients`, and *Servers* is *register* (this box
+joining a server), `/offers` (letting a new device join) and `/doctor`, each word opening the overlay on its page, with a box at the head
 that finds a row on any page (`docs/DESIGN.md` §4.48 item 7). The *Seat › mode*
 page, the word beside the mark and Ctrl+Shift+\ switch the **interface mode**:
 *simple* is the window as described, every pane floating; *advanced* docks two
@@ -205,8 +210,11 @@ list of one. Two files an older server may have left in an entry,
 served is retired.
 
 **A seat joins a server by registering itself** (yog's `docs/REMOTE.md` §15.1;
-`docs/DESIGN.md` §4.50). An operator on a seat that is already connected mints
-a one-time offer and hands over its URL; then, on the new box:
+`docs/DESIGN.md` §4.50, §4.51). An operator on a seat that is already connected
+mints a one-time offer — `lernie offer <workspace> <name> <grade>`, or
+*Settings › Servers › offers* — and hands over its URL, which is printed as
+text and as a QR symbol and is good once, for ten minutes; then, on the new
+box:
 
 ```
 lernie register https://<host>/yog/register/<code>
@@ -216,7 +224,10 @@ or the same act in the window, under *Settings › Servers › register*. lernie
 makes its own P-256 key, sends only the public half over HTTPS, and files what
 comes back — with the private key — as `wire/workspaces/<workspace>/`. It
 prints a six-character confirmation word; the operator approves the offer whose
-row shows that word, and until then the server refuses the new box everything.
+row shows that word (`lernie offers <workspace>`, then `lernie approve
+<workspace> <name>`, or the same page), and until then the server refuses the
+new box everything. The old `enroll` act, which carried a private key in a QR
+symbol, is gone.
 **The seat makes its own key when it registers and never receives one**, and it
 signs nothing: the certificate is signed by the operator's CA, on the server.
 An entry that already exists is never overwritten. The road by hand remains
@@ -286,7 +297,7 @@ because nothing here compares pixels to a pinned image — see below.
 
 It writes one PNG per (world, size) into **`target/snapshots/`**, named
 `<world>--<size>.png` — four named world states (`unprovisioned`, `seated`,
-`beginning`, `enrolling`) at three viewport sizes (`phone` 400x800, `narrow`
+`beginning`, `offering`) at three viewport sizes (`phone` 400x800, `narrow`
 900x700, `desk` 1400x900). They are untracked on purpose: an image is a derivation, re-made by
 every run of the suite, and the disclosure gate refuses every tracked binary.
 

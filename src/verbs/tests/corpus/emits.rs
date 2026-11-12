@@ -19,9 +19,9 @@ use std::collections::BTreeMap;
 use serde_json::{Map, Value, json};
 
 use super::super::super::{
-    ADDRESS, ANSWER, CREATE, DELIVER, DOCTOR, EFFORT, ENROLL, FAN, FORK, OPS, PREPARE, PRIORITY,
-    PROMPT, PROPOSALS, RETIRE, UPDATE, answer, create, deliver, doctor, effort, enroll, fan, find,
-    fork, ops, prepare, priority, prompt, proposals, retire, update,
+    ANSWER, CREATE, DELIVER, DOCTOR, EFFORT, FAN, FORK, OPS, PREPARE, PRIORITY, PROMPT, PROPOSALS,
+    RETIRE, UPDATE, answer, create, deliver, doctor, effort, fan, find, fork, ops, prepare,
+    priority, prompt, proposals, retire, update,
 };
 use super::{emitted, request};
 use crate::envelope;
@@ -112,22 +112,7 @@ fn from_row(verb: crate::verbs::Verb, obj: &Map<String, Value>) -> Option<Value>
 fn rebuilt(frame: &Value) -> Option<Value> {
     let obj = frame.as_object().expect("a gesture envelope");
     let op = text(obj, envelope::OP);
-    // **The one row with a door beside it** (bl-971c): `enroll` is in the verb
-    // table and its request carries an optional field, so the generic arm
-    // below — which composes exactly the row's parameters and its raised flags
-    // — declines the `--at` form on arity alone. It is composed here through
-    // the same door both faces use, absence and all: `address` unstated is the
-    // server's own, which is a value rather than a field left short.
-    if op == ENROLL.word {
-        return Some(enroll(
-            text(obj, envelope::WORKSPACE),
-            text(obj, "name"),
-            text(obj, "grade"),
-            said(obj, ADDRESS),
-        ));
-    }
-    // **The second row with a door beside it** (bl-c515), on `enroll`'s own
-    // terms: `proposals` is one op at two depths and the deeper one names an
+    // **The one row with a door beside it** (bl-c515): `proposals` is one op at two depths and the deeper one names an
     // optional `id`, which the generic arm declines on arity alone. The door
     // composes both, absence and all — a bare listing states no id, because
     // that absence is the fact rather than a field left short.

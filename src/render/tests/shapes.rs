@@ -10,7 +10,7 @@ use crate::render::rendered;
 
 /// Render a frame and assert every needle is in it.
 #[track_caller]
-fn says(frame: &Value, needles: &[&str]) {
+pub(super) fn says(frame: &Value, needles: &[&str]) {
     let said = rendered(frame);
     for needle in needles {
         assert!(said.contains(needle), "{frame}\n-> {said}");
@@ -197,10 +197,9 @@ fn a_governing_commit_carries_the_servers_own_sentence_either_way() {
     );
 }
 
-/// **A staged start, a spread of them, and the enrollment whose material is
-/// deliberately not printed.**
+/// **A staged start and a spread of them.**
 #[test]
-fn the_start_family_renders_and_an_enrollment_prints_no_secret() {
+fn the_start_family_renders() {
     let body = json!({"workspace": "proj", "goal": "write the changelog"});
     says(
         &json!({"ok": true, "kind": "prepared", "prepared": body}),
@@ -209,14 +208,6 @@ fn the_start_family_renders_and_an_enrollment_prints_no_secret() {
     says(
         &json!({"ok": true, "kind": "fanned", "rows": []}),
         &["no candidate"],
-    );
-    let said = rendered(&json!({"ok": true, "kind": "enrolled", "grade": "operator",
-                                "name": "phone", "address": "h:1", "ca": "CA-PEM",
-                                "cert": "CERT-PEM", "key": "KEY-PEM"}));
-    assert!(said.contains("enrolled phone"), "{said}");
-    assert!(
-        !said.contains("KEY-PEM"),
-        "the key reached the terminal: {said}"
     );
 }
 

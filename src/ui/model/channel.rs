@@ -84,7 +84,7 @@ pub enum Held {
     /// which today are *this client is registered in no workspace here*. The
     /// server is up and dialled, so this is neither of the two above: it is
     /// not *waiting to hear* and not *down*, and the remedy it names — found
-    /// a workspace, or be enrolled in one — is a gesture on this section. The
+    /// a workspace, or be offered a place in one — is a gesture on this section. The
     /// next roster answer spends it, as it spends every other state.
     Refused(String),
     /// It answered.

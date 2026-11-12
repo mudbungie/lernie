@@ -40,13 +40,8 @@ impl Model {
     /// while one is open, and a switcher stacked over a pane handed the
     /// operator back to that pane after they chose a conversation. Each is
     /// put down by its own Esc, so a pane with a step back (the clearing to
-    /// its trail, an assignment to its roles) goes all the way down. The
-    /// enrollment is the exception it is everywhere: it covers the window and
-    /// is only ever left by its own gesture.
+    /// its trail, an assignment to its roles) goes all the way down.
     pub fn switch(&mut self) {
-        if self.enroll.is_some() {
-            return;
-        }
         if self.switching {
             self.close_switcher();
         } else {

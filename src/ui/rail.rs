@@ -76,12 +76,9 @@ pub fn room(ctx: &egui::Context, model: &Model) -> bool {
 }
 
 /// **Lay every rail that stands**, context first so it takes the edge, each
-/// a resizable panel on the window's right. Nothing paints under the
-/// enrollment, and nothing is laid while the panes float.
+/// a resizable panel on the window's right. Nothing is laid while the panes
+/// float.
 pub fn render(ctx: &egui::Context, model: &mut Model) {
-    if model.enroll.is_some() {
-        return;
-    }
     let laid: Vec<Rail> = Rail::ALL
         .into_iter()
         .filter(|rail| model.railed(*rail))

@@ -2,7 +2,7 @@
 //! subject, and the cover question three panes share.
 
 use crate::test_support::window::{recorded, seated};
-use crate::ui::{Enrolling, Model, Tuning};
+use crate::ui::{Model, Tuning};
 
 /// **The selection is the gate**: no conversation, no pane — the same reading
 /// tuning gives the aim.
@@ -71,8 +71,7 @@ fn covered_answers_for_all_three_panes_and_for_none() {
         ..seated()
     };
     assert!(tuning.covered());
-    let mut enrolling = seated();
-    let aim = enrolling.aim.clone().expect("the seated fixture is aimed");
-    enrolling.enroll = Some(Enrolling::at(aim));
-    assert!(enrolling.covered());
+    let mut offering = seated();
+    offering.begin_offers();
+    assert!(offering.covered());
 }

@@ -1,9 +1,8 @@
 //! The overlay: the breadcrumb, the tree as a column and as a select, every
-//! knob a row of its page, the pin, the defaults, the search, and the
-//! enrollment's door.
+//! knob a row of its page, the pin, the defaults and the search.
 
 use super::rows::{DEFAULTS, PINNED};
-use super::{DOOR, HEADING, WORD, render};
+use super::{HEADING, WORD, render};
 use crate::paint_probe::frame::Window;
 use crate::settings::{KNOBS, Settings};
 use crate::test_support::window::{click, pane, seated};
@@ -139,40 +138,16 @@ fn the_word_and_the_chord_open_look_and_escape_closes_it() {
     );
 }
 
-/// **The enrollment's page is its door**: offered on an aim, it opens the
-/// whole-window cover and the overlay stands down under it.
-#[test]
-fn the_enrollment_page_is_a_door_to_the_cover() {
-    let mut harness = crate::snapshot::seat(open(Page::Enrollment), 1400.0, 900.0);
-    harness.get_by_label(DOOR).click();
-    harness.run();
-    assert!(harness.state().enroll.is_some());
-    assert_eq!(harness.state().page(), None);
-    let bare = Model {
-        lookup: Some(Lookup::Settings(Page::Enrollment)),
-        ..Model::default()
-    };
-    let mut harness = crate::snapshot::seat(bare, 1400.0, 900.0);
-    harness.get_by_label(DOOR).click();
-    harness.run();
-    assert!(harness.state().enroll.is_none(), "dark with nothing aimed");
-}
-
-/// **The Servers pages say the dial state the seat panel says**, where a
-/// server will not dial — on the enrollment's page and the doctor's.
+/// **The doctor's page says the dial state the seat panel says**, where a
+/// server will not dial.
 #[test]
 fn the_servers_pages_say_the_dial_state() {
-    for page in [Page::Enrollment, Page::Doctor] {
-        let mut model = open(page);
-        model.roster[0].held = crate::ui::Held::Unheld("nothing provisioned".to_owned());
-        let painted = pane(|ui| {
-            render(ui, &mut model);
-        });
-        assert!(
-            painted.contains("nothing provisioned"),
-            "{page:?}:\n{painted}"
-        );
-    }
+    let mut model = open(Page::Doctor);
+    model.roster[0].held = crate::ui::Held::Unheld("nothing provisioned".to_owned());
+    let painted = pane(|ui| {
+        render(ui, &mut model);
+    });
+    assert!(painted.contains("nothing provisioned"), "{painted}");
 }
 
 /// **The defaults link puts the knobs back and leaves the pin**, which is

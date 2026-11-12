@@ -70,8 +70,8 @@ pub enum Lookup {
     Pricing,
     /// **The settings overlay, on one of the pages with no state of its own**
     /// (`crate::ui::settings`; DESIGN §4.48 item 7): the seat's three knob
-    /// pages, the enrollment's door and the doctor (bl-9bbb), whose read is
-    /// posted when its page opens. The four workspace pages never ride here —
+    /// pages, the register page and the doctor (bl-9bbb), whose read is
+    /// posted when its page opens. The workspace pages and the offers never ride here —
     /// each stands on its own field, and `Model::page` reads them first.
     Settings(super::Page),
 }

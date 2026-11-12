@@ -23,7 +23,7 @@
 //! answers that proposal whole beside the listing, `files`' own shape. The id
 //! is therefore an **optional string**, which the table's rule (*a word and
 //! its parameters, all of them named strings*) says is not a parameter, so it
-//! rides [`super::Verb::stating`]'s door exactly as `enroll`'s `address` does.
+//! rides [`super::Verb::stating`]'s door.
 //!
 //! [`PROPOSAL`] takes both its id and its verdict as parameters, because
 //! upstream requires both and for reasons a seat must not soften: a settle

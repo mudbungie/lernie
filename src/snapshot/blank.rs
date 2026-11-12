@@ -75,7 +75,7 @@ pub(crate) const MIN: u32 = 6;
 ///
 /// By search rather than by cast. The house lint set denies a lossy numeric
 /// conversion and the only home for a suppression is the manifest, so the
-/// conversion is done the way `crate::ui::enroll::points` does it in the other
+/// conversion is done the way `crate::ui::offers`' symbol painter does it in the other
 /// direction — exactly, by a route the lint has nothing to say about. A window
 /// is a couple of thousand pixels on its longest side and this runs four times
 /// per node, so the scan costs nothing worth naming.

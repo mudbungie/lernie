@@ -1,8 +1,7 @@
 //! **What a control does, whichever control did it.**
 //!
 //! The acts the window affords beyond composing a gesture: aim at a workspace,
-//! select a conversation, put a notice down, and the enrollment's four — open
-//! it, spend it, file what it answered, close it and forget. Each used to live
+//! select a conversation, and put a notice down. Each used to live
 //! inside the `if …clicked()` that made it, which is fine while a pointer is
 //! the only way to make it — and stops being fine once a key can make it. Two
 //! spellings of *what aiming means* would drift, and the one that drifted would
@@ -23,10 +22,6 @@
 //! conversation retires the transcript and the live tail, because they are the
 //! old one's. Nothing else is touched — and in particular the draft is not,
 //! because what an operator typed is theirs until they send it.
-//!
-//! The enrollment's own act is the sharpest case of that rule: closing it
-//! clears the material and nothing else, and clearing the material IS the
-//! product — after it there is no copy of that key on this box.
 
 use super::{Aim, Model};
 
@@ -100,6 +95,9 @@ impl Model {
         // standing over a new aim would paint one workspace's machines under
         // another's name.
         self.retire_clients();
+        // **And the offers page**: its rows and its minted URL are one
+        // workspace's.
+        self.retire_offers();
         // **And the config pane with them** (bl-5c53), sharper again: a
         // destination carries the aim's own workspace inside it, so a pane
         // left standing over a new aim would read one workspace's file and paint it
@@ -161,10 +159,7 @@ impl Model {
     /// extended for the tuning pane in bl-4a2c).
     ///
     /// A ladder from the innermost thing on the glass outwards, which is the
-    /// order the key is actually reached for. The enrollment covers the window
-    /// and holds a secret, so it goes first — and closing it is the same act
-    /// `done — forget it` performs, material and all, because the control that
-    /// closes that pane is the control that forgets. Then a draft assignment,
+    /// order the key is actually reached for. First a draft assignment,
     /// which is a thing inside a pane rather than the pane: Escape over a
     /// half-typed model puts the draft down and leaves the rows standing.
     /// Then the tuning pane itself, then the ball pane's authoring block
@@ -183,9 +178,7 @@ impl Model {
     /// is the only thing left to put down, and Escape is its × reached without
     /// a pointer.
     pub fn escape(&mut self) {
-        if self.enroll.is_some() {
-            self.close_enrollment();
-        } else if self.dropup.is_some() {
+        if self.dropup.is_some() {
             self.close_dropup();
         } else if self.switching {
             self.close_switcher();
@@ -199,6 +192,8 @@ impl Model {
             self.close_queue();
         } else if self.showing(super::Listing::Clients) {
             self.close_clients();
+        } else if self.showing(super::Listing::Offers) {
+            self.close_offers();
         } else if self.fleet.is_some() {
             self.close_fleet();
         } else if self.lookup.is_some() {
@@ -224,71 +219,6 @@ impl Model {
             self.founding = None;
         } else {
             self.dismiss();
-        }
-    }
-
-    /// **Open an enrollment aimed at the workspace the window is pointed at**, or do
-    /// nothing where it is pointed at none.
-    ///
-    /// The aim is the gate rather than a separate check: the act mints a
-    /// registration, a registration is the pair `(client, workspace)`, and a
-    /// workspace is exactly what an aim is. So the control is offered where
-    /// there is one and nowhere else.
-    pub fn begin_enrollment(&mut self) {
-        if let Some(aim) = self.aim.clone() {
-            self.enroll = Some(super::Enrolling::at(aim));
-        }
-    }
-
-    /// **Spend the enrollment**: compose the gesture for whoever can send it.
-    ///
-    /// It composes and does not clear, because the pane has to stand until the
-    /// answer arrives — there is nothing else on the screen that would tell an
-    /// operator the act is in flight.
-    pub fn post_enrollment(&mut self) {
-        let Some(enrolling) = self.enroll.as_mut().filter(|held| held.ready()) else {
-            return;
-        };
-        enrolling.posted = true;
-        let gesture = enrolling.gesture();
-        self.outbox.push(super::Posted::act(gesture));
-    }
-
-    /// **Close the enrollment, and drop the material with it.** The one control
-    /// whose whole product is a forgetting: after it there is no copy of that
-    /// key anywhere on this box, which is the property DESIGN §3 states and
-    /// `crate::seat::enroll`'s tests assert over the tree.
-    pub fn close_enrollment(&mut self) {
-        self.enroll = None;
-    }
-
-    /// **File the material** — draw it, and hold the picture beside it.
-    ///
-    /// Two arms and the second is a real one. Where the pane is still open the
-    /// symbol is drawn once, here, because a frame may not compute one. Where
-    /// it is **not** — the operator closed it while the act was in flight — the
-    /// material has arrived with nowhere to go, and it is dropped *and said so*:
-    /// the enrollment did happen on the server, and an operator who is not told
-    /// would go looking for a box that has a registration and no material. A
-    /// silent drop is the one thing this model's door does not do.
-    pub(super) fn enrolled(&mut self, material: &crate::reply::enrolled::Enrolled) {
-        let Some(enrolling) = self.enroll.as_mut() else {
-            self.notice = Some(super::Notice::Said(format!(
-                "the server enrolled {} after the enroll pane closed, so its code is \
-                 gone — /enroll makes another",
-                material.caption()
-            )));
-            return;
-        };
-        match super::Shown::of(material) {
-            Ok(shown) => {
-                enrolling.shown = Some(shown);
-                self.notice = None;
-            }
-            Err(why) => {
-                self.enroll = None;
-                self.notice = Some(super::Notice::Unreadable(why));
-            }
         }
     }
 }

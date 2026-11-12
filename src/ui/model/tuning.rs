@@ -1,7 +1,6 @@
 //! **The tuning pane between frames**, and the four acts its controls spend.
 //!
-//! Its type and its acts are one file rather than the two the enrollment uses
-//! (`crate::ui::model::enroll` beside `crate::ui::model::acts`), because
+//! Its type and its acts are one file, because
 //! `acts.rs` is at its design-time budget and because these four acts have no
 //! reader but this type. The rule that governs both placements is the same one:
 //! **a binding names a control that already exists**, so what a click means
@@ -94,7 +93,7 @@ impl Model {
     /// nothing where it is aimed at none.
     ///
     /// The aim is the gate rather than a separate check, exactly as it is for
-    /// the enrollment: every gesture the pane composes carries a workspace, and
+    /// the offers page: every gesture the pane composes carries a workspace, and
     /// a workspace is what an aim is.
     pub fn begin_tuning(&mut self) {
         if self.aim.is_some() {
@@ -154,10 +153,8 @@ impl Model {
 
     /// **Spend the draft assignment**, and go back to the rows.
     ///
-    /// It composes and then closes the editor, unlike the enrollment's own
-    /// post: an enrollment has to stand until its answer arrives because the
-    /// answer *is* the product, and this act's product is a row the standing
-    /// read will bring back on its own.
+    /// It composes and then closes the editor: this act's product is a row
+    /// the standing read will bring back on its own.
     pub fn post_assignment(&mut self) {
         let Some(edit) = self.draft_assignment().filter(|edit| edit.ready()).cloned() else {
             return;

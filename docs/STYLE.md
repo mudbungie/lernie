@@ -353,7 +353,7 @@ unreadable answer, `Annotation` for a note — with no fill and no box, in the
 rule's state slot, or whole and wrapped just above the rule where the slot
 cannot hold it beside every fact (§2); Esc dismisses it.
 
-**A covering pane** (records, queue, trail, enrollment and the rest): the
+**A covering pane** (records, queue, trail, offers and the rest): the
 pane's heading, its subject line one step weaker, its close as a control at
 the right of that line, and sections separated by `L` of space and a
 `HAIRLINE` — never by a framed group.

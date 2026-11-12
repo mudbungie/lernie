@@ -41,8 +41,6 @@ mod delete;
 mod doctor;
 /// A selector's dropup on the rule: which is open and whether it reloaded.
 mod dropup;
-/// An enrollment, between the control that opened it and the symbol it ends at.
-mod enroll;
 /// Which composer box a row menu's navigation asked for the cursor in.
 mod fill;
 /// The fleet pane between frames: three words, five acts and two reads.
@@ -61,6 +59,8 @@ mod listing;
 mod login;
 /// What the seat last heard that was not content, and how the shell says it.
 mod notice;
+/// The offers page between frames: the form, the minted offer, the acts.
+mod offers;
 /// The settings overlay's pages, and which one stands (§4.48 item 7).
 mod page;
 /// What a frame composed, and what a lost reply would mean for it.
@@ -109,7 +109,6 @@ pub use config::{Configuring, Proposing};
 pub use doctor::Diagnosis;
 pub(crate) use dropup::choices::lane;
 pub use dropup::{Choice, Dropup, Pick, Reload, Selector, WORKER};
-pub use enroll::{Enrolling, Grade, Shown};
 pub use fill::Fill;
 pub use fleet::{Armed, Fleet};
 pub use fold::Server;
@@ -117,6 +116,7 @@ pub use held::Model;
 pub use listing::Listing;
 pub use login::Login;
 pub use notice::{CONFIG_DOOR, Notice};
+pub use offers::{Grade, Minted, Offering};
 pub use page::{Group, Page, Seeking};
 pub use posted::Posted;
 pub use pricing::{Pricing, Table as PriceTable};

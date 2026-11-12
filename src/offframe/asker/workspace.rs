@@ -64,6 +64,16 @@ pub(super) fn ask(
             &crate::verbs::clients(aim.address.clone()),
         );
     }
+    // **The pending offers stand on their page** (DESIGN §4.51): a device
+    // claiming and dialling moves a row with nothing asked here.
+    if standing.standing(&Open::Offers) {
+        aimed(
+            link,
+            root,
+            channel,
+            &crate::verbs::offers(aim.address.clone()),
+        );
+    }
     config(link, root, standing, channel, aim);
 }
 

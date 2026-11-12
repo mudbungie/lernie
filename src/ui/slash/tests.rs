@@ -68,7 +68,7 @@ fn what_is_offered_follows_the_aim_and_the_selection() {
         crate::verbs::NUDGE.word,
         crate::verbs::FLAG.word,
         DELETE,
-        crate::ui::enroll::WORD,
+        crate::ui::offers::WORD,
         crate::ui::unmake::WORD,
     ] {
         assert!(talking.contains(&word), "{word}: {talking:?}");
@@ -241,7 +241,9 @@ fn every_opener_opens_what_its_word_names() {
         (crate::ui::board::WORD, Model::boarding),
         (crate::ui::prices::WORD, Model::pricing),
         (crate::ui::find::WORD, Model::finding),
-        (crate::ui::enroll::WORD, |m: &Model| m.enroll.is_some()),
+        (crate::ui::offers::WORD, |m: &Model| {
+            m.showing(crate::ui::Listing::Offers)
+        }),
     ] {
         assert!(fire(&mut model, word, ""), "{word}");
         assert!(open(&model), "{word} opens its pane");

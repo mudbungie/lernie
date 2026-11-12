@@ -59,7 +59,7 @@
 //! set the question is about.
 
 use crate::ui::{
-    Model, Page, board, clients, commands, config, doctor, enroll, find, fleet, keys, login,
+    Model, Page, board, clients, commands, config, doctor, find, fleet, keys, login, offers,
     prices, queue, records, theme, trail, tuning, unmake,
 };
 use egui_kittest::Harness;
@@ -92,9 +92,7 @@ struct Covered {
 }
 
 /// **The fifteen panes this walk visits.** Every one is two gestures from the
-/// box: the word, and Escape back out. The enrollment is among them because
-/// Escape closes it too — the one pane whose way out forgets something
-/// (`Model::escape`).
+/// box: the word, and Escape back out.
 const PANES: [Covered; 15] = [
     Covered {
         word: queue::WORD,
@@ -105,8 +103,8 @@ const PANES: [Covered; 15] = [
         heading: Page::Roles.label(),
     },
     Covered {
-        word: enroll::WORD,
-        heading: enroll::HEADING,
+        word: offers::WORD,
+        heading: Page::Offers.label(),
     },
     Covered {
         word: login::WORD,

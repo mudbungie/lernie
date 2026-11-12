@@ -68,10 +68,9 @@ pub enum Page {
     /// **Register this box** (`crate::ui::register`): the URL field, the
     /// button and the outcome. No word: it opens directly, aimed or not.
     Register,
-    /// **The enrollment's door.** The enrollment itself keeps §4.15's
-    /// whole-window cover while its material is on the glass; this page is
-    /// the row that opens it.
-    Enrollment,
+    /// `/offers` (`crate::ui::offers`): minting an offer for a new device,
+    /// and approving or declining the pending ones.
+    Offers,
     /// `/doctor` (`crate::ui::doctor`).
     Doctor,
 }
@@ -94,7 +93,7 @@ impl Page {
         Self::Config,
         Self::Clients,
         Self::Register,
-        Self::Enrollment,
+        Self::Offers,
         Self::Doctor,
     ];
 
@@ -103,7 +102,7 @@ impl Page {
         match self {
             Self::Seat(_) => Group::Seat,
             Self::Roles | Self::Providers | Self::Config | Self::Clients => Group::Workspace,
-            Self::Register | Self::Enrollment | Self::Doctor => Group::Servers,
+            Self::Register | Self::Offers | Self::Doctor => Group::Servers,
         }
     }
 
@@ -116,7 +115,7 @@ impl Page {
             Self::Config => "config",
             Self::Clients => "clients",
             Self::Register => "register",
-            Self::Enrollment => "enrollment",
+            Self::Offers => "offers",
             Self::Doctor => "doctor",
         }
     }
@@ -132,7 +131,7 @@ impl Page {
             Self::Register => {
                 "joins this box to a server with a one-time registration URL and a key made here"
             }
-            Self::Enrollment => "lets a new box join: a name, a grade, and a key shown once",
+            Self::Offers => "lets a new device join: mint an offer, then approve it by its word",
             Self::Doctor => "whether this box is wired, one check at a time",
         }
     }
@@ -146,8 +145,9 @@ impl Page {
             Self::Providers => Some(crate::ui::login::WORD),
             Self::Config => Some(crate::ui::config::WORD),
             Self::Clients => Some(crate::ui::clients::WORD),
+            Self::Offers => Some(crate::ui::offers::WORD),
             Self::Doctor => Some(crate::ui::doctor::WORD),
-            Self::Seat(_) | Self::Register | Self::Enrollment => None,
+            Self::Seat(_) | Self::Register => None,
         }
     }
 }
@@ -176,6 +176,8 @@ impl Model {
             Some(Page::Config)
         } else if self.showing(Listing::Clients) {
             Some(Page::Clients)
+        } else if self.showing(Listing::Offers) {
+            Some(Page::Offers)
         } else if let Some(Lookup::Settings(page)) = self.lookup {
             Some(page)
         } else {
@@ -196,13 +198,10 @@ impl Model {
 
     /// **Turn the overlay to `page`**: by its word where it has one, else
     /// directly — over whatever stood, since one overlay stands at a time.
-    /// Answers whether it opened; nothing opens under the enrollment.
+    /// Answers whether it opened.
     pub fn turn_to(&mut self, page: Page) -> bool {
         if let Some(word) = page.word() {
             return crate::ui::slash::fire(self, word, "");
-        }
-        if self.enroll.is_some() {
-            return false;
         }
         self.uncover();
         self.lookup = Some(Lookup::Settings(page));

@@ -44,14 +44,18 @@ fn the_page_is_read_off_the_panes_own_fields() {
     model.begin_doctor();
     assert_eq!(model.page(), Some(Page::Doctor));
     model.escape();
-    model.lookup = Some(Lookup::Settings(Page::Enrollment));
-    assert_eq!(model.page(), Some(Page::Enrollment));
+    model.begin_offers();
+    assert_eq!(model.page(), Some(Page::Offers));
+    model.escape();
+    model.lookup = Some(Lookup::Settings(Page::Register));
+    assert_eq!(model.page(), Some(Page::Register));
     model.lookup = Some(Lookup::Commands);
     assert_eq!(model.page(), None, "another lookup is not a page");
 }
 
 /// **A page with a word is offered while its word is**: the workspace's
-/// four and the doctor need what their words need, and the rest are always.
+/// four, the offers and the doctor need what their words need, and the rest
+/// are always.
 #[test]
 fn a_page_is_offered_exactly_while_its_word_is() {
     let aimed = seated();
@@ -62,7 +66,7 @@ fn a_page_is_offered_exactly_while_its_word_is() {
     for page in Page::ALL {
         let expected = !matches!(
             page,
-            Page::Roles | Page::Providers | Page::Config | Page::Clients
+            Page::Roles | Page::Providers | Page::Config | Page::Clients | Page::Offers
         );
         assert_eq!(bare.offers(page), expected, "{page:?} with nothing aimed");
     }
@@ -88,17 +92,6 @@ fn turning_to_a_page_opens_it_alone_by_its_word() {
     let mut bare = Model::default();
     assert!(!bare.turn_to(Page::Roles), "no aim, no roles");
     assert_eq!(bare.page(), None);
-}
-
-/// **Nothing opens under the enrollment**, which only its own gesture leaves.
-#[test]
-fn nothing_turns_under_the_enrollment() {
-    let mut model = seated();
-    model.begin_enrollment();
-    assert!(!model.turn_to(Page::Enrollment));
-    assert!(!model.turn_to(Page::Roles));
-    assert!(model.enroll.is_some());
-    assert_eq!(model.page(), None);
 }
 
 /// **The mark reopens the page last shown**, and *Seat › look* where that

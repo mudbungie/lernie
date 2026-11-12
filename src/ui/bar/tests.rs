@@ -230,7 +230,7 @@ fn an_empty_list_says_why_open_and_nothing_shut() {
 
 /// **`+ new` at the head begins a conversation on the aimed workspace** — the
 /// switcher's own door — and stands down under a covering pane but the
-/// switcher's; nothing of the bar paints under the enrollment.
+/// switcher's.
 #[test]
 fn new_begins_on_the_aimed_workspace_and_stands_down_under_a_cover() {
     let window = Window::new();
@@ -255,10 +255,6 @@ fn new_begins_on_the_aimed_workspace_and_stands_down_under_a_cover() {
     model.bar.pinned = false;
     let covered = said(&tick(&ctx, &mut model, 0.0, None));
     assert!(!covered.iter().any(|t| t == super::PLUS), "{covered:?}");
-    let mut enrolling = seated();
-    enrolling.enroll = enrolling.aim.clone().map(crate::ui::Enrolling::at);
-    let none = said(&tick(&ctx, &mut enrolling, 0.0, None));
-    assert!(!none.iter().any(|t| t == theme::glyph::PIN), "{none:?}");
 }
 
 /// **The rows wear the switcher's tags, `+ new` the start's, and the pin

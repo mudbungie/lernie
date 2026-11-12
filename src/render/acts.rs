@@ -1,5 +1,5 @@
 //! **What an ACT came back saying**: a captured run, a staged start, a
-//! sign-in, an enrollment, and the receipts that carry one fact or two.
+//! sign-in, an offer and the pending ones, and the receipts that carry one fact or two.
 //!
 //! A receipt is a sentence rather than a listing, and that is not brevity: the
 //! reply vocabulary is emphatic that a receipt carries nothing it would have
@@ -7,8 +7,8 @@
 //! rendering says what landed and stops, exactly as the frame does.
 
 use crate::reply::Outcome;
-use crate::reply::enrolled::Enrolled;
 use crate::reply::login::Signin;
+use crate::reply::offers::{OfferRow, Offered};
 use crate::reply::providers::ProviderRow;
 use crate::reply::start::Prepared;
 
@@ -63,17 +63,44 @@ pub(super) fn fanned(candidates: &[Prepared]) -> String {
     )
 }
 
-/// **A new box's material.** The listing names the six facts and prints none
-/// of the three secrets: the reply carries a private key, and the destination
-/// of this stream is a terminal's scrollback (REMOTE §8.4). `lernie enroll`
-/// draws the symbol instead ([`crate::seat::enroll`]), which is what this
-/// answer is for; a rendering that spilled the key into a log would defeat the
-/// one act on this surface that deliberately writes nothing down.
-pub(super) fn enrolled(enrolled: &Enrolled) -> String {
+/// **A minted offer** (REMOTE §15.1): the URL as text and as a symbol — the
+/// same bytes, one for a paste and one for a camera — and the expiry in
+/// words, then what happens next. Nothing in it is a secret, so all of it is
+/// printed.
+pub(super) fn offered(offered: &Offered) -> String {
+    let symbol = match crate::qr::Symbol::encode(offered.url.as_bytes()) {
+        Ok(symbol) => symbol.block(),
+        Err(too_long) => format!("(no symbol: the URL will not fit one — {too_long})"),
+    };
     format!(
-        "enrolled {} at {} ({} grade) — its material is in this frame and is not printed; \
-         `lernie enroll` shows the symbol that carries it",
-        enrolled.name, enrolled.address, enrolled.grade
+        "offer minted — the new device opens this URL, or scans the symbol:\n\n{}\n\n{symbol}\n\
+         It works once, and only until {} — ten minutes from when it was minted. The device \
+         then shows a six-character confirmation word: `lernie offers <workspace>` shows the \
+         same word on its row, and `lernie approve <workspace> <name>` seats it.",
+        offered.url,
+        crate::reply::offers::clock(offered.expires)
+    )
+}
+
+/// **A workspace's pending offers**: one line each, and under an unclaimed
+/// one, when its code expires.
+pub(super) fn offers(rows: &[OfferRow]) -> String {
+    listing(
+        "offers",
+        rows.iter()
+            .map(|row| {
+                line(vec![
+                    Some(row.line()),
+                    when(row.word.is_none(), "code expires"),
+                    when(
+                        row.word.is_none(),
+                        &crate::reply::offers::clock(row.expires),
+                    ),
+                    when(row.proved(), "— can be approved"),
+                ])
+            })
+            .collect(),
+        "no offer is pending in this workspace",
     )
 }
 

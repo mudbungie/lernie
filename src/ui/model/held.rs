@@ -13,9 +13,9 @@
 mod asked;
 
 use super::{
-    Aim, Asking, Authoring, Bindings, Chunk, Columns, Context, Diagnosis, Dropup, Enrolling, Fill,
-    Fleet, Forking, Hits, Listing, Login, Lookup, Notice, Pages, Posted, Pricing, Records, Servers,
-    Start, Trail, Trailing, Tuning, Unmaking,
+    Aim, Asking, Authoring, Bindings, Chunk, Columns, Context, Diagnosis, Dropup, Fill, Fleet,
+    Forking, Hits, Listing, Login, Lookup, Notice, Pages, Posted, Pricing, Records, Servers, Start,
+    Trail, Trailing, Tuning, Unmaking,
 };
 use crate::reply::{convs::ConvRow, stream::Stream, transcript::Transcript};
 
@@ -282,11 +282,11 @@ pub struct Model {
     /// the draft as `<name> <goal>` ([`Model::found`]). Put down by any aim
     /// or selection.
     pub founding: Option<String>,
-    /// **An enrollment, while it is happening** — the second thing this window
-    /// holds across a round trip, and the only thing it ever holds that is a
-    /// secret. It is dropped by a control and written down nowhere
-    /// ([`Enrolling`]).
-    pub enroll: Option<Enrolling>,
+    /// **The offers page's form and the offer last minted** (DESIGN §4.51).
+    pub offering: super::Offering,
+    /// The aimed workspace's pending offers, or `None` until the page's
+    /// standing read has answered.
+    pub pending: Option<Vec<crate::reply::offers::OfferRow>>,
     /// **Registering this box** (DESIGN §4.50): the URL in the settings page's
     /// field, the claim a click fired, and how the last one ended.
     pub registering: super::Registering,

@@ -27,17 +27,15 @@
 //! the column. So a Shift+Tab off the box lands on the bar, and a Tab off
 //! the send door goes on up into the transcript (`crate::ui::keys`).
 //!
-//! **The composer and the status bar stand down under an overlay and under
-//! the enrollment**, the composer for the reason it always did — the
+//! **The composer and the status bar stand down under an overlay**, the
+//! composer for the reason it always did — the
 //! conversation the box deposits into is not what the operator is looking at
 //! — and the status bar because every pane is built to fit the narrowest
 //! shape the layout promises (§4.32) and its line is what the tallest of
-//! them needs there; the overlay's name line says where you are meanwhile. Nothing live
-//! paints under the enrollment (bl-7574): it covers the whole window, the one
-//! pane that does, because what it holds must not be legible beside anything.
+//! them needs there; the overlay's name line says where you are meanwhile.
 
 use crate::ui::{
-    Model, ask, bar, chat, composer, dock, enroll, keys, overlay, rail, slash, status, tabs, theme,
+    Model, ask, bar, chat, composer, dock, keys, overlay, rail, slash, status, tabs, theme,
 };
 
 /// Paint one frame of the whole window.
@@ -118,9 +116,6 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
         top
     });
     egui::CentralPanel::default().show(ctx, |ui| {
-        if enroll::render(ui, model) {
-            return;
-        }
         // **The head stands over the transcript** (§4.44, item 2): the mark
         // at the column's top right, the tabs wrapping to its left.
         tabs::render(ui, model);

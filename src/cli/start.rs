@@ -1,5 +1,5 @@
 //! **`start`'s grammar** — the composite's two optional words, in its own file
-//! for [`super::enroll`]'s reason: a verb whose grammar is more than words is
+//! for [`super::answer`]'s reason: a verb whose grammar is more than words is
 //! its own file, and this one's tail stopped being words when the role landed.
 //!
 //! # Two optional words that are not the same KIND of optional
@@ -17,13 +17,12 @@
 //!
 //! # And the name is not read here
 //!
-//! Unlike `enroll`'s grade, a role is **not** a closed set this binary holds: a
+//! Unlike `offer`'s grade, a role is **not** a closed set this binary holds: a
 //! workspace's roles are whatever its governing config commit declares, and
 //! this seat cannot know them without reading that commit. litany resolves the
 //! role before the fork, so a name it does not declare leaves no branch, no ref
 //! and no worktree and refuses in its own words. What is decided here is only
-//! the GRAMMAR — that the word was given a value — which is the same division
-//! `enroll`'s `--at` already draws.
+//! the GRAMMAR — that the word was given a value.
 
 use super::{Decided, Verdict};
 use crate::render::Form;
@@ -55,7 +54,7 @@ pub(super) fn start(address: &str, goal: &str, tail: &[&str], form: Form) -> Dec
 /// role word with its value — or the one refusal that teaches the whole
 /// grammar.
 ///
-/// One sentence for every way it can be wrong, `enroll`'s own rule: to the
+/// One sentence for every way it can be wrong: to the
 /// operator a bad tail is one event, and naming the grammar answers an unknown
 /// word, a repeat and a word with no value at once.
 fn stated(tail: &[&str]) -> Result<(Option<String>, Option<String>), String> {

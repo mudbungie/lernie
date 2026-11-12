@@ -5,7 +5,7 @@
 //!
 //! Every other control in this window adds or changes something and is undone
 //! by doing the other thing: aiming, selecting, depositing, nudging, starting,
-//! enrolling, and the four tuning gestures. This is the first that destroys,
+//! offering, and the four tuning gestures. This is the first that destroys,
 //! and it is a **place** rather than a control among them. Three things follow
 //! and DESIGN §4.20 states all three; what is here is why they land in this
 //! file.

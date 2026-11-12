@@ -35,6 +35,8 @@ pub enum Listing {
     /// **The clients pane** — the machines registered in the aimed workspace's
     /// workspace (`super::clients`; DESIGN §4.28).
     Clients,
+    /// The offers page: the aimed workspace's pending offers.
+    Offers,
 }
 
 impl Model {

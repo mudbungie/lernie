@@ -405,7 +405,8 @@ holds (`lineages`) and one file's bytes with the settings its schema found in
 them (`config`), both §4.30's — a captured
 run (`outcome`), the detached advance's receipt
 (`nudged`), the start family's two — the staged body (`prepared`) and the
-minted name (`started`) — a new box's material (`enrolled`, §4.15) and
+minted name (`started`) — the offer's four (`offered`, `offers`, `approved`,
+`declined`, §4.51) and
 whether the box is wired (`doctor`, §4.21), plus the refusal envelope, which is not a kind at all. A kind nothing renders is a kind nobody has to carry, and the ball that
 lands a pane is the ball that adds its kind.
 
@@ -810,7 +811,7 @@ answer a question the wire asked the SEAT. So `lernie ops` is the ordinary
 reading and `lernie ops <max>` is the override, and the two faces ask with one
 figure from one constant rather than two that can drift. A depth that is not a
 number is read in `cli::run` and refused there, on `ask`'s body's and
-`enroll`'s grade's own division: decided entirely by what was typed, the
+`offer`'s grade's own division: decided entirely by what was typed, the
 caller's typo, earns the usage, costs no connection.
 
 **A staged body CAN be re-fired without `start`, and the word for it is `ask`**
@@ -833,16 +834,6 @@ editing. A hand-written fire carries whatever goal it is given and no prefill,
 so a `prompt` typed by hand off a path-rung `prepare` starts a conversation
 without the preamble its rung meant it to have. That is the residual, and it is
 a fact about what a one-shot word can hold rather than about the vocabulary.
-
-**The two arguments the seat settles itself are `enroll`'s grade and its
-destination** (bl-07b9, bl-1554). The second is `--into <dir>`, the one optional
-word in this surface, and it is read in the same place for the same reason: a
-directory on THIS box is decided entirely by what was typed. A tail that is
-anything else refuses naming that word rather than falling through to the verb
-table, whose arity sentence is about three arguments and says nothing about a
-fourth. The usage line stays computed from the row's parameters and stores
-nothing (`Verb::usage`); the word is stated in the row's own `detail`, which is
-what `lernie help enroll` prints.
 
 **And `model` reads before it writes** (`src/seat/model.rs`, bl-1e5a). The
 word accepted an id the same seat could prove does not exist, answered `ok`,
@@ -870,9 +861,10 @@ round trip, it is exactly what `lernie models` would have printed, and a
 similarity score is a mechanism with no input: an operator knows which one they
 meant the moment they see the row.
 
-**The one argument the seat settles itself is `enroll`'s grade** (bl-07b9).
-`grade` is a closed set of two words the boundary defines (REMOTE §8.4) and
-this binary already holds them — `lernie help enroll` says so — so a typo used
+**The one argument the seat settles itself is `offer`'s grade** (bl-07b9, on
+`enroll`; carried to `offer` by bl-1f57). `grade` is a closed set of two words
+the boundary defines (REMOTE §15.1) and this binary already holds them —
+`lernie help offer` says so — so a typo used
 to cost a round trip and come back `unknown grade "OPERATOR"`: true, and naming
 neither word that would have worked. It is read in `cli::run` for exactly the
 reason a hand-written envelope is: decided entirely by what was typed, the
@@ -907,9 +899,7 @@ Nothing new crosses the wire: what goes out is `agent` and then `follow`, the
 boundary's own envelopes, asked as many times as the conversation takes to
 come to rest. `follow` stays a row of the gesture table — the window's own lane
 spends it and the corpus round-trips it — and what the CLI word adds is the
-LOOP, exactly as `start` adds the local between two acts. `enroll` is the
-precedent for the arm: a row whose word is answered ahead of the table because
-what the seat does with the answer is not printing it.
+LOOP, exactly as `start` adds the local between two acts.
 
 **Two defects, one cause.** The word was one `ask`: one held connection, its
 frames collected, printed at the end, and the exit code read off the last
@@ -1058,7 +1048,7 @@ operator has to keep in agreement with the first.
 **A path this seat does not check.** The directory is on the SERVER's box and a
 seat may hold no such path at all, so a path that is not there is refused over
 the wire in the server's own words. That is the same division §4.10 draws for
-`enroll`'s grade in the other direction: the grade is a closed set this binary
+`offer`'s grade in the other direction: the grade is a closed set this binary
 holds, and a filesystem on another machine is not.
 
 **What the ball measured is why the rung is worth an argument.** Same model,
@@ -1126,7 +1116,7 @@ workspace's row — the selected conversation, and the composer. It was four, th
 second being a pane of the aimed workspace's conversations; what it painted is now a
 level of the first, and `src/ui/convs.rs` is what a row is rather than a pane
 — with seven more that COVER the conversation when they are open
-(§4.15's enrollment, §4.17's tuning, §4.18's records, §4.19's decision queue,
+(§4.51's offers, §4.17's tuning, §4.18's records, §4.19's decision queue,
 §4.20's unmaking and §4.21's two window-level reads), asked as one question
 rather than seven (`Model::covered`). Every one of
 them is a function of the [`Model`] it is handed.
@@ -1152,8 +1142,8 @@ the window painted by no panel at all. The answer is not more yielding — there
 is none left to do — it is the **covering-pane idiom read across the whole
 layout**: below the width at which the yield can still keep the conversation
 its floor, the window shows one `Column` and a bar naming both, which is a
-surface you navigate to, act in, and come back from exactly as §4.15's
-enrollment and §4.17's tuning pane are.
+surface you navigate to, act in, and come back from exactly as §4.17's
+tuning pane is.
 
 **There are TWO columns and two variants since bl-b9a3** — `Servers` and
 `Conversation`. The fold did not add a case to the policy; it took a term out
@@ -1560,27 +1550,6 @@ RECTS rather than the glyphs: a galley's rows carry no newline where the wrap
 broke them, so a wrapped run and a run laid past the frame read back as the
 same string — the paint probe's own division, where geometry is unaffected and
 it is the text that lies.
-
-**The enrollment is a modal, so it behaves like one** (`src/ui/enroll.rs`,
-bl-7574). Its argument for covering the conversation is about the WINDOW — a
-private key on a screen, the act is *look at this now and close it*, and a
-conversation legible behind it invites the long life on a display the material
-must not have — and it only ever covered a PANEL. Two things close the gap and
-neither widens what it covers. **Escape closes it** (`Model::escape`), doing
-exactly what `done — forget it` does, material included, because the control
-that closes this pane is the control that forgets; reachable by Tab is not the
-same as operable, and this is the one pane whose purpose is *close it quickly*.
-**Nothing live paints under it**: the composer is a bottom panel and so outside
-what a central panel covers, which left a live `start` control — firing a
-conversation on the very workspace being enrolled into — beneath the symbol, so the
-shell stands the composer down while an enrollment is open. The arrows stand
-down with it (a modal owns them: the lists behind it are not the subject of
-anything, and the name box keeps its own cursor keys). Escape typed into that
-name box cancels rather than leaving the box, deliberately: egui clears a box's
-focus while processing the same Escape, so the keyboard gate cannot see it, and
-cancel is what Escape means on a modal — nothing is minted until `mint`, so it
-costs a name retyped. The roster and the conversation list stay legible, which
-is where the operator looks rather than what they act with.
 
 **An empty pane says WHICH emptiness it is** (`src/ui/convs.rs`, bl-f780). The
 list had two sentences — nothing aimed at, and *"no conversations here"* — so a
@@ -2034,209 +2003,37 @@ delete the branch and close its pull request in the same breath.
 
 ---
 
-### 4.15 Enrollment: the one reply this seat draws and refuses to keep (REMOTE §8.4)
+### 4.15 Enrollment — RETIRED (yog REMOTE §15.4; bl-1f57)
 
-`src/reply/enrolled.rs`, `src/seat/enroll.rs`, `src/seat/enroll/entry.rs`,
-`src/verbs/enroll.rs`, `src/cli/enroll.rs`, `src/ui/enroll.rs`, `src/qr/`.
+**Retired entire, 2026-11-11, by operator ruling; §4.50 and §4.51 supersede
+it.** This section described the `enroll` act: an operator-grade seat named a
+workspace, a name and a grade; the server minted a key and a leaf and answered
+both; and this seat drew that material as a QR symbol, printed it as one line
+of JSON (`{"yog-enroll":1,…}`), or filed it with `--into <dir>`, keeping no
+copy. The envelope put a private key in a symbol and on a clipboard — a copy
+of it was the device — and that is what the ruling reverses. A device now
+makes its own key and registers itself (§4.50); the operator mints an offer
+and approves it by its confirmation word (§4.51).
 
-**What the act is.** `enroll` names a workspace, a name and a grade, and the
-server mints that box's leaf on its own CA, seats the registration, answers the
-material and shreds the key. The seat sends it over an entry it already holds
-at operator grade and shows the answer as a QR symbol. §3 above records why
-this does not lift REMOTE §1.4, and REMOTE §8.4 is the authority for the wire.
+Deleted with it, in the one act: `src/seat/enroll*` (the act and the `--into`
+filing), `src/reply/enrolled.rs` (the reply and the envelope),
+`src/verbs/enroll.rs`, `src/cli/enroll.rs` (`--at`, `--into`),
+`src/ui/enroll.rs` and `src/ui/model/enroll.rs` (the whole-window cover), and
+the `enrolling` snapshot world. `src/qr/` stays: the offer's URL is drawn with
+it. The symbol's painter moved to `src/ui/offers/symbol.rs` unchanged.
 
-**The reply is not the product, and that is the one place this seat departs
-from its own shape.** Every other verb hands its reply stream to stdout —
-`seat::ask` is the whole of it. This one must not, because the product is not
-the frame: it is REMOTE §8.4's **envelope**, which is the same fields with two
-of them removed under a marker, and a seat that handed on the frame would leave
-the operator to reimplement the payload contract. So `enroll` has an arm of its
-own all the way up to `cli::Decided`. `lernie ask` still prints the raw frame,
-which is correct — an operator who spells the envelope by hand has asked for
-the stream, and nothing here is a boundary against the operator.
+**The whole-window cover went with the secret.** The enrollment was the one
+pane that covered the window, that nothing fired or painted under, and that
+Escape closed first — all because what it drew was a private key. Nothing on
+this seat's glass is one any more, so every such exception named elsewhere in
+this document (§4.11, §4.42 items 6 and 7, §4.46, §4.48 item 7) is void: the
+offers page is a page of the settings overlay like its neighbours.
 
-**And `--json` is the envelope ALONE** (bl-ac76). The three renderings below
-are what a PERSON is offered; a script is offered one. Under `--json` stdout
-carries the envelope on one line and nothing else — no caption, no symbol, no
-colour, no receipt. It printed the whole human rendering under the flag, so a
-line-oriented capture (`head`, a `read`, a pipe into a formatter) took an
-ANSI-coloured block and left the material behind. That is not an ordinary
-rendering defect here: the server has already minted and shredded by then and a
-second enrollment under one name is refused, so what the script kept was a
-picture of a key it could no longer ask for, and the name was spent. §4.37's
-rule — *every verb renders by default and `--json` is the machine form* —
-reaches the one verb that had no machine form at all; what differs is only
-WHICH object the machine form is, and that is already this act's whole
-exception (above): the frame is not the product, the envelope is.
-
-**The machine form and bl-768a's withholding compose into one sentence**:
-under `--json`, stdout carries the envelope exactly when the material was not
-written down. A run that FILED withholds it — the files are the copy the
-operator chose — so stdout is empty and the receipt naming them goes to stderr,
-because a receipt is prose about a file and not a frame. A run whose filing
-FAILED says the envelope, for bl-768a's own reason: the screen is then the only
-place the material can be. And the sentence explaining a destination that would
-not take the files is a diagnosis on stderr in both forms, which is what this
-section already required — *the answer is said on stdout whichever way the
-filing went, and only the exit code reports a directory that would not take
-it*. `enroll` therefore takes a warning sink exactly as the role assignment
-does, and `src/main.rs` hands it `eprintln!`. The four words the gesture is
-made of ride as one value (`cli::Asking`) rather than as four parameters, so
-the act's signature separates what is being ASKED from what this box does with
-the answer — and argv's reading of those words and the act's parameters are one
-object rather than two lists in agreement.
-
-**One artifact, three renderings, and the operator picks which they can take**
-(bl-1554, bl-a8fd). The envelope is one line of compact JSON and everything
-else is a rendering of it: the **QR symbol** for a camera, the **line itself**
-for the paste box an android seat offers — *one line of JSON beginning
-`{"yog-enroll": 1`*, in that screen's own words — and `--into <dir>` for a box
-with neither, which lays the envelope down as the four files §4.6's entry is.
-There is one place the
-envelope is built (`Enrolled::envelope`) and the renderings are of that, so no
-two of them can disagree.
-
-**The envelope carries the rendezvous pair when the reply does** (bl-5378, on
-yog bl-9043, edition 20). REMOTE §8.4's reply grew two optional keys beside the
-six facts, `rendezvous_pub` and `pairing_salt` — the server's public rendezvous
-key and the pairing salt, 32 bytes of hex each, present together or not at all
-— and a phone reads its roving material (REMOTE §13.3) from exactly this
-envelope. `Enrolled` re-said a fixed six, so the symbol this seat drew for a
-phone dropped both and the phone could never find a moved server; and `--into`
-wrote the four entry files and not the two `crate::channel::rendezvous` reads,
-so a foot filed that way could not rove either. Now `Enrolled` carries the pair
-as one `Option`, the reader refuses one key without the other, the envelope
-writes both when present (still `serde_json`'s sorted order, pinned byte for
-byte against the server's own corpus fixture). **`--into` no longer lays the
-pair down** (bl-2723): the rendezvous is retired and nothing reads the two
-files (§4.49), so an entry is four files whatever the envelope carried. A
-loopback server sends neither and everything here is what it
-was. The caption stays the three facts that are not material — the salt is
-shared with the server, so it is material.
-
-**The route the NEW box will dial is stated, not assumed** (bl-971c, on yog
-bl-fec6's `--at`). REMOTE §8.4's request carries an optional `address`, and it
-is a fact about the device being enrolled rather than a setting on the server:
-the box being provisioned is by definition not the box the server runs on, so
-the route it reaches that server by need not be the one the server wrote for
-itself — an emulator reaches its host through the emulator's alias, a phone
-over the LAN, an overlay peer by name. Unstated is the server's own
-`wire/address`, which is right only for a device sharing this box's view of it.
-
-The seat could not state it, and **the failure was silent at both ends**: the
-four files `--into` wrote were correct in every byte except `address`, so the
-foot came up, dialled an address it cannot reach, printed nothing and waited,
-while the server held the registration and the roster showed the client absent.
-Nothing anywhere said why. The only workaround was `yog gesture` on the
-server's own box with the reply taken apart by hand — which is available to
-every operator except the one a seat is for.
-
-So `lernie enroll <workspace> <name> <grade> [--at <host>:<port>] [--into
-<dir>]`: **two optional words, independent and in either order.** They address
-different things — `--at` the far box, `--into` this terminal — so neither
-implies the other and one refusal teaches both. What the seat settles is only
-that a word was given a value; whether the value names an endpoint a device can
-dial is the server's judgement, which it makes on its own address and a stated
-one alike and answers with the remedy it names. A second copy of that rule here
-would be a second authority on addresses that could disagree with the first.
-`address` is the field on the wire and `--at` is the word argv spells it with —
-the same word yog's own line reader takes, so an operator who learned it at one
-face has learned it at both. **The window states none**, and that is a control
-it owes rather than a `None` to fill in: it has no field for a route, and an
-operator sitting at a window is on a box that dialled this server successfully.
-
-**Picking one is picking one** (bl-768a). `--into` says *this box has neither a
-camera nor a paste box; write it down for me*, so once the four files exist the
-symbol and the line are a copy nobody asked for — and it is the copy this seat
-can never reach afterwards: a terminal scrollback, a `tmux` buffer, a
-`script`/`asciinema` capture, the job log of an unattended run. A run that
-files therefore says the caption and the receipt and nothing else, and the
-receipt is what names where the key is. The rule is not a second custody
-policy; it is the one below, read on the one path where the operator has
-already named the copy they want.
-
-**It printed the picture alone until bl-1554, and that closed the act to two of
-the four components.** A **foot** is by definition a box the operator is not
-sitting at — no screen, no camera — so the one component the act exists to
-provision was the one it could not reach; and the **phone** asks for the line
-verbatim, which the seat was drawing a picture of and discarding. Both had the
-same workaround — spell the envelope by hand through `lernie ask` and reassemble
-it against §8.4 — and the material was spent either way, because the server
-shreds the key and a second enrollment under one name is refused.
-
-**The custody argument does not reach the text, and that is why this is not a
-relaxation.** What the rule below rules out is a copy *nobody chose*: a cache, a
-log, a temporary file. The envelope was on the screen either way, drawn as a
-picture of itself, and a photograph of a private key is a private key.
-
-**Nothing is written UNASKED, and it is asserted over the tree.** No file, no
-cache, no log line, no temporary anything, on either face: with no `--into` the
-command line holds the material in locals, the window holds it in
-`Model::enroll` and drops it with the pane, and closing that pane is a control
-whose whole product is the forgetting. `seat::enroll`'s suite walks a throwaway
-root before and after the act and compares — over the **tree** rather than over
-the paths the code happens to know about, because a defect here is precisely a
-path nobody thought of. A destination the operator NAMED is walked the same way
-and holds exactly the four files.
-
-**And a destination never costs the material.** The server has already minted
-and shredded by the time any of this runs, so a filing that FAILED says
-everything on stdout — the screen is then the only place the material can be —
-and only the exit code reports a directory that would not take it. That is the
-same fact the paragraph above rests on, read the other way: what is withheld
-beside a receipt is withheld because the files hold it, so no files means
-nothing withheld. Two more rules follow from it and neither is a convenience: a
-**symbol that will not fit** no longer refuses — it is one of
-three renderings and the other two still work, where refusing would burn a name
-over a drawing — and a **file already present** is never written over, because
-re-issuing distrusts nothing and a clobbered `client.pem` leaves two live
-certificates under one identity with the surviving key belonging to neither.
-The files are created with the mode on the `open` rather than corrected
-afterwards, so the key is never readable off the account even for an instant.
-
-**The QR encoder is this crate's own** (`src/qr/`), byte mode at correction
-level M, no new dependency. A QR symbol is a fully specified algorithm rather
-than a research problem, and the manifest's dependency set is an approved list
-a ball has to argue its way onto. REMOTE §8.4 measures the envelope at 1567
-bytes from a loopback server and ~1730 with the rendezvous pair, and states the
-rule as *PEM as minted, at level M or lower*; level M carries 2331, and the pair
-is what took the envelope past level Q's 1663 — a level this encoder never
-emitted, so nothing moved here, and `reply::enrolled`'s suite builds an envelope
-at the measured sizes and encodes it. The encoder's own module doc holds the rulings, and its suite
-pins three whole symbols and all forty versions against an **independent**
-implementation — because an encoder that agrees with itself proves nothing, and
-two reference implementations disagreeing with each other is how two of this
-one's choices were settled.
-
-**And the drawing is a scale rule, not a constant** (`src/ui/enroll/symbol.rs`,
-bl-5e0e). The symbol's whole job is to be read by a camera once, before the
-material is forgotten, so two things about how it is painted are properties of
-the act rather than of taste. It is drawn **as large as the pane allows** — the
-module pitch is what the available square divides into, where a four-point
-constant put a realistic §8.4 envelope's 153-module symbol in a 644-point
-square that overflowed the central panel at every window size this seat is
-photographed at, with no zoom and no way to make it bigger. And the pitch is a
-**whole number of device pixels**, drawn as **one mesh** rather than a filled
-rectangle per module: egui feathers every fill by a device pixel, half of it
-proud of the edge, so at a fractional origin — the only kind a layout offers —
-a module's own edge pixels come out grey and the contrast a decoder needs is
-spent on anti-aliasing. The suite renders and reads every module back off the
-pixels at one and two device pixels per point, which is the only altitude that
-can see either defect.
-
-**The symbol is geometry, so the assertions are geometry.** A QR symbol has no
-glyphs, so `crate::paint_probe` — the one walk over painted *text* — has
-nothing to say about one. The pane's words go through the probe; the picture is
-asserted as the module matrix, which is the thing that is right or wrong. A
-symbol drawn at the wrong scale carries the same bytes; a symbol with one wrong
-module does not.
-
-**And it is the one pane that covers another.** The shell's rule is a bar
-rather than a modal, because a refusal about one pane must not stop the
-operator reading the other three. The enrollment earns the exception: what it
-holds is a private key on a screen, the whole act is *look at this now and
-close it*, and a conversation legible behind it would invite the one thing the
-material must not have, which is a long life on a display.
+**Until upstream deletes the op** (yog bl-7a14) the vendored corpus still
+carries it, and three ledgers say so rather than pass over it: the reply
+fixture is filed under `corpus/unpainted/` (a kind this build does not show),
+the request fixture is one of the ops this seat has no word for, and
+`parity.toml` carries the one line `enroll`, citing the retirement.
 
 ### 4.16 Interface parity: a control that fires an op says which op (yog's docs/PARITY.md)
 
@@ -2328,9 +2125,7 @@ intersection would be reachability asked by the wrong instrument.
 *The seat's own preferences are §4.46 item 4's pane (`/settings`); this one stays the workspace's.*
 
 `src/ui/tuning.rs`. **The seat's second covering pane, and the first that is a
-place rather than a moment.** §4.15's enrollment covers the conversation because
-what it holds is a private key and the act is *look at this now and close it*.
-This one covers it for a plainer reason: it is a surface an operator navigates
+place rather than a moment.** It covers the conversation for a plain reason: it is a surface an operator navigates
 to, acts in, and comes back from — which is what §4.11's reach assertion was
 written about and recorded that this seat did not have. It does now, and the
 walk covers both panes.
@@ -2543,7 +2338,7 @@ op, and an aim is not one.
 seat's fifth covering pane, and the first control in it that destroys
 something.** Everything else this window affords adds or changes and is undone
 by doing the other thing — aiming, selecting, depositing, nudging, starting,
-enrolling, and the four tuning gestures. `delete-workspace` is the first that
+offering, and the four tuning gestures. `delete-workspace` is the first that
 is not, and bl-4a2c refused to build it on exactly that ground: the first
 destructive control must not invent an arming, a confirmation shape, a wording
 convention and a test scaffolding in the same commit that also happens to unmake
@@ -2602,12 +2397,11 @@ customer.
   the state an operator reaches for this control in. Clearing the box would
   charge a retype for the server's *no*, a toll on the safe path — where
   clearing a sent message costs nothing, because it was sent. Firing is said
-  instead (`asked — waiting for the server`), for the reason the enrollment says
-  `minting…`: the outbox is drained within the beat, so nothing else on the
+  instead (`asked — waiting for the server`): the outbox is drained within the beat, so nothing else on the
   glass can answer *has this been asked*.
 - **The act carries `act:<op>` and the pane's own controls carry none** (§4.16).
   The opening control crosses no wire — it opens a pane — so it is tagged with
-  nothing, the same division `enroll a box…` keeps with `mint`.
+  nothing.
 
 **What this does not close.** `reply/deleted` is `{kind, ok}` and this build
 decodes no such kind, so a successful unmaking answers with §4.9's rung-3
@@ -2674,7 +2468,7 @@ it in the command line, so all three surfaces read one predicate.
 **The bare channel is enumerated when it is provisioned, or when it is the
 only thing there is** (bl-b858). The fan asks *every channel this box holds*,
 and a flat root with no material at all is not one — it is an ABSENCE. On a
-seat for a server somewhere else, provisioned exactly as `enroll --into`
+seat for a server somewhere else, holding only what `lernie register` filed, as `--into` once
 instructs, it was enumerated anyway, so a paragraph of refusal beginning *"if
 a server runs on this box"* stood above every working channel on every roster
 read, on a box where none does and none is meant to; the read had worked and
@@ -2887,10 +2681,7 @@ that cross the boundary, and a banner is state.
 which is right for a fire that never left (the stage's steps are convergent)
 and exactly wrong for one that crossed: a second `lernie start` is a second
 conversation. It now says which happened, and the in-doubt sentence names
-`lernie conversations` rather than a retype. `seat/enroll.rs` gained the same
-split for the sharper case — its product is the one reply this seat never
-keeps, so a lost answer leaves a registration whose material exists nowhere,
-and `enroll again` would mint a second over a first nobody can see.
+`lernie conversations` rather than a retype.
 
 **The test seam is the finding upstream recorded not having.** yog bl-d1f1:
 *"The wire path's window is not drivable without a way to drop a connection
@@ -5121,7 +4912,7 @@ parts, in its vertical order, each with what it becomes here.
    carried, minus its ellipsis** (bl-e016): a pane's noun opens the pane and
    a verb's word fires the verb, so a hand that reached for `records…` types
    `/records` and nothing is renamed. The nouns: `/records`, `/attention`,
-   `/help`, `/doctor`, `/trail`, `/board`, `/prices`, `/find`, `/enroll`,
+   `/help`, `/doctor`, `/trail`, `/board`, `/prices`, `/find`, `/offers`,
    `/roles` (and `/model`, the same pane by the word an operator reaches for
    — item 10), `/login`, `/clients`, `/config`, `/fleet`, `/unmake` — and **`/help` answers with what this window takes
    first**, the menu's own rows in its order and the keys, then the servers'
@@ -5152,7 +4943,7 @@ parts, in its vertical order, each with what it becomes here.
 
 6. **An overlay, not a covering pane** (`src/ui/overlay.rs`). Every pane that
    covered the conversation — records, trail, board, fleet, clients, config,
-   tuning, prices, login, enrollment, doctor, find, verbs, unmaking, clearing
+   tuning, prices, login, offers, doctor, find, verbs, unmaking, clearing
    and the queue — keeps its content and loses its frame: it stands in a
    **framed box over the transcript**, as tall as the pane less a margin at
    the top (every pane is built to fit the narrowest shape the layout
@@ -5163,9 +4954,7 @@ parts, in its vertical order, each with what it becomes here.
    pointer had nothing to press). A click on it raises a flag the Escape
    key's own reader spends (`crate::ui::keys`), so it is the key with a
    second spelling and closes exactly what the key would; it is never the
-   pane's first keyboard stop. Esc closes it and one stands at a time. The
-   enrollment keeps §4.15's whole-window cover, because what it holds must
-   not be legible beside anything. Each pane's `done` control goes with the
+   pane's first keyboard stop. Esc closes it and one stands at a time. Each pane's `done` control goes with the
    frame — the reach walk types the word and counts the key (bl-e016). It is
    a child region of the pane rather than an `egui::Area`, because a fresh
    area paints nothing on its first frame and every single-frame assertion
@@ -5463,7 +5252,7 @@ parts, in its vertical order, each with what it becomes here.
     op its pick spends, each segment the read it posts. The role tuning
     stays as the per-role editor (`/roles`); **`/model` and Ctrl+O open the
     model's dropup** — from under a pane too: opening a dropup puts down
-    whatever stands, the enrollment excepted, as Ctrl+X does (bl-27dd;
+    whatever stands, as Ctrl+X does (bl-27dd;
     a dropup opened under a cover was put down by it the same frame). A Shift+Tab off the prompt lands on the rule — the name,
     then the selectors right to left — and a Tab walks them in order
     (§4.45 item 3: the Tab order is the laying order, and the rule is laid
@@ -6117,7 +5906,7 @@ changes.
    pick; this item gives it to every seat that senses a click — the trail's
    fold head, the panels' `▸` folds, the dock's line and rows, the ask's
    cells, the overlay name lines, the queue's, records', config and tuning
-   panes' controls, the enrollment's — each through `theme::paint`'s door or
+   panes' controls, the offers page's — each through `theme::paint`'s door or
    the row idiom, or wearing egui's own button hover where it is already a
    button. The instrument is a test that hovers each tagged control of each
    snapshot world and reads a fill under the pointer, so a control that
@@ -6307,7 +6096,7 @@ surface.
    `Model::uncover`, the one loop the switcher's and the dropup's doors
    already spent, so §4.42 item 7's *one stands at a time* holds from under
    anything — Ctrl+, under the switcher opened the settings pane beneath it.
-   Nothing fires under the enrollment. **A standing pane leads the Tab
+   **A standing pane leads the Tab
    order** (bl-99ed): the bar is painted first, so Tab under a pane walked
    its pin, its `+ new` and every row before reaching the pane; now, while
    a pane stands and nothing holds the keyboard, the pane's first painted
@@ -6685,7 +6474,7 @@ bar* is §4.42 item 11's rule, re-homed (item 4). *A Bot* is defined in item
      switcher's alone: a server not heard from yet (*waiting to hear*), the
      per-server counts, and *Ctrl+X then + new workspace* (the switcher's
      own `+ new workspace` row is that door).
-   - The status bar stands down under an overlay and the enrollment, as the
+   - The status bar stands down under an overlay, as the
      rule did (`crate::ui::shell`).
 
 5. **The bar grows the baseline's sidebar in four places** (amending §4.44
@@ -6745,7 +6534,7 @@ bar* is §4.42 item 11's rule, re-homed (item 4). *A Bot* is defined in item
      pages are therefore `fleet` (the aim's, so only while one is aimed),
      `attention`, `trail`, `board`, `prices`, in the menu's order. The
      panes item 7 moves into the settings overlay (`roles`, `login`,
-     `config`, `clients`, `enroll`, `doctor`, `settings`) are not pages,
+     `config`, `clients`, `offers`, `doctor`, `settings`) are not pages,
      nor are `find` (a needle, asked once), `help`, the switcher, `model`
      (a dropup) or `unmake` (an act). Each row is `/` and the word, its
      summary as its help; `attention` wears the waiting count
@@ -6820,7 +6609,8 @@ bar* is §4.42 item 11's rule, re-homed (item 4). *A Bot* is defined in item
    a select. The ruling's *not a terribly cohesive answer* is accurate:
    this seat has `/settings` as one flat table of knobs, and beside it six
    panes that are each a page of what a person would call settings —
-   `/roles` (the tuning), `/login`, `/config`, `/clients`, `/enroll`,
+   `/roles` (the tuning), `/login`, `/config`, `/clients`, `/enroll` (now
+   `/offers`, §4.51),
    `/doctor` — each its own overlay with its own frame. **They become pages
    of one overlay**, the tree being:
    - **Seat** — *look* (scale, bubbles, fold, the tones' one knob if a
@@ -6830,7 +6620,8 @@ bar* is §4.42 item 11's rule, re-homed (item 4). *A Bot* is defined in item
    - **Workspace** — *roles* (`/roles`), *providers* (`/login`), *config*
      (`/config`), *clients* (`/clients`);
    - **Servers** — *register* (this box joining a server; §4.50, added
-     bl-fb7f), *enrollment* (`/enroll`), *doctor* (`/doctor`), each
+     bl-fb7f), *offers* (`/offers`; §4.51, replacing the enrollment's door,
+     bl-1f57), *doctor* (`/doctor`), each
      server's dial state as the seat panel said it.
    **Every word stands**: `/roles` opens the overlay on its page, as does
    each of the others, so the menu, the reach bound and PARITY's one-door
@@ -6844,9 +6635,7 @@ bar* is §4.42 item 11's rule, re-homed (item 4). *A Bot* is defined in item
    the boundary says so with the button and a page that does not applies on
    the next frame, as §4.46 item 4 has it. The search field finds a row by
    its label or help across every page and jumps to it; the breadcrumb is
-   `Settings › Workspace › roles`. **The enrollment keeps §4.15's
-   whole-window cover** while its material is on the glass, and is a page
-   only for its door. The overlay rule of §4.42 item 6 stands, read with
+   `Settings › Workspace › roles`. The overlay rule of §4.42 item 6 stands, read with
    one more clause: the settings overlay is one overlay whatever page it
    shows, so one stands at a time still.
 
@@ -6857,7 +6646,7 @@ bar* is §4.42 item 11's rule, re-homed (item 4). *A Bot* is defined in item
      `configuring`, the clients listing — which is also what their standing
      reads key on (§4.17's `Standing`, unchanged: a read stands while its
      page shows because the page IS the field). The five with no state of
-     their own (the three Seat pages, the enrollment's door, the doctor)
+     their own (the Seat pages, the register page, the doctor)
      ride in `Lookup::Settings(page)`, the one variant that replaced
      `Lookup::Settings` and `Lookup::Doctor`. `Model::page` is the query;
      the mark's *where it was last* is the one field added (`visited`), and
@@ -6875,8 +6664,8 @@ bar* is §4.42 item 11's rule, re-homed (item 4). *A Bot* is defined in item
      the right end down to `rows::STACK`; narrower — the matrix size with
      the bar open — the control stands under the sentence, because a
      200-point slider beside a sentence has no page to stand on at 288.
-   - **The knob pages and the enrollment's door are in the row shape; the
-     four workspace pages keep their wrapped layouts.** Their control groups
+   - **The knob pages are in the row shape; the four workspace pages and
+     the two Servers pages with controls keep their wrapped layouts.** Their control groups
      (four effort seats and a toggle; two buttons; a row of picks) do not
      fit at the right end of a 288-point page, so each keeps its label,
      its weak line and its controls beneath, its tags, its standing read
@@ -7058,8 +6847,7 @@ always was (§4.40 says why the held line left with the punch).
 
 **Retired here:** §4.40 entire, and the two entry files it read. An entry that
 still has `rendezvous.pub` and `pairing.salt` works exactly as one without
-them. The enrollment envelope (§4.15) no longer files that pair; the envelope
-itself is retired by the ball that lands the offer.
+them. The enrollment envelope that once filed that pair is retired (§4.15).
 
 ### 4.50 Registering this box: an offer claimed with a key made here (yog REMOTE §15.1 steps 2–4, §15.2; bl-fb7f)
 
@@ -7152,6 +6940,66 @@ the workspace's name, so a box cannot register twice for one workspace name
 without moving the first entry. It does not retry: a URL works once. And it
 does not approve — that is an operator's act, on another seat.
 
+### 4.51 The offer: minted, listed, approved and declined from the seat (yog REMOTE §15.1 steps 1 and 5; bl-1f57)
+
+A new device joins a workspace by an **offer**. This section is the operator's
+side of it — the seat that is already in the workspace — and §4.50 is the new
+device's. Four acts on the wire, all operator grade, all plain rows of the
+gesture table (`src/verbs/offer.rs`):
+
+| Word | Asks | Answers |
+|---|---|---|
+| `lernie offer <workspace> <name> <grade>` | mint an offer for a client of that name and grade (`operator` or `foot`) | `offered`: the one-time URL and when its code expires |
+| `lernie offers <workspace>` | list the pending offers | `offers`: a row each — name, grade, state, expiry, and the confirmation word once claimed |
+| `lernie approve <workspace> <name>` | seat a proved offer's device | `approved` |
+| `lernie decline <workspace> <name>` | void an offer | `declined` |
+
+Each is rendered by default and `--json` prints the frame as it crossed, as
+for every row. In the order an operator uses them:
+
+1. **Mint.** `offer` prints the URL as text **and** as a QR symbol
+   (`src/qr/`) — the same bytes, one for a paste and one for a camera — then
+   the expiry in words (*"It works once, and only until 22:23 UTC — ten
+   minutes from when it was minted"*) and what happens next. A grade that is
+   not one of the two is refused in `cli::run` before anything is dialled
+   (§4.10); every other refusal is the server's, in its words. Nothing in the
+   reply is a secret, so all of it is printed: the URL carries no key.
+2. **The device claims it** (§4.50) and shows a six-character word.
+3. **List.** `offers` shows each pending offer's state — `open` (nobody has
+   claimed the code), `claimed` (a device holds the leaf and has not dialled),
+   `proved` (it has dialled) — and, from `claimed` on, the same word.
+4. **Approve or decline.** The operator reads the word off the new device and
+   approves the row that shows the same one. The server refuses `approve`
+   unless the row is proved. A row whose word matches nothing in front of the
+   operator is declined.
+
+**In the window it is one page: *Settings › Servers › offers*, opened by
+`/offers`** (`src/ui/offers.rs`). Top to bottom: the workspace it is about; a
+form — the new device's name, the two grades as seats, `mint offer`; the offer
+last minted — its URL as selectable text, *its code expires at HH:MM UTC*, and
+the symbol; then *pending offers*, a row each with name, grade, state and word,
+and under it `approve` and `decline`. **`approve` is dark until the row's state
+is `proved`**, and its hover says why. The page needs an aim, as the clients
+page does.
+
+**The list is a standing read** (`Open::Offers`, §4.17's pattern): a row moves
+from open to claimed to proved on the server while the operator watches, so
+`offers` is asked on every beat the page stands and never when it does not.
+The three acts are posted once each (§4.22) and their receipts are the bar's;
+a row leaves the list when the next read says it has. The page, its rows and
+the minted URL go with the aim — all three are one workspace's.
+
+**Parity** (§4.16): `offers` is tagged on the `/offers` row that opens the
+page, `offer` on the mint, `approve` and `decline` on every pending row; the
+`offering` snapshot world puts all four on the glass with one row of each
+state.
+
+**What this is not.** The page is not a cover: §4.15's whole-window exception
+existed for a private key, and there is none here. The seat does not compute
+the word on this side — the server states it on the row. And the page does
+not say an offer is *expired*: the server drops an expired open offer from
+the list, and the minted block shows the time its code runs out.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -7160,8 +7008,7 @@ does not approve — that is an operator's act, on another seat.
 | `src/lib.rs` | the crate doc and the module list. | small |
 | `src/cli.rs` | the command line as a **pure function**: arguments in, a `Decided` out. No argv, no environment, no streams, no exit. | ~210 |
 | `src/cli/start.rs` | the composite start's grammar: the work target, positional because the §3.4 rung is what it decides, and `--role <name>`, written because it is stated on the FIRE and not on the stage (REMOTE §9.21, PROTOCOL 18). A tail this arm cannot read leads with the quoting, because it is almost always an unquoted goal. | ~80 |
-| `src/cli/answer.rs` | `answer`'s own grammar: the three words and the optional fourth, the reach (PROTOCOL 18). A word the wire REQUIRES and an operator may leave off is neither a parameter nor a flag, so the word answers the field from the narrow constant and reads a misspelling here — `enroll`'s grade's own rule. | ~60 |
-| `src/cli/enroll.rs` | `enroll`'s own grammar: its three words, the grade read off a closed set of two, and the two optional words — `--at <host>:<port>`, the route the new box will dial, and `--into <dir>`, where this box writes the material down (§4.15, bl-971c). Its own file for the reason yog's line reader cut the same seam at: a verb whose grammar is more than words is its own file. | ~120 |
+| `src/cli/answer.rs` | `answer`'s own grammar: the three words and the optional fourth, the reach (PROTOCOL 18). A word the wire REQUIRES and an operator may leave off is neither a parameter nor a flag, so the word answers the field from the narrow constant and reads a misspelling here — `offer`'s grade's own rule. | ~60 |
 | `src/cli/decided.rs` | what one invocation decided to DO — the value `run` hands back and the whole of what `src/main.rs` acts on. Split from the deciding at the cap: a word added moves the match, a kind of act moves this. | ~100 |
 | `src/cli/verdict.rs` | what an invocation says, and with what exit code: the four constructors, the two codes, and the one-line pointer a refusal carries instead of the whole usage (§4.10, bl-b232). | ~110 |
 | `src/cli/text.rs` | what this binary says about itself: the version line, and the usage whose verb section is derived. | ~75 |
@@ -7186,6 +7033,11 @@ does not approve — that is an operator's act, on another seat.
 | `src/seat/register/https.rs` | the one HTTPS request: a hand-written HTTP/1.1 POST over `rustls`, bounded in time and size, against roots the caller passes; and the public web's roots. | ~135 |
 | `src/seat/register/entry.rs` | the door's answer read as its six fields, the workspace name refused unless it is one path component, and the entry filed `0600` and never over one that exists. | ~125 |
 | `src/ui/register.rs` | *Settings › Servers › register* (§4.50): the URL field, the button, and the outcome. Fires nothing on the wire itself. | ~75 |
+| `src/verbs/offer.rs` | the offer's four rows — `offer`, `offers`, `approve`, `decline` — the two grades, and the typed doors the window composes them through (§4.51). | ~105 |
+| `src/reply/offers.rs` | the offer's replies: the minted URL and its expiry, one pending row (name, grade, state, expiry, word), whether a row can be approved, and a moment as a clock reads it. | ~95 |
+| `src/ui/offers.rs` | *Settings › Servers › offers* (`/offers`; §4.51): the form that mints an offer, the minted URL as text and symbol with its expiry, and the pending rows with `approve` (dark until proved) and `decline`. | ~170 |
+| `src/ui/offers/symbol.rs` | the QR symbol as geometry (bl-5e0e): whole device pixels per module, a quiet zone, paper and ink that are not the theme's. Moved from the enrollment unchanged. | ~95 |
+| `src/ui/model/offers.rs` | the offers page between frames: the two grades, the form, the offer last minted with its symbol, and the acts — mint, approve, decline — each composing its own verb for the aimed workspace. | ~125 |
 | `src/ui/model/register.rs` | the register page between frames: the URL typed, the claim handed to the poster, how it ended, and the roster section a success seats. | ~85 |
 | `src/channel.rs` | one wire to one server: ask, follow, and what the server at the far end could SPELL as of the last dial (§4.9). | ~210 |
 | `src/channel/dial.rs` | how a socket is obtained and first spoken on: the entry's address list dialled in order, the endpoint that worked first; the preface and the request down it; and the sentence a failed write earns (§4.49). Split from the root at the budget. | ~145 |
@@ -7221,13 +7073,7 @@ does not approve — that is an operator's act, on another seat.
 | `src/reply/transcript.rs` | the conversation's entries — the envelope of one, and which origin wrote it. | ~155 |
 | `src/reply/transcript/blocks.rs` | what one model entry says: the canonical blocks, and the provider's own counters. | ~115 |
 | `src/reply/start.rs` | the start family's three receipts: the staged body carried whole, one of those per candidate of a spread (§4.36), and the minted name. | ~110 |
-| `src/reply/enrolled.rs` | a new box's material, and the one envelope a camera carries it in — the six fields and the optional rendezvous pair spelled once, read and re-said. | ~175 |
-| `src/seat/enroll.rs` | the §8.4 act from argv: one gesture, and its envelope said as a symbol, as a line, and — where the operator names a destination — as an entry. | ~135 |
-| `src/seat/enroll/entry.rs` | the envelope decomposed into §4.6's four files under `material`'s own names, created narrow and never over material already there. | ~110 |
-| `src/ui/enroll.rs` | the enrollment pane: a name, a grade, and the symbol that comes back — the one pane that covers another. | ~140 |
-| `src/ui/enroll/symbol.rs` | the symbol as geometry (bl-5e0e): the module pitch, which is a whole number of device pixels and as many of them as the pane has room for, and the one mesh every dark module is drawn in rather than a feathered rectangle apiece. | ~120 |
 | `src/qr.rs` and `src/qr/*` | a QR symbol drawn by this crate: the field, the tables, the zigzag, the four scoring rules, and the terminal rendering. Seven files, none over 250. | ~250 |
-| `src/ui/model/enroll.rs` | an enrollment between the control that opened it and the symbol it ends at, and the only secret this window holds. | ~135 |
 | `src/reply/stream.rs` | the live tail's fold: the prose that accretes, the tool window beside it, and the append a follower answers a frame with. | ~195 |
 | `src/reply/stream/window.rs` | the tool window (REMOTE §5.5): two transitions a call, merged onto one call by the id both carry, where the exit code's presence is the status. | ~95 |
 | `src/reply/steps.rs` | the steps a conversation's loop has taken: one strict row per step, the nested spend, and the class tokens carried verbatim with `"none"` the one word the pane reads (§4.18). | ~135 |
@@ -7240,7 +7086,6 @@ does not approve — that is an operator's act, on another seat.
 | `src/verbs.rs` | the typed gesture surface: which words exist, which module each row lives in, and what the table is for. | ~155 |
 | `src/verbs/verb.rs` | what a verb IS: the row, the usage it computes, the flags its own word can raise (§4.10, bl-9fd1), and the two doors onto the one envelope it becomes — the second stating an optional string field, for the one request that carries one (bl-971c). Split from the surface at the workspace, because the two change for different reasons. | ~160 |
 | `src/verbs/rows.rs` | the reads, the deposit and the advance, as data — each with the typed door the window composes by name — beside the one table that enumerates every row wherever it is declared. | ~240 |
-| `src/verbs/enroll.rs` | the enrollment: its row, `address` — the one optional field a request on this surface carries (§4.15, bl-971c) — and the door both faces compose it through. One subject, one file: its reply is the only one this seat renders rather than prints. | ~70 |
 | `src/verbs/conversation.rs` | the conversation's own four acts as rows — the cut, the kill, the change of lineage and the unmaking. Here and not in the exemption ledger because every one of them answers a captured run, which is a kind this seat already paints. | ~110 |
 | `src/verbs/queue.rs` | the decision queue's three ops as rows — the fan that names no workspace, the raise and the answer, the last of which replies with a queue rather than a receipt (§4.19). | ~90 |
 | `src/verbs/trail.rs` | the trail's read as a typed door rather than a row, its bound being a number, and the depth BOTH faces ask with stated once (§4.27, §4.10) — beside its two acts, which carry no field at all and are therefore rows (§4.35). | ~100 |
@@ -7281,7 +7126,7 @@ does not approve — that is an operator's act, on another seat.
 | `src/ui/model/notice.rs` | what the seat last heard that was not content: six kinds — five failures and one act's receipt (§4.34, §4.36) — and the line that says whose sentence each is. | ~170 |
 | `src/ui/model/posted.rs` | a gesture on its way out: whether a lost reply leaves it in doubt (§4.22), and the channel it is addressed to where its envelope names no workspace (§4.30) — both recorded at the control because neither can be computed. | ~110 |
 | `src/ui/model/delete.rs` | **a conversation's deletion** (§4.44 item 1; §4.42 item 5; bl-e837): the name the server compares, the confirmation's two answers, and `post_delete` — the one composition of `delete-agent` the trashcan and `/delete` share. | ~60 |
-| `src/ui/model/acts.rs` | what a control does, whichever control did it — the one home a binding and a click share: the aim, the selection, Escape's ladder, the enrollment's four and the workspace's pin. | ~220 |
+| `src/ui/model/acts.rs` | what a control does, whichever control did it — the one home a binding and a click share: the aim, the selection, Escape's ladder and the workspace's pin. | ~175 |
 | `src/ui/model/channel.rs` | what a channel is, what a gesture aimed down one must be addressed as, and what its section says when it has no workspaces. | ~110 |
 | `src/ui/model/start.rs` | a start between its two acts: what is held, what each receipt does to it, the born-on role written onto the body the fire carries back (§4.39), and the refusal that retires it with the goal back in the box (§4.26). | ~255 |
 | `src/ui/model/start/spread.rs` | the same start with n in the middle (§4.36): the obligation it is over, the fan its staging receipt composes, and the one fire per candidate the fan's own answer does. | ~130 |

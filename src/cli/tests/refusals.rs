@@ -10,15 +10,14 @@ use super::super::Stream;
 use super::super::verdict::REFUSED;
 use super::said;
 
-/// **The enrollment's arity is exact too**, and a wrong one earns the row's own
-/// usage rather than the arm's silence — the same grammar every other verb
-/// teaches from its mistake.
+/// **The offer's arity is exact**, and a wrong one earns the row's own usage —
+/// the same grammar every other verb teaches from its mistake.
 #[test]
-fn a_misspelled_enrollment_earns_the_row_s_usage() {
-    let said = said(&["enroll", "home"]);
+fn a_misspelled_offer_earns_the_row_s_usage() {
+    let said = said(&["offer", "home"]);
     assert_eq!(said.code, 2);
     assert!(
-        said.text.contains(&crate::verbs::ENROLL.usage()),
+        said.text.contains(&crate::verbs::OFFER.usage()),
         "{}",
         said.text
     );
@@ -171,15 +170,15 @@ fn a_recognised_word_with_extra_words_is_not_recognised() {
 #[test]
 fn a_grade_that_is_not_one_of_the_two_refuses_before_anything_is_dialled() {
     for typo in ["notagrade", "OPERATOR", ""] {
-        let v = said(&["enroll", "home", "phone-1", typo]);
+        let v = said(&["offer", "home", "phone-1", typo]);
         assert_eq!(v.code, REFUSED, "{typo:?}");
         assert!(
             v.text
-                .contains(&format!("unknown grade {typo:?} — `lernie enroll` takes")),
+                .contains(&format!("unknown grade {typo:?} — `lernie offer` takes")),
             "{typo:?}: {}",
             v.text
         );
-        for word in crate::ui::Grade::both() {
+        for word in crate::ui::Grade::BOTH {
             assert!(
                 v.text.contains(&format!("{:?}", word.word())),
                 "it names both words that would have worked: {}",
@@ -238,7 +237,7 @@ fn a_tail_that_is_not_the_flag_is_told_which_word_it_takes() {
 
 /// **A depth that is not a number is the caller's typo**, so it is read here
 /// rather than spent on a connection — the same division `ask`'s body and
-/// `enroll`'s grade are read on (bl-28a4). The wire would refuse it too, in
+/// `offer`'s grade are read on (bl-28a4). The wire would refuse it too, in
 /// its own words, a round trip later.
 #[test]
 fn a_trail_depth_that_is_not_a_number_earns_the_door_s_usage() {

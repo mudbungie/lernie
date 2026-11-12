@@ -36,8 +36,7 @@ pub const NOTHING: &str = "this workspace holds no balls";
 /// one of its rows.
 ///
 /// **Every control here opens a block and crosses no wire**, so none of them
-/// carries a parity token — the division `enroll a box…` keeps with `mint`
-/// (§4.20). The acts themselves are [`acts`]'s.
+/// carries a parity token (§4.20). The acts themselves are [`acts`]'s.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     ui.separator();
     let Some(aim) = model.aim.clone() else {

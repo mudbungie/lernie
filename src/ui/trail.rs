@@ -87,8 +87,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         }
         // **And the cut opens a place rather than firing** (DESIGN §4.20), so
         // it carries no `act:` token: the op is tagged on the control inside
-        // that pane which actually spends it — the division `enroll a box…`
-        // keeps with `mint`.
+        // that pane which actually spends it.
         if theme::paint::button(ui, crate::ui::clear::OPEN, true, OPEN_HELP).clicked() {
             model.begin_clearing();
         }

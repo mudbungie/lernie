@@ -13,7 +13,7 @@ fn subject(model: &Model) -> Aim {
         .expect("the fixture is aimed at a workspace")
 }
 
-/// **The aim is the gate**, exactly as it is for the enrollment and the tuning
+/// **The aim is the gate**, exactly as it is for the offers page and the tuning
 /// pane: the gesture carries a workspace, and a workspace is what an aim is.
 #[test]
 fn it_opens_on_the_aimed_workspace_and_not_at_all_without_one() {

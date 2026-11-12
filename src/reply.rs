@@ -91,8 +91,6 @@ pub mod convs;
 pub mod diff;
 /// Whether this box is wired: one row per check, the remedy verbatim.
 pub mod doctor;
-/// A new box's material, and the envelope a camera carries it in.
-pub mod enrolled;
 /// The strict field readers every decoder below shares.
 pub(crate) mod fields;
 /// What one conversation's worktree holds.
@@ -109,6 +107,8 @@ mod kinds;
 pub mod lineages;
 /// One sign-in run, as the server streams it.
 pub mod login;
+/// A new box's material, and the envelope a camera carries it in.
+pub mod offers;
 /// Every action that crossed the server's boundary, and where its alarm stands.
 pub mod ops;
 /// The price table and the ceiling — the world's two money facts.

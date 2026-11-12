@@ -85,7 +85,7 @@ pub(super) fn held(data_root: &Path) -> Vec<(String, Result<crate::channel::Chan
 ///
 /// An unprovisioned flat root is an ABSENCE, not a fault. On a seat for a
 /// server somewhere else — a box that holds named entries and no server of its
-/// own, provisioned exactly as `enroll --into` instructs — enumerating it put a
+/// own, holding only what `lernie register` filed — enumerating it put a
 /// paragraph of refusal above every working channel on every roster read,
 /// beginning *"if a server runs on this box"* on a box where none does and
 /// none is meant to. The read had worked; the answer was under the complaint.

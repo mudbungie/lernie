@@ -13,6 +13,8 @@ use crate::test_support::corpus;
 
 /// A token count never prints without the cost beside it.
 mod money;
+/// The offer's four replies.
+mod offers;
 /// The shapes the corpus does not carry a fixture of, built by hand.
 mod shapes;
 

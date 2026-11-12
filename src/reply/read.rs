@@ -12,9 +12,8 @@ use serde_json::Value;
 
 use super::{
     ERROR, KIND, OK, Outcome, Read, Reply, agent, balls, board, clients, config, convs, diff,
-    doctor, enrolled, fields, files, governing, help, inbox, lineages, login, ops, prices,
-    proposals, providers, queue, rail, roles, roster, science, search, start, step, steps, stream,
-    transcript,
+    doctor, fields, files, governing, help, inbox, lineages, login, offers, ops, prices, proposals,
+    providers, queue, rail, roles, roster, science, search, start, step, steps, stream, transcript,
 };
 
 /// The kind token each arm answers to. Its type's own file holds the rest, so
@@ -123,7 +122,10 @@ fn decode(frame: &Value) -> Result<Read, String> {
         providers::MODELS => Reply::Models(fields::rows(obj, providers::offered)?),
         login::KIND => Reply::Login(login::signin(obj)?),
         stream::KIND => Reply::Follow(stream::follow(obj)?),
-        enrolled::KIND => Reply::Enrolled(enrolled::enrolled(obj)?),
+        offers::OFFERED => Reply::Offered(offers::offered(obj)?),
+        offers::KIND => Reply::Offers(fields::rows(obj, offers::row)?),
+        offers::APPROVED => Reply::Approved,
+        offers::DECLINED => Reply::Declined,
         start::PREPARED => Reply::Prepared(start::prepared(obj)?),
         start::FANNED => Reply::Fanned(fields::rows(obj, start::candidate)?),
         DELIVERED => Reply::Delivered {

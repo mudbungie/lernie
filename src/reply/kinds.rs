@@ -13,9 +13,9 @@
 //! the ball that lands a pane is the ball that adds its kind.
 
 use super::{
-    agent, balls, board, clients, config, convs, diff, doctor, enrolled, files, governing, help,
-    inbox, lineages, login, ops, prices, proposals, providers, queue, rail, roles, roster, science,
-    search, start, step, steps, stream, transcript,
+    agent, balls, board, clients, config, convs, diff, doctor, files, governing, help, inbox,
+    lineages, login, offers, ops, prices, proposals, providers, queue, rail, roles, roster,
+    science, search, start, step, steps, stream, transcript,
 };
 
 /// **The kinds the window draws.** Forty-seven, and each is here because a
@@ -262,10 +262,15 @@ pub enum Reply {
     /// them, which the next act hands straight back — the one reply on this
     /// surface a seat has to hold between two gestures.
     Prepared(start::Prepared),
-    /// **A new box's material** — the one reply on this surface that carries a
-    /// secret, held while a symbol is on screen and written down nowhere
-    /// (REMOTE §8.4; DESIGN §3).
-    Enrolled(enrolled::Enrolled),
+    /// **A minted offer** (REMOTE §15.1): the one-time URL a new device
+    /// claims, and when its code expires. No secret is in it.
+    Offered(offers::Offered),
+    /// A workspace's pending offers, each with its state and its word.
+    Offers(Vec<offers::OfferRow>),
+    /// An offer was approved: its device is seated.
+    Approved,
+    /// An offer was declined.
+    Declined,
     /// **A start, fired**, and the name the server minted for it. It carries
     /// nothing else for the reason [`Nudged`](Self::Nudged) carries nothing:
     /// what the model does with the turn arrives on the transcript. What is

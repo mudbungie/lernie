@@ -94,7 +94,7 @@ impl Model {
         self.docked() && self.standing_on(rail)
     }
 
-    /// **Whether a pane floats over the conversation** — the enrollment, the
+    /// **Whether a pane floats over the conversation** — the
     /// switcher, the tuning pane, a listing, the window's own, the login
     /// pane, the fleet pane, an unmaking, or one of the three re-homed panes
     /// while they are not docked. The question the shell and every
@@ -102,8 +102,7 @@ impl Model {
     /// a control that opened a second would replace what is standing without
     /// saying so. A docked pane is not a cover: the column stands beside it.
     pub fn covered(&self) -> bool {
-        self.enroll.is_some()
-            || self.switching
+        self.switching
             || self.tuning.is_some()
             || self.listing.is_some()
             || self.lookup.is_some()

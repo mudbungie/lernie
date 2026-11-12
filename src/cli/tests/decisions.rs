@@ -107,12 +107,6 @@ fn a_typed_verb_and_the_envelope_it_stands_for_decide_alike() {
 
 /// Every verb in the table is reachable from argv, with the arguments in the
 /// order its usage states.
-///
-/// **`enroll` is the one exception and it is asserted rather than skipped**: it
-/// decides its own arm, because its reply carries a private key and the reply
-/// stream's destination is a terminal's scrollback (`crate::seat::enroll`). The
-/// envelope it eventually sends is still this row's — `verbs::tests` pins that
-/// — so what differs is where the answer goes and nothing about what crosses.
 #[test]
 fn every_verb_in_the_table_is_typable() {
     for verb in crate::verbs::table() {
@@ -125,35 +119,13 @@ fn every_verb_in_the_table_is_typable() {
             .iter()
             .map(|p| {
                 if *p == "grade" {
-                    crate::ui::Grade::default().word()
+                    crate::ui::Grade::default().word().to_owned()
                 } else {
                     format!("a-{p}")
                 }
             })
             .collect();
         words.extend(filled.iter().map(String::as_str));
-        if verb.word == crate::verbs::ENROLL.word {
-            let Decided::Enroll { asking, into, .. } = run(argv(&words)) else {
-                panic!("`enroll` renders its answer rather than printing a frame");
-            };
-            assert_eq!(
-                (
-                    asking.workspace.as_str(),
-                    asking.name.as_str(),
-                    asking.grade.as_str()
-                ),
-                (
-                    "a-workspace",
-                    "a-name",
-                    crate::ui::Grade::default().word().as_str()
-                )
-            );
-            // **The three words alone write nothing and state no route**,
-            // which is what makes each of the two the operator's choice rather
-            // than this seat's.
-            assert_eq!((asking.at, into), (None, None));
-            continue;
-        }
         // **`follow` is the other row whose word is not one ask** (bl-f076):
         // the gesture is the row's, and the word spends it until the
         // conversation comes to rest.
@@ -254,14 +226,6 @@ fn the_json_flag_leads_and_leaves_the_gesture_exactly_as_it_was() {
     else {
         panic!("the raw door carries it");
     };
-    // **The enrollment carries it too** (bl-ac76). It has an arm of its own —
-    // its answer is the §8.4 envelope rather than a frame stream — and that
-    // arm had no form at all, so `--json` reached everything but the one act
-    // whose product cannot be asked for twice.
-    let Decided::Enroll { form, .. } = run(argv(&["--json", "enroll", "home", "n", "foot"])) else {
-        panic!("the enrollment carries it");
-    };
-    assert_eq!(form, Form::Json);
 }
 
 /// **A parameter that happens to be the flag is still the parameter.** Reading

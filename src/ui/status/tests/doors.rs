@@ -168,13 +168,6 @@ fn ctrl_o_opens_the_model_s_dropup_where_a_workspace_is_aimed() {
     assert!(!model.covered(), "the trail is put down");
     let text = crate::test_support::window::painted(&mut model);
     assert!(text.contains(crate::ui::status::dropup::HINT), "{text}");
-    model.dropup = None;
-    model.begin_enrollment();
-    ctrl_o(&mut model);
-    assert!(
-        model.dropup.is_none() && model.enroll.is_some(),
-        "never over the enrollment"
-    );
     let mut nowhere = Model::default();
     ctrl_o(&mut nowhere);
     assert!(nowhere.dropup.is_none());

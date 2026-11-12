@@ -52,7 +52,7 @@ pub const NO_NAME_HELP: &str =
 ///
 /// **The eight per-workspace controls hang off the aimed row and off no other**,
 /// because
-/// an enrollment mints the pair `(client, workspace)` and the workspace is
+/// an approved offer seats the pair `(client, workspace)` and the workspace is
 /// exactly what an aim is. Offering it on every row would be offering it before
 /// the operator had said which workspace — and the answer to that question is
 /// already on the screen, once.

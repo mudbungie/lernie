@@ -7,8 +7,8 @@
 //! beside it that were each a page of what a person would call settings.
 //! **They are pages of this one overlay now**: *Seat* (the knob table's three
 //! pages, `crate::settings::Page`), *Workspace* (`/roles`, `/login`,
-//! `/config`, `/clients`) and *Servers* (registering this box, the
-//! enrollment's door, `/doctor`).
+//! `/config`, `/clients`) and *Servers* (registering this box, `/offers`,
+//! `/doctor`).
 //!
 //! **Every word stands.** A page is opened by its word where it has one
 //! (`crate::ui::Page::word`), so the menu, the reach bound and the standing
@@ -38,12 +38,6 @@ pub const SUMMARY: &str =
     "this seat's settings: its own knobs, the workspace's, the servers' — Ctrl+,";
 /// The breadcrumb's root.
 pub const HEADING: &str = "Settings";
-/// The enrollment's row, its door, and what the door does.
-pub const ENROLL: &str = "a new box";
-pub const DOOR: &str = "enroll…";
-pub const ENROLL_HELP: &str =
-    "opens the enrollment over the whole window: a name, a grade, and the key shown once";
-
 /// **The overlay's inner width at which the tree stands as a column**: the
 /// tree's width and a page as wide as the matrix size's window. Narrower,
 /// the tree is a select above the page.
@@ -119,27 +113,13 @@ fn body(ui: &mut egui::Ui, model: &mut Model, page: Page) {
                 clients::render(ui, model);
             }
             Page::Register => crate::ui::register::render(ui, model),
-            Page::Enrollment => enrollment(ui, model),
+            Page::Offers => {
+                crate::ui::offers::render(ui, model);
+            }
             Page::Doctor => {
                 doctor::render(ui, model);
             }
         });
-}
-
-/// **The enrollment's page is its door** — the enrollment itself covers the
-/// window (§4.15) — under the server's dial state as the seat panel says it.
-fn enrollment(ui: &mut egui::Ui, model: &mut Model) {
-    if let Some(dial) = crate::ui::status::seat::dial(model) {
-        ui.colored_label(theme::INK_WEAK, dial);
-    }
-    let offered = crate::ui::slash::rows(model)
-        .iter()
-        .any(|row| row.word == crate::ui::enroll::WORD);
-    rows::row(ui, ENROLL, ENROLL_HELP, |ui| {
-        if theme::paint::button(ui, DOOR, offered, ENROLL_HELP).clicked() {
-            crate::ui::slash::fire(model, crate::ui::enroll::WORD, "");
-        }
-    });
 }
 
 /// The knob pages' rows, and the row shape every page's are laid in.

@@ -42,7 +42,7 @@ pub const NOT_ANSWERED: &str = "waiting to hear which machines this workspace ho
 /// What it says for a workspace that answered and holds no registration at all — a
 /// fact about the workspace, and the one empty state here that is not a wait.
 pub const NONE_REGISTERED: &str = "no machine is registered in this workspace yet — \
-                                   /enroll lets one join";
+                                   /offers lets one join";
 /// What a row says of a machine that has presented no set.
 pub const OFFERS_NOTHING: &str = "has advertised no tool";
 /// What a tool says when its box consents to a caller-named directory.

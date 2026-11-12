@@ -129,9 +129,9 @@ fn workspace_rows(pinned: bool, out: &mut Vec<Row>) {
         ));
     }
     out.push(Row::new(
-        crate::ui::enroll::WORD,
-        verbs::ENROLL.summary,
-        &[],
+        crate::ui::offers::WORD,
+        said(verbs::OFFERS.word),
+        &[verbs::OFFERS.word],
     ));
     out.push(Row::new(
         crate::ui::tuning::WORD,

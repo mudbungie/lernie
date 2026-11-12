@@ -35,7 +35,7 @@ fn each_reach_rides_the_gesture_as_the_word_that_was_typed() {
 }
 
 /// **A misspelled reach is read here and costs no connection**, exactly as
-/// `enroll`'s grade is: it is a closed set of three the boundary defines and
+/// `offer`'s grade is: it is a closed set of three the boundary defines and
 /// this binary holds, so the mistake is the caller's typo and the refusal
 /// names all three words that would have worked. Falling through would spend a
 /// round trip to be told `unknown scope "conversaton"` — true, and naming

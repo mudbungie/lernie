@@ -18,8 +18,7 @@
 //!
 //! **The frame is the one new shape**, and `docs/STYLE.md` §1's *no outlines*
 //! is amended by exactly it: a stroke on a thing that floats says what is
-//! over what. The enrollment is not here — it keeps §4.15's whole-window
-//! cover, because what it holds must not be legible beside anything.
+//! over what.
 
 use crate::ui::{Model, theme};
 
@@ -182,7 +181,7 @@ pub fn about(ui: &mut egui::Ui, word: &str, subject: Option<&str>) {
 /// rather than a rule with an exception: no two stand together
 /// (`Model::covered` is one question), so the order is never spent.
 pub fn stand(ui: &mut egui::Ui, model: &mut Model) {
-    if !model.covered() || model.enroll.is_some() {
+    if !model.covered() {
         return;
     }
     let first = egui::Id::new(FIRST);

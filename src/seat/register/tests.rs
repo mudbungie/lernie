@@ -82,7 +82,8 @@ fn a_claimed_offer_is_filed_shown_and_proved_on_the_wire() {
         format!(
             "Registered as phone (operator) in workspace home. The entry is filed at {}.\n\
              Confirmation word: {}\n\
-             On a seat that is already connected, approve the offer whose row shows that word.\n\
+             On a seat that is already connected, approve the offer whose row shows that word: \
+             `lernie approve home phone`, or Settings › Servers › offers.\n\
              Waiting for approval: the server has heard this box and will refuse it until the \
              offer is approved.",
             dir.display(),

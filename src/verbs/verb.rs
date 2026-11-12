@@ -153,8 +153,8 @@ impl Verb {
     }
 
     /// **The same envelope with one optional string field stated**, for the
-    /// one gesture whose request carries one: `enroll`'s `address`, the route
-    /// the DEVICE will dial (REMOTE §8.4 as amended, yog bl-fec6).
+    /// one gesture whose request carries one: `proposals`' id, which names
+    /// the proposal to answer whole (REMOTE §9.22).
     ///
     /// It is a door beside [`built`](Self::built) rather than a fourth kind of
     /// row, because an optional string is not a parameter — the table's rule

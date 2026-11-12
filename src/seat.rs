@@ -27,8 +27,6 @@ use serde_json::Value;
 
 /// A world-level act, down the one channel the operator named.
 mod aimed;
-/// The §8.4 enrollment act, whose reply is a picture rather than a stream.
-mod enroll;
 /// A gesture that names no workspace, asked of every channel this box holds.
 mod fan;
 /// Holding the line on one conversation until it comes to rest.
@@ -45,7 +43,6 @@ mod route;
 mod start;
 
 pub use aimed::aimed;
-pub use enroll::enroll;
 pub use fan::fanned;
 pub use follow::follow;
 pub use holds::{OWN, channels, dial, listing};

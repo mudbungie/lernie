@@ -1,20 +1,15 @@
 //! The overlay: a pane floats in the one frame, over the conversation, and
 //! Escape puts it down.
 
-use super::{HINT, stand};
+use super::HINT;
 use crate::test_support::window::{escape, painted, queued, seated};
 use crate::ui::Model;
 
-/// **Nothing floats over a window with nothing standing**, and the enrollment
-/// is not this frame's — it keeps its whole-window cover.
+/// **Nothing floats over a window with nothing standing.**
 #[test]
 fn nothing_stands_where_nothing_is_open() {
     let mut model = seated();
     let text = painted(&mut model);
-    assert!(!text.contains(HINT), "{text}");
-    let mut enrolling = seated();
-    enrolling.begin_enrollment();
-    let text = crate::test_support::window::pane(|ui| stand(ui, &mut enrolling));
     assert!(!text.contains(HINT), "{text}");
 }
 

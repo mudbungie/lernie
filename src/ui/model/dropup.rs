@@ -119,14 +119,10 @@ impl Model {
     /// **Opening one puts down whatever stands** (bl-27dd), as the switcher's
     /// chord does (`Model::switch`, bl-339d): `/model` and Ctrl+O reach it
     /// from under a pane, and a dropup opened under a cover was closed by the
-    /// cover the same frame — the chord did nothing. The enrollment is the
-    /// exception it is everywhere.
+    /// cover the same frame — the chord did nothing.
     pub fn drop_up(&mut self, selector: Selector) {
         if self.dropup.as_ref().is_some_and(|d| d.selector == selector) {
             self.dropup = None;
-            return;
-        }
-        if self.enroll.is_some() {
             return;
         }
         self.uncover();

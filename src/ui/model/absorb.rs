@@ -201,9 +201,10 @@ impl Model {
             // The start family's two, whose whole product is each other: the
             // staged body composes the fire, and the fire's receipt is the
             // minted name. [`Start`] holds the chain.
-            // The one answer that is never filed as content: it is drawn, held
-            // while the picture is on screen, and dropped with the pane.
-            Reply::Enrolled(material) => self.enrolled(&material),
+            // The offers page's two: the list it stands on, and the URL a
+            // mint answers.
+            Reply::Offers(rows) => self.pending = Some(rows),
+            Reply::Offered(offered) => self.offered(offered),
             Reply::Prepared(prepared) => self.staged(&prepared),
             // **The spread's product is n starts** (§4.36), so the frame that
             // absorbs it composes n fires — §4.26's own argument read over n:
@@ -237,6 +238,8 @@ impl Model {
             | Reply::Nudged
             | Reply::Flagged
             | Reply::Acked
+            | Reply::Approved
+            | Reply::Declined
             | Reply::TrailCleared) => {
                 self.notice = Some(Notice::Said(crate::render::receipt(&said)));
             }

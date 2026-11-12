@@ -85,13 +85,16 @@ impl Registered {
         format!(
             "Registered as {} ({}) in workspace {}. The entry is filed at {}.\n\
              {WORD_LINE}: {}\n\
-             On a seat that is already connected, approve the offer whose row shows that word.\n\
+             On a seat that is already connected, approve the offer whose row shows that word: \
+             `lernie approve {} {}`, or Settings › Servers › offers.\n\
              {proved}",
             self.name,
             self.grade,
             self.workspace,
             self.entry.display(),
-            self.word
+            self.word,
+            self.workspace,
+            self.name
         )
     }
 }

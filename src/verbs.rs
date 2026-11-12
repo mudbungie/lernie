@@ -92,14 +92,14 @@ pub mod conversation;
 pub mod doctor;
 /// The words this binary answers itself — a page and a usage line, no envelope.
 pub mod doors;
-/// The one act whose subject is a box that has never connected.
-pub mod enroll;
 /// The fleet loop, the alignment monitor, and what a workspace's agents changed.
 pub mod fleet;
 /// The roster and one word's page, answered here rather than by a server.
 pub mod help;
 /// The sign-in family: the provider table, the offering, the act and its lane.
 pub mod login;
+/// The offer's four words: mint, list, approve, decline.
+pub mod offer;
 /// The price table and the ceiling — one read row and two numeric doors.
 pub mod prices;
 /// The learning loop's two ops — what a reviewer staged, and the verdict on one.
@@ -139,7 +139,6 @@ pub use conversation::{
     delete_agent, interrupt, retarget, stop, workflow,
 };
 pub use doctor::{DOCTOR, doctor};
-pub use enroll::{ADDRESS, ENROLL, enroll};
 pub use fleet::{
     ARM, DISARM, DISBAND, FLEET, SCAN, SCIENCE, WORK_DIFF, arm, disarm, disband, fleet, scan,
     science, work_diff,
@@ -147,6 +146,7 @@ pub use fleet::{
 pub use login::{
     CATALOG, LOGIN, LOGIN_TAIL, MODELS, PROVIDERS, catalog, login, login_tail, models, providers,
 };
+pub use offer::{APPROVE, DECLINE, GRADES, OFFER, OFFERS, approve, decline, offer, offers};
 pub use prices::{CEILING, PRICE, PRICES, ceiling, price};
 pub use proposals::{PROPOSAL, PROPOSALS, proposal, proposals};
 pub use queue::{ATTENTION, FLAG, SEEN, attention, flag, seen};

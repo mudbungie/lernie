@@ -1,7 +1,7 @@
 //! **The rows** — the reads, the deposit and the advance, as data. The
 //! conversation's own four acts are [`super::conversation`]'s, the tuning
-//! family's two are [`super::tuning`]'s and the enrollment is
-//! [`super::enroll`]'s.
+//! family's two are [`super::tuning`]'s and the offer's four are
+//! [`super::offer`]'s.
 //!
 //! Split from [`super`] at the design-time budget on the seam the module's own
 //! doc already draws: [`super`] is what a verb *is* and what it does with its
@@ -30,11 +30,8 @@
 //! family's four are [`super::login`]'s, on the same terms: the table, one
 //! row's offering, the act that starts a run in the workspace and the lane that
 //! streams it are one subject, and three of the four are reads while one is an
-//! act. And the **enrollment** is [`super::enroll`]'s (bl-971c), on the
-//! strongest form of the same terms: its reply is the only one this seat
-//! renders rather than prints, and its request is the only one carrying an
-//! optional field, so the row, that field's name and the door that states it
-//! are one subject. What stays here is the enumeration: every verb this binary
+//! act. And the **offer**'s four are [`super::offer`]'s: minting one, listing
+//! the pending, approving and declining are one subject. What stays here is the enumeration: every verb this binary
 //! has a word for is in the one list below.
 //!
 //! **Every row is also a `pub const`, with a typed door beside it**, because
@@ -197,7 +194,7 @@ pub const NUDGE: Verb = Verb {
 ///
 /// The conversation's four live in [`super::conversation`], its records' two in
 /// [`super::records`], the queue's three in [`super::queue`], the workspace's one in
-/// [`super::workspace`] and the enrollment in [`super::enroll`], named here
+/// [`super::workspace`] and the offer's four in [`super::offer`], named here
 /// rather than defined here — one table, many files, on the seams those files'
 /// own docs draw. [`super::window`]'s
 /// other member has no row and says why: its word is `lernie help`'s.
@@ -244,7 +241,10 @@ pub(super) const TABLE: &[Verb] = &[
     super::capability::REVOKE,
     super::capability::RESTORE,
     super::conversation::DELETE_AGENT,
-    super::enroll::ENROLL,
+    super::offer::OFFER,
+    super::offer::OFFERS,
+    super::offer::APPROVE,
+    super::offer::DECLINE,
     super::login::LOGIN,
     super::tuning::MODEL,
     super::workspace::PIN,

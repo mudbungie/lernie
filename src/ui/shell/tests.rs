@@ -45,17 +45,6 @@ fn the_prompt_and_the_rule_stand_down_under_an_overlay() {
     assert!(text.contains(crate::ui::queue::HEADING), "{text}");
 }
 
-/// **Nothing live paints under the enrollment** (bl-7574): neither the
-/// prompt nor the rule.
-#[test]
-fn nothing_live_paints_under_the_enrollment() {
-    let mut model = seated();
-    model.begin_enrollment();
-    let text = painted(&mut model);
-    assert!(!text.contains(crate::ui::composer::HINT), "{text}");
-    assert!(!text.contains(RULE), "{text}");
-}
-
 /// **The rule is the lowest painted line and the box stands directly under
 /// the transcript, at every size the matrix renders** (DESIGN §4.45 item 3):
 /// between the transcript and the box stands the ask while the conversation

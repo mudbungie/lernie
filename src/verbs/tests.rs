@@ -26,7 +26,7 @@ fn every_verb_builds_an_envelope_whose_op_is_its_own_word() {
 }
 
 /// The twenty-eight reads, the conversation's seventeen acts, the trail's two, the
-/// enrollment, the sign-in, the model assignment, the learning loop's settle,
+/// offer's four, the sign-in, the model assignment, the learning loop's settle,
 /// the ball family's three and the workspace's own three, spelled out — so the roster is asserted rather than
 /// merely iterated, and a verb added or dropped is a diff here.
 #[test]
@@ -77,7 +77,10 @@ fn the_roster_is_the_verbs_the_seat_can_read_the_answers_to() {
             "revoke",
             "restore",
             "delete-agent",
-            "enroll",
+            "offer",
+            "offers",
+            "approve",
+            "decline",
             "login",
             "model",
             "pin",

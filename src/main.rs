@@ -69,21 +69,6 @@ fn main() -> ExitCode {
         } => rooted(|root| {
             lernie::seat::start(root, &address, &goal, dir.as_deref(), role.as_deref(), form)
         }),
-        // **The filing diagnosis is a diagnosis, so it goes to stderr** — the
-        // material under it is the product and stays on stdout, which is what
-        // lets `--json` put one envelope there and nothing else.
-        // **The filing diagnosis is a diagnosis, so it goes to stderr** — the
-        // material under it is the product and stays on stdout, which is what
-        // lets `--json` put one envelope there and nothing else.
-        Decided::Enroll { asking, into, form } => rooted(|root| {
-            lernie::seat::enroll(
-                root,
-                &asking,
-                into.as_deref().map(std::path::Path::new),
-                form,
-                &mut |said| eprintln!("{said}"),
-            )
-        }),
         // The public web's roots are handed in here, at the edge, so the act
         // below takes them as a parameter and the suite hands it its own.
         Decided::Register(url) => {

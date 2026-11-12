@@ -1,7 +1,8 @@
 +++
 title = "Re-vendor the corpus at edition 27: enroll and the doctor reply's rendezvous counters are retired upstream, so their leftovers leave the seat"
 created = 1794460156
-updated = 1794460156
+updated = 1794460157
+claimant = "Sidles-seat"
 parent = "bl-3719"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

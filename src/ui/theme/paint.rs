@@ -155,7 +155,19 @@ pub fn link(ui: &mut egui::Ui, words: &str, ink: Color32, help: &str) -> Respons
         words,
         0.0,
         help,
+        Sense::click(),
     )
+}
+
+/// **A [`link`] the pointer alone reaches** (bl-a4bd): the overlay's way
+/// out, which is a key already — so it is no stop in the Tab order.
+pub fn pointer_link(ui: &mut egui::Ui, words: &str, ink: Color32, help: &str) -> Response {
+    let sense = Sense {
+        focusable: false,
+        ..Sense::click()
+    };
+    let style = egui::TextStyle::Small;
+    door(ui, style, &[(words, ink)], words, 0.0, help, sense)
 }
 
 /// **A door at the heading size with `S` of air inside its seat** (DESIGN
@@ -172,6 +184,7 @@ pub fn heading_link(ui: &mut egui::Ui, words: &str, ink: Color32, help: &str) ->
         words,
         space::S,
         help,
+        Sense::click(),
     )
 }
 
@@ -195,12 +208,21 @@ pub fn link_marked(
         words,
         0.0,
         help,
+        Sense::click(),
     )
 }
 
 /// **A tab** (DESIGN §4.44 item 2): a [`link`] at the body size.
 pub fn tab(ui: &mut egui::Ui, words: &str, ink: Color32, help: &str) -> Response {
-    door(ui, egui::TextStyle::Body, &[(words, ink)], words, 0.0, help)
+    door(
+        ui,
+        egui::TextStyle::Body,
+        &[(words, ink)],
+        words,
+        0.0,
+        help,
+        Sense::click(),
+    )
 }
 
 /// **The one door**: `parts` laid as one run at `style`, each in its own ink,
@@ -214,6 +236,7 @@ fn door(
     name: &str,
     pad: f32,
     help: &str,
+    sense: Sense,
 ) -> Response {
     let font = style.resolve(ui.style());
     let mut job = egui::text::LayoutJob::default();
@@ -221,7 +244,7 @@ fn door(
         job.append(text, 0.0, egui::TextFormat::simple(font.clone(), *ink));
     }
     let galley = ui.fonts(|fonts| fonts.layout_job(job));
-    let (rect, seat) = ui.allocate_exact_size(galley.size() + vec2(pad, pad) * 2.0, Sense::click());
+    let (rect, seat) = ui.allocate_exact_size(galley.size() + vec2(pad, pad) * 2.0, sense);
     dress(ui, &seat, rect, name);
     ui.painter().galley(rect.min + vec2(pad, pad), galley, INK);
     told(seat.on_hover_cursor(egui::CursorIcon::PointingHand), help)

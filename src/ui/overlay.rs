@@ -6,9 +6,10 @@
 //! A pane keeps its content and loses its own chrome: the box, its name line
 //! and the hint line under it are painted here, once, and the pane paints
 //! only what it is about. Esc closes whichever is standing
-//! ([`Model::escape`]), and that is said on the glass by the hint rather than
-//! by a control — the fifteen `done` controls this replaces were fifteen
-//! spellings of one key.
+//! ([`Model::escape`]), and the name line's other end is that key as a door
+//! ([`way_out`]; bl-a4bd): one control the frame paints once, where a hand
+//! on the pointer reaches it — not the fifteen `done` controls this
+//! replaced, which were fifteen spellings of one key.
 //!
 //! **It floats over the transcript and stands above the composer's place.**
 //! The composer stands down while a pane is standing, exactly as it did under
@@ -22,8 +23,14 @@
 
 use crate::ui::{Model, theme};
 
-/// What every overlay says under its rows.
-pub const HINT: &str = "Esc closes";
+/// **The way out's word**: the key's own name, on the door that is the key.
+pub const HINT: &str = "ESC";
+/// What the way out does.
+pub const OUT_HELP: &str = "closes this — the same as pressing Esc";
+/// **The way out was clicked**: raised by [`way_out`], taken down by the one
+/// reader of the Escape key (`crate::ui::keys`), so a click and the key are
+/// one act with one order rather than two.
+pub const OUT: &str = "the overlay's way out was clicked";
 /// **Where the box clips**, written to the toolkit's memory each frame it
 /// stands, for the one reader that has to know: the snapshot matrix judges
 /// a control laid past the window as a layout fault, and a control scrolled
@@ -122,6 +129,27 @@ pub fn name(ui: &mut egui::Ui, word: &str) {
     about(ui, word, None);
 }
 
+/// **The way out, as a door** (bl-a4bd): [`HINT`] in weak ink at the small
+/// size, and a click on it is the Escape key — it raises [`OUT`] and the
+/// key's own reader spends it.
+///
+/// **It never takes the keyboard**: it is a key already, so it is no stop in
+/// the Tab order (`theme::paint::pointer_link`), and the [`FIRST`] flag is
+/// held across it — it is laid before the pane's own controls, and a pane
+/// that opened with the caret on its way out would close on the first Enter.
+pub fn way_out(ui: &mut egui::Ui) {
+    let first = egui::Id::new(FIRST);
+    let held = ui.ctx().data_mut(|d| d.remove_temp::<bool>(first));
+    if theme::paint::pointer_link(ui, HINT, theme::INK_WEAK, OUT_HELP).clicked() {
+        ui.ctx()
+            .data_mut(|d| d.insert_temp(egui::Id::new(OUT), true));
+        ui.ctx().request_repaint();
+    }
+    if let Some(held) = held {
+        ui.ctx().data_mut(|d| d.insert_temp(first, held));
+    }
+}
+
 /// **The name line with what the pane is open ON beside it**, one step
 /// weaker — the subject on the name's line rather than under it, for the
 /// same reason the hint is.
@@ -131,7 +159,7 @@ pub fn name(ui: &mut egui::Ui, word: &str) {
 /// line, and a subject laid before the hint ran under it.
 pub fn about(ui: &mut egui::Ui, word: &str, subject: Option<&str>) {
     ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
-        ui.label(egui::RichText::new(HINT).small().color(theme::INK_WEAK));
+        way_out(ui);
         // One row tall, laid left to right by name: a child in a
         // right-to-left parent would otherwise claim the pane's height.
         ui.allocate_ui_with_layout(

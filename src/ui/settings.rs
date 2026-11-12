@@ -78,11 +78,7 @@ fn breadcrumb(ui: &mut egui::Ui, page: Page) {
     // The hint takes the right end first, and the path wraps in what is
     // left — so at the matrix size the two never cross.
     ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
-        ui.label(
-            egui::RichText::new(overlay::HINT)
-                .small()
-                .color(theme::INK_WEAK),
-        );
+        overlay::way_out(ui);
         // Laid left to right by name: a wrapped row inside a right-to-left
         // parent would run the other way.
         ui.allocate_ui_with_layout(

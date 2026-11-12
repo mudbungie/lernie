@@ -41,6 +41,18 @@ fn escape_puts_the_pane_down() {
     assert!(!text.contains(HINT), "{text}");
 }
 
+/// **A click on the way out puts it down too** (bl-a4bd): the door is the
+/// key, spent by the key's own reader on the frame after the click.
+#[test]
+fn a_click_on_the_way_out_puts_the_pane_down() {
+    let mut model: Model = queued();
+    let window = crate::paint_probe::frame::Window::new();
+    let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
+    crate::test_support::window::click(&window, HINT, &mut body);
+    window.frame(Vec::new(), &mut body);
+    assert!(!model.showing(crate::ui::Listing::Queue));
+}
+
 /// **A standing pane leads the Tab order** (bl-99ed): with nothing holding
 /// the keyboard, the pane's first control takes it, and it stands inside the
 /// box — not on the bar, which is painted first.

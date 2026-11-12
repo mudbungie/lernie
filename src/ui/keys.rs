@@ -112,6 +112,14 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
     if !model.covered() && !model.switching {
         crate::ui::ask::keys(ctx, model);
     }
+    // **A click on a pane's way out is the Escape key** (bl-a4bd;
+    // `crate::ui::overlay::way_out`): spent here, by the key's own reader,
+    // and before the typing gate — a pointer is not a key a box takes.
+    let out = egui::Id::new(crate::ui::overlay::OUT);
+    if ctx.data_mut(|d| d.remove_temp::<bool>(out)).is_some() {
+        model.escape();
+        return;
+    }
     if typing {
         return;
     }

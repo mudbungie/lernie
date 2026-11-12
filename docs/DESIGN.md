@@ -5338,8 +5338,13 @@ parts, in its vertical order, each with what it becomes here.
    **framed box over the transcript**, as tall as the pane less a margin at
    the top (every pane is built to fit the narrowest shape the layout
    promises, §4.32, so a box that took a share of it would be a pane that
-   fits nowhere), with its name on the first line and *Esc closes* at that
-   line's other end in weak ink; Esc closes it and one stands at a time. The
+   fits nowhere), with its name on the first line and the way out at that
+   line's other end — *ESC* in weak ink, **a door as well as a hint**
+   (bl-a4bd, amending this item: it was words only, and a hand on the
+   pointer had nothing to press). A click on it raises a flag the Escape
+   key's own reader spends (`crate::ui::keys`), so it is the key with a
+   second spelling and closes exactly what the key would; it is never the
+   pane's first keyboard stop. Esc closes it and one stands at a time. The
    enrollment keeps §4.15's whole-window cover, because what it holds must
    not be legible beside anything. Each pane's `done` control goes with the
    frame — the reach walk types the word and counts the key (bl-e016). It is
@@ -7442,7 +7447,7 @@ rendering, not a reading of a design.
 | `src/ui/chat/fold.rs` | what a machine's answer hides when it is folded, and the two counts a reader chooses between. | ~90 |
 | `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects, and the one read of Enter both of the box's modes share (§4.39); a slash line is the menu's and not the deposit's (§4.42); a deposit is recorded as sent the frame it is composed (§4.45 item 4). | ~200 |
 | `src/ui/slash.rs` | **the slash verbs** (§4.42): the rows this seat offers right now — the conversation's, the workspace's, the window's — each the word its control carried; what a typed line parses to; what firing a word does; and the completion menu over the box, a window of rows around the chosen one. | ~300 |
-| `src/ui/overlay.rs` | **the one frame every pane floats in** (§4.42): the box at the bottom of the pane it is called in, the name line with the subject and *Esc closes* on it, and the order the panes are tried in — the three re-homed ones only while they are not docked (§4.48 item 8). A child region, never an `Area`. | ~180 |
+| `src/ui/overlay.rs` | **the one frame every pane floats in** (§4.42): the box at the bottom of the pane it is called in, the name line with the subject and the *ESC* door on it, and the order the panes are tried in — the three re-homed ones only while they are not docked (§4.48 item 8). A child region, never an `Area`. | ~180 |
 | `src/ui/rail.rs` | **the rails** (§4.48 item 8): the branch and the context laid as resizable panels at the window's right while `Model::docked`, each painting its pane whole and scrolled; the allowance, the floor, the column's floor, and the room read before the frame. | ~145 |
 | `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one — the deposit's own field at the deposit's own rows, with `start` inside it (§4.39). | ~90 |
 | `src/ui/keys.rs` | the keyboard: the table below run first, then the one cursor track's walk, which is the selection — over three kinds of row since the fold (§4.39) — and the one binding that is not a walk, Enter on the row the cursor stands on (a server's, or a begin), fired only while no control holds the keyboard. There is no `Pane`: one list needs no field saying which. The registry of boxes that take text split out at the cap (`keys/boxes.rs`). | ~200 |

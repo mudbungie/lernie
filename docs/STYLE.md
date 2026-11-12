@@ -266,8 +266,9 @@ lines and never taller.
 **An overlay** (`overlay`): a `SURFACE` box with a `HAIRLINE` frame and
 `RADIUS` corners over the transcript, `S` under the top of the pane and `L`
 in from each side, padded `S`; its name on the first line in `INK` at `BODY`
-with what it is open on beside it in `INK_WEAK` and *Esc closes* at the
-line's other end in `INK_WEAK` at `SMALL`; its body under that. The
+with what it is open on beside it in `INK_WEAK` and the way out at the
+line's other end — *ESC*, a link in `INK_WEAK` at `SMALL`, and a click on it
+is the key (bl-a4bd); its body under that. The
 completion menu is the same box as tall as the rows it lays — a window of
 them around the chosen one, never a scroll — with the keys said in one
 `SMALL` line above them; a row is the row above, its line `/word  summary`,

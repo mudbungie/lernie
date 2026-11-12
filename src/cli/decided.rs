@@ -81,6 +81,13 @@ pub enum Decided {
         /// Which form the answer is said in.
         form: Form,
     },
+    /// **Register this box** with the offer at that URL (REMOTE §15.1 steps 2
+    /// to 4): a key made here, the offer claimed over HTTPS, the entry filed,
+    /// the confirmation word shown, and the wire dialled once. Not a gesture —
+    /// nothing crosses the boundary until the entry exists — so it carries the
+    /// URL and the entry point adds the two things that are the process's: the
+    /// data root and the public web's trust roots ([`crate::seat::register`]).
+    Register(String),
     /// Send this gesture envelope down the channel it names. Needs the data
     /// root for the same reason.
     ///

@@ -225,8 +225,8 @@ fn an_server_the_anchors_do_not_cover_never_reaches_the_boundary() {
         "and the other half of the pair: {why}"
     );
     assert!(
-        why.contains("the seat mints nothing"),
-        "and the act, which is not a mint: {why}"
+        why.contains("`lernie register` files both from an offer"),
+        "and the act that provisions them: {why}"
     );
     assert_eq!(server.heard(), Vec::<Value>::new(), "nothing was said");
 }

@@ -76,6 +76,8 @@ pub mod queue;
 pub mod rail;
 /// The records pane: what a conversation's loop did, and what it touched.
 pub mod records;
+/// The settings page that registers this box with a server.
+pub mod register;
 /// The window's one list: the servers, their workspaces, and the aimed workspace's
 /// conversations.
 pub mod roster;
@@ -102,10 +104,10 @@ pub mod unmake;
 
 pub(crate) use model::lane;
 pub use model::{
-    Aim, Armed, Asking, Authoring, Bindings, Channel, Choice, Chunk, Columns, Configuring, Context,
-    Diagnosis, Dropup, Edit, Enrolling, Fill, Fleet, Forking, Grade, Group, Held, Hits, Listing,
-    Login, Lookup, Model, Notice, Page, Pages, Pick, Posted, PriceTable, Pricing, Proposing, Rail,
-    Records, Reload, Seeking, Selector, Sent, Servers, Shown, Stand, Tab, Trail, Trailing, Tuning,
-    Unmaking, WORKER,
+    Aim, Armed, Asking, Authoring, Bindings, Channel, Choice, Chunk, Claim, Columns, Configuring,
+    Context, Diagnosis, Dropup, Edit, Enrolling, Fill, Fleet, Forking, Grade, Group, Held, Hits,
+    Listing, Login, Lookup, Model, Notice, Page, Pages, Pick, Posted, PriceTable, Pricing,
+    Proposing, Rail, Records, Registering, Reload, Seeking, Selector, Sent, Servers, Shown, Stand,
+    Tab, Trail, Trailing, Tuning, Unmaking, WORKER,
 };
 pub use shell::render;

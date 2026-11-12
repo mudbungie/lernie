@@ -37,6 +37,8 @@ mod follow;
 mod holds;
 /// The role assignment, against the list the same seat can already fetch.
 mod model;
+/// Registering this box: an offer claimed with a key made here.
+pub mod register;
 /// Which channel a gesture goes down, and what it carries there.
 mod route;
 /// The §8.1 start family's two acts, spelled as one word.
@@ -48,6 +50,7 @@ pub use fan::fanned;
 pub use follow::follow;
 pub use holds::{OWN, channels, dial, listing};
 pub use model::model;
+pub use register::register;
 pub use route::{Routed, route};
 pub use start::start;
 

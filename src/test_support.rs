@@ -4,10 +4,10 @@
 //! Two things live here that live nowhere else in the crate, and both are
 //! deliberate:
 //!
-//! - **The certificate mint** ([`mint`]). The seat mints nothing (yog's
-//!   `docs/REMOTE.md` §1.4) — the operator issues a pair on the box that holds
-//!   the CA and carries it here by hand — so the suite has to perform that act
-//!   on the operator's behalf before it can open a channel at all. It is
+//! - **The certificate mint** ([`mint`]). The seat signs no certificate (yog's
+//!   `docs/REMOTE.md` §15.1) — the operator's CA does, on the box that holds
+//!   it — so the suite has to perform that act on the operator's behalf
+//!   before it can open a channel at all. It is
 //!   `cfg(test)`, it shells to the tool an operator would use, and **no
 //!   certificate is ever committed**: a fixture key in a tree is a private key
 //!   in a repository, which is the exact class `make leak-scan` refuses.
@@ -20,6 +20,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 /// The one walk over the wire conformance corpus, shared by both replays.
 pub(crate) mod corpus;
+/// A registration door: TLS with no client certificate, one HTTP request.
+pub(crate) mod door;
 /// The one door to a GPU renderer, held under the binary's one lock.
 pub(crate) mod glass;
 /// The operator's out-of-channel act, performed by the suite.

@@ -84,6 +84,11 @@ fn main() -> ExitCode {
                 &mut |said| eprintln!("{said}"),
             )
         }),
+        // The public web's roots are handed in here, at the edge, so the act
+        // below takes them as a parameter and the suite hands it its own.
+        Decided::Register(url) => {
+            rooted(|root| lernie::seat::register(root, &url, lernie::seat::register::web_roots()))
+        }
         Decided::Window => rooted(window),
     };
     match verdict.stream {

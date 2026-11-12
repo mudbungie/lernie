@@ -59,16 +59,16 @@ fn a_half_provisioned_directory_names_every_gap_at_once() {
     assert!(refusal.contains("half-provisioned"), "{refusal}");
 }
 
-/// The remedy is an act on another box by another hand, and the refusal says
-/// so. A seat must never look like something that could mint its own way in.
+/// The remedy names both roads: the offer this box can claim for itself, and
+/// the leaf an operator mints on the host and carries here.
 #[test]
-fn every_refusal_says_the_material_arrives_by_hand() {
+fn every_refusal_names_registering_and_the_road_by_hand() {
     let tmp = Scratch::new();
     provision(tmp.path(), "server.example:9000");
     std::fs::remove_file(tmp.path().join(ANCHORS)).expect("rm");
     let refusal = read_dir(tmp.path(), Whose::Elsewhere).expect_err("refused");
-    assert!(refusal.contains("the seat mints nothing"), "{refusal}");
-    assert!(refusal.contains("carried here by hand"), "{refusal}");
+    assert!(refusal.contains("`lernie register <url>`"), "{refusal}");
+    assert!(refusal.contains("By hand instead"), "{refusal}");
     // **The assignment goes before the verb** (bl-5cbe). `WIRE_LEAF` is an
     // environment variable, not an argument `yog wire-certs` parses, so the
     // spelling this line printed for a year did not work when it was typed —

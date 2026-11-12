@@ -132,29 +132,27 @@ undo a severance rather than add a feature.
 - **It never listens.** A seat dials and is never dialled; the server never
   speaks first. There is no inbound direction to secure because there is no
   inbound direction.
-- **It never mints.** Certificates arrive out of channel, by the operator's
-  hand (REMOTE §1.4). The suite's own mint is `cfg(test)` and shells to
-  `openssl`, which is what an operator does; there is no production caller and
-  there must never be one.
+- **It never signs a certificate, and never receives a private key.** A
+  leaf is signed by the operator's CA, on the server's box (REMOTE §15.1). The
+  suite's own signing is `cfg(test)` and shells to `openssl`; there is no
+  production caller and there must never be one.
 
-  **This clause used to add "there is no enrollment, pairing or bootstrap flow
-  in the channel, ever", and that sentence has been amended** (REMOTE §8.4,
-  operator ruling 2026-08-30). Two things were welded together in it and only
-  one was the invariant. What may never happen is a **device acquiring its
-  identity over its own channel** — a machine holding no material opening a
-  connection and being handed some. That stays impossible rather than merely
-  forbidden: with no certificate there is no handshake, so an unenrolled box
-  performs no channel act of any kind, and this seat still answers nothing and
-  still listens to nothing.
+  **This clause read "it never mints", and before that added "there is no
+  enrollment, pairing or bootstrap flow in the channel, ever". Both are
+  reversed by operator ruling** (2026-11-11; REMOTE §15, which reverses its
+  own §1.4). What replaced them is narrower and is the invariant that was
+  always underneath: *nothing that is the device ever travels*. A box now
+  registers itself (§4.50) — it makes its own key, sends the public half to a
+  one-time URL an operator minted, and is handed a leaf signed over that key.
+  The 2026-08-30 `enroll` act (§4.15) went the other way — the server made the
+  key and a QR symbol carried it, so a copy of the symbol was the device — and
+  it is retired by the offer.
 
-  What the second half described was the *surface as it then stood*, and the
-  `enroll` act is now on it (§4.13). The seat does not mint it: the mint is the
-  server's, on the server's box, over a trust root that already exists. The act
-  crosses a channel **already** authenticated at operator grade on material
-  that already moved out of channel; the box being enrolled is not a party to
-  it and has no channel yet; and what reaches that box reaches it through a
-  camera pointed at a screen, which is the same class of act as carrying a file
-  on a stick and is mediated by the same operator. The seat asks, and paints.
+  What still holds: with no certificate there is no handshake, so a box that
+  has not registered performs no act on the wire; the registration door is one
+  HTTPS request on a separate footing (no client certificate, one path, one
+  answer) and reaches no gesture; and a registered box is refused everything
+  until an operator approves the offer by its confirmation word.
 - **It adds no wire vocabulary.** REMOTE §3's ban is on a capability that
   exists on the wire and nowhere else. A gesture typed at a seat is the same
   envelope the server's own inbox carries, answered by the same dispatch.
@@ -272,7 +270,11 @@ The sibling foot component does the mirror of this and fails **closed** —
 its obligation is to carry a foot leaf and refuse anything else — which is not
 a disagreement: the two ends answer different questions.
 
-### 4.5 Material arrives out of channel and is never written (§1.4, §8.2)
+### 4.5 Material is read here, and written only by a registration (§8.2, §15.1)
+
+**Amended 2026-11-11 (bl-fb7f):** this section's heading read *"arrives out
+of channel and is never written"*. An entry is now written by one act,
+`lernie register` (§4.50), and still never by this module.
 
 `src/channel/material.rs` only ever reads, and answers three ways: nothing
 provisioned (an answer, not an error — removing it deletes config, not code),
@@ -282,6 +284,11 @@ not depend on which program was installed. `address` is a list, one endpoint
 per line (§4.49). Two more files may still lie beside them in an entry an
 older server filed — `rendezvous.pub` and `pairing.salt`, the retired
 rendezvous material — and nothing reads or requires them (§4.40, §4.49).
+
+**The remedy leads with registering** (bl-fb7f): an entry's refusal names
+`lernie register <url>` first and the hand-carried leaf second, and the flat
+root's names registering for a server on another box. What follows is how the
+two remedies came to differ, and it stands.
 
 **The remedy is two remedies, and which one is the CALLER's fact**
 (`material::Whose`, bl-ad7f, bl-5cbe). Every refusal about absent material used
@@ -6822,7 +6829,8 @@ bar* is §4.42 item 11's rule, re-homed (item 4). *A Bot* is defined in item
      mode (item 8);
    - **Workspace** — *roles* (`/roles`), *providers* (`/login`), *config*
      (`/config`), *clients* (`/clients`);
-   - **Servers** — *enrollment* (`/enroll`), *doctor* (`/doctor`), each
+   - **Servers** — *register* (this box joining a server; §4.50, added
+     bl-fb7f), *enrollment* (`/enroll`), *doctor* (`/doctor`), each
      server's dial state as the seat panel said it.
    **Every word stands**: `/roles` opens the overlay on its page, as does
    each of the others, so the menu, the reach bound and PARITY's one-door
@@ -7053,6 +7061,97 @@ still has `rendezvous.pub` and `pairing.salt` works exactly as one without
 them. The enrollment envelope (§4.15) no longer files that pair; the envelope
 itself is retired by the ball that lands the offer.
 
+### 4.50 Registering this box: an offer claimed with a key made here (yog REMOTE §15.1 steps 2–4, §15.2; bl-fb7f)
+
+The operator rulings of 2026-11-11 make a new device register **itself**. An
+operator-grade seat mints an offer (the ball after this one); the server
+answers a one-time URL, `https://<host>[:<port>]/yog/register/<code>`; and
+that string is the whole of what reaches the new box. This section is what the
+new box does with it. It is the one place the seat makes a key, and the seat
+never receives one (§3).
+
+**Two doors, one act.** `lernie register <url>` on the command line, and
+*Settings › Servers › register* in the window — a URL field, a button, and the
+outcome under them. Both call `seat::register::claim`. In the order it
+happens:
+
+1. **The URL is read** (`register/url.rs`): `https`, a host (a v6 literal
+   bracketed), an optional port, the fixed path and a code of letters and
+   digits. Anything else refuses before a socket opens — a claim is single-use
+   and a guess at what was meant could spend it.
+2. **This box makes a P-256 key pair** with `ring` (`register/key.rs`): the
+   private half as PKCS#8, the public half as a 91-byte DER
+   `SubjectPublicKeyInfo`.
+3. **The public half is POSTed** as PEM in `{"public_key": …}`
+   (`register/https.rs`). No HTTP library is linked: it is one HTTP/1.1
+   request hand-written over `rustls`, with a `Content-Length` and
+   `Connection: close`, and a read bounded three ways — five seconds per
+   address to connect, fifteen per read, 64 KiB in all. The answer is read to
+   its stated `Content-Length`, or to the peer's close where it states none;
+   a chunked answer is not decoded.
+4. **Anything but `200` is one sentence**: *this offer cannot be claimed*.
+   The door answers the same bare `404` for a code that is unknown, expired
+   or already used and does not say which, so neither does the seat.
+5. **The answer is read** (`register/entry.rs`): `workspace`, `name`,
+   `grade`, `address` (the list of §4.49), `ca`, `cert`. The workspace name
+   came off the network and is about to be a path, so it must be exactly one
+   ordinary path component or nothing is filed.
+6. **The confirmation word is computed**: SHA-256 over the public key's DER
+   followed by the DER of the first certificate in `ca`; the first thirty
+   bits, five at a time, most significant first, as six symbols of
+   `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`. `key::tests` pins yog's vector
+   (`2LFTUR`).
+7. **The entry is filed** at `<data root>/wire/workspaces/<workspace>/` as
+   `ca.pem`, `client.pem`, `client.key` and `address` (one endpoint per
+   line), every file created `0600`. **An entry directory that exists is
+   never written over**: the directory is made with `create_dir`, which
+   succeeds for exactly one caller, and the refusal says the offer is spent
+   and what to do. That cost is real — the workspace is not known until the
+   claim has spent the offer — and is accepted: the alternative is two
+   certificates in one directory.
+8. **The wire is dialled once** with the new entry, asking `workspaces`. The
+   server refuses a certificate nobody has approved, and being heard at all
+   is what marks the offer *proved* (REMOTE §15.1 step 4). So an answer of
+   any kind is said as **waiting for approval**, never as an error; only a
+   dial that reached nothing is said as a fault, with the entry still filed
+   and the next dial doing the proving.
+
+**What is said** is one text for both doors (`Registered::said`): who this box
+is registered as and where the entry is, the word on a line of its own, *On a
+seat that is already connected, approve the offer whose row shows that word*,
+and the waiting line. The page paints the word's line strong.
+
+**The trust roots are a parameter, and that is the design for testability.**
+The registration URL is verified against the public web's roots — a
+registering box holds no operator CA yet, which is what it is registering to
+get. `claim` takes the root store; `src/main.rs` and the poster pass
+`web_roots()` (the `webpki-roots` set), and the suite passes the root of a
+local door (`test_support/door.rs`) whose leaf it signs with `openssl` over
+the key the device sent (`mint::signed`, the server's own `-force_pubkey`
+recipe). So the whole act runs in the suite end to end, down to the wire's
+mTLS accepting the filed key with the signed leaf. The client configuration
+is built for the one request and dropped; the wire's mTLS configuration
+(§4.4) is another object and does not change.
+
+**`webpki-roots` is the one dependency this added**, by operator approval:
+exact-pinned, data rather than code, its one dependency already linked, and
+one licence value (`CDLA-Permissive-2.0`) added to `deny.toml` with it.
+`Cargo.toml`'s approval comment has the terms.
+
+**In the window the act is the poster's** (§4.12). The frame never dials, so
+the click moves the URL into `Model::registering`, the next settle hands it
+across the lock, the poster's lane claims it, and the outcome comes back by
+the settle after. One claim at a time — the button is dark while one is out.
+On success the roster gains the new channel's section at once, as a restart
+would seat it from the disk. The page carries no `act:` tag (§4.16): a tag
+names an op that crosses the boundary, and nothing does until the entry
+exists.
+
+**What this does not do.** It does not choose the entry's leaf: the leaf is
+the workspace's name, so a box cannot register twice for one workspace name
+without moving the first entry. It does not retry: a URL works once. And it
+does not approve — that is an operator's act, on another seat.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -7081,6 +7180,13 @@ itself is retired by the ball that lands the offer.
 | `src/seat/follow.rs` | holding the line on one conversation until it comes to rest (§4.10, bl-3dca, bl-f076): the reads it holds across the server's step boundaries, and the sink the product is written to as it arrives. | ~190 |
 | `src/seat/follow/rest.rs` | when that watch stops and what it says then, split from the file above at the cap on the seam the word has (bl-3a1f): the three readings of the standing row — working, at rest, or PARKED at the capability boundary — the inbox read that says whether a rest is one (bl-87ab, bl-3ecd), and the two sentences an ending can be. | ~170 |
 | `src/seat/model.rs` | the role assignment, against the list the same seat can already fetch (§4.10, bl-1e5a): the read that goes ahead of the write, the warning a listing nobody offers earns, and every way a silent read costs the assignment nothing. | ~95 |
+| `src/seat/register.rs` | **registering this box** (§4.50): the claim in the order it happens — URL read, key made, public half POSTed, answer filed, word computed, the wire dialled once — and the one text both doors say. | ~150 |
+| `src/seat/register/url.rs` | the registration URL read as host, port and code, strictly; the `Host` header's spelling of it. | ~95 |
+| `src/seat/register/key.rs` | the P-256 pair this box makes, its DER and PEM (the crate's one base64 encoder), and the confirmation word, pinned to yog's vector. | ~120 |
+| `src/seat/register/https.rs` | the one HTTPS request: a hand-written HTTP/1.1 POST over `rustls`, bounded in time and size, against roots the caller passes; and the public web's roots. | ~135 |
+| `src/seat/register/entry.rs` | the door's answer read as its six fields, the workspace name refused unless it is one path component, and the entry filed `0600` and never over one that exists. | ~125 |
+| `src/ui/register.rs` | *Settings › Servers › register* (§4.50): the URL field, the button, and the outcome. Fires nothing on the wire itself. | ~75 |
+| `src/ui/model/register.rs` | the register page between frames: the URL typed, the claim handed to the poster, how it ended, and the roster section a success seats. | ~85 |
 | `src/channel.rs` | one wire to one server: ask, follow, and what the server at the far end could SPELL as of the last dial (§4.9). | ~210 |
 | `src/channel/dial.rs` | how a socket is obtained and first spoken on: the entry's address list dialled in order, the endpoint that worked first; the preface and the request down it; and the sentence a failed write earns (§4.49). Split from the root at the budget. | ~145 |
 | `src/channel/frame.rs` | the framing. | ~105 |
@@ -7253,7 +7359,7 @@ itself is retired by the ball that lands the offer.
 | `src/ui/model/clients.rs` | the clients pane between frames — the aim that gates it, and what it retires with (§4.28). | ~55 |
 | `src/ui/model/listing.rs` | the two panes that are pure listings, and the one field that says which is standing (§4.28); the records pane left it for the context rail's field (§4.48 item 8). | ~65 |
 | `src/ui/model/login.rs` | the login pane between frames — two questions rather than two modes — the three acts its controls spend, and where the server is, read off the channel stamp. | ~165 |
-| `src/state.rs` | **the link** (§4.12): what the frame and the off-frame threads say to each other, and the crate's one lock. `settle` is the frame's whole side of it, and it publishes two projections — what to ask, and what to keep (§4.13). Its second tenant is the endpoint that worked for an entry this run (§4.49). | ~215 |
+| `src/state.rs` | **the link** (§4.12): what the frame and the off-frame threads say to each other, and the crate's one lock. `settle` is the frame's whole side of it, and it publishes two projections — what to ask, and what to keep (§4.13). Its second tenant is the endpoint that worked for an entry this run (§4.49). It also carries a registration's URL to the poster and its outcome back (§4.50). | ~235 |
 | `src/state/traffic.rs` | what crosses the lock — a worker's report in its kinds — among them a routed gesture's reply stamped with the op it answers (§4.26) and a `models` answer stamped with the provider row asked (§4.17). | ~120 |
 | `src/state/traffic/standing.rs` | the standing question set the frame publishes (§4.12), whose open panes are a set since a docked one stands beside a floating one (§4.48 item 8). | ~200 |
 | `src/offframe.rs` | the four off-frame threads (§4.12): the one leg both fanning workers share, the filing every answer goes through, and the pump that is a cadence rather than a timeout. | ~120 |
@@ -7363,8 +7469,9 @@ itself is retired by the ball that lands the offer.
 | `src/test_support/window/panes/fleet.rs` | the fleet pane's fixtures (§4.32) — its own file rather than the ball pane's neighbour, on the seam DESIGN draws: that pane is two widths and this one is one. `cfg(test)`. | ~130 |
 | `src/test_support/window/panes/board.rs` | the ball pane's fixtures (§4.31) — the one pane whose subject is both every channel and the aimed workspace, so it is neither file's neighbour and gets its own. `cfg(test)`. | ~130 |
 | `src/test_support/glass.rs` | **the one door to a GPU renderer in the test binary** (bl-f824): a `TestRenderer` held, created and dropped under one process-wide lock, because the system Vulkan loader is not safe across threads — one test's `vkEnumeratePhysicalDevices` `dlclose`d a driver library while another test called through it, and the whole binary died of SIGSEGV with no test named. `cfg(test)`. | ~50 |
-| `src/test_support/mint.rs` | the operator's out-of-channel act, performed by the suite. **The crate's one spawn site.** | ~200 |
+| `src/test_support/mint.rs` | the operator CA's acts, performed by the suite: the CA, the two leaves, and a leaf signed over a public key a registering box sent (§4.50). **The crate's one spawn site.** | ~235 |
 | `src/test_support/server.rs` | the stand-in server: a real listener, a real handshake, a real preface. | ~150 |
+| `src/test_support/door.rs` | a registration door (§4.50): TLS with no client certificate, one HTTP request read, the test's scripted answer written. `cfg(test)`. | ~130 |
 
 **The three confined files, and two of them do not exist.** A confinement rule
 names its one location *before* the first site is written, or the first site

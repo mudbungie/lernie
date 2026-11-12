@@ -1,12 +1,12 @@
-//! **The operator's act, performed by the suite** (yog's `docs/REMOTE.md`
-//! §1.4).
+//! **The CA's acts, performed by the suite** (yog's `docs/REMOTE.md` §1.4,
+//! §15.1).
 //!
-//! The seat mints nothing. A certificate and its key are issued by the
-//! operator's own CA on the box that holds it and carried to the seat by hand —
-//! so there is no production caller here, and there must never be one: a seat
-//! that could provision itself over the wire would be a seat any wire could
-//! provision. What the suite needs is a channel to test, and the honest way to
-//! get one is to do out of band exactly what the operator does out of band.
+//! The seat signs no certificate. A leaf is signed by the operator's own CA
+//! on the box that holds it — over a key the operator made and carried here,
+//! or over the public key a registering box sent ([`signed`]) — so there is
+//! no production caller here, and there must never be one. What the suite
+//! needs is a channel to test and a door to claim from, and the honest way
+//! to get them is to do exactly what the far end does.
 //!
 //! It shells to `openssl`, which is the tool an operator uses and the tool yog's
 //! own mint recipe uses. **This file is the crate's one spawn site**
@@ -110,6 +110,25 @@ fn ca(dir: &Path) {
 /// spelling both toolsets have, and it is the more honest model besides — what
 /// a certificate asserts is decided by whoever signs it, not by whoever asked.
 fn leaf(dir: &Path, name: &str, subject: &str, san: &str, eku: &str) {
+    issue(dir, name, subject, san, eku, None);
+}
+
+/// **The leaf a registration door signs** (REMOTE §15.1 step 2): a client
+/// leaf named `name` over the public key the DEVICE sent, never over a key
+/// made here — `x509 -req -force_pubkey`, the server's own recipe. Answers
+/// the certificate's PEM.
+pub(crate) fn signed(dir: &Path, name: &str, public_key: &str) -> String {
+    let device = dir.join(format!("{name}.pub"));
+    std::fs::write(&device, public_key).expect("the device's public key");
+    let subject = format!("/CN={name}");
+    let san = format!("DNS:{name}");
+    issue(dir, name, &subject, &san, "clientAuth", Some(&device));
+    std::fs::read_to_string(dir.join(format!("{name}.pem"))).expect("the signed leaf")
+}
+
+/// [`leaf`], signed over `forced` where a public key is stated instead of
+/// over the scratch key the request was made with.
+fn issue(dir: &Path, name: &str, subject: &str, san: &str, eku: &str, forced: Option<&Path>) {
     let ext = dir.join(format!("{name}.ext"));
     std::fs::write(
         &ext,
@@ -132,28 +151,42 @@ fn leaf(dir: &Path, name: &str, subject: &str, san: &str, eku: &str) {
         "-out",
         &path(dir, &format!("{name}.csr")),
     ]);
-    tool(&[
+    let (ext, csr, pem) = (
+        ext.to_string_lossy().into_owned(),
+        path(dir, &format!("{name}.csr")),
+        path(dir, &format!("{name}.pem")),
+    );
+    let (ca, ca_key) = (
+        path(dir, crate::channel::material::ANCHORS),
+        path(dir, CA_KEY),
+    );
+    let forced = forced.map(|key| key.to_string_lossy().into_owned());
+    let mut signing = vec![
         "x509",
         "-req",
         "-sha256",
         "-days",
         DAYS,
         "-extfile",
-        &ext.to_string_lossy(),
+        &ext,
         "-extensions",
         "leaf",
         "-in",
-        &path(dir, &format!("{name}.csr")),
+        &csr,
         "-CA",
-        &path(dir, crate::channel::material::ANCHORS),
+        &ca,
         "-CAkey",
-        &path(dir, CA_KEY),
+        &ca_key,
         // LibreSSL refuses to sign with no serial file unless told it may make
         // one; OpenSSL 3 accepts the flag and does the same thing.
         "-CAcreateserial",
         "-out",
-        &path(dir, &format!("{name}.pem")),
-    ]);
+        &pem,
+    ];
+    if let Some(key) = &forced {
+        signing.extend(["-force_pubkey", key]);
+    }
+    tool(&signing);
 }
 
 /// **Re-mint this box's own pair as FOOT grade**, over the operator-grade one

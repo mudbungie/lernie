@@ -190,3 +190,26 @@ fn the_endpoint_that_worked_is_remembered_per_entry() {
     );
     assert_eq!(read("state-tests/entry-b"), None);
 }
+
+/// **A registration crosses the lock both ways** (DESIGN §4.50): a settle
+/// hands the fired URL over once, and the next files how the claim ended.
+#[test]
+fn a_settle_hands_a_claim_over_and_files_how_it_ended() {
+    let link = link();
+    let mut model = seated();
+    model.registering.url = "https://engine.example/yog/register/ABCD2345".to_owned();
+    assert!(model.register());
+    link.settle(&mut model);
+    assert_eq!(model.registering.asked, None, "handed over");
+    assert_eq!(
+        link.claims(),
+        ["https://engine.example/yog/register/ABCD2345"]
+    );
+    assert_eq!(link.claims(), Vec::<String>::new(), "a take, not a copy");
+    link.claimed(Err("this offer cannot be claimed".to_owned()));
+    link.settle(&mut model);
+    assert_eq!(
+        model.registering.phase,
+        crate::ui::Claim::Done(Err("this offer cannot be claimed".to_owned()))
+    );
+}

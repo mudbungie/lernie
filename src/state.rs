@@ -45,6 +45,10 @@ struct Shared {
     standing: Standing,
     place: crate::place::Place,
     stopped: bool,
+    /// Registration URLs a click fired, for the poster; and how each claim
+    /// ended, for the frame (`crate::ui::Registering`).
+    claims: Vec<String>,
+    claimed: Vec<Result<crate::seat::register::Registered, String>>,
 }
 
 /// **The one handle**, cloned to every worker.
@@ -111,6 +115,10 @@ impl Link {
                 }
             }
         }
+        for outcome in std::mem::take(&mut shared.claimed) {
+            model.registered(outcome);
+        }
+        shared.claims.extend(model.registering.asked.take());
         shared.outbox.append(&mut model.outbox);
         shared.standing = Standing::of(model);
         // **And the seat's own place, on the standing set's own terms**
@@ -180,6 +188,17 @@ impl Link {
     /// re-queues an envelope a leg could not deliver.
     pub fn compose(&self) -> Vec<Posted> {
         std::mem::take(&mut self.hold().outbox)
+    }
+
+    /// **The registration URLs fired since the last drain** — a take, for
+    /// [`Self::compose`]'s reason: a URL works once, and nothing re-queues one.
+    pub fn claims(&self) -> Vec<String> {
+        std::mem::take(&mut self.hold().claims)
+    }
+
+    /// How one claim ended, for the next settle to file.
+    pub fn claimed(&self, outcome: Result<crate::seat::register::Registered, String>) {
+        self.hold().claimed.push(outcome);
     }
 
     /// Ask every worker to finish its pass and stop.

@@ -105,7 +105,15 @@ ignore = [
 #                   which carries no SPDX id and so arrives as a LicenseRef.
 #   Zlib            `slotmap`, the arena `egui_glow` keys its textures by. Sole
 #                   licence, and the most permissive name on this list.
+#
+# Registration's one (bl-fb7f):
+#
+#   CDLA-Permissive-2.0
+#                   `webpki-roots`, the public web's trust roots as data — the
+#                   Community Data License Agreement, permissive: the terms
+#                   Mozilla's root list is redistributed under. Sole licence.
 allow = [
+    "CDLA-Permissive-2.0",
     "MIT",
     "Apache-2.0",
     "ISC",

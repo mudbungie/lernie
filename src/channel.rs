@@ -54,6 +54,7 @@ pub mod reach;
 /// The mTLS configuration.
 pub mod tls;
 
+pub(crate) use dial::connect;
 use material::Material;
 pub use reach::Reach;
 

@@ -7,7 +7,8 @@
 //! beside it that were each a page of what a person would call settings.
 //! **They are pages of this one overlay now**: *Seat* (the knob table's three
 //! pages, `crate::settings::Page`), *Workspace* (`/roles`, `/login`,
-//! `/config`, `/clients`) and *Servers* (the enrollment's door, `/doctor`).
+//! `/config`, `/clients`) and *Servers* (registering this box, the
+//! enrollment's door, `/doctor`).
 //!
 //! **Every word stands.** A page is opened by its word where it has one
 //! (`crate::ui::Page::word`), so the menu, the reach bound and the standing
@@ -117,6 +118,7 @@ fn body(ui: &mut egui::Ui, model: &mut Model, page: Page) {
             Page::Clients => {
                 clients::render(ui, model);
             }
+            Page::Register => crate::ui::register::render(ui, model),
             Page::Enrollment => enrollment(ui, model),
             Page::Doctor => {
                 doctor::render(ui, model);

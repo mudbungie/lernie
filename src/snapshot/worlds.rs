@@ -271,6 +271,7 @@ fn simple() -> Vec<World> {
         clients(),
         config(),
         settings(),
+        covered::registering(),
         accordion(),
         pinned_workspace(),
         slashing(),

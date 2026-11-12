@@ -133,6 +133,10 @@ pub fn run(args: Vec<String>) -> Decided {
         ["enroll", workspace, name, grade, tail @ ..] => {
             enroll::enroll(workspace, name, grade, tail, form)
         }
+        // **This box registering itself** (REMOTE §15.1): one URL, read whole
+        // by the act. Any other arity falls to `typed`, where the door row
+        // states the usage.
+        [crate::seat::register::WORD, url] => Decided::Register((*url).to_owned()),
         // The bare invocation is the window, because a seat is a window. Every
         // other spelling is a way of reaching one gesture without one.
         [] => Decided::Window,

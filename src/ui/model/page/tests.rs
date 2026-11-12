@@ -5,10 +5,10 @@ use super::{Group, Page};
 use crate::test_support::window::seated;
 use crate::ui::{Lookup, Model};
 
-/// **Ten pages, three groups, every label distinct**, and each group's pages
+/// **Eleven pages, three groups, every label distinct**, and each group's pages
 /// are exactly the ones that name it.
 #[test]
-fn the_tree_is_ten_pages_under_three_groups_with_distinct_labels() {
+fn the_tree_is_eleven_pages_under_three_groups_with_distinct_labels() {
     let labels: std::collections::BTreeSet<_> = Page::ALL.iter().map(|page| page.label()).collect();
     assert_eq!(labels.len(), Page::ALL.len());
     let grouped: Vec<Page> = Group::ALL.into_iter().flat_map(Group::pages).collect();

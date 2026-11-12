@@ -146,8 +146,8 @@ pub const ENTRIES: Door = Door {
              elsewhere, each with its address or the reason it has none. It \
              opens no socket, so it answers with every server down — and a \
              half-provisioned channel says which file is missing beside the \
-             ones that are fine. Material reaches these directories by the \
-             operator's hand, out of channel, always.",
+             ones that are fine. Material reaches these directories by \
+             `lernie register`, or by the operator's hand.",
 };
 
 /// **The trail, as deep as it is asked for** — the one door that carries a
@@ -229,6 +229,31 @@ pub const CEILING: Door = Door {
              `price` chooses it.",
 };
 
+/// **This box registering itself** (yog's `docs/REMOTE.md` §15.1) — a door
+/// because nothing crosses the boundary until the entry it files exists.
+pub const REGISTER: Door = Door {
+    word: crate::seat::register::WORD,
+    takes: "<url>",
+    arity: (1, 1),
+    summary: "join a workspace with a one-time registration URL, using a key made on this box",
+    detail: "Claims the offer an operator minted for this box. The URL is the \
+             whole of what was handed over — \
+             `https://<host>/yog/register/<code>`, by eye, by paste or off a \
+             QR symbol — and it works once. This box makes its own P-256 key, \
+             sends only the public half over HTTPS (verified against the \
+             public web's certificate roots), and files what comes back with \
+             its private key as an entry under <data root>/wire/workspaces/, \
+             named for the workspace; the private key never leaves this box. \
+             It then prints a six-character CONFIRMATION WORD. The operator \
+             approves the offer whose row shows the same word, from a seat \
+             that is already connected; until then the server refuses this \
+             box everything, which is said as waiting for approval. An entry \
+             this box already holds under that workspace's name is never \
+             overwritten: the word refuses and says so. A URL that is \
+             unknown, expired or already used cannot be claimed, and a new \
+             offer is the remedy.",
+};
+
 /// The word whose subject is this binary.
 pub const HELP: Door = Door {
     word: "help",
@@ -244,8 +269,11 @@ pub const HELP: Door = Door {
 };
 
 /// Every door, in the order the usage prints them: the six that cross a
-/// wire, then the two that answer with no server up.
-const TABLE: &[Door] = &[START, ASK, OPS, DOCTOR, PRICE, CEILING, ENTRIES, HELP];
+/// wire, the one that claims an offer, then the two that answer with no
+/// server up.
+const TABLE: &[Door] = &[
+    START, ASK, OPS, DOCTOR, PRICE, CEILING, REGISTER, ENTRIES, HELP,
+];
 
 #[cfg(test)]
 mod tests;

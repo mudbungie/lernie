@@ -30,6 +30,17 @@ fn both_version_spellings_print_the_version_and_succeed() {
 #[test]
 fn the_verbs_decide_and_carry_what_they_were_given() {
     assert!(matches!(run(argv(&["entries"])), Decided::Entries));
+    // The registration URL rides whole to the act, which is what reads it.
+    let url = "https://engine.example/yog/register/ABCD2345";
+    assert!(matches!(
+        run(argv(&["register", url])),
+        Decided::Register(carried) if carried == url
+    ));
+    // Any other arity is the door's own usage, not a typo's quote-back.
+    let Decided::Say(refused) = run(argv(&["register"])) else {
+        panic!("a bare `register` refuses");
+    };
+    assert!(refused.text.contains("usage: lernie register <url>"));
     assert_eq!(
         asked(&["ask", r#"{"op":"workspaces"}"#]),
         json!({"op": "workspaces"})

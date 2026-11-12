@@ -44,6 +44,7 @@ usage: lernie                      open the window on this box's channels
        lernie [--json] <verb> [argument…]
        lernie start <workspace> <goal>
        lernie ask <envelope>
+       lernie register <url>
        lernie entries
        lernie help [<verb>]
        lernie [--version | --help]
@@ -66,9 +67,9 @@ dash.
 
 {}
 
-And the four words this binary answers itself, with no channel and no server
-up. Each has its own page too: `lernie help <word>` reaches every entry in
-both lists.
+And the words that are not one gesture: this binary answers them itself, some
+with no channel and no server up. Each has its own page too: `lernie help
+<word>` reaches every entry in both lists.
 
 {}
 
@@ -76,9 +77,10 @@ both lists.
   -V, --version   print the name and version
   -h, --help      print this
 
-What it reads, all of it provisioned by hand and none of it ever written by
-lernie: this box's own channel at <data root>/wire/, and one channel per
-directory under <data root>/wire/workspaces/. The data root is
+What it reads: this box's own channel at <data root>/wire/, and one channel
+per directory under <data root>/wire/workspaces/. `lernie register <url>`
+files one of those itself, with a private key made on this box that never
+leaves it; the rest are carried here by the operator's hand. The data root is
 $XDG_DATA_HOME/lernie, or $HOME/.local/share/lernie.
 
 See docs/DESIGN.md for the role and the module map, and yog's docs/REMOTE.md

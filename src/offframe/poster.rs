@@ -80,6 +80,14 @@ use crate::ui::Posted;
 /// a channel the gesture never went down, and a gesture composed with no aim
 /// earned a stamp naming nothing at all (bl-c70d).
 pub fn tick(link: &Link, root: &Path) {
+    // **A registration is this lane's too** (DESIGN §4.50): it dials — one
+    // HTTPS request, then the wire — and it is an act fired once, which is
+    // what this thread is for. It is not a gesture: nothing crosses the
+    // boundary until the entry it files exists.
+    for url in link.claims() {
+        let roots = crate::seat::register::web_roots();
+        link.claimed(crate::seat::register::claim(root, &url, roots));
+    }
     let standing = link.standing();
     for posted in link.compose() {
         if crate::envelope::workspace(&posted.envelope).is_none() {

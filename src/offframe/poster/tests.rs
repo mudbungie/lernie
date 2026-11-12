@@ -141,6 +141,9 @@ fn an_empty_outbox_sends_nothing() {
     assert_eq!(model.notice, None);
 }
 
+/// A registration: claimed on this lane, its outcome filed by the frame.
+mod claims;
+
 /// The lost-reply contract: what an act with no reply paints, and what it
 /// never does.
 mod doubt;

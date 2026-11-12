@@ -73,6 +73,8 @@ mod queue;
 mod rail;
 /// The records pane between frames: open or not, and what its two reads filed.
 mod records;
+/// Registering this box: the URL typed, and where the one claim stands.
+mod register;
 /// What this seat sent and has not yet seen come back as the server's row.
 mod sent;
 /// **The accordion**: which server is open, and how the rest are ordered.
@@ -121,6 +123,7 @@ pub use pricing::{Pricing, Table as PriceTable};
 pub use queue::{Asking, Section};
 pub use rail::{Context, Rail};
 pub use records::Records;
+pub use register::{Phase as Claim, Registering};
 pub use sent::Sent;
 pub use servers::Servers;
 pub use spine::Forking;

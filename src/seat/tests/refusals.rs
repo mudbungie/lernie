@@ -35,7 +35,7 @@ fn a_box_with_no_wire_names_the_directory_and_the_operator_s_act() {
         assert!(verdict.text.contains(named), "{named}: {}", verdict.text);
     }
     assert!(
-        verdict.text.contains("the seat mints nothing"),
+        verdict.text.contains("`lernie register <url>`"),
         "{}",
         verdict.text
     );

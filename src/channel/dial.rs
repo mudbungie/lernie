@@ -84,9 +84,9 @@ impl Channel {
     /// One endpoint: the socket, the mTLS over it verifying the name read off
     /// that same endpoint, and this end's preface and request down it.
     fn send(&self, at: &Endpoint, request: &Value) -> Result<Tls, String> {
-        let connect = |e| format!("connect {}: {e}", at.address);
-        let tcp = connect_bounded(&at.address).map_err(connect)?;
-        tcp.set_read_timeout(Some(GONE)).map_err(connect)?;
+        let refused = |e| format!("connect {}: {e}", at.address);
+        let tcp = connect(&at.address).map_err(refused)?;
+        tcp.set_read_timeout(Some(GONE)).map_err(refused)?;
         let conn = ClientConnection::new(Arc::clone(&self.config), at.name.clone())
             .map_err(|e| format!("tls {}: {e}", at.address))?;
         let mut tls = StreamOwned::new(conn, tcp);
@@ -118,7 +118,7 @@ impl Channel {
             return format!("send {address}: {e}");
         };
         format!(
-            "the handshake with {address} did not verify ({fault:?}): {} must hold the anchors of THAT server's CA, and {} must be a leaf that CA issued. Both are carried here by hand; the seat mints nothing",
+            "the handshake with {address} did not verify ({fault:?}): {} must hold the anchors of THAT server's CA, and {} must be a leaf that CA issued. `lernie register` files both from an offer; otherwise both are carried here by hand",
             self.anchors.display(),
             self.chain.display()
         )
@@ -127,7 +127,7 @@ impl Channel {
 
 /// A connect that gives each address `endpoint` resolves to at most
 /// [`CONNECT`], and answers the last refusal where none of them took it.
-fn connect_bounded(endpoint: &str) -> std::io::Result<TcpStream> {
+pub(crate) fn connect(endpoint: &str) -> std::io::Result<TcpStream> {
     let mut refusal = std::io::Error::other("resolved to no address");
     for addr in endpoint.to_socket_addrs()? {
         match TcpStream::connect_timeout(&addr, CONNECT) {

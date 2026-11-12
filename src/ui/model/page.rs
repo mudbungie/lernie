@@ -1,5 +1,5 @@
 //! **The settings overlay's pages, and which one stands** (DESIGN §4.48
-//! item 7). One overlay, a tree of pages: three sections, ten pages, and
+//! item 7). One overlay, a tree of pages: three sections, eleven pages, and
 //! every page that used to be an overlay of its own is a page of this one.
 //!
 //! **The page is derived, not kept.** Four of the pages are the panes that
@@ -52,7 +52,7 @@ impl Group {
     }
 }
 
-/// **The ten pages.**
+/// **The eleven pages.**
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Page {
     /// The knob table's four pages (`crate::settings::Page`).
@@ -65,6 +65,9 @@ pub enum Page {
     Config,
     /// `/clients` (`crate::ui::clients`).
     Clients,
+    /// **Register this box** (`crate::ui::register`): the URL field, the
+    /// button and the outcome. No word: it opens directly, aimed or not.
+    Register,
     /// **The enrollment's door.** The enrollment itself keeps §4.15's
     /// whole-window cover while its material is on the glass; this page is
     /// the row that opens it.
@@ -80,8 +83,8 @@ impl Default for Page {
 }
 
 impl Page {
-    /// The ten, in the tree's order.
-    pub const ALL: [Self; 10] = [
+    /// The eleven, in the tree's order.
+    pub const ALL: [Self; 11] = [
         Self::Seat(crate::settings::Page::Look),
         Self::Seat(crate::settings::Page::Input),
         Self::Seat(crate::settings::Page::Bar),
@@ -90,6 +93,7 @@ impl Page {
         Self::Providers,
         Self::Config,
         Self::Clients,
+        Self::Register,
         Self::Enrollment,
         Self::Doctor,
     ];
@@ -99,7 +103,7 @@ impl Page {
         match self {
             Self::Seat(_) => Group::Seat,
             Self::Roles | Self::Providers | Self::Config | Self::Clients => Group::Workspace,
-            Self::Enrollment | Self::Doctor => Group::Servers,
+            Self::Register | Self::Enrollment | Self::Doctor => Group::Servers,
         }
     }
 
@@ -111,6 +115,7 @@ impl Page {
             Self::Providers => "providers",
             Self::Config => "config",
             Self::Clients => "clients",
+            Self::Register => "register",
             Self::Enrollment => "enrollment",
             Self::Doctor => "doctor",
         }
@@ -124,6 +129,9 @@ impl Page {
             Self::Providers => "what this workspace can sign in to, and the sign-in itself",
             Self::Config => "the files this workspace's policy is written in",
             Self::Clients => "which machines may execute for this workspace",
+            Self::Register => {
+                "joins this box to a server with a one-time registration URL and a key made here"
+            }
             Self::Enrollment => "lets a new box join: a name, a grade, and a key shown once",
             Self::Doctor => "whether this box is wired, one check at a time",
         }
@@ -139,7 +147,7 @@ impl Page {
             Self::Config => Some(crate::ui::config::WORD),
             Self::Clients => Some(crate::ui::clients::WORD),
             Self::Doctor => Some(crate::ui::doctor::WORD),
-            Self::Seat(_) | Self::Enrollment => None,
+            Self::Seat(_) | Self::Register | Self::Enrollment => None,
         }
     }
 }

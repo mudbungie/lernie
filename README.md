@@ -76,6 +76,7 @@ lernie start <workspace> <goal> [<dir>]  # begin a conversation — two acts, on
 lernie                  # open the window
 lernie --json <verb>…   # the reply frames as they crossed, instead of rendered
 lernie entries          # every channel this box holds, without dialling any
+lernie register <url>   # join a server: claim a one-time offer with a key made here
 lernie ask <envelope>   # the same gestures, written out as JSON
 lernie help [<verb>]    # what a verb takes — answered with no server up
 ```
@@ -185,8 +186,8 @@ the string that went in, so a label the toolkit elided to `…` reads back whole
 and every assertion against it is blind to truncation. Upstream found that three
 times before it became a rule; it arrived here as a rule.
 
-What it reads, all of it put there by the operator's hand and none of it ever
-written by lernie:
+What it reads — filed by `lernie register`, or carried here by the operator's
+hand:
 
 ```
 <data root>/wire/                     this box's own channel
@@ -202,8 +203,25 @@ keeps the one that worked for the rest of the run, in memory only
 list of one. Two files an older server may have left in an entry,
 `rendezvous.pub` and `pairing.salt`, are ignored: the hole-punched path they
 served is retired.
-Certificates arrive out of channel, by the operator's hand; **lernie mints
-nothing**, and there is no bootstrap flow and must never be one.
+
+**A seat joins a server by registering itself** (yog's `docs/REMOTE.md` §15.1;
+`docs/DESIGN.md` §4.50). An operator on a seat that is already connected mints
+a one-time offer and hands over its URL; then, on the new box:
+
+```
+lernie register https://<host>/yog/register/<code>
+```
+
+or the same act in the window, under *Settings › Servers › register*. lernie
+makes its own P-256 key, sends only the public half over HTTPS, and files what
+comes back — with the private key — as `wire/workspaces/<workspace>/`. It
+prints a six-character confirmation word; the operator approves the offer whose
+row shows that word, and until then the server refuses the new box everything.
+**The seat makes its own key when it registers and never receives one**, and it
+signs nothing: the certificate is signed by the operator's CA, on the server.
+An entry that already exists is never overwritten. The road by hand remains
+for a box with no route to that URL: mint a leaf on the server
+(`WIRE_LEAF=<name> yog wire-certs`) and carry the four files here.
 
 **0.1.0 is published**, and it is the version that fixes the fence in the public
 record — the coordinated cutover moment for the whole four-component split.
@@ -489,7 +507,7 @@ two files do not exist, and that is the discipline working — a confinement rul
 names its location before the first site is written, or the first site picks the
 location by being written. The third names test scaffolding because the seat
 forks nothing in production, and the crate's one child is the suite performing
-the operator's own out-of-channel certificate mint.
+the operator CA's own signing with `openssl`.
 
 The `rules/` directory enforces what it can, and `make rules-audit` checks both
 directions: the tree clean **and** every rule, run alone by its own id, still

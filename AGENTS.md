@@ -214,8 +214,8 @@ inventories, which is no inventory. The three files are rows in DESIGN §5.
 
 Two of the three do not exist, and that is the rule working rather than a gap.
 The third names test scaffolding because the seat forks nothing in production
-and the crate's one child is the suite performing the operator's own
-out-of-channel certificate mint — a rule pointing at an empty `src/spawn.rs`
+and the crate's one child is the suite performing the operator CA's own
+signing — a rule pointing at an empty `src/spawn.rs`
 while the one real site sat elsewhere would not be an inventory. If production
 ever needs a child, the location moves in the commit that writes the first site.
 
@@ -460,8 +460,9 @@ it can say.
   fails the suite if it happens.
 - Never add a dependency that is not on the approved set. **`Cargo.toml`'s
   `[dependencies]` comment is that set**: rustls with `ring` and no default
-  features, `serde_json`, `thiserror` — each landing in the manifest with the
-  ball that first LINKS it, never in advance. `eframe`/`egui` are DEFERRED and
+  features, `serde_json`, `thiserror`, `ring` named directly, and
+  `webpki-roots` (registration's one HTTPS request, bl-fb7f) — each landing in
+  the manifest with the ball that first LINKS it, never in advance. `eframe`/`egui` are DEFERRED and
   deliberately not pre-granted: they are the largest approval this crate will
   make and they arrive with the window (bl-428f), which also re-derives the
   licence allow-list from the lockfile that results. `clap` is deferred pending

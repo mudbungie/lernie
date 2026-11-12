@@ -258,3 +258,24 @@ pub(super) fn settings() -> World {
         model,
     }
 }
+
+/// **The register page with a claim that came back** (DESIGN §4.50): the
+/// field, the button, the confirmation word and the sentences under it — the
+/// longest state the page has.
+pub(super) fn registering() -> World {
+    let mut model = settings().model;
+    model.lookup = Some(crate::ui::Lookup::Settings(crate::ui::Page::Register));
+    model.registering.phase = crate::ui::Claim::Done(Ok(crate::seat::register::Registered {
+        workspace: "lab".to_owned(),
+        name: "laptop".to_owned(),
+        grade: "operator".to_owned(),
+        word: "K7M2QX".to_owned(),
+        entry: std::path::PathBuf::from("/home/u/.local/share/lernie/wire/workspaces/lab"),
+        addresses: vec!["engine.example:7737".to_owned()],
+        proved: Ok(()),
+    }));
+    World {
+        name: "registering",
+        model,
+    }
+}

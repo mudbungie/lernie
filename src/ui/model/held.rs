@@ -287,6 +287,9 @@ pub struct Model {
     /// secret. It is dropped by a control and written down nowhere
     /// ([`Enrolling`]).
     pub enroll: Option<Enrolling>,
+    /// **Registering this box** (DESIGN §4.50): the URL in the settings page's
+    /// field, the claim a click fired, and how the last one ended.
+    pub registering: super::Registering,
     /// **The gestures this frame composed**, for whoever can send them. A frame
     /// that posted its own would be a frame that waits.
     ///

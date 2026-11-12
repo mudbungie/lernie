@@ -1,14 +1,16 @@
 //! **What the operator carried to this box**, and what its absence means
 //! (yog's `docs/REMOTE.md` §1.4, §8.2; DESIGN §4.5).
 //!
-//! **The seat mints nothing.** The certificate and its key are issued by the
-//! operator's own CA, on the box that holds it, and carried here by hand. So
-//! this module only ever *reads*, and there is no bootstrap flow to secure: a
-//! seat that could provision itself over the wire would be a seat any wire
-//! could provision. That is the whole of REMOTE §1.4 on this side — the
-//! server's own boot self-provisions a loopback root for the window in ITS
-//! process, which is an act on the operator's own box by the operator's own
-//! program, and it is not this crate's.
+//! **This module only ever reads.** An entry gets here one of two ways, and
+//! neither is this file's: `lernie register` files one from a one-time offer,
+//! with a key this box made and never sent (REMOTE §15.1;
+//! [`crate::seat::register`]); or the operator mints a leaf on the box that
+//! holds the CA and carries the files here by hand, which remains for a box
+//! with no route to the registration door (§15.4). The seat signs no
+//! certificate either way, and never receives a private key. The flat root is
+//! a third thing: the server's own boot self-provisions a loopback root for
+//! the window in ITS process, an act on the operator's own box by the
+//! operator's own program.
 //!
 //! Three answers, and they are the whole of the trust bootstrap on this side:
 //!
@@ -76,10 +78,10 @@ pub enum Whose {
 }
 
 impl Whose {
-    /// What a refusal names as the remedy. **It is an act by the operator's
-    /// own hand, out of channel, always** (REMOTE §1.4) — never a target this
-    /// binary could be asked to run — and it names the four files, because
-    /// *carried here by hand* said what to do and not what to carry.
+    /// What a refusal names as the remedy: `lernie register` with an offer
+    /// (REMOTE §15.1), or the operator's own hand — and for the second it
+    /// names the four files, because *carried here by hand* said what to do
+    /// and not what to carry.
     pub fn remedy(self) -> String {
         let four = format!("`{ANCHORS}`, `{CHAIN}`, `{KEY}` and `{ADDRESS}`");
         match self {
@@ -92,15 +94,17 @@ impl Whose {
                  `{ADDRESS}` must name a stated host:port; a server that bound `:0` asked the \
                  kernel for a port and told only its own window, so re-issue with one stated \
                  (`WIRE_HOST=<host> WIRE_PORT=<port> yog wire-certs`) before copying. If the \
-                 server is on ANOTHER box, mint a leaf there instead (`WIRE_LEAF=<name> yog \
-                 wire-certs` — the assignment before the verb) and carry the same four files \
-                 here; the seat mints nothing"
+                 server is on ANOTHER box, register this box with it instead: a seat already \
+                 connected there mints an offer, and `lernie register <url>` claims it with a \
+                 key made here"
             ),
             Self::Elsewhere => format!(
-                "the pair is minted on the host that issued it — `WIRE_LEAF=<name> yog \
+                "`lernie register <url>` files a whole entry from a one-time offer, with a \
+                 key made on this box, in a directory that holds nothing yet. By hand instead, \
+                 the pair is minted on the host that issued it — `WIRE_LEAF=<name> yog \
                  wire-certs` there, the assignment BEFORE the verb, because `WIRE_LEAF` is an \
-                 environment variable and not an argument it parses — and carried here by hand \
-                 as {four}, under those names; the seat mints nothing"
+                 environment variable and not an argument it parses — and carried here as \
+                 {four}, under those names"
             ),
         }
     }

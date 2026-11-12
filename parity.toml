@@ -184,9 +184,7 @@
 # `offer` on the mint, and `approve` and `decline` on every pending row. No
 # line was ever written here for them.
 #
-# `enroll` is the one line, and it is a retirement rather than a debt: the
-# offer replaces the carried envelope (REMOTE §15.4), this seat deleted the act
-# with bl-1f57, and upstream's own deletion of the op is yog bl-7a14. The
-# roster still classes it `control` until that lands; when the re-vendor after
-# it drops the row, this line rots and is deleted.
-enroll = "retired by the offer (REMOTE §15.4): deleted here in bl-1f57, and the op leaves the roster with yog bl-7a14"
+# `enroll` was one line here for the length of one re-vendor: the offer
+# replaced the carried envelope (REMOTE §15.4), this seat deleted the act with
+# bl-1f57, and the roster dropped the op at edition 27 (yog bl-7a14). bl-7ad1
+# re-vendored and the line went with the row.

@@ -44,7 +44,9 @@ fn above_the_floor() -> BTreeSet<Row> {
 }
 
 /// **The floor and this build's edition are the corpus's own.** The floor is
-/// stated there; the edition is the newest stamp in it, which is exactly what
+/// stated there; the edition is the newest stamp in it — over the signatures
+/// AND the `retired` map, since a removal is stamped with the edition it went
+/// at and leaves no path behind to carry the number — which is exactly what
 /// the preface claims this build can spell.
 #[test]
 fn the_floor_and_the_edition_are_read_back_out_of_the_corpus() {
@@ -54,7 +56,15 @@ fn the_floor_and_the_edition_are_read_back_out_of_the_corpus() {
         corpus.floor,
         "the vendored FLOOR is not the corpus's — refresh one or correct the other"
     );
-    let newest = stamped().into_values().max().expect("a stamped corpus");
+    let retired = corpus
+        .retired
+        .into_values()
+        .map(|at| u32::try_from(at).expect("an edition"));
+    let newest = stamped()
+        .into_values()
+        .chain(retired)
+        .max()
+        .expect("a stamped corpus");
     assert_eq!(
         EDITION, newest,
         "the vendored EDITION is not the newest stamp in the corpus — a seat \

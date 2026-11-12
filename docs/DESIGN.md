@@ -466,14 +466,19 @@ Two numbers, two questions, and only one of them can refuse a connection.
 
 **This seat's copy of the three facts is `src/channel/edition.rs`** — the floor,
 this build's edition (the newest stamp in the corpus it vendors) and the ledger
-of the paths above the floor. Vendored on `PROTOCOL`'s own precedent rather
+of the paths above the floor. **A removal moves the edition too**: `shapes.json`
+keeps what a server no longer answers under `retired`, each entry stamped with
+the edition it went at, so the newest stamp is read over the signatures AND
+that map — the edition is 27 on the strength of `enroll`'s retirement alone,
+with no surviving path stamped above 26 (bl-7ad1). Vendored on `PROTOCOL`'s own precedent rather
 than derived at build time, and held equal to `corpus/shapes.json` by its own
 tests, both directions: a stamp with no row is as red as a row with no stamp.
 The corpus is `cfg(test)` apparatus and is not packaged, so the constants are
 what a released binary carries and the test is what makes them true. **The
 ledger is EMPTY at the cut**, which is the design and not a gap — the floor is
 where the major was cut, so at that instant nothing is above it, and a row is
-added by the same commit that re-vendors the corpus which grew the path.
+added by the same commit that re-vendors the corpus which grew the path, and
+deleted by the one that re-vendors a corpus which retired it.
 
 **A fourth fact is vendored beside them and it is a WARNING with a deadline**:
 `DEPRECATED`, upstream's list of what it will remove. REMOTE §3.2's window rule
@@ -2029,11 +2034,14 @@ this seat's glass is one any more, so every such exception named elsewhere in
 this document (§4.11, §4.42 items 6 and 7, §4.46, §4.48 item 7) is void: the
 offers page is a page of the settings overlay like its neighbours.
 
-**Until upstream deletes the op** (yog bl-7a14) the vendored corpus still
-carries it, and three ledgers say so rather than pass over it: the reply
-fixture is filed under `corpus/unpainted/` (a kind this build does not show),
-the request fixture is one of the ops this seat has no word for, and
-`parity.toml` carries the one line `enroll`, citing the retirement.
+**Upstream deleted the op at edition 27** (yog bl-7a14), and bl-7ad1
+re-vendored: `request/enroll`, `reply/enrolled`, the `/enroll` help row and the
+doctor reply's `rendezvous` object are gone from `corpus/`, and with them the
+three things this seat carried in the interval — the reply fixture under
+`corpus/unpainted/`, the request fixture, and `parity.toml`'s one `enroll`
+line. Nothing on this seat ever painted the doctor's `rendezvous` counters, so
+that retirement deleted eight ledger rows and no code. `shapes.json` keeps
+each removal under `retired`, stamped 27 (§4.9).
 
 ### 4.16 Interface parity: a control that fires an op says which op (yog's docs/PARITY.md)
 

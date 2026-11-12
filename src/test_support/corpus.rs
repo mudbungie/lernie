@@ -136,6 +136,9 @@ pub(crate) struct Record {
     /// What upstream has announced it will remove: a whole shape, or one field
     /// path inside one spelled `<shape><path>` with no type suffix.
     pub(crate) deprecated: Vec<String>,
+    /// What upstream no longer answers, spelled the same way, each stamped
+    /// with the edition it went at.
+    pub(crate) retired: Signature,
 }
 
 /// One shape's field paths, each stamped with the edition it appeared at.
@@ -160,6 +163,12 @@ pub(crate) fn record() -> Record {
             .expect("a deprecation list")
             .iter()
             .map(|named| named.as_str().expect("a deprecated name").to_owned())
+            .collect(),
+        retired: value["retired"]
+            .as_object()
+            .expect("a retirement record")
+            .iter()
+            .map(|(named, at)| (named.clone(), at.as_u64().expect("a retirement's edition")))
             .collect(),
     }
 }

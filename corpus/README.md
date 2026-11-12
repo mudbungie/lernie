@@ -18,7 +18,8 @@ which `src/reply/tests/corpus.rs` fails on in a sentence naming both numbers.
 
     shapes.json        vendored: every shape upstream has, every field path
                        stamped with the EDITION it appeared at, the floor the
-                       current major was cut at, and what is deprecated
+                       current major was cut at, what is deprecated, and
+                       what was retired and at which edition
     request/           vendored whole: one file per request `op`
     answers/   \
     refusals/   \ the assertion layer — reply frames, filed by what `read` must

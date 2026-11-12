@@ -14,8 +14,10 @@
 //!   nothing at or below the floor can be missing and nothing about it has to
 //!   be discovered.
 //! - [`EDITION`] is what this build can spell — the newest stamp in the
-//!   `corpus/shapes.json` it vendors — and it is stated in the preface beside
-//!   the major.
+//!   `corpus/shapes.json` it vendors, over the paths it carries AND the
+//!   `retired` map of what it has dropped, because a removal moves the edition
+//!   exactly as an addition does — and it is stated in the preface beside the
+//!   major.
 //! - [`STAMPS`] is the ledger of the paths **above** the floor, which are the
 //!   only ones two ends of one major can disagree about. It is empty at the
 //!   cut and gains a row per addition, which is what makes it readable: the
@@ -37,11 +39,14 @@
 /// server speaking it two additions later agree about every one of these paths.
 pub(crate) const FLOOR: u32 = 18;
 
-/// What this build can spell — the newest stamp in its vendored corpus.
+/// What this build can spell — the newest stamp in its vendored corpus, its
+/// `retired` map included: 27 is the edition `enroll`, its reply and the
+/// doctor reply's `rendezvous` object went at (REMOTE §15.4), and no path that
+/// survives is stamped that high.
 ///
 /// Stated in the preface beside the major so the far end knows what this one
 /// can read, and re-read from the corpus by [`tests`] on every run.
-pub(crate) const EDITION: u32 = 26;
+pub(crate) const EDITION: u32 = 27;
 
 /// **The post-floor ledger**: `(shape, field path, the edition it appeared
 /// at)`, for every path stamped above [`FLOOR`].
@@ -49,8 +54,8 @@ pub(crate) const EDITION: u32 = 26;
 /// Empty at the cut, and that is the design rather than a gap — the floor is
 /// the edition the major was cut at, so at that instant every path in the
 /// corpus is at or below it. A row is added by the same commit that re-vendors
-/// the corpus which grew the path, because [`tests`] refuses the pair
-/// otherwise.
+/// the corpus which grew the path, and deleted by the one that re-vendors a
+/// corpus which retired it, because [`tests`] refuses the pair otherwise.
 ///
 /// A plain slice, searched linearly. It holds what one major has added since
 /// its cut, which is a handful of paths — an index over it would be a second
@@ -76,16 +81,6 @@ pub(crate) const STAMPS: &[(&str, &str, u32)] = &[
     ("reply/declined", "", 26),
     ("reply/declined", "/kind", 26),
     ("reply/declined", "/ok", 26),
-    ("reply/doctor", "/rendezvous", 21),
-    ("reply/doctor", "/rendezvous/accepted", 22),
-    ("reply/doctor", "/rendezvous/active", 21),
-    ("reply/doctor", "/rendezvous/calls", 21),
-    ("reply/doctor", "/rendezvous/last_poll_unix", 21),
-    ("reply/doctor", "/rendezvous/published", 21),
-    ("reply/doctor", "/rendezvous/punched", 21),
-    ("reply/doctor", "/rendezvous/served", 21),
-    ("reply/enrolled", "/pairing_salt", 20),
-    ("reply/enrolled", "/rendezvous_pub", 20),
     ("reply/governing", "/workflow_mark", 19),
     ("reply/governing", "/workflow_mark/holder", 19),
     ("reply/governing", "/workflow_mark/lineage", 19),

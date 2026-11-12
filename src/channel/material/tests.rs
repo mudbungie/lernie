@@ -39,7 +39,7 @@ fn a_provisioned_directory_answers_its_material() {
     let held = read_dir(tmp.path(), Whose::Elsewhere)
         .expect("readable")
         .expect("provisioned");
-    assert_eq!(held.address, "server.example:9000");
+    assert_eq!(held.addresses, ["server.example:9000"]);
     assert_eq!(held.anchors, tmp.path().join(ANCHORS));
     assert_eq!(held.chain, tmp.path().join(CHAIN));
     assert_eq!(held.key, tmp.path().join(KEY));
@@ -101,4 +101,44 @@ fn an_address_that_says_nothing_refuses_however_it_says_it() {
     std::fs::create_dir(tmp.path().join(ADDRESS)).expect("mkdir");
     let refusal = read_dir(tmp.path(), Whose::Elsewhere).expect_err("refused");
     assert!(refusal.contains("half-provisioned"), "{refusal}");
+}
+
+/// **The address file is a list, in the order stated** (REMOTE §15.3): one
+/// endpoint per line, a v6 host bracketed, blank lines nothing.
+#[test]
+fn an_address_file_of_several_lines_is_dialled_in_the_order_it_states() {
+    let tmp = Scratch::new();
+    provision(
+        tmp.path(),
+        "engine.example:7737\n\n  192.0.2.7:7737\n[2001:db8::7]:7737\n",
+    );
+    let held = read_dir(tmp.path(), Whose::Elsewhere)
+        .expect("readable")
+        .expect("provisioned");
+    assert_eq!(
+        held.addresses,
+        [
+            "engine.example:7737",
+            "192.0.2.7:7737",
+            "[2001:db8::7]:7737"
+        ]
+    );
+    assert_eq!(
+        held.address(),
+        "engine.example:7737, 192.0.2.7:7737, [2001:db8::7]:7737"
+    );
+}
+
+/// **An entry an older server filed still works** (REMOTE §15.4): the two
+/// files the retired rendezvous left behind are neither read nor required,
+/// whatever they hold.
+#[test]
+fn the_retired_rendezvous_files_are_ignored_where_an_entry_still_has_them() {
+    let tmp = Scratch::new();
+    provision(tmp.path(), "server.example:9000");
+    let bare = read_dir(tmp.path(), Whose::Elsewhere);
+    std::fs::write(tmp.path().join("rendezvous.pub"), "not a key").expect("write");
+    std::fs::write(tmp.path().join("pairing.salt"), "").expect("write");
+    assert_eq!(read_dir(tmp.path(), Whose::Elsewhere), bare);
+    assert!(bare.expect("readable").is_some());
 }

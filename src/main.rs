@@ -143,7 +143,7 @@ fn window(root: &std::path::Path) -> Verdict {
     link.settle(&mut model);
     // **The handles are dropped, not joined** (bl-9cef). A held lane is parked
     // on a socket read and learns of a stop only when the server writes or
-    // hangs up — its ping, twenty-five seconds — so a join here was the hang
+    // hangs up — its hold, thirty seconds — so a join here was the hang
     // GNOME offered to force-quit. Closing the window ends the process, and the
     // process ending is what ends a lane (`lernie::offframe`).
     drop(lernie::offframe::run(&link, root));

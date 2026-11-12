@@ -174,3 +174,19 @@ fn a_receipt_is_filed_with_the_act_it_answers() {
     assert_eq!(model.draft, "do the thing", "the goal came back");
     assert_eq!(model.notice, None);
 }
+
+/// **The endpoint that worked is kept per entry, in RAM**: nothing until one
+/// is set, then that one, and one entry's says nothing about another's.
+#[test]
+fn the_endpoint_that_worked_is_remembered_per_entry() {
+    let read = |key: &str| super::worked(key, |worked| worked.clone());
+    assert_eq!(read("state-tests/entry-a"), None);
+    super::worked("state-tests/entry-a", |worked| {
+        *worked = Some("192.0.2.7:7737".to_owned());
+    });
+    assert_eq!(
+        read("state-tests/entry-a"),
+        Some("192.0.2.7:7737".to_owned())
+    );
+    assert_eq!(read("state-tests/entry-b"), None);
+}

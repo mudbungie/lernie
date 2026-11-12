@@ -27,12 +27,9 @@
 //! — a click changes the model, and what is asked next follows from it.
 
 use std::collections::HashMap;
-use std::net::{IpAddr, SocketAddr};
 use std::sync::{Arc, Mutex, OnceLock, PoisonError};
 use std::time::Duration;
 
-use crate::channel::line::Held;
-use crate::channel::rendezvous::punch::Punch;
 use crate::ui::{Channel, Model, Posted};
 
 /// What crosses the lock, and what the frame publishes for the workers to ask.
@@ -204,51 +201,30 @@ impl Link {
     }
 }
 
-/// **What worked for one entry, this run** (DESIGN §4.40) — the second
-/// tenant of this file, and the runtime half of yog's `docs/REMOTE.md` §8's
-/// `:0` discipline: never disk. A punched line is held between asks, the
-/// presence a landed call answered to is re-called without reading it again
-/// (yog bl-278f), the punch port is bound once so the server's peer sees one
-/// port, and the inbox sequence rises across calls. Keyed by the entry's
-/// directory, because entries share nothing (§4.6): what worked for one
-/// server says nothing about another.
+/// **The endpoint that worked for one entry, this run** (DESIGN §4.49;
+/// yog's `docs/REMOTE.md` §15.3) — the second tenant of this file. An entry's
+/// `address` is a list dialled in order, and the endpoint that answered is
+/// tried first for the rest of the run: RAM and never disk, so a box that
+/// moved between networks starts from the list's own order on its next start.
+/// Keyed by the entry's directory, because entries share nothing (§4.6).
 ///
 /// It is here rather than in the channel because a channel is opened per
-/// gesture and the four off-frame threads each open their own — the fact
-/// that a connection exists outlives every one of them, and it is shared
-/// across all of them, which is exactly the state this chokepoint exists to
-/// inventory.
-#[derive(Default)]
-pub(crate) struct Worked {
-    /// Punched lines kept between asks, newest last.
-    pub(crate) held: Vec<Held>,
-    /// The cached presence: the server's endpoints at its punch port, as the
-    /// last call that LANDED found them. A call that expires clears it.
-    pub(crate) endpoints: Vec<SocketAddr>,
-    /// Where the commons last saw this end, for a re-call that writes first.
-    pub(crate) observed: Vec<IpAddr>,
-    /// The port this end punches from, for the run.
-    pub(crate) punch: Option<Arc<Punch>>,
-    /// The last inbox sequence written, so two calls in one second still
-    /// move forward — a node refuses a `seq` that does not.
-    pub(crate) last_seq: i64,
-    /// What each source of the rendezvous path's lines said last, so a
-    /// repeated outcome is said once (`channel::say::tell`).
-    pub(crate) said: HashMap<&'static str, Vec<String>>,
-}
+/// gesture and the off-frame threads each open their own — what worked
+/// outlives every one of them and is shared across all of them, which is
+/// exactly the state this chokepoint exists to inventory.
+static WORKED: OnceLock<Mutex<HashMap<String, String>>> = OnceLock::new();
 
-/// What worked, per entry — keyed by the entry it is about.
-static WORKED: OnceLock<Mutex<HashMap<String, Worked>>> = OnceLock::new();
-
-/// Act on what worked for the entry `key` names. **`f` runs under the lock
-/// and must not touch a socket** — it moves things in and out, and a
-/// liveness check on a held line happens outside, on the line it took.
-pub(crate) fn worked<T>(key: &str, f: impl FnOnce(&mut Worked) -> T) -> T {
+/// Read or replace the endpoint that worked for the entry `key` names. **`f`
+/// runs under the lock and must not touch a socket.**
+pub(crate) fn worked<T>(key: &str, f: impl FnOnce(&mut Option<String>) -> T) -> T {
     let mut table = WORKED
         .get_or_init(Mutex::default)
         .lock()
         .unwrap_or_else(PoisonError::into_inner);
-    f(table.entry(key.to_owned()).or_default())
+    let mut endpoint = table.remove(key);
+    let answer = f(&mut endpoint);
+    table.extend(endpoint.map(|worked| (key.to_owned(), worked)));
+    answer
 }
 
 #[cfg(test)]

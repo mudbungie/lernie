@@ -38,8 +38,6 @@
 
 pub mod channel;
 pub mod cli;
-/// The seat's own client of the mainline DHT, for the rendezvous.
-pub mod dht;
 pub mod envelope;
 /// The seat's own mark, and where a desktop actually looks for one.
 pub mod mark;

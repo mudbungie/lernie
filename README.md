@@ -195,12 +195,13 @@ written by lernie:
 
 where the data root is `$XDG_DATA_HOME/lernie` or `$HOME/.local/share/lernie`.
 Each directory holds `ca.pem`, `client.pem`, `client.key` and `address`, plus an
-optional `workspace` file naming what that workspace is called on its host —
-and, for a server that roves behind a NAT with no dialable listener, the pair
-`rendezvous.pub` and `pairing.salt`, with which a dial finds the server over
-the mainline DHT and punches a connection to it (`docs/DESIGN.md` §4.40; yog's
-`docs/REMOTE.md` §13). An entry without the pair is dialled at its address and
-nowhere else.
+optional `workspace` file naming what that workspace is called on its host.
+`address` is a list, one `host:port` per line: a dial tries each in order and
+keeps the one that worked for the rest of the run, in memory only
+(`docs/DESIGN.md` §4.49; yog's `docs/REMOTE.md` §15.3). A file of one line is a
+list of one. Two files an older server may have left in an entry,
+`rendezvous.pub` and `pairing.salt`, are ignored: the hole-punched path they
+served is retired.
 Certificates arrive out of channel, by the operator's hand; **lernie mints
 nothing**, and there is no bootstrap flow and must never be one.
 

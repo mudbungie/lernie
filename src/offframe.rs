@@ -31,7 +31,7 @@
 //! when the server writes, when the connection closes, or when the transport's
 //! own read timeout expires. That is not a leak — closing the window ends the
 //! process, and **the exit joins no lane** (bl-9cef): a join waited out the
-//! server's ping, twenty-five seconds of a window that would not close — and
+//! server's hold, thirty seconds of a window that would not close — and
 //! the alternative is a second signal path into a blocking read, which is a
 //! mechanism for a case that has no consequence.
 

@@ -9,6 +9,9 @@ use crate::test_support::server::{Answer, HOLD, Server};
 use crate::test_support::{Scratch, mint};
 use serde_json::{Value, json};
 
+/// The address list: order, fall-through and what is remembered.
+mod list;
+
 /// A scratch box with a server standing at the far end, answering the n-th
 /// dial with the n-th entry of `script`.
 fn wired(protocol: u32, script: Vec<impl Into<Answer>>) -> (Scratch, Server, Material) {
@@ -270,6 +273,9 @@ fn a_write_that_is_not_a_handshake_is_said_in_the_transport_s_own_words() {
     let scratch = Scratch::new();
     let held = mint::provisioned(scratch.path(), "server.example:9000");
     let channel = Channel::open(&held).expect("opened");
-    let said = channel.wrote(&std::io::Error::other("the pipe went away"));
-    assert_eq!(said, "send: the pipe went away");
+    let said = channel.wrote(
+        "server.example:9000",
+        &std::io::Error::other("the pipe went away"),
+    );
+    assert_eq!(said, "send server.example:9000: the pipe went away");
 }

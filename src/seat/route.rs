@@ -180,13 +180,13 @@ pub(super) fn flat(data_root: &Path) -> Result<Channel, String> {
         // and it tells its own in-process window in RAM. So there is nothing
         // here to dial, and saying so beats the raw connect error port zero
         // earns.
-        Some(held) if held.address.ends_with(":0") => Err(format!(
+        Some(held) if held.addresses.iter().any(|at| at.ends_with(":0")) => Err(format!(
             "{} names {} — a kernel-chosen port only that server's own window is \
              told; a seat wants a stated address. Re-issue with one stated \
              (`WIRE_HOST=<host> WIRE_PORT=<port> yog wire-certs` on that box) and \
              copy the {} here again",
             dir.join(material::ADDRESS).display(),
-            held.address,
+            held.address(),
             material::ADDRESS
         )),
         Some(held) => Channel::open(&held),

@@ -6,14 +6,13 @@
 //!
 //! An entry is four files, and their names are
 //! [`crate::channel::material`]'s — the wire's own, read by this seat and by
-//! every foot — plus, from a server holding rendezvous material, the two
-//! [`crate::channel::rendezvous`] names (`rendezvous.pub`, `pairing.salt`;
-//! REMOTE §8.4, §13.2), so six. This module writes those lists rather than a
-//! list of its own, so a name that moves moves once. What it lays down is
-//! exactly what [`crate::channel::material::read_dir`] and
-//! [`crate::channel::rendezvous::read_dir`] read back, which is what makes the
+//! every foot. This module writes that list rather than a list of its own,
+//! so a name that moves moves once. What it lays down is exactly what
+//! [`crate::channel::material::read_dir`] reads back, which is what makes the
 //! act reversible by inspection: the operator can point this seat's `entries`
-//! at the directory and be told what it holds.
+//! at the directory and be told what it holds. The rendezvous pair an older
+//! server still states in the envelope is not filed: nothing reads it (REMOTE
+//! §15.4).
 //!
 //! # Why a seat may write this and may not keep it
 //!
@@ -38,22 +37,14 @@
 //!
 //! The mode rides the `open`, so the file is never readable by anyone else
 //! even for the instant between creating it and correcting it. Every file is
-//! `0600` but one: `rendezvous.pub` is a public key and lands `0644`, the mode
-//! the server's own mint gives it — the salt beside it is shared with the
-//! server and stays narrow. `#[cfg(unix)]`
+//! `0600`. `#[cfg(unix)]`
 //! guards the one call rather than the function, because a mode is the only
 //! part of this that is a platform's fact.
 
 use std::path::Path;
 
 use crate::channel::material::{ADDRESS, ANCHORS, CHAIN, KEY};
-use crate::channel::rendezvous::{PUBLIC, SALT};
-use crate::reply::enrolled::{Enrolled, Handoff};
-
-/// The mode of every file but one.
-const NARROW: u32 = 0o600;
-/// The server's rendezvous public key's, as the server mints it.
-const OPEN: u32 = 0o644;
+use crate::reply::enrolled::Enrolled;
 
 /// What a refusal offers instead. It is an act on this box, by this hand, and
 /// it costs nothing — unlike the enrollment above it, which is spent.
@@ -64,20 +55,16 @@ const FRESH: &str = "the enrollment above is already minted, so nothing is lost 
 /// where it went.
 pub(super) fn written(dir: &Path, material: &Enrolled) -> Result<String, String> {
     std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
-    let mut files = vec![
-        (ANCHORS, material.ca.as_str(), NARROW),
-        (CHAIN, material.cert.as_str(), NARROW),
-        (KEY, material.key.as_str(), NARROW),
-        (ADDRESS, material.address.as_str(), NARROW),
+    let files = [
+        (ANCHORS, material.ca.as_str()),
+        (CHAIN, material.cert.as_str()),
+        (KEY, material.key.as_str()),
+        (ADDRESS, material.address.as_str()),
     ];
-    if let Some(Handoff { public, salt }) = &material.rendezvous {
-        files.push((PUBLIC, public.as_str(), OPEN));
-        files.push((SALT, salt.as_str(), NARROW));
+    for (leaf, body) in &files {
+        laid(&dir.join(leaf), body)?;
     }
-    for (leaf, body, mode) in &files {
-        laid(&dir.join(leaf), body, *mode)?;
-    }
-    let names: Vec<&str> = files.iter().map(|(leaf, ..)| *leaf).collect();
+    let names: Vec<&str> = files.iter().map(|(leaf, _)| *leaf).collect();
     Ok(format!(
         "filed as an entry in {}: {}. Carry the directory to the box it is for, under its own \
          `wire/workspaces/<name>/`",
@@ -92,13 +79,11 @@ pub(super) fn written(dir: &Path, material: &Enrolled) -> Result<String, String>
 /// operator — *this file did not get written, and here is the reason the
 /// operating system gave*. The path is in the sentence, so which file it was is
 /// never in doubt.
-fn laid(path: &Path, body: &str, mode: u32) -> Result<(), String> {
+fn laid(path: &Path, body: &str) -> Result<(), String> {
     let mut options = std::fs::OpenOptions::new();
     options.write(true).create_new(true);
     #[cfg(unix)]
-    std::os::unix::fs::OpenOptionsExt::mode(&mut options, mode);
-    #[cfg(not(unix))]
-    let _ = mode;
+    std::os::unix::fs::OpenOptionsExt::mode(&mut options, 0o600);
     // The address file is read back with a `trim`, and PEM already ends in one,
     // so exactly one trailing newline is right for all of them and is what a
     // terminal and an editor both expect of a text file.

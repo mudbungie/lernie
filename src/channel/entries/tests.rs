@@ -44,7 +44,7 @@ fn a_provisioned_entry_answers_its_leaf_as_its_own_host_name() {
     assert_eq!(held[0].leaf, "home");
     assert_eq!(held[0].workspace, "home");
     assert_eq!(
-        held[0].channel.as_ref().expect("provisioned").address,
+        held[0].channel.as_ref().expect("provisioned").address(),
         "server.example:9000"
     );
 }
@@ -147,7 +147,7 @@ fn a_provisioned_entry_opens_onto_its_own_address() {
     let entries = scratch.dir("workspaces");
     let path = entries.join("home");
     let held = mint::provisioned(&path, "server.example:9000");
-    assert_eq!(held.address, "server.example:9000");
+    assert_eq!(held.address(), "server.example:9000");
     let entry = read_dir(&entries).into_iter().next().expect("listed");
     assert_eq!(
         entry.open().expect("opened").address(),

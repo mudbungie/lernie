@@ -30,7 +30,7 @@ pub fn listing(data_root: &Path) -> Verdict {
         let label = label(&held.leaf, &held.workspace);
         let state = held
             .channel
-            .map_or_else(|state| state, |material| material.address);
+            .map_or_else(|state| state, |material| material.address());
         rows.push(row(&label, &state));
     }
     Verdict::ok(rows.join("\n"))
@@ -94,11 +94,7 @@ pub fn channels(data_root: &Path) -> Vec<crate::ui::Chunk> {
                     crate::ui::Channel {
                         name: entry.leaf,
                         named_there: Some(entry.workspace),
-                        dials: entry
-                            .channel
-                            .as_ref()
-                            .ok()
-                            .map(|material| material.address.clone()),
+                        dials: entry.channel.as_ref().ok().map(material::Material::address),
                     },
                     entry.channel.err(),
                 )
@@ -173,7 +169,7 @@ pub(super) fn rename(data_root: &Path, name: &str) -> String {
 fn own(data_root: &Path) -> Result<String, String> {
     let dir = entries::flat(data_root);
     match material::read_dir(&dir, material::Whose::Own) {
-        Ok(Some(held)) => Ok(held.address),
+        Ok(Some(held)) => Ok(held.address()),
         Ok(None) => Err(format!(
             "nothing provisioned at {}: {}",
             dir.display(),

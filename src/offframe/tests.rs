@@ -115,7 +115,7 @@ fn the_threads_carry_a_real_answer_to_a_real_frame() {
 
 /// **A stop does not end a held lane, so the exit must not wait on one**
 /// (bl-9cef). The follow lane is parked on a socket read and learns of a stop
-/// only when the server writes or hangs up — its ping, twenty-five seconds on a
+/// only when the server writes or hangs up — its hold, thirty seconds on a
 /// real server — which is the hang a join at exit became. So `src/main.rs`
 /// drops the handle, and this is the fact that makes dropping it the only
 /// answer: the lane is still running after the stop, and nothing but the

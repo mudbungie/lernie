@@ -21,7 +21,7 @@
 //!   at once because a remedy that reveals one gap per run is a remedy run four
 //!   times.
 //! - **Provisioned** — `Ok(Some(Material))`: the anchors, this box's leaf and
-//!   key for this channel, and the one address it dials.
+//!   key for this channel, and the addresses it dials, in order.
 //!
 //! **The four files are REMOTE §8.2's, unchanged.** An operator who
 //! provisioned an entry for a yog client has provisioned one for a seat; the
@@ -29,10 +29,13 @@
 //! operator's act depend on which program was installed. §8.2 names a fifth,
 //! `workspace`, and it is not here on purpose: it is not material, it is the
 //! name the workspace bears on its host, and it lives with the entry that
-//! carries it ([`entries`](super::entries)). §13.2 names two more —
-//! `rendezvous.pub` and `pairing.salt`, the roving material — and they are
-//! read here through [`rendezvous`](super::rendezvous), optional as a pair:
-//! an entry without them is dialled at its address and nowhere else.
+//! carries it ([`entries`](super::entries)).
+//!
+//! **`address` is a list** (REMOTE §15.3; DESIGN §4.49): one `host:port` per
+//! line, in dial order, and a one-line file is a list of one. Two files an
+//! older server handed out for the retired rendezvous — `rendezvous.pub` and
+//! `pairing.salt` — may still lie in an entry; nothing here names them, so
+//! they are neither read nor required.
 
 use std::path::{Path, PathBuf};
 
@@ -45,8 +48,9 @@ pub const ANCHORS: &str = "ca.pem";
 pub const CHAIN: &str = "client.pem";
 /// This box's private key for that chain.
 pub const KEY: &str = "client.key";
-/// The `host:port` this channel dials. One address per relationship and no
-/// flag: two spellings of one address is the drift REMOTE §8 removed.
+/// The `host:port` list this channel dials, one per line and in order
+/// (REMOTE §15.3). One file per relationship and no flag: two spellings of
+/// one address is the drift REMOTE §8 removed.
 pub const ADDRESS: &str = "address";
 
 /// **Which side of the wire a directory's material was minted on**, which is
@@ -111,12 +115,16 @@ pub struct Material {
     pub chain: PathBuf,
     /// This end's private key, PEM.
     pub key: PathBuf,
-    /// `host:port` — the server this channel dials.
-    pub address: String,
-    /// The rendezvous material, where the entry carries it (DESIGN §4.40):
-    /// `None` is an entry with no roving, dialled at its address and nowhere
-    /// else.
-    pub pairing: Option<super::rendezvous::Pairing>,
+    /// Each `host:port` this channel dials, in the order the file states
+    /// them. Never empty.
+    pub addresses: Vec<String>,
+}
+
+impl Material {
+    /// The whole list as one phrase, for a line that says what an entry dials.
+    pub fn address(&self) -> String {
+        self.addresses.join(", ")
+    }
 }
 
 /// Read one directory as the channel it claims to be. See the module doc for
@@ -142,13 +150,10 @@ pub fn read_dir(dir: &Path, whose: Whose) -> Result<Option<Material>, String> {
     // A file that will not read yields no address, and no address is the same
     // refusal an empty one earns: one branch, because "unreadable" and "empty"
     // are one fact about what this box can be told to dial.
-    let address = std::fs::read_to_string(dir.join(ADDRESS))
-        .unwrap_or_default()
-        .trim()
-        .to_owned();
-    if address.is_empty() {
+    let addresses = list(&std::fs::read_to_string(dir.join(ADDRESS)).unwrap_or_default());
+    if addresses.is_empty() {
         return Err(format!(
-            "{} names no address; it must hold one host:port — {}",
+            "{} names no address; it must hold one host:port per line — {}",
             dir.join(ADDRESS).display(),
             whose.remedy()
         ));
@@ -157,9 +162,18 @@ pub fn read_dir(dir: &Path, whose: Whose) -> Result<Option<Material>, String> {
         anchors: dir.join(ANCHORS),
         chain: dir.join(CHAIN),
         key: dir.join(KEY),
-        address,
-        pairing: super::rendezvous::read_dir(dir)?,
+        addresses,
     }))
+}
+
+/// An address file's text as the list it states: one endpoint per line, blank
+/// lines and the space around an endpoint dropped.
+pub fn list(text: &str) -> Vec<String> {
+    text.lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(str::to_owned)
+        .collect()
 }
 
 #[cfg(test)]

@@ -4,18 +4,41 @@
 //! can be asked, this is what happens between a request and the first frame
 //! of its answer.
 //!
-//! Three things, in the order a dial runs them: the ladder is climbed for a
-//! [`Line`] ([`super::ladder`]), the preface and the request go down it, and
-//! a failed write is turned into the sentence an operator can act on.
+//! **The entry's address list is dialled in order** (yog's `docs/REMOTE.md`
+//! §15.3; DESIGN §4.49). The endpoint that worked earlier in this run is
+//! tried first ([`crate::state::worked`], RAM only), then every other in the
+//! order the file states. An endpoint is passed over when its socket will
+//! not open *or* its handshake will not verify — a private address dialled
+//! from somebody else's network may well be answered, and whatever answers
+//! there cannot present the operator's CA — and nothing has crossed in
+//! either case, so falling through repeats no gesture.
 
-use std::net::TcpStream;
+use std::net::{TcpStream, ToSocketAddrs};
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
+use std::time::Duration;
 
 use rustls::{ClientConnection, StreamOwned};
 use serde_json::Value;
 
-use super::{Channel, Reach, edition, frame, hello, ladder, line};
+use super::{Channel, Endpoint, Reach, frame, hello};
+
+/// How long a read may find nothing before the server is judged gone — the
+/// server's own bound, and the bound it hangs up on.
+///
+/// It is a bound on the **transport**, not on the wait. An ordinary ask is
+/// answered at once; a follow-class read is answered by the server at the
+/// rate the thing being followed writes, so this has to sit comfortably
+/// above that cadence or an idle tail would read as a dead channel.
+pub(crate) const GONE: Duration = Duration::from_mins(2);
+
+/// How long one resolved address is given to answer a SYN. Bounded because a
+/// network that drops the SYN would otherwise cost minutes before the next
+/// endpoint in the list is tried.
+const CONNECT: Duration = Duration::from_secs(5);
+
+/// The mTLS stream over one TCP connection.
+pub(crate) type Tls = StreamOwned<ClientConnection, TcpStream>;
 
 impl Channel {
     /// Connect, handshake and send. The TLS handshake happens inside the first
@@ -37,36 +60,40 @@ impl Channel {
     /// breath as this end's preface, so a connection that broke before the
     /// server's answer got back may have broken after it ran the gesture.
     ///
-    /// **A held line owes no preface** (REMOTE §13.4): it was exchanged when
-    /// the line was new, so the request alone goes down it. A held line that
-    /// will not take the write is gone — nothing crossed — and is dropped
-    /// with the refusal; the next ask climbs the ladder below it.
-    pub(super) fn dial(&self, request: &Value) -> Result<line::Line, Reach> {
-        let mut line = ladder::climb(self, true).map_err(Reach::Unsent)?;
-        if line.fresh {
-            hello::state(&mut line.tls).map_err(|e| Reach::Unsent(self.wrote(&e)))?;
+    /// **Every endpoint that refused is named**, each in its own sentence, so
+    /// a list that reached nothing says why of every line in it.
+    pub(super) fn dial(&self, request: &Value) -> Result<Tls, Reach> {
+        let worked = crate::state::worked(&self.key, |worked| worked.clone());
+        let mut order: Vec<&Endpoint> = self.endpoints.iter().collect();
+        order.sort_by_key(|at| Some(&at.address) != worked.as_ref());
+        let mut refusals = Vec::new();
+        for at in order {
+            match self.send(at, request) {
+                Ok(mut tls) => {
+                    crate::state::worked(&self.key, |worked| *worked = Some(at.address.clone()));
+                    let spelled = hello::confirm(&mut tls)?;
+                    self.spelled.store(spelled, Ordering::Relaxed);
+                    return Ok(tls);
+                }
+                Err(refusal) => refusals.push(refusal),
+            }
         }
-        frame::write_value(&mut line.tls, request).map_err(|e| Reach::Unsent(self.wrote(&e)))?;
-        if line.fresh {
-            line.spelled = hello::confirm(&mut line.tls)?;
-        }
-        self.spelled.store(line.spelled, Ordering::Relaxed);
-        Ok(line)
+        Err(Reach::Unsent(refusals.join("; ")))
     }
 
-    /// The inner mTLS over a stream a rung produced — the same configuration,
-    /// the same name off the same address, whichever rung it was.
-    pub(crate) fn line(&self, tcp: TcpStream, kept: bool) -> Result<line::Line, String> {
-        tcp.set_read_timeout(Some(line::GONE))
-            .map_err(|e| format!("connect {}: {e}", self.address))?;
-        let conn = ClientConnection::new(Arc::clone(&self.config), self.name.clone())
-            .map_err(|e| format!("tls {}: {e}", self.address))?;
-        Ok(line::Line {
-            tls: StreamOwned::new(conn, tcp),
-            spelled: edition::FLOOR,
-            fresh: true,
-            kept,
-        })
+    /// One endpoint: the socket, the mTLS over it verifying the name read off
+    /// that same endpoint, and this end's preface and request down it.
+    fn send(&self, at: &Endpoint, request: &Value) -> Result<Tls, String> {
+        let connect = |e| format!("connect {}: {e}", at.address);
+        let tcp = connect_bounded(&at.address).map_err(connect)?;
+        tcp.set_read_timeout(Some(GONE)).map_err(connect)?;
+        let conn = ClientConnection::new(Arc::clone(&self.config), at.name.clone())
+            .map_err(|e| format!("tls {}: {e}", at.address))?;
+        let mut tls = StreamOwned::new(conn, tcp);
+        hello::state(&mut tls)
+            .and_then(|()| frame::write_value(&mut tls, request))
+            .map_err(|e| self.wrote(&at.address, &e))?;
+        Ok(tls)
     }
 
     /// **What a failed write says.**
@@ -83,18 +110,30 @@ impl Channel {
     /// transport's own words: a certificate fault is read off the typed
     /// `rustls::Error` rather than off its wording, so a rewritten message
     /// cannot silently stop matching.
-    pub(super) fn wrote(&self, e: &std::io::Error) -> String {
+    pub(super) fn wrote(&self, address: &str, e: &std::io::Error) -> String {
         let Some(rustls::Error::InvalidCertificate(fault)) = e
             .get_ref()
             .and_then(|inner| inner.downcast_ref::<rustls::Error>())
         else {
-            return format!("send: {e}");
+            return format!("send {address}: {e}");
         };
         format!(
-            "the handshake with {} did not verify ({fault:?}): {} must hold the anchors of THAT server's CA, and {} must be a leaf that CA issued. Both are carried here by hand; the seat mints nothing",
-            self.address,
+            "the handshake with {address} did not verify ({fault:?}): {} must hold the anchors of THAT server's CA, and {} must be a leaf that CA issued. Both are carried here by hand; the seat mints nothing",
             self.anchors.display(),
             self.chain.display()
         )
     }
+}
+
+/// A connect that gives each address `endpoint` resolves to at most
+/// [`CONNECT`], and answers the last refusal where none of them took it.
+fn connect_bounded(endpoint: &str) -> std::io::Result<TcpStream> {
+    let mut refusal = std::io::Error::other("resolved to no address");
+    for addr in endpoint.to_socket_addrs()? {
+        match TcpStream::connect_timeout(&addr, CONNECT) {
+            Ok(tcp) => return Ok(tcp),
+            Err(e) => refusal = e,
+        }
+    }
+    Err(refusal)
 }

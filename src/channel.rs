@@ -13,15 +13,13 @@
 //! is [`Channel::follow`]: the same one request, with each frame handed over as
 //! it arrives instead of collected. No second envelope, no second reader.
 //!
-//! **And where the entry carries rendezvous material, the connection is
-//! climbed for rather than dialled** (REMOTE §13.4; [`ladder`]): a live held
-//! line, the direct address, a re-call from the presence last found, the
-//! full rendezvous over the commons. A punched line is held between asks
-//! ([`line`]), because first contact costs seconds. Nothing above `dial`
-//! knows which rung answered, and nothing about what is trusted changes with
-//! it — the same mTLS verifies the same name off the same address.
+//! **An entry's address is a list, dialled in order** (REMOTE §15.3;
+//! [`dial`]): the endpoint that worked earlier in this run first, then each
+//! line of the file. Nothing above `dial` knows which endpoint answered, and
+//! nothing about what is trusted changes with it — the same mTLS verifies
+//! each endpoint's own name against the same operator CA.
 //!
-//! **The server's name comes from the address and from nowhere else.** A dotted
+//! **A server's name comes from the endpoint dialled and from nowhere else.** A dotted
 //! quad or a bracketed v6 literal is verified as an IP address — the server's
 //! leaf must carry the matching `IP:` subject alternative name — and anything
 //! else is a DNS name. There is nothing to configure and nothing that can
@@ -37,8 +35,6 @@ use rustls::ClientConfig;
 use rustls::pki_types::ServerName;
 use serde_json::Value;
 
-/// The seat's one reading of time, injected.
-pub mod clock;
 /// How a socket is obtained and first spoken on.
 mod dial;
 /// What each end of the wire can SPELL, which is not what it must AGREE about.
@@ -49,20 +45,12 @@ pub mod entries;
 pub mod frame;
 /// The version preface.
 pub mod hello;
-/// The four rungs a dial climbs.
-pub mod ladder;
 /// The grade, read off this box's own certificate before anything is dialled.
 pub mod leaf;
-/// One line to one server, and what is kept of it between asks.
-pub(crate) mod line;
 /// What the operator carried to this box.
 pub mod material;
 /// Why an exchange produced no answer, and whether the request crossed.
 pub mod reach;
-/// The rendezvous material, the two sealed items and the punch.
-pub mod rendezvous;
-/// What the rendezvous path says on stderr: families and counts only.
-pub mod say;
 /// The mTLS configuration.
 pub mod tls;
 
@@ -73,15 +61,11 @@ pub use reach::Reach;
 #[derive(Debug)]
 pub struct Channel {
     config: Arc<ClientConfig>,
-    address: String,
-    name: ServerName<'static>,
-    /// The rendezvous material the entry carries, or none (§13.4).
-    pairing: Option<rendezvous::Pairing>,
-    /// The entry's directory: what the run's RAM cache of what worked is
-    /// keyed by ([`crate::state::worked`]).
+    /// The entry's address list, in the order its file states (§15.3).
+    endpoints: Vec<Endpoint>,
+    /// The entry's directory: what the run's memory of the endpoint that
+    /// worked is keyed by ([`crate::state::worked`]).
     key: String,
-    clock: Arc<dyn clock::Clock>,
-    roving: ladder::Roving,
     /// The two files a failed handshake is about, kept so the sentence can name
     /// them (bl-e620). They are read once at [`Channel::open`]; holding the
     /// paths costs nothing and is what turns rustls' own wording into a remedy.
@@ -101,6 +85,13 @@ pub struct Channel {
     spelled: AtomicU32,
 }
 
+/// One line of an entry's address list, and the name its server must prove.
+#[derive(Debug)]
+struct Endpoint {
+    address: String,
+    name: ServerName<'static>,
+}
+
 impl Channel {
     /// Open the channel from provisioned material. **Nothing is dialled here**:
     /// a channel is a fact about what this box may say, not about whether a
@@ -108,32 +99,25 @@ impl Channel {
     pub fn open(m: &Material) -> Result<Self, String> {
         Ok(Self {
             config: tls::client_config(m)?,
-            address: m.address.clone(),
-            name: server_name(&m.address)?,
-            pairing: m.pairing,
+            endpoints: m
+                .addresses
+                .iter()
+                .map(|address| {
+                    Ok(Endpoint {
+                        address: address.clone(),
+                        name: server_name(address)?,
+                    })
+                })
+                .collect::<Result<_, String>>()?,
             key: m
                 .anchors
                 .parent()
                 .map(|dir| dir.display().to_string())
                 .unwrap_or_default(),
-            clock: clock::system(),
-            roving: ladder::Roving::default(),
             anchors: m.anchors.clone(),
             chain: m.chain.clone(),
             spelled: AtomicU32::new(edition::FLOOR),
         })
-    }
-
-    /// The same channel with the roving rungs' knobs and the clock replaced
-    /// — the suite's door, so a rendezvous runs against a fake DHT in
-    /// milliseconds and a held line's silence is crossed by hand.
-    #[cfg(test)]
-    pub(crate) fn tuned(self, roving: ladder::Roving, clock: Arc<dyn clock::Clock>) -> Self {
-        Self {
-            clock,
-            roving,
-            ..self
-        }
     }
 
     /// **Whether the server can spell one field of one shape** (yog's
@@ -148,9 +132,14 @@ impl Channel {
         edition::spells(self.spelled.load(Ordering::Relaxed), shape, key)
     }
 
-    /// The address it dials.
+    /// The addresses it dials, in the order its entry states them.
     pub fn address(&self) -> String {
-        self.address.clone()
+        let listed: Vec<&str> = self
+            .endpoints
+            .iter()
+            .map(|at| at.address.as_str())
+            .collect();
+        listed.join(", ")
     }
 
     /// Send one request and read its whole answer: every frame up to the
@@ -200,25 +189,14 @@ impl Channel {
         request: &Value,
         on_frame: &mut dyn FnMut(Value) -> bool,
     ) -> Result<(), Reach> {
-        let mut line = self.dial(request)?;
-        let mut pings = 0;
-        while let Some(chunk) = line::read(&mut line.tls, &mut pings)
-            .map_err(|e| Reach::Unanswered(format!("receive: {e}")))?
+        let mut tls = self.dial(request)?;
+        while let Some(chunk) =
+            frame::read_value(&mut tls).map_err(|e| Reach::Unanswered(format!("receive: {e}")))?
         {
             if !on_frame(chunk) {
                 return Ok(());
             }
         }
-        // The whole answer is in, so a kept line goes back to its pool; a
-        // follower that stopped early returned above and dropped its line,
-        // which is the word to the server. A ping discarded on the way is
-        // said, the way the climb's rungs were (`say::tell`).
-        say::tell(
-            self,
-            "pings",
-            (pings > 0).then(say::pinged).into_iter().collect(),
-        );
-        line.give_back(&self.key, self.clock.now());
         Ok(())
     }
 }

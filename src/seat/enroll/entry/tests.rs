@@ -2,7 +2,6 @@
 
 use super::{FRESH, written};
 use crate::channel::material::{self, ADDRESS, ANCHORS, CHAIN, KEY};
-use crate::channel::rendezvous::{self, PUBLIC, SALT};
 use crate::reply::enrolled::{Enrolled, Handoff};
 use crate::test_support::Scratch;
 
@@ -34,7 +33,7 @@ fn the_four_files_are_the_entry_this_seat_itself_reads() {
     let held = material::read_dir(&dir, material::Whose::Elsewhere)
         .expect("it reads")
         .expect("it holds a channel");
-    assert_eq!(held.address, "engine.invalid:7737");
+    assert_eq!(held.address(), "engine.invalid:7737");
     assert_eq!(held.anchors, dir.join(ANCHORS));
     assert_eq!(held.chain, dir.join(CHAIN));
     assert_eq!(held.key, dir.join(KEY));
@@ -106,18 +105,6 @@ fn a_destination_that_is_not_a_directory_says_so() {
     assert!(refused.contains("under"), "{refused}");
 }
 
-/// [`minted`] from a server holding rendezvous material (REMOTE §8.4,
-/// edition 20).
-fn roving() -> Enrolled {
-    Enrolled {
-        rendezvous: Some(Handoff {
-            public: "ab".repeat(32),
-            salt: "cd".repeat(32),
-        }),
-        ..minted()
-    }
-}
-
 /// The file names under `dir`, sorted.
 fn names(dir: &std::path::Path) -> Vec<String> {
     let mut found: Vec<String> = std::fs::read_dir(dir)
@@ -129,59 +116,20 @@ fn names(dir: &std::path::Path) -> Vec<String> {
     found
 }
 
-/// **Six files with the pair, four without** — and the two extra are exactly
-/// what this seat's own rendezvous reader opens, so the entry roves without a
-/// hand touching it (bl-5378).
+/// **Four files, whatever the envelope carried** (REMOTE §15.4): the
+/// rendezvous pair an older server still states is not filed, because nothing
+/// reads it.
 #[test]
-fn the_pair_lands_as_the_two_files_the_rendezvous_reader_reads() {
+fn an_envelope_with_the_retired_pair_files_the_four_and_no_more() {
     let scratch = Scratch::new();
-    let plain = scratch.path().join("plain");
-    written(&plain, &minted()).expect("filed");
-    assert_eq!(names(&plain), [ADDRESS, ANCHORS, KEY, CHAIN]);
-    assert_eq!(rendezvous::read_dir(&plain), Ok(None));
-
-    let dir = scratch.path().join("roving");
-    let said = written(&dir, &roving()).expect("filed");
-    assert_eq!(names(&dir), [ADDRESS, ANCHORS, KEY, CHAIN, SALT, PUBLIC]);
-    for named in [PUBLIC, SALT] {
-        assert!(said.contains(named), "{named} unsaid: {said}");
-    }
-    let pairing = rendezvous::read_dir(&dir)
-        .expect("it reads")
-        .expect("it holds a pairing");
-    assert_eq!(pairing.server, [0xab; 32]);
-    assert_eq!(pairing.salt, [0xcd; 32]);
-    assert_eq!(
-        std::fs::read_to_string(dir.join(PUBLIC)).expect(PUBLIC),
-        format!("{}\n", "ab".repeat(32))
-    );
-}
-
-/// **The modes the server mints**: the public key is readable, the salt is
-/// not — it is shared with the server and is material.
-#[cfg(unix)]
-#[test]
-fn the_public_key_is_open_and_the_salt_is_narrow() {
-    use std::os::unix::fs::PermissionsExt;
-
-    let scratch = Scratch::new();
-    let dir = scratch.path().join("roving");
-    written(&dir, &roving()).expect("filed");
-    let mode = |leaf: &str| {
-        std::fs::metadata(dir.join(leaf))
-            .expect(leaf)
-            .permissions()
-            .mode()
+    let dir = scratch.path().join("entry");
+    let carried = Enrolled {
+        rendezvous: Some(Handoff {
+            public: "ab".repeat(32),
+            salt: "cd".repeat(32),
+        }),
+        ..minted()
     };
-    assert_eq!(
-        mode(SALT) & 0o077,
-        0,
-        "the salt is readable off this account"
-    );
-    assert_eq!(
-        mode(PUBLIC) & 0o022,
-        0,
-        "the public key is writable by others"
-    );
-    assert_eq!(mode(PUBLIC) & 0o400, 0o400, "the public key is unreadable");
+    written(&dir, &carried).expect("filed");
+    assert_eq!(names(&dir), [ADDRESS, ANCHORS, KEY, CHAIN]);
 }

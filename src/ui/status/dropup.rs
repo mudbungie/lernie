@@ -62,6 +62,8 @@ fn ops(pick: &Pick) -> &'static [&'static str] {
     match pick {
         Pick::Workspace(_) => &[verbs::CONVERSATIONS.word],
         Pick::Found(_) => &[verbs::PREPARE, verbs::PROMPT],
+        // A door on this box: nothing crosses the wire.
+        Pick::Manage => &[],
         Pick::Provider(_) => &[verbs::MODELS.word],
         Pick::Model(_) => &[verbs::MODEL.word],
         Pick::Effort(_) => &[verbs::EFFORT],

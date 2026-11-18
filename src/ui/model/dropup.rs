@@ -57,6 +57,9 @@ pub enum Pick {
     Workspace(Aim),
     /// `+ new workspace` on the named channel (bl-673e; DESIGN §4.44).
     Found(String),
+    /// `manage servers`: the door to *Settings › Servers › connections*
+    /// (DESIGN §4.52 item 2).
+    Manage,
     Provider(String),
     Model(String),
     Effort(Option<String>),
@@ -191,6 +194,9 @@ impl Model {
                 self.aim_at(&aim.channel, &aim.address);
             }
             Pick::Found(channel) => self.begin_founding(&channel),
+            Pick::Manage => {
+                self.turn_to(crate::ui::Page::Connections);
+            }
             Pick::Provider(name) => self.open_on(Selector::Model, Some(name)),
             Pick::Model(id) => {
                 if let Some(provider) = asked {

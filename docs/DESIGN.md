@@ -7024,8 +7024,11 @@ named.
    folds two names for one server under one section because it answers *where
    can I work*; this page answers *what does this box hold*, and two entries
    are two sets of files.
-2. **The roster's last row opens it, always.** `manage servers`, under every
-   section, in the list's own scroll. The word is *servers* because that is
+2. **The last row of both workspace lists opens it, always.** `manage
+   servers` stands under every section of the switcher's roster, in the
+   list's own scroll, and is the last choice of the workspace dropup at the
+   bar's foot (bl-2f56) — the list an operator picks from day to day, where
+   the first landing left it out. The word is *servers* because that is
    the list's own word (§4.39); *workspace* on this glass is the thing a
    server holds and `/unmake` deletes there, which this page never does.
 3. **Removing is this box's half only.** `crate::channel::entries::forget`

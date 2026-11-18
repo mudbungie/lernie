@@ -21,7 +21,11 @@ fn each_list_is_the_held_rows_with_the_cursor_on_what_is_in_force() {
     model.drop_up(Selector::Workspace);
     assert_eq!(
         texts(&model),
-        vec!["home", crate::ui::roster::server::FOUND]
+        vec![
+            "home",
+            crate::ui::roster::server::FOUND,
+            crate::ui::roster::MANAGE
+        ]
     );
     assert_eq!(last(&model), Some(crate::verbs::workspaces()));
     model.drop_up(Selector::Model);
@@ -265,4 +269,21 @@ fn a_refusal_of_its_read_puts_the_reload_down() {
     model.close_dropup();
     model.receipt(&channel, crate::verbs::WORKSPACES.word, no());
     assert!(model.notice.is_some());
+}
+
+/// **The workspace list ends at the door to the connections page, always**
+/// (DESIGN §4.52 item 2) — on a seat holding nothing too — and picking it
+/// closes the dropup and turns the settings overlay there.
+#[test]
+fn the_workspace_list_ends_at_the_door_to_the_connections_page() {
+    for mut model in [crate::test_support::window::seated(), Model::default()] {
+        model.drop_up(Selector::Workspace);
+        let rows = model.choices();
+        let last = rows.last().expect("a last row");
+        assert_eq!(last.text, crate::ui::roster::MANAGE);
+        assert_eq!(last.pick, Pick::Manage);
+        model.pick(rows.len() - 1);
+        assert_eq!(model.dropup, None);
+        assert_eq!(model.page(), Some(crate::ui::Page::Connections));
+    }
 }

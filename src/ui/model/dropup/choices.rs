@@ -84,9 +84,10 @@ impl Model {
     }
 
     /// **Every workspace this seat can address**, in the roster's order — named
-    /// with its server where the seat reaches more than one — and last,
+    /// with its server where the seat reaches more than one — then
     /// `+ new workspace` under this box's own server where it is held
-    /// (DESIGN §4.44: the switcher's row, beside the choice it belongs to).
+    /// (DESIGN §4.44: the switcher's row, beside the choice it belongs to),
+    /// and last, always, `manage servers`.
     fn workspaces(&self) -> Vec<Choice> {
         let many = self.roster.len() > 1;
         let found = self
@@ -122,6 +123,14 @@ impl Model {
                 })
             })
             .chain(found)
+            // **The list's last row, always** (§4.52 item 2): this is the
+            // list an operator picks a workspace from, so it is where the
+            // door to what stands behind those workspaces belongs.
+            .chain([Choice {
+                text: crate::ui::roster::MANAGE.to_owned(),
+                current: false,
+                pick: Pick::Manage,
+            }])
             .collect()
     }
 }

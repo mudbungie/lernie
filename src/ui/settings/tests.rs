@@ -163,3 +163,33 @@ fn defaults_reset_the_knobs_and_leave_the_pin() {
     assert_eq!(model.settings, Settings::default());
     assert!(model.bar.pinned);
 }
+
+/// **The breadcrumb's words above the page's own are doors** (bl-1ac4): the
+/// section turns to its first page on offer, the root to *Seat › look* —
+/// at the narrow size, where the tree is a select and the path is the only
+/// row of words above the page.
+#[test]
+fn the_breadcrumb_s_root_and_section_turn_the_overlay() {
+    let mut harness = crate::snapshot::seat(open(Page::Doctor), 600.0, 900.0);
+    harness.get_by_label(Page::Doctor.group().label()).click();
+    harness.run();
+    assert_eq!(harness.state().page(), Some(Page::Connections));
+    harness.get_by_label(HEADING).click();
+    harness.run();
+    assert_eq!(harness.state().page(), Some(Page::default()));
+}
+
+/// A section with no page on offer — the workspace's, once the aim is gone
+/// from under an open page — takes the click and turns nothing.
+#[test]
+fn a_section_with_no_page_on_offer_turns_nothing() {
+    let mut model = seated();
+    model.begin_tuning();
+    model.aim = None;
+    assert_eq!(model.page(), Some(Page::Roles));
+    assert!(!model.offers(Page::Roles));
+    let mut harness = crate::snapshot::seat(model, 600.0, 900.0);
+    harness.get_by_label(Page::Roles.group().label()).click();
+    harness.run();
+    assert_eq!(harness.state().page(), Some(Page::Roles));
+}

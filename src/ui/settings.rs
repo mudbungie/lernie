@@ -50,7 +50,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         return false;
     };
     model.visited = page;
-    breadcrumb(ui, page);
+    breadcrumb(ui, model, page);
     if search::render(ui, model) {
         return true;
     }
@@ -67,9 +67,19 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     true
 }
 
-/// **`Settings › Workspace › roles`**: each word its own label, so a word is
-/// a thing the walk can find, with the way out at the line's other end.
-fn breadcrumb(ui: &mut egui::Ui, page: Page) {
+/// What the breadcrumb's two doors say under the pointer.
+pub const ROOT_HELP: &str = "turns the settings to their first page";
+pub const GROUP_HELP: &str = "turns the settings to this section's first page";
+
+/// **`Settings › Workspace › roles`**: each word its own, so a word is a
+/// thing the walk can find, with the way out at the line's other end.
+///
+/// **The words above the page's own are doors** (bl-1ac4): the root to
+/// *Seat › look*, the section to its first page on offer now. A page opened
+/// from outside the overlay — the connections, from the workspace list —
+/// stands under a path, and a path that takes no click is a dead end at the
+/// narrow size, where the tree is folded into a select.
+fn breadcrumb(ui: &mut egui::Ui, model: &mut Model, page: Page) {
     // The hint takes the right end first, and the path wraps in what is
     // left — so at the matrix size the two never cross.
     ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
@@ -80,11 +90,21 @@ fn breadcrumb(ui: &mut egui::Ui, page: Page) {
             egui::vec2(ui.available_width(), theme::ROW),
             egui::Layout::left_to_right(egui::Align::Center).with_main_wrap(true),
             |ui| {
-                ui.label(egui::RichText::new(HEADING).color(theme::INK));
-                for word in [page.group().label(), page.label()] {
+                let prompt = |ui: &mut egui::Ui| {
                     ui.label(egui::RichText::new(theme::glyph::PROMPT).color(theme::INK_FAINT));
-                    ui.label(egui::RichText::new(word).color(theme::INK_WEAK));
+                };
+                if theme::paint::tab(ui, HEADING, theme::INK, ROOT_HELP).clicked() {
+                    model.turn_to(Page::default());
                 }
+                prompt(ui);
+                let group = page.group();
+                if theme::paint::tab(ui, group.label(), theme::INK_WEAK, GROUP_HELP).clicked()
+                    && let Some(first) = group.pages().find(|leaf| model.offers(*leaf))
+                {
+                    model.turn_to(first);
+                }
+                prompt(ui);
+                ui.label(egui::RichText::new(page.label()).color(theme::INK_WEAK));
             },
         );
     });

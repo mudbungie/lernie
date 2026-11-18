@@ -1,7 +1,8 @@
 +++
 title = "advisories.yml has failed daily at 'Mend the lockfile' since at least 2026-11-14 (yog too, since 2026-11-10; yog-android on 2026-11-17): the day's advisory is not being mended and nobody was told"
 created = 1794984937
-updated = 1794985667
+updated = 1794985668
+claimant = "Knuckled"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

@@ -17,7 +17,7 @@
 //! read as exactly one ordinary path component or refused: a name with a
 //! separator in it, or `..`, files nothing.
 
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 
@@ -57,9 +57,7 @@ pub fn read(body: &[u8]) -> Result<Claimed, String> {
         .filter(|listed| !listed.is_empty())
         .ok_or_else(|| missing(ADDRESS))?;
     let workspace = text("workspace")?;
-    let mut parts = Path::new(&workspace).components();
-    if !matches!((parts.next(), parts.next()), (Some(Component::Normal(leaf)), None) if leaf == workspace.as_str())
-    {
+    if !entries::is_leaf(&workspace) {
         return Err(format!(
             "the server named the workspace {workspace:?}, which cannot be a directory name here; \
              nothing was filed"

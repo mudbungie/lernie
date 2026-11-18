@@ -88,6 +88,11 @@ pub fn tick(link: &Link, root: &Path) {
         let roots = crate::seat::register::web_roots();
         link.claimed(crate::seat::register::claim(root, &url, roots));
     }
+    // **And so is removing an entry** (DESIGN §4.52): a write to this box's
+    // own disk, which a frame never makes.
+    for name in link.forgets() {
+        link.forgotten(&name, crate::channel::entries::forget(root, &name));
+    }
     let standing = link.standing();
     for posted in link.compose() {
         if crate::envelope::workspace(&posted.envelope).is_none() {

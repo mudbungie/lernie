@@ -53,6 +53,7 @@ fn the_accordion_comes_back_with_the_aim() {
             aimed: [("lab".to_owned(), "bench".to_owned())]
                 .into_iter()
                 .collect(),
+            ..Servers::default()
         },
         pinned: true,
         kept: vec![Tab {

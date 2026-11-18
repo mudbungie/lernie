@@ -7,7 +7,7 @@
 //! beside it that were each a page of what a person would call settings.
 //! **They are pages of this one overlay now**: *Seat* (the knob table's three
 //! pages, `crate::settings::Page`), *Workspace* (`/roles`, `/login`,
-//! `/config`, `/clients`) and *Servers* (registering this box, `/offers`,
+//! `/config`, `/clients`) and *Servers* (the connections, registering this box, `/offers`,
 //! `/doctor`).
 //!
 //! **Every word stands.** A page is opened by its word where it has one
@@ -112,6 +112,7 @@ fn body(ui: &mut egui::Ui, model: &mut Model, page: Page) {
             Page::Clients => {
                 clients::render(ui, model);
             }
+            Page::Connections => crate::ui::connections::render(ui, model),
             Page::Register => crate::ui::register::render(ui, model),
             Page::Offers => {
                 crate::ui::offers::render(ui, model);

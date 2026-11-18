@@ -48,6 +48,8 @@ pub mod commands;
 pub mod composer;
 /// The config pane: the files a workspace's policy is written in, and their settings.
 pub mod config;
+/// The connections page: every channel this box holds, in full, and removing an entry.
+pub mod connections;
 /// A conversation's row under its workspace, and the words a row is made of.
 pub mod convs;
 /// The live dock: what runs under the aimed workspace, folded above the rule (§4.42).

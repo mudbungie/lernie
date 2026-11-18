@@ -1,6 +1,6 @@
 //! What a box holds, and what a directory that is not quite an entry says.
 
-use super::{ENTRIES, Entry, WIRE, WORKSPACE, dir, flat, read_dir};
+use super::{ENTRIES, Entry, WIRE, WORKSPACE, dir, flat, forget, is_leaf, read_dir};
 use crate::channel::material::{ADDRESS, ANCHORS, CHAIN, KEY};
 use crate::test_support::{Scratch, mint};
 use std::path::Path;
@@ -153,4 +153,34 @@ fn a_provisioned_entry_opens_onto_its_own_address() {
         entry.open().expect("opened").address(),
         "server.example:9000"
     );
+}
+
+/// **Removing an entry removes its directory, entire, and nothing beside
+/// it**; a second removal says the directory was not there to remove.
+#[test]
+fn forgetting_an_entry_removes_its_directory_and_no_other() {
+    let scratch = Scratch::new();
+    let entries = dir(scratch.path());
+    provision(&entries.join("lab"), "engine.example:7737");
+    provision(&entries.join("zoo"), "engine.example:7738");
+    assert_eq!(forget(scratch.path(), "lab"), Ok(()));
+    assert!(!entries.join("lab").exists());
+    assert!(entries.join("zoo").join(KEY).exists());
+    let again = forget(scratch.path(), "lab").expect_err("already gone");
+    assert!(again.contains("was not removed"), "{again}");
+}
+
+/// **A name that is not one path component removes nothing** — it would
+/// name a directory outside the entries.
+#[test]
+fn a_name_that_is_not_a_leaf_removes_nothing() {
+    let scratch = Scratch::new();
+    provision(&flat(scratch.path()), "127.0.0.1:7737");
+    for name in ["..", "", "a/b", "/abs", "."] {
+        assert!(!is_leaf(name), "{name:?}");
+        let refused = forget(scratch.path(), name).expect_err("refused");
+        assert!(refused.contains("nothing was removed"), "{refused}");
+    }
+    assert!(is_leaf("lab"));
+    assert!(flat(scratch.path()).join(KEY).exists());
 }

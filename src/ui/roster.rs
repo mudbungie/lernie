@@ -64,6 +64,10 @@ pub const NO_WORKSPACES: &str = "this server holds no workspace this box is in";
 /// is yogs, each by the name this box gave it.
 pub const HEADING: &str = "servers";
 
+/// The list's last row, and what it opens.
+pub const MANAGE: &str = "manage servers";
+pub const MANAGE_HELP: &str = "opens Settings › Servers › connections: every server this box reaches, in full, and removing one";
+
 /// Paint the roster and take a click on it. **The heading is the shell's** —
 /// see [`HEADING`].
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
@@ -84,6 +88,12 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
             for server in model.server_rows() {
                 let showing = open.as_deref() == Some(server.name());
                 section(ui, model, &server, showing, reveal);
+            }
+            // **The list's last row, always** (§4.52): the door to what
+            // this box holds behind the sections above, and to removing one.
+            ui.add_space(theme::space::S);
+            if theme::paint::link(ui, MANAGE, theme::INK_WEAK, MANAGE_HELP).clicked() {
+                model.turn_to(crate::ui::Page::Connections);
             }
         });
 }

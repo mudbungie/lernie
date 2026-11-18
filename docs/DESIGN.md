@@ -6627,8 +6627,9 @@ bar* is §4.42 item 11's rule, re-homed (item 4). *A Bot* is defined in item
      mode (item 8);
    - **Workspace** — *roles* (`/roles`), *providers* (`/login`), *config*
      (`/config`), *clients* (`/clients`);
-   - **Servers** — *register* (this box joining a server; §4.50, added
-     bl-fb7f), *offers* (`/offers`; §4.51, replacing the enrollment's door,
+   - **Servers** — *connections* (every channel this box holds, and
+     removing an entry; §4.52, added bl-6f3c), *register* (this box joining
+     a server; §4.50, added bl-fb7f), *offers* (`/offers`; §4.51, replacing the enrollment's door,
      bl-1f57), *doctor* (`/doctor`), each
      server's dial state as the seat panel said it.
    **Every word stands**: `/roles` opens the overlay on its page, as does
@@ -7008,6 +7009,43 @@ the word on this side — the server states it on the row. And the page does
 not say an offer is *expired*: the server drops an expired open offer from
 the list, and the minted block shows the time its code runs out.
 
+### 4.52 The connections: what this box holds, in full, and removing an entry (bl-6f3c)
+
+**The defect.** The roster showed a server and nothing about the files behind
+it, and the window could not remove an entry. An entry whose address was this
+box's own listener painted that server's workspaces under a second name, and
+the only remedy was deleting a directory by hand — which the window never
+named.
+
+1. **A page, *Settings › Servers › connections*.** One block per channel in
+   `Model::roster`, never folded: its name here, its name on its host, the
+   addresses it dials, **which other connection dials the same address**,
+   where its files are under the data root, and what it last said. The roster
+   folds two names for one server under one section because it answers *where
+   can I work*; this page answers *what does this box hold*, and two entries
+   are two sets of files.
+2. **The roster's last row opens it, always.** `manage servers`, under every
+   section, in the list's own scroll. The word is *servers* because that is
+   the list's own word (§4.39); *workspace* on this glass is the thing a
+   server holds and `/unmake` deletes there, which this page never does.
+3. **Removing is this box's half only.** `crate::channel::entries::forget`
+   removes the entry's directory — key, leaf, anchors, address. The server's
+   registration of this box is permission and stays until an operator there
+   removes it; the page says so before the second click. Joining again takes
+   a new offer (§4.50).
+4. **Two clicks, the way out first** (§4.20's order, without the typed name:
+   the act is local and an offer undoes it). The first arms one entry and
+   states what goes; `keep it` precedes `remove it`.
+5. **The frame writes nothing.** The confirmed name crosses the lock to the
+   poster's lane, as a registration URL does (§4.50), and the outcome comes
+   back the same way: the section leaves the roster on the frame the removal
+   is filed, and an aim down that channel is put down with it.
+6. **This box's own server is listed and not removable.** It is the flat
+   root, not an entry; removing it would unprovision the box, and a channel
+   is an entry exactly where it carries a host-side name.
+7. **No verb.** Nothing crosses the wire, so there is no op and no `act:`
+   tag; `lernie entries` remains the command line's read of the same facts.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -7041,6 +7079,8 @@ the list, and the minted block shows the time its code runs out.
 | `src/seat/register/https.rs` | the one HTTPS request: a hand-written HTTP/1.1 POST over `rustls`, bounded in time and size, against roots the caller passes; and the public web's roots. | ~135 |
 | `src/seat/register/entry.rs` | the door's answer read as its six fields, the workspace name refused unless it is one path component, and the entry filed `0600` and never over one that exists. | ~125 |
 | `src/ui/register.rs` | *Settings › Servers › register* (§4.50): the URL field, the button, and the outcome. Fires nothing on the wire itself. | ~75 |
+| `src/ui/connections.rs` | *Settings › Servers › connections* (§4.52): one block per channel with every fact this box holds about it, and the two clicks that remove an entry. Writes nothing itself. | ~135 |
+| `src/ui/model/forget.rs` | removing an entry between frames (§4.52): which is armed, which were confirmed, and what a removal's return does to the roster and the aim. | ~65 |
 | `src/verbs/offer.rs` | the offer's four rows — `offer`, `offers`, `approve`, `decline` — the two grades, and the typed doors the window composes them through (§4.51). | ~105 |
 | `src/reply/offers.rs` | the offer's replies: the minted URL and its expiry, one pending row (name, grade, state, expiry, word), whether a row can be approved, and a moment as a clock reads it. | ~95 |
 | `src/ui/offers.rs` | *Settings › Servers › offers* (`/offers`; §4.51): the form that mints an offer, the minted URL as text and symbol with its expiry, and the pending rows with `approve` (dark until proved) and `decline`. | ~170 |

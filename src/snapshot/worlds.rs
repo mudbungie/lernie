@@ -19,6 +19,8 @@ use crate::ui::{Channel, Chunk, Model, Unmaking};
 mod bar;
 /// The column's own states: the ask, the dock, the tabs, the notice.
 mod column;
+/// The connections page: a duplicate, and a removal armed.
+mod connections;
 /// The covered states — one world per pane that stands over the conversation.
 mod covered;
 /// A turn's shapes: settled under its answer, and running.
@@ -266,6 +268,7 @@ fn simple() -> Vec<World> {
         config(),
         settings(),
         covered::registering(),
+        connections::connections(),
         accordion(),
         pinned_workspace(),
         slashing(),

@@ -42,6 +42,10 @@ pub struct Servers {
     /// carries — what an opening aims at, so a server an operator comes back
     /// to is the server they left.
     pub aimed: BTreeMap<String, String>,
+    /// **Which entry is being removed**, and how the last removal ended
+    /// (`super::forget`). The seat's own, like the rest, and never kept: the
+    /// place file reads the three above by name.
+    pub forgetting: super::Forgetting,
 }
 
 impl Servers {

@@ -49,6 +49,10 @@ struct Shared {
     /// ended, for the frame (`crate::ui::Registering`).
     claims: Vec<String>,
     claimed: Vec<Result<crate::seat::register::Registered, String>>,
+    /// Entries a confirmed removal named, for the poster; and how each
+    /// ended, for the frame (`crate::ui::Forgetting`).
+    forgets: Vec<String>,
+    forgotten: Vec<(String, Result<(), String>)>,
 }
 
 /// **The one handle**, cloned to every worker.
@@ -119,6 +123,10 @@ impl Link {
             model.registered(outcome);
         }
         shared.claims.extend(model.registering.asked.take());
+        for (name, outcome) in std::mem::take(&mut shared.forgotten) {
+            model.forgotten(&name, outcome);
+        }
+        shared.forgets.append(&mut model.servers.forgetting.asked);
         shared.outbox.append(&mut model.outbox);
         shared.standing = Standing::of(model);
         // **And the seat's own place, on the standing set's own terms**
@@ -199,6 +207,17 @@ impl Link {
     /// How one claim ended, for the next settle to file.
     pub fn claimed(&self, outcome: Result<crate::seat::register::Registered, String>) {
         self.hold().claimed.push(outcome);
+    }
+
+    /// **The entries whose removal was confirmed since the last drain** — a
+    /// take, for [`Self::claims`]'s reason.
+    pub fn forgets(&self) -> Vec<String> {
+        std::mem::take(&mut self.hold().forgets)
+    }
+
+    /// How one removal ended, for the next settle to file.
+    pub fn forgotten(&self, name: &str, outcome: Result<(), String>) {
+        self.hold().forgotten.push((name.to_owned(), outcome));
     }
 
     /// Ask every worker to finish its pass and stop.

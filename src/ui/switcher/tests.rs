@@ -170,3 +170,18 @@ fn a_workspace_click_keeps_it_and_the_next_chord_is_one_toggle() {
     ctrl_x(&window, &mut model);
     assert!(model.switching, "and the next is the other");
 }
+
+/// **The list's last row is the door to the connections page** (DESIGN
+/// §4.52): it stands under every server, and a click turns the overlay from
+/// the switcher to *Settings › Servers › connections*.
+#[test]
+fn the_last_row_opens_the_connections_page() {
+    let mut model = seated();
+    let window = Window::new();
+    ctrl_x(&window, &mut model);
+    click(&window, crate::ui::roster::MANAGE, |ctx| {
+        crate::ui::render(ctx, &mut model);
+    });
+    assert!(!model.switching, "one overlay stands at a time");
+    assert_eq!(model.page(), Some(crate::ui::Page::Connections));
+}

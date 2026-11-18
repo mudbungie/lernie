@@ -133,6 +133,7 @@ pub fn read(root: &Path) -> Place {
             open: held.get(OPEN).and_then(Value::as_str).map(current),
             opened: table(&held, OPENED, Value::as_u64),
             aimed: table(&held, AIMED, |held| held.as_str().map(str::to_owned)),
+            ..Servers::default()
         },
         pinned: held.get(PINNED).and_then(Value::as_bool).unwrap_or(false),
         kept: kept(&held),

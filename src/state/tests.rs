@@ -213,3 +213,23 @@ fn a_settle_hands_a_claim_over_and_files_how_it_ended() {
         crate::ui::Claim::Done(Err("this offer cannot be claimed".to_owned()))
     );
 }
+
+/// **A removal crosses the lock both ways** (DESIGN §4.52): a settle hands
+/// the confirmed name over once, and the next files how it ended.
+#[test]
+fn a_settle_hands_a_removal_over_and_files_how_it_ended() {
+    let link = link();
+    let mut model = seated();
+    model.arm_forget("lab");
+    assert!(model.forget());
+    link.settle(&mut model);
+    assert!(model.servers.forgetting.asked.is_empty(), "handed over");
+    assert_eq!(link.forgets(), ["lab"]);
+    assert_eq!(link.forgets(), Vec::<String>::new(), "a take, not a copy");
+    link.forgotten("lab", Err("was not removed".to_owned()));
+    link.settle(&mut model);
+    assert_eq!(
+        model.servers.forgetting.refused.as_deref(),
+        Some("was not removed")
+    );
+}

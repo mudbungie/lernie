@@ -47,6 +47,8 @@ mod fill;
 mod fleet;
 /// One server, every name it is held under: the roster folded by address.
 mod fold;
+/// Removing an entry: the arming, the asking, and what its return does.
+mod forget;
 /// A selection the server no longer knows, and what retires it.
 mod gone;
 /// **What the window holds between frames** — the struct itself.
@@ -112,6 +114,7 @@ pub use dropup::{Choice, Dropup, Pick, Reload, Selector, WORKER};
 pub use fill::Fill;
 pub use fleet::{Armed, Fleet};
 pub use fold::Server;
+pub use forget::Forgetting;
 pub use held::Model;
 pub use listing::Listing;
 pub use login::Login;

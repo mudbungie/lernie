@@ -50,10 +50,12 @@
 //! even when it cannot be dialled — falling through to the flat root would send
 //! a gesture to the wrong server on the strength of a missing file.
 //!
-//! **Nothing here writes anything.** Material reaches an entry by the
-//! operator's hand, out of channel, forever (REMOTE §1.4).
+//! **Nothing here writes material.** It reaches an entry by `lernie register`
+//! (`crate::seat::register`) or by the operator's hand, out of channel
+//! (REMOTE §1.4). The one write here is the opposite act: [`forget`] removes
+//! an entry, entire.
 
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 use super::material::{self, Material, Whose};
 
@@ -99,6 +101,30 @@ pub fn flat(data_root: &Path) -> PathBuf {
 /// Where entries live under a data root.
 pub fn dir(data_root: &Path) -> PathBuf {
     flat(data_root).join(ENTRIES)
+}
+
+/// **Whether `name` can be an entry's leaf**: exactly one ordinary path
+/// component. A name off the network or off a click becomes a path under the
+/// entries directory, so one with a separator in it, or `..`, names no entry.
+pub fn is_leaf(name: &str) -> bool {
+    let mut parts = Path::new(name).components();
+    matches!((parts.next(), parts.next()), (Some(Component::Normal(leaf)), None) if leaf == name)
+}
+
+/// **Remove one entry** — its directory, entire: this box's key and leaf for
+/// that server, its anchors and its address (DESIGN §4.52).
+///
+/// It is this box's half only. The server-side registration is permission and
+/// is the server operator's to remove; what goes here is possession, and a
+/// box that wants back in claims a new offer.
+pub fn forget(data_root: &Path, leaf: &str) -> Result<(), String> {
+    if !is_leaf(leaf) {
+        return Err(format!(
+            "{leaf:?} is not an entry's name; nothing was removed"
+        ));
+    }
+    let entry = dir(data_root).join(leaf);
+    std::fs::remove_dir_all(&entry).map_err(|e| format!("{} was not removed: {e}", entry.display()))
 }
 
 /// Every entry in `dir`, sorted by [`leaf`](Entry::leaf).

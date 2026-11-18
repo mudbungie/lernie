@@ -60,6 +60,8 @@ jobs:
       contents: write
       # Dispatching ci.yml and release-plz.yml.
       actions: write
+      # The one issue a red streak opens (scripts/alarm.sh).
+      issues: write
     env:
       # Present: pushes trigger workflows and no dispatch is needed. Absent:
       # the default token pushes and release-plz.yml is dispatched (5).
@@ -100,7 +102,9 @@ jobs:
       - name: Land it through the gate
         if: steps.ask.outputs.clean != 'true'
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN || github.token }}
+          # The job's own token, never a personal one: GitHub refuses a
+          # personal token a workflow dispatch (HTTP 403; yog bl-37d8).
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           if git diff --quiet -- Cargo.lock; then
@@ -133,3 +137,14 @@ jobs:
           if [ -z "$PAT" ]; then
             gh workflow run release-plz.yml --ref main
           fi
+      # One issue per red streak, closed by the next green run (scripts/alarm.sh).
+      - name: Say so, once per streak
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/alarm.sh red
+      - name: Close the streak
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/alarm.sh green

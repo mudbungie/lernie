@@ -39,6 +39,8 @@ on:
 # the tag in the trailing comment, as everywhere else here.
 permissions:
   contents: read
+  # The one issue a red streak opens (scripts/alarm.sh).
+  issues: write
 
 jobs:
   tasks:
@@ -63,3 +65,14 @@ jobs:
       - name: Scan the task store
         working-directory: store
         run: "$GITHUB_WORKSPACE/scripts/leak-scan.sh"
+      # One issue per red streak, closed by the next green run (scripts/alarm.sh).
+      - name: Say so, once per streak
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/alarm.sh red
+      - name: Close the streak
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/alarm.sh green

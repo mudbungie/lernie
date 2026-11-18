@@ -1,5 +1,5 @@
 .PHONY: all build release test coverage lint fmt fmt-check check ci \
-        line-cap leak-scan protocol-gate rules-audit deny advisories mend-advisories corpus snapshots install-hooks install \
+        line-cap leak-scan protocol-gate alarm-selftest rules-audit deny advisories mend-advisories corpus snapshots install-hooks install \
         uninstall icon icon-seats deploy-seat deploy-selftest clean
 
 # The build authority. Every gate step has ONE home here, and the pre-commit
@@ -64,6 +64,7 @@ lint:
 	$(MAKE) line-cap
 	$(MAKE) deploy-selftest
 	$(MAKE) protocol-gate
+	$(MAKE) alarm-selftest
 	$(MAKE) leak-scan
 	cargo clippy --all-targets -- -D warnings
 	$(MAKE) rules-audit
@@ -157,6 +158,12 @@ leak-scan:
 # its self-test. Milliseconds, so it sits at the head of `lint`.
 protocol-gate:
 	@scripts/protocol-gate.sh --self-test
+
+# `scripts/alarm.sh` is what tells the operator a scheduled run went red — one
+# issue per streak — and it runs only on a runner, on a failure, so nothing
+# else would ever judge it. Both directions under a stand-in `gh`.
+alarm-selftest:
+	@scripts/alarm.sh --self-test
 
 # Static audit of every ast-grep rule (rules/, pinned ast-grep 0.44.1 — see
 # sgconfig.yml). BOTH DIRECTIONS: `src` must be clean, AND every rule must

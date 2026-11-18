@@ -29,7 +29,7 @@ third answer.
 ## The gate
 
 `make check` is the complete gate: `fmt-check → lint → coverage`, where `lint`
-is `line-cap → deploy-selftest → protocol-gate → leak-scan → clippy -D warnings
+is `line-cap → deploy-selftest → protocol-gate → alarm-selftest → leak-scan → clippy -D warnings
 → rules-audit → cargo deny check bans licenses sources`. The pre-commit hook (`.githooks/pre-commit`,
 the mainline refusal) execs `scripts/pre-commit`, which is `exec bl-gate "$@"`:
 the gate is `bl-gate` from userconf (`~/userconf/bin/bl-gate`, ops bl-1f80,
@@ -125,6 +125,13 @@ its own on `main`, so anything reading them must read `release-plz.yml`.
 
 **All tests must pass and coverage must be 100% before anything merges.** It
 does not matter who broke the test.
+
+**A red scheduled run says so, once** (bl-f625). `advisories.yml` and
+`store-scan.yml` have no author to mail, and the first went red daily for a
+week unseen. Each now ends in `scripts/alarm.sh`: the first red run of a
+streak opens one issue titled for the workflow and mentioning the owner, later
+red runs are silent while it is open, and the next green run closes it. The
+open issue is the whole state; `make alarm-selftest` proves both directions.
 
 `deploy-selftest` is in that list because `scripts/deploy/` is code that runs
 unattended on somebody's desktop and is in no crate, so nothing else would ever

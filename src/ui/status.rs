@@ -36,7 +36,7 @@ pub mod dropup;
 mod fit;
 /// The seat's facts at the right end.
 pub mod seat;
-/// The four selectors, and the workspace's run the bar's foot paints.
+/// The five selectors, and the workspace's run the bar's foot paints.
 pub mod selectors;
 /// The seat-wide waiting count, as the queue's door.
 pub mod waiting;

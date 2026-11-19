@@ -204,3 +204,32 @@ fn the_roster_control_opens_the_pane_and_the_pane_covers_the_conversation() {
         "the composer stands down under it:\n{painted}"
     );
 }
+
+/// **The catalog is parted by machine** (DESIGN §4.44 item 3): the server's
+/// rows under `server`, each machine's under its name, every row said without
+/// its qualification — and a sign-in still addressed by the qualified name.
+#[test]
+fn the_catalog_is_parted_by_machine() {
+    let mut model = Model {
+        catalog: Some(vec![
+            provider("housevendor"),
+            provider("farvendor@attic"),
+            provider("housevendor@attic"),
+        ]),
+        login: Some(Login::default()),
+        ..seated()
+    };
+    let painted = pane(|ui| {
+        render(ui, &mut model);
+    });
+    let lines: Vec<&str> = painted
+        .lines()
+        .filter(|line| ["server", "attic", "housevendor", "farvendor"].contains(line))
+        .collect();
+    assert_eq!(
+        lines,
+        vec!["server", "housevendor", "attic", "farvendor", "housevendor"],
+        "{painted}"
+    );
+    assert!(!painted.contains('@'), "{painted}");
+}

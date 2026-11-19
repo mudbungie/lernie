@@ -203,6 +203,7 @@ fn each_pick_fires_its_door() {
     model.dropup = Some(super::Dropup {
         selector: Selector::Model,
         provider: None,
+        machine: None,
         cursor: 0,
         reload: None,
     });

@@ -56,7 +56,7 @@ pub fn toggle(ui: &egui::Ui, model: &mut Model, selector: Selector) {
 }
 
 /// **The ops a row's pick spends**: the aim reads the workspace's conversations,
-/// a provider opens its model list, and the rest are the tuning writes.
+/// a machine opens its providers, a provider its model list, and the rest are the tuning writes.
 fn ops(pick: &Pick) -> &'static [&'static str] {
     use crate::verbs;
     match pick {
@@ -64,6 +64,8 @@ fn ops(pick: &Pick) -> &'static [&'static str] {
         Pick::Found(_) => &[verbs::PREPARE, verbs::PROMPT],
         // A door on this box: nothing crosses the wire.
         Pick::Manage => &[],
+        // A machine opens its providers, which posts their read again.
+        Pick::Machine(_) => &[verbs::PROVIDERS.word],
         Pick::Provider(_) => &[verbs::MODELS.word],
         Pick::Model(_) => &[verbs::MODEL.word],
         Pick::Effort(_) => &[verbs::EFFORT],

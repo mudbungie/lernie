@@ -23,7 +23,7 @@ fn wears(
     glyph: &str,
     ink: egui::Color32,
 ) -> bool {
-    let run = &crate::ui::status::runs(model).0[0];
+    let run = &crate::ui::status::runs(model).0[1];
     let door = format!("{} {glyph}", run.text);
     run.mark == Some((glyph, ink)) && seen.iter().any(|seen| seen.text == door)
 }
@@ -260,4 +260,23 @@ fn a_list_stands_on_the_edge_it_opens_from() {
             );
         }
     }
+}
+
+/// **The machine's door opens the machines** (DESIGN §4.44 item 3): the
+/// server first, then each client a row names — and its providers' read.
+#[test]
+fn the_machine_s_door_lists_the_server_and_each_client() {
+    let window = Window::new();
+    let mut model = selecting();
+    let far = crate::test_support::window::provider("housevendor@attic");
+    model.providers.get_or_insert_default().push(far);
+    click_rule(&window, &mut model, &dropped(crate::ui::machine::SERVER));
+    assert_eq!(
+        model.dropup.as_ref().map(|open| open.selector),
+        Some(Selector::Machine)
+    );
+    let seen = glass(&window, &mut model);
+    let texts: Vec<&str> = seen.iter().map(|run| run.text.as_str()).collect();
+    assert!(texts.contains(&"attic"), "{texts:?}");
+    assert!(texts.contains(&"• server"), "{texts:?}");
 }

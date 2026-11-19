@@ -56,7 +56,7 @@
 //! this pane adds is one sentence saying so, naming the channel and no address.
 
 use crate::reply::providers::ProviderRow;
-use crate::ui::{Model, theme};
+use crate::ui::{Model, machine, theme};
 
 /// The followed run's own half of the pane — its lines, its exit and the
 /// command to run by hand.
@@ -123,8 +123,20 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
             ui.label(NO_PROVIDERS);
         }
         Some(rows) => {
+            // **Parted by machine** (DESIGN §4.44 item 3): the catalog is
+            // every machine's rows end to end, each under its machine.
+            let mut machines: Vec<Option<&str>> = Vec::new();
             for row in &rows {
-                provider(ui, model, row);
+                let on = machine::of(&row.name);
+                if !machines.contains(&on) {
+                    machines.push(on);
+                }
+            }
+            for on in machines {
+                theme::paint::section(ui, machine::word(on));
+                for row in rows.iter().filter(|row| machine::of(&row.name) == on) {
+                    provider(ui, model, row);
+                }
             }
         }
     }
@@ -135,7 +147,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
 /// and the two controls on it.
 fn provider(ui: &mut egui::Ui, model: &mut Model, row: &ProviderRow) {
     ui.separator();
-    ui.label(row.name.clone());
+    ui.label(machine::row(&row.name));
     let weak = theme::tone_ink(&crate::reply::convs::Tone::Weak);
     ui.colored_label(weak, row.fact.clone());
     if let Some(takes) = row.takes() {

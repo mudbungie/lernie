@@ -82,9 +82,9 @@ fn the_hint_names_the_provider_the_rule_shows() {
         ..unselected()
     };
     let (runs, _) = crate::ui::status::selectors::selectors(&model);
-    assert_eq!(runs[0].text, "anthropic");
+    assert_eq!(runs[1].text, "anthropic");
     let lack = missing(&model).expect("the row is missing");
-    assert!(lack.starts_with(&runs[0].text), "{lack}");
+    assert!(lack.starts_with(&runs[1].text), "{lack}");
     assert!(!lack.contains("no provider"), "{lack}");
 }
 

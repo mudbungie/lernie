@@ -1,6 +1,6 @@
 //! **What an open dropup lists**: the rows this seat already holds, read at
-//! once — the roster's workspaces, the providers read, one provider's models, the
-//! levels — so the list stands before the refresh it posted has answered.
+//! once — the roster's workspaces, the providers read parted by machine
+//! (`super::machine`), one provider's models, the levels — so the list stands before the refresh it posted has answered.
 
 use super::{Choice, Model, Pick, Selector};
 
@@ -18,34 +18,11 @@ impl Model {
         let worker = self.worker();
         match open.selector {
             Selector::Workspace => self.workspaces(),
-            // **Every row of the table is a choice** (bl-67aa; it filtered
-            // bare rows off under bl-526d): the providers read is brazen's
-            // routing table, so a preset nobody named and nobody signed into
-            // is not in it at all. **The row in force is listed whether or
-            // not the table names it** — a worker bound to such a preset is
-            // on no table row — so the list still says where the worker
-            // stands.
-            Selector::Provider => {
-                let mut names: Vec<String> = self
-                    .providers
-                    .iter()
-                    .flatten()
-                    .map(|row| row.name.clone())
-                    .collect();
-                if let Some(w) = worker
-                    && !names.contains(&w.provider)
-                {
-                    names.insert(0, w.provider.clone());
-                }
-                names
-                    .into_iter()
-                    .map(|name| Choice {
-                        current: worker.is_some_and(|w| w.provider == name),
-                        text: name.clone(),
-                        pick: Pick::Provider(name),
-                    })
-                    .collect()
-            }
+            Selector::Machine => self.machine_rows(),
+            // **Every row of the table is a choice** (bl-67aa), on the
+            // machine it is on: the list is the one machine's rows the
+            // dropup is browsing (`machine`).
+            Selector::Provider => self.provider_rows(open.machine.as_deref()),
             Selector::Model => {
                 let provider = open.provider.clone().unwrap_or_default();
                 let mut ids = self.offered_by(&provider);

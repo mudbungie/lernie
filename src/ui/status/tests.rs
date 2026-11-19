@@ -33,7 +33,8 @@ fn the_state_slot_follows_the_selection_and_the_notice() {
     assert_eq!(noted.ink, theme::accent(theme::State::Annotation));
 }
 
-/// **The status bar's runs, left to right**: the provider and the priority,
+/// **The status bar's runs, left to right**: the machine, the provider (said
+/// as its machine spells it — DESIGN §4.44 item 3) and the priority,
 /// then the state — the model and the effort are the box's pills (DESIGN
 /// §4.48 item 4) — and no seat-wide count among them: the waiting count is
 /// the right end's, once. The workspace is the bar's foot (DESIGN §4.44),
@@ -49,9 +50,9 @@ fn the_runs_are_the_selectors_then_the_conversation() {
         });
     assert_eq!(
         texts(&model),
-        vec!["housevendor", "priority off", "quiescent · 42s"]
+        vec!["server", "housevendor", "priority off", "quiescent · 42s"]
     );
-    assert_eq!(runs(&model).1, 1, "the provider never drops");
+    assert_eq!(runs(&model).1, 2, "the machine and the provider never drop");
     let pills: Vec<String> = super::selectors::pills(&model)
         .into_iter()
         .map(|run| run.text)
@@ -59,6 +60,10 @@ fn the_runs_are_the_selectors_then_the_conversation() {
     assert_eq!(pills, vec!["house-model-1", "effort medium"]);
     let none = texts(&Model::default());
     assert_eq!(none, vec![READY]);
+    if let Some(worker) = model.roles.iter_mut().flatten().next() {
+        worker.provider = "housevendor@attic".to_owned();
+    }
+    assert_eq!(texts(&model)[..2], ["attic", "housevendor"]);
     let glass = painted(&mut model);
     assert_eq!(glass.matches("2 waiting").count(), 1, "{glass}");
     assert!(!glass.contains("1 server"), "{glass}");

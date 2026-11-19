@@ -242,6 +242,7 @@ fn a_refused_role_write_names_config_and_another_refusal_does_not() {
 fn every_selector_has_its_own_sentence() {
     let said: std::collections::BTreeSet<&str> = [
         Selector::Workspace,
+        Selector::Machine,
         Selector::Provider,
         Selector::Model,
         Selector::Effort,
@@ -250,6 +251,6 @@ fn every_selector_has_its_own_sentence() {
     .into_iter()
     .map(super::super::selectors::help)
     .collect();
-    assert_eq!(said.len(), 5, "{said:?}");
+    assert_eq!(said.len(), 6, "{said:?}");
     assert!(said.iter().all(|s| !s.is_empty()));
 }

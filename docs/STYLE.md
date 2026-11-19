@@ -74,7 +74,7 @@ glows green while the selected conversation is asking; the switcher's asking
 rows wear `?` in green. A window with nothing waiting has nothing green on it.
 
 **The status bar is the conversation's line and the seat's** (DESIGN §4.42,
-item 11, re-homed by §4.48 item 4). One line across the window: `— provider ⏶
+item 11, re-homed by §4.48 item 4). One line across the window: `— machine ⏶ | provider ⏶
 | priority ⏶ | state · elapsed | tokens in · out | cost | context N% — name`
 at the left, and at the right end the dial sentence in red while the aimed
 server will not dial, `N waiting` in green while anything asks (the queue's

@@ -1,22 +1,26 @@
-//! **The conversation's four selectors** (DESIGN §4.42, item 11, as §4.44
-//! and §4.48 item 4 amend it): provider, model, effort and priority — what
-//! this conversation talks to, each a dropup. The provider and the priority
-//! stand on the status bar ([`selectors`]); the model and the effort stand
+//! **The conversation's five selectors** (DESIGN §4.42, item 11, as §4.44
+//! and §4.48 item 4 amend it): machine, provider, model, effort and priority
+//! — what this conversation talks to, each a dropup. The machine and the
+//! provider are one name read in two halves (`crate::ui::machine`).
+//! The machine, the provider and the priority stand on the status bar ([`selectors`]); the model and the effort stand
 //! in the box as pills ([`pills`]). The workspace left the rule for the
 //! bar's foot (`crate::ui::bar`), because a workspace is not a fact of a
 //! conversation; its run is still spelled here ([`workspace`]), once.
 //!
-//! The four are the **worker role's** row off the
+//! The five are the **worker role's** row off the
 //! `roles` read, which stands on the aim (`crate::offframe::asker::workspace`).
 //! Effort and priority stand only where the worker's provider row takes them
 //! — or where the providers read has not said, because absence is not
 //! evidence (`crate::ui::model::tuning::offers`' own rule).
 
 use super::{Door, Run, run};
+use crate::ui::machine;
 use crate::ui::{Model, Reload, Selector, theme};
 
 /// The workspace's words with nothing aimed — `⏶` stands beside them.
 pub const NO_WORKSPACE: &str = "workspace";
+/// The machine slot where the worker's row is not in hand.
+pub const NO_MACHINE: &str = "machine…";
 /// The provider slot where the worker's row is not in hand.
 pub const NO_PROVIDER: &str = "provider…";
 /// The model slot where neither the worker's row nor the transcript names
@@ -42,6 +46,7 @@ pub(crate) fn ops(door: Door) -> &'static [&'static str] {
 pub(crate) fn help(selector: Selector) -> &'static str {
     match selector {
         Selector::Workspace => "picks the workspace the window is aimed at",
+        Selector::Machine => "picks the machine whose providers this workspace's worker runs on",
         Selector::Provider => "picks the provider this workspace's worker runs on",
         Selector::Model => "picks the model this workspace's worker runs on",
         Selector::Effort => "picks how hard the worker's model thinks",
@@ -103,21 +108,22 @@ pub(crate) fn workspace(model: &Model) -> Run {
     selector(model, Selector::Workspace, workspace, NO_WORKSPACE)
 }
 
-/// **The four selectors, in order** — provider, model, effort, priority —
-/// with nothing aimed none stands; with a workspace aimed the provider and
-/// the model, and effort and priority where the worker's row takes them.
+/// **The five selectors, in order** — machine, provider, model, effort,
+/// priority — with nothing aimed none stands; with a workspace aimed the
+/// machine, the provider (said as its machine spells it) and the model, and effort and priority where the worker's row takes them.
 fn all(model: &Model) -> Vec<Run> {
     let mut out = Vec::new();
     if model.aim.is_none() {
         return out;
     }
     let worker = model.worker().cloned();
-    out.push(selector(
-        model,
-        Selector::Provider,
-        worker.as_ref().map(|w| w.provider.clone()),
-        NO_PROVIDER,
-    ));
+    let (row, on) = worker
+        .as_ref()
+        .map(|w| machine::split(&w.provider))
+        .map(|(row, on)| (row.to_owned(), machine::word(on).to_owned()))
+        .unzip();
+    out.push(selector(model, Selector::Machine, on, NO_MACHINE));
+    out.push(selector(model, Selector::Provider, row, NO_PROVIDER));
     let said = worker
         .as_ref()
         .map(|w| w.model.clone())
@@ -152,10 +158,11 @@ fn pilled(run: &Run) -> bool {
 }
 
 /// **The selectors the status bar offers, in order**, and how many of them
-/// never drop: the provider, which never drops, and the priority.
+/// never drop: the machine and the provider, which never drop and share the
+/// line where it is short, and the priority.
 pub fn selectors(model: &Model) -> (Vec<Run>, usize) {
     let out: Vec<Run> = all(model).into_iter().filter(|run| !pilled(run)).collect();
-    let kept = out.len().min(1);
+    let kept = out.len().min(2);
     (out, kept)
 }
 

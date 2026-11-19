@@ -104,7 +104,6 @@ pub mod tuning;
 /// The unmaking pane: the seat's one destructive act, and the idiom it sets.
 pub mod unmake;
 
-pub(crate) use model::lane;
 pub use model::{
     Aim, Armed, Asking, Authoring, Bindings, Channel, Choice, Chunk, Claim, Columns, Configuring,
     Context, Diagnosis, Dropup, Edit, Fill, Fleet, Forking, Grade, Group, Held, Hits, Listing,
@@ -112,4 +111,5 @@ pub use model::{
     Records, Registering, Reload, Seeking, Selector, Sent, Servers, Stand, Tab, Trail, Trailing,
     Tuning, Unmaking, WORKER,
 };
+pub(crate) use model::{lane, machine};
 pub use shell::render;

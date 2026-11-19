@@ -5613,6 +5613,55 @@ as the keyboard's door and the whole seat's view.
    its segment: `status::selectors` no longer lists it, and the bar's foot
    is its one segment.
 
+   **Every level is its own menu, and the machine is one** (bl-01f2;
+   operator ruling 2026-11-18). What the seat reaches is a tree — a seat,
+   its servers and their workspaces, each workspace's **machines** (the
+   server itself, and each machine registered in the workspace that offers
+   its own model access), each machine's providers, each provider's models —
+   and a level folded into its neighbour is a list nobody can read: yog's
+   `providers` (REMOTE §5.7) answers the server's own rows and then one row
+   per provider per such machine, named `<row>@<client>`, so a flat provider
+   list was every machine's rows end to end. So a **machine selector stands
+   between the workspace and the provider**, and the order of the selectors
+   is workspace (the bar's foot) · machine · provider · model · effort ·
+   priority. On the status bar that is `machine ⏶ | provider ⏶ | priority ⏶`
+   (the model and the effort are the box's pills, §4.48 item 4); the machine
+   and the provider never drop and share one cut width, the priority drops
+   first.
+
+   - **The machine's list** is the server — always, first, under the word
+     `server`, this crate's own noun for the far end — then each client a
+     held provider name is on, in the table's order. Picking one **opens that
+     machine's provider list and writes nothing**, as picking a provider
+     opens its models: the write (`model <workspace> <role> <provider>
+     <model>`) takes the pair, so it is the model's pick alone that fires.
+   - **The provider's list** is one machine's rows — the worker's own
+     machine where the segment opened it, the picked one where the machine's
+     list did — each said **as that machine spells it, without the
+     qualification**, as the segment says the row in force. A pick still
+     carries the table's own qualified name, so the wire is what it was.
+   - **The machine is derived and held nowhere** (`ui/model/dropup/
+     machine.rs`). The name in force is the role's and the names on offer are
+     the table's; the machine is read off either. The one fact held is which
+     machine an open provider list is browsing (`Dropup::machine`), and it
+     dies with the list.
+   - **The reading is the last `@` in the name, and that is not the server's
+     rule.** The server matches the workspace's registered clients, the
+     longest that fits, because neither a row's name nor a client's is barred
+     from carrying the joiner. The seat cannot: a `providers` row states a
+     name and no client, and the registered set is another read (`clients`)
+     that stands only while its page is open. The last joiner agrees with the
+     server wherever no client's name carries one and none of the server's
+     own rows does; where one does, a row is filed under the wrong machine
+     **on the glass only**, since nothing here composes a name. A `client`
+     field on the row is the remedy and it is the server's to add. A client
+     registered as `server` reads as the server's twin in the machine list;
+     the two are still two rows with two picks.
+   - **The sign-in catalog is parted the same way** (`ui/login.rs`): the
+     catalog's rows under one heading per machine, each said without its
+     qualification, the sign-in and the offering still addressed by the
+     qualified name.
+
 4. **What stays.** The switcher (item 7, Ctrl+X) stands as the keyboard's
    door and the one view across every server; the bar is one workspace's view
    with the pointer. Both paint `convs::` rows, so a glyph, a word or a
@@ -6438,7 +6487,7 @@ bar* is §4.42 item 11's rule, re-homed (item 4). *A Bot* is defined in item
    then a door that opens a menu of acts the seat cannot perform is a
    promise it cannot keep. The microphone is not lifted for the same reason.
    **The rule is the status bar** (item 1), what stays on it being what is
-   not in the box: `— provider ⏶ | priority ⏶ | <diagnostics> — <name>` at
+   not in the box: `— machine ⏶ | provider ⏶ | priority ⏶ | <diagnostics> — <name>` at
    the left, in weak ink, with item 11's notice rule, width rule and doors
    as written; and at its right end, the seat's facts — the version, the
    waiting count as the queue's door, the dial sentence in the error accent
@@ -7300,9 +7349,9 @@ named.
 | `src/ui/shell.rs` | the layout: the room read, the status bar, the bar, the rails (§4.48 item 8), then one column (§4.42, §4.44, §4.45) — the transcript, the prompt directly under it, the dock and the rule under the prompt, the menu and the overlay over it, and what stands down under what. | ~150 |
 | `src/ui/bar.rs`, `bar/drag.rs`, `bar/rows.rs`, `bar/foot.rs`, `bar/confirm.rs` | **the bar** (§4.44 item 1; §4.45 items 1–2): the left panel listing the aimed workspace's conversations, a glyph column until the pointer is over it, lingering 0.75 s after it leaves, pinned by its head, `+ new` beside the pin; its two widths, each dragged at its right edge (`drag.rs`: the seat, the floor and the ceiling, which width a drag writes held from its first frame) and remembered in the place; the aimed workspace's conversations as `convs::` spells them, each row's trashcan under the pointer (`rows.rs`; bl-e837) and the confirmation its click opens on the box (`confirm.rs`: `keep` and `delete`, Esc and Enter); and the workspace at its foot, with the workspace's dropup standing inside it. | ~215, ~130, ~110, ~60, ~85 |
 | `src/ui/status.rs` | **the status rule** (§4.42): the state slot — the notice, the selected conversation's word and age, or `ready` — the facts between it and the name, which facts fit at a width, and the name at the right end; the model and the name as doors, each the menu row it fires (item 10). | ~250 |
-| `src/ui/status/selectors.rs`, `status/diagnostics.rs`, `status/dropup.rs` | **the rule's line** (§4.42 item 11, §4.44 item 3): the four selectors and their marks, the workspace's run the bar's foot paints, this conversation's diagnostics and the aimed server's dial sentence, and a selector's dropup — its list over the segment, its keys and its picks. | ~120 each |
+| `src/ui/status/selectors.rs`, `status/diagnostics.rs`, `status/dropup.rs` | **the rule's line** (§4.42 item 11, §4.44 item 3): the five selectors (machine, provider, model, effort, priority) and their marks, the workspace's run the bar's foot paints, this conversation's diagnostics and the aimed server's dial sentence, and a selector's dropup — its list over the segment, its keys and its picks. | ~120 each |
 | `src/ui/status/waiting.rs` | **the seat-wide waiting count off the rule** (item 11, bl-4cac): leaving out a channel that will not dial, painted as the queue's door on the seat panel and at the switcher's head. | ~35 |
-| `src/ui/model/dropup.rs` | **a dropup between frames**: which selector is open, its cursor, whether its read has landed, the read it posts and what a pick fires (`dropup/choices.rs`: what each lists). | ~200 |
+| `src/ui/model/dropup.rs` | **a dropup between frames**: which selector is open, its cursor, whether its read has landed, the read it posts and what a pick fires (`dropup/choices.rs`: what each lists; `dropup/machine.rs`: the machine a provider's name is on, read off the name, and the two lists that parts — §4.44 item 3). | ~200 |
 | `src/ui/switcher.rs` | **the switcher** (§4.42): the roster as an overlay, opened by Ctrl+X or `/conversations`, kept open by the walk and closed by a choice — the paint; its acts are `model/walk.rs`'s. | ~45 |
 | `src/ui/model/walk.rs` | **the keyboard walk between frames** (§4.42 item 7, §4.44 item 2; bl-5b49): `Walk` — the reveal the list owes its selection, and the selection the switcher stood over — and the switcher's four acts: open, preview (the select without the tab), choose (the tab) and leave (the preview put down). Split from `held.rs` at the cap on the seam the walk draws. | ~110 |
 | `src/ui/tabs.rs` | **the head** (§4.44): the mark as the settings' door, the mode's door beside it (§4.48 item 8), and the strip — one tab per conversation opened in the aimed workspace, filled by `Model::select` alone, each with its close. | ~135 |

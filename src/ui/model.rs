@@ -110,6 +110,7 @@ pub use channel::{Channel, Chunk, Held, UNHELD};
 pub use config::{Configuring, Proposing};
 pub use doctor::Diagnosis;
 pub(crate) use dropup::choices::lane;
+pub(crate) use dropup::machine;
 pub use dropup::{Choice, Dropup, Pick, Reload, Selector, WORKER};
 pub use fill::Fill;
 pub use fleet::{Armed, Fleet};

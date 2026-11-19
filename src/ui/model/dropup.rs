@@ -3,7 +3,7 @@
 //! has been answered.
 //!
 //! A selector opens on what this seat already holds — the roster's workspaces,
-//! the providers read, one provider's models, the provider row's levels —
+//! the providers read and the machines its names are on, one provider's models, the provider row's levels —
 //! and posts the read that refreshes that list in the same gesture. The list
 //! is the server's answer and lives where every answer lives; what is held
 //! here is only the question of whether the refresh has come back, because
@@ -23,6 +23,9 @@ pub const WORKER: &str = "worker";
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Selector {
     Workspace,
+    /// Where the provider runs: the server, or a machine registered in the
+    /// workspace ([`machine`]).
+    Machine,
     Provider,
     Model,
     Effort,
@@ -46,6 +49,9 @@ pub struct Dropup {
     /// picked on the provider list, because a provider alone is half an
     /// assignment and the write takes the pair.
     pub provider: Option<String>,
+    /// The machine a provider list is browsing — the worker's, or the one
+    /// just picked on the machine list; `None` is the server ([`machine`]).
+    pub machine: Option<String>,
     pub cursor: usize,
     /// `None` where nothing could be asked (a model list with no provider).
     pub reload: Option<Reload>,
@@ -60,6 +66,10 @@ pub enum Pick {
     /// `manage servers`: the door to *Settings › Servers › connections*
     /// (DESIGN §4.52 item 2).
     Manage,
+    /// A machine, which opens its providers: `None` is the server.
+    Machine(Option<String>),
+    /// A provider, by the table's own name — qualified where it is a
+    /// machine's.
     Provider(String),
     Model(String),
     Effort(Option<String>),
@@ -81,7 +91,9 @@ impl Selector {
         match self {
             Self::Workspace => crate::verbs::WORKSPACES.word,
             Self::Model => crate::verbs::MODELS.word,
-            Self::Provider | Self::Effort | Self::Priority => crate::verbs::PROVIDERS.word,
+            Self::Machine | Self::Provider | Self::Effort | Self::Priority => {
+                crate::verbs::PROVIDERS.word
+            }
         }
     }
 
@@ -90,7 +102,7 @@ impl Selector {
         match self {
             Self::Workspace => matches!(reply, Reply::Workspaces(_)),
             Self::Model => matches!(reply, Reply::Models(_)),
-            Self::Provider | Self::Effort | Self::Priority => {
+            Self::Machine | Self::Provider | Self::Effort | Self::Priority => {
                 matches!(reply, Reply::Providers(_))
             }
         }
@@ -130,15 +142,17 @@ impl Model {
         }
         self.uncover();
         let provider = self.worker().map(|row| row.provider.clone());
-        self.open_on(selector, provider);
+        let on = provider.as_deref().and_then(machine::of).map(str::to_owned);
+        self.open_on(selector, provider, on);
     }
 
-    /// Open a dropup on `provider`'s rows, its cursor on what is in force,
-    /// and post the read that refreshes it.
-    fn open_on(&mut self, selector: Selector, provider: Option<String>) {
+    /// Open a dropup on `provider`'s rows or `machine`'s, its cursor on what
+    /// is in force, and post the read that refreshes it.
+    fn open_on(&mut self, selector: Selector, provider: Option<String>, machine: Option<String>) {
         let mut open = Dropup {
             selector,
             provider,
+            machine,
             cursor: 0,
             reload: None,
         };
@@ -182,12 +196,14 @@ impl Model {
     }
 
     /// **Pick the row at `at`**: fire its door and close the dropup — or, for
-    /// a provider, open the model list on it, since the write takes the pair.
+    /// a machine, open its providers, and for a provider its models, since
+    /// the write takes the pair and nothing is written until a model is.
     pub fn pick(&mut self, at: usize) {
         let Some(choice) = self.choices().into_iter().nth(at) else {
             return;
         };
         let asked = self.dropup.take().and_then(|open| open.provider);
+        let on = |name: &str| machine::of(name).map(str::to_owned);
         match choice.pick {
             Pick::Workspace(aim) => {
                 self.servers.opening(&aim.channel);
@@ -197,7 +213,11 @@ impl Model {
             Pick::Manage => {
                 self.turn_to(crate::ui::Page::Connections);
             }
-            Pick::Provider(name) => self.open_on(Selector::Model, Some(name)),
+            Pick::Machine(machine) => self.open_on(Selector::Provider, asked, machine),
+            Pick::Provider(name) => {
+                let machine = on(&name);
+                self.open_on(Selector::Model, Some(name), machine);
+            }
             Pick::Model(id) => {
                 if let Some(provider) = asked {
                     self.post_model(WORKER, provider, id);
@@ -238,6 +258,7 @@ impl Model {
 }
 
 pub mod choices;
+pub(crate) mod machine;
 
 #[cfg(test)]
 mod tests;

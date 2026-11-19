@@ -29,10 +29,10 @@ ignore = [
     # those would hide the next advisory too. Re-check it at every egui bump;
     # the day egui moves to `skrifa` this line stops matching and says so.
     "RUSTSEC-2026-0192",
-    # THE NEXT THREE ARE DEV-ONLY, AND THAT IS THE WHOLE REASON (bl-dc07).
+    # EVERYTHING BELOW IS DEV-ONLY, AND THAT IS THE WHOLE REASON (bl-dc07).
     #
     # None of them is in the SHIPPED graph. `cargo tree -e normal -i <crate>
-    # --target all` answers "nothing to print" for all three: they arrive
+    # --target all` answers "nothing to print" for every one: they arrive
     # behind the snapshot harness, which turns on `egui/accesskit` and so needs
     # `eframe/accesskit` to match it — and that feature is raised in
     # `[dev-dependencies]` only, so `cargo build --release` resolves none of
@@ -59,6 +59,17 @@ ignore = [
     # entries stop matching and the gate says so.
     "RUSTSEC-2026-0194",
     "RUSTSEC-2026-0195",
+    # `zbus_names`, `zvariant` and `zvariant_derive` are UNMAINTAINED rather
+    # than vulnerable (bl-7388): no CVE, and no safe upgrade exists. They are
+    # the wire types of that same AT-SPI bus, under `accesskit_unix`, so they
+    # are dev-only by the same command and unreached for the same reason — the
+    # harness never opens a bus. Acknowledged on the operator's ruling, because
+    # an unmendable notice does more than colour a run: the daily mend re-asks
+    # after moving what it can, fails on these, and lands NOTHING, which held
+    # a real `rustls-webpki` fix off `main` for a week (bl-d8c4).
+    "RUSTSEC-2026-0370",
+    "RUSTSEC-2026-0371",
+    "RUSTSEC-2026-0372",
 ]
 
 [licenses]

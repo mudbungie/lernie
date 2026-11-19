@@ -35,7 +35,9 @@ name: Advisories
 #
 # WHAT A FAILED RUN MEANS. The fast-forward refuses when `main` moved while
 # the gate ran; the next day's run begins again from the new `main`, so the
-# refusal costs a day and no hand. A red `ci.yml` on the branch means the
+# refusal costs a day and no hand — and the run ends GREEN, because a red one
+# opens the alarm's issue and an alarm nobody need answer teaches its reader
+# to ignore the next. A red `ci.yml` on the branch means the
 # bump broke something real, and that IS a hand's — the lockfile move that
 # cannot pass the gate is a change somebody must read. Both leave `main`
 # untouched: nothing lands here that the gate did not pass.
@@ -131,8 +133,17 @@ jobs:
           [ -n "$run" ] || { echo "ci.yml never started on $branch" >&2; exit 1; }
           gh run watch "$run" --exit-status
           git push origin "$branch:main" || {
+            # Refused, and why decides the colour (bl-7388). Main's tip still
+            # inside the branch means main did NOT move: the push was refused
+            # for some other reason, and that is a hand's. Otherwise main
+            # moved, the next run retries, and nobody need be told.
+            git fetch -q origin main
+            if git merge-base --is-ancestor FETCH_HEAD "$branch"; then
+              echo "the push to main was refused and main did not move: this is a hand's" >&2
+              exit 1
+            fi
             echo "main moved while the gate ran: nothing landed; the next run begins from the new main" >&2
-            exit 1
+            exit 0
           }
           if [ -z "$PAT" ]; then
             gh workflow run release-plz.yml --ref main

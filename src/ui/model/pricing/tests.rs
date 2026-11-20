@@ -99,6 +99,32 @@ fn a_provider_the_aimed_workspace_does_not_name_disables_the_control() {
     assert_eq!(model.unpriceable(&elsewhere), None);
 }
 
+/// **A row on another machine is priced by its qualified name** (yog's
+/// `docs/REMOTE.md` §5.7 — the price table keys on the name a step records):
+/// the roster check reads the table's own spelling, so the bare row beside it
+/// does not stand in, and the act carries the name whole.
+#[test]
+fn a_row_on_another_machine_is_priced_by_its_qualified_name() {
+    let channel = own().channel;
+    let mut model = drafting("3 15");
+    model.pricing.provider = "housevendor@attic".to_owned();
+    model.providers = Some(vec![provider("housevendor")]);
+    assert!(
+        model.unpriceable(&channel).is_some(),
+        "the bare row is another row"
+    );
+    model.providers = Some(vec![provider("housevendor"), provider("housevendor@attic")]);
+    assert_eq!(model.unpriceable(&channel), None);
+    model.post_price(&channel);
+    model.post_unprice(&channel, "housevendor@attic", "*");
+    let sent: Vec<&str> = model
+        .outbox
+        .iter()
+        .filter_map(|posted| posted.envelope["provider"].as_str())
+        .collect();
+    assert_eq!(sent, vec!["housevendor@attic", "housevendor@attic"]);
+}
+
 /// **Each act goes down the channel its section is**, and a control that is
 /// not live posts nothing.
 #[test]

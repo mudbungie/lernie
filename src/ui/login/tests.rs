@@ -4,6 +4,10 @@ use super::{
     ELSEWHERE, LOOPBACK, NO_PROVIDERS, NOT_ANSWERED, NOT_OFFERED, OFFERS, OFFERS_NOTHING, SIGN_IN,
     WORD, render,
 };
+/// A catalog row on another machine: what its heading says and what its two
+/// controls send.
+mod far;
+
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, pane, provider, seated, signing};
 use crate::ui::{Login, Model};

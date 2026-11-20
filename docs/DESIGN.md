@@ -2902,6 +2902,17 @@ sometimes unnecessary beats a silence that is sometimes wrong. If the column
 ever reaches the view, the sentence narrows to the rows that need it and
 nothing else here moves.
 
+**A row on another machine says its browser opens on that machine** (REMOTE
+§5.7; bl-4c80). The catalog lists each serving machine's rows as
+`<row>@<client>` (§4.44 item 3 parts them under one heading per machine). Such
+a row's credential is minted and kept on that machine, and a browser flow
+opens its browser there — the one box where the redirect can land — so the
+remedy above, which names the server's box, is the wrong box for it. Each
+client's heading therefore carries one sentence naming the machine
+(`login::far`), on a workspace this box holds as on one held elsewhere, and
+for every row under it for the reason just given: the flow does not cross the
+wire. The machine is named as the row's own name names it, never by address.
+
 **The run-by-hand fallback is the server's sentence with one of ours beside
 it.** `fallback` is composed by the end that knows the workspace and arrives only on
 a non-zero exit. The original surface (yog bl-1ddb) spelled a local workspace's
@@ -5660,7 +5671,21 @@ as the keyboard's door and the whole seat's view.
    - **The sign-in catalog is parted the same way** (`ui/login.rs`): the
      catalog's rows under one heading per machine, each said without its
      qualification, the sign-in and the offering still addressed by the
-     qualified name.
+     qualified name. **A client's heading says where its browser opens**
+     (bl-4c80; REMOTE §5.7): the credential of a row on another machine is
+     kept on that machine, and a flow that opens a browser opens it there, so
+     the heading carries one sentence naming the machine (`login::far`). It is
+     said per heading and not per browser-only row, for the loopback remedy's
+     own reason (§4.19): the flow a row serves does not cross the wire.
+   - **Everything that SENDS a provider sends the table's own spelling**
+     (bl-4c80), and each is held by a test with a row on another machine in
+     it: the pick (`ui/model/dropup/machine/tests.rs`), `login` and `models`
+     off the catalog's two controls (`ui/login/tests/far.rs`), the held
+     `login-tail` (`offframe/signin/tests.rs`), and `price`, whose roster
+     check does not let the bare row stand in for the qualified one
+     (`ui/model/pricing/tests.rs`). **The prices pane is the one surface that
+     says the name whole**: a price row is keyed by the name a step records,
+     and it sits under no machine's heading.
 
 4. **What stays.** The switcher (item 7, Ctrl+X) stands as the keyboard's
    door and the one view across every server; the bar is one workspace's view

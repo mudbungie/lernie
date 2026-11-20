@@ -129,6 +129,24 @@ fn the_frames_read_as_their_listings_and_one_bad_row_fails_it_all() {
     assert!(matches!(read(&frame), Read::Unreadable(_)), "one bad row");
 }
 
+/// **A row on another machine is one more row** (yog's `docs/REMOTE.md`
+/// §5.7): `<row>@<client>` reads under both kinds with its name whole, and its
+/// credential fact is that machine's.
+#[test]
+fn a_row_named_for_another_machine_keeps_its_whole_name() {
+    let mut far = open();
+    far["name"] = json!("housevendor@attic");
+    far["fact"] = json!("auth oauth2 · signed in");
+    for kind in [KIND, CATALOG] {
+        let frame = json!({"kind": kind, "ok": true, "rows": [open(), far.clone()]});
+        let Read::Answer(Reply::Providers(rows) | Reply::Catalog(rows)) = read(&frame) else {
+            panic!("{kind} is an answer: {:?}", read(&frame));
+        };
+        assert_eq!(rows[1].name, "housevendor@attic", "{kind}");
+        assert!(rows[1].signable() && !rows[1].bare(), "{kind}");
+    }
+}
+
 /// **A row is bare where the server's words say it needs a credential and
 /// holds none** (bl-7a77): both endings, and never a stored, signed-in or
 /// keyless row, nor words this build cannot read.

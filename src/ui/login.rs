@@ -40,6 +40,16 @@
 //! stated remedy that is sometimes unnecessary beats a silence that is
 //! sometimes wrong.
 //!
+//! # A row on another machine says where its browser opens
+//!
+//! A catalog row named `<row>@<client>` is that machine's own (REMOTE §5.7):
+//! the credential is minted and kept there, and a flow that opens a browser
+//! opens it **on that machine**, the one box where its redirect can land. So
+//! each client's heading carries [`far`], naming the machine. It is said for
+//! every row under the heading and not for the browser-only ones, for the
+//! loopback remedy's own reason: the flow a row serves does not cross the
+//! wire. It names the machine as the row's own name does, and no address.
+//!
 //! # One control fires two ops, because following the run is part of starting it
 //!
 //! `sign in to this row` carries `act:login act:login-tail`. The act starts the
@@ -95,6 +105,16 @@ pub const LOOPBACK: &str = "if the sign-in opens a web page, that page expects \
                             a browser on the server's box: finish it there, or \
                             forward the port by hand";
 
+/// **What a client's heading says about every sign-in under it**: where the
+/// credential is kept and where a browser flow opens (REMOTE §5.7).
+pub fn far(machine: &str) -> String {
+    format!(
+        "these providers are {machine}'s own: a sign-in keeps its credential \
+         there, and one that opens a browser opens it on {machine} — finish it \
+         at that box"
+    )
+}
+
 /// Paint the page's rows and take the clicks on them. Answers whether there
 /// was a page to paint — the overlay scrolls it (`crate::ui::settings`).
 pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
@@ -134,6 +154,9 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
             }
             for on in machines {
                 theme::paint::section(ui, machine::word(on));
+                if let Some(there) = on {
+                    ui.colored_label(theme::INK_WEAK, far(there));
+                }
                 for row in rows.iter().filter(|row| machine::of(&row.name) == on) {
                     provider(ui, model, row);
                 }

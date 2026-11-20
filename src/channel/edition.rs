@@ -40,13 +40,13 @@
 pub(crate) const FLOOR: u32 = 18;
 
 /// What this build can spell — the newest stamp in its vendored corpus, its
-/// `retired` map included: 27 is the edition `enroll`, its reply and the
-/// doctor reply's `rendezvous` object went at (REMOTE §15.4), and no path that
-/// survives is stamped that high.
+/// `retired` map included: 29 is the edition the `invocations` reply gained
+/// `superseded` at (yog bl-96e0), over the streamed run's `partial` and
+/// `since` at 28 (REMOTE §5.7).
 ///
 /// Stated in the preface beside the major so the far end knows what this one
 /// can read, and re-read from the corpus by [`tests`] on every run.
-pub(crate) const EDITION: u32 = 27;
+pub(crate) const EDITION: u32 = 29;
 
 /// **The post-floor ledger**: `(shape, field path, the edition it appeared
 /// at)`, for every path stamped above [`FLOOR`].
@@ -86,6 +86,7 @@ pub(crate) const STAMPS: &[(&str, &str, u32)] = &[
     ("reply/governing", "/workflow_mark/lineage", 19),
     ("reply/governing", "/workflow_mark/oid", 19),
     ("reply/governing", "/workflow_mark/short_oid", 19),
+    ("reply/invocations", "/superseded", 29),
     ("reply/offered", "", 26),
     ("reply/offered", "/expires", 26),
     ("reply/offered", "/kind", 26),
@@ -125,6 +126,9 @@ pub(crate) const STAMPS: &[(&str, &str, u32)] = &[
     ("reply/rail", "/rows/[]/cost/micro_usd", 19),
     ("reply/rail", "/rows/[]/cost/unpriced_tokens", 19),
     ("reply/rail", "/rows/[]/cost/usd", 19),
+    ("reply/routed", "/partial", 28),
+    ("reply/routed", "/partial/stderr", 28),
+    ("reply/routed", "/partial/stdout", 28),
     ("reply/science", "/rows/[]/cost", 19),
     ("reply/science", "/rows/[]/cost/micro_usd", 19),
     ("reply/science", "/rows/[]/cost/unpriced_tokens", 19),
@@ -141,6 +145,9 @@ pub(crate) const STAMPS: &[(&str, &str, u32)] = &[
     ("request/approve", "/name", 26),
     ("request/approve", "/op", 26),
     ("request/approve", "/workspace", 26),
+    ("request/capture", "/since", 28),
+    ("request/capture", "/since/stderr", 28),
+    ("request/capture", "/since/stdout", 28),
     ("request/catalog", "", 24),
     ("request/catalog", "/op", 24),
     ("request/catalog", "/workspace", 24),
@@ -151,6 +158,9 @@ pub(crate) const STAMPS: &[(&str, &str, u32)] = &[
     ("request/clear-workflow", "/agent", 19),
     ("request/clear-workflow", "/op", 19),
     ("request/clear-workflow", "/workspace", 19),
+    ("request/complete", "/partial", 28),
+    ("request/complete", "/partial/stderr", 28),
+    ("request/complete", "/partial/stdout", 28),
     ("request/decline", "", 26),
     ("request/decline", "/name", 26),
     ("request/decline", "/op", 26),

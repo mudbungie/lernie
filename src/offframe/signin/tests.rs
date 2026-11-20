@@ -78,6 +78,29 @@ fn every_frame_of_the_held_read_is_absorbed_onto_an_empty_fold() {
     );
 }
 
+/// **A run on another machine is followed by its qualified name** (yog's
+/// `docs/REMOTE.md` §5.7): the lane asks `login-tail` for the row as the
+/// catalog spells it, and the frames file under that same name.
+#[test]
+fn a_run_on_another_machine_is_followed_by_its_qualified_name() {
+    let scratch = Scratch::new();
+    let said = json!({"ok": true, "kind": "login",
+                      "lines": [{"text": "code ABCD-EFGH", "err": true}]});
+    let server = wired(&scratch, &flat(), vec![vec![said]]);
+    let mut model = watching();
+    model.login = Some(Login {
+        following: Some("housevendor@attic".to_owned()),
+        asking: None,
+    });
+    let link = linked(&model);
+    tick(&link, scratch.path());
+    link.settle(&mut model);
+    assert_eq!(model.signin.expect("the run").lines.len(), 1);
+    let asked = json!({"op": "login-tail", "workspace": "home",
+                       "provider": "housevendor@attic"});
+    assert!(server.heard().contains(&asked), "{:?}", server.heard());
+}
+
 /// **A read starts holding nothing**, so re-asking replays rather than
 /// doubling: the server's own cursor is per read and opens at zero.
 #[test]

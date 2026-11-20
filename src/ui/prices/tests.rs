@@ -65,6 +65,28 @@ fn each_emptiness_says_which_one_it_is() {
     assert!(!glass.contains(LIFT), "no bound, nothing to lift: {glass}");
 }
 
+/// **A priced row on another machine is said whole and unpriced by that
+/// name** (yog's `docs/REMOTE.md` §5.7): the table keys on `<row>@<client>`,
+/// so this pane neither cuts the name nor files it under a machine.
+#[test]
+fn a_row_on_another_machine_is_said_and_unpriced_by_its_whole_name() {
+    let mut model = priced();
+    let rows = &mut model.pricing.tables[0].prices.rows;
+    rows.truncate(1);
+    rows[0].provider = "housevendor@attic".to_owned();
+    let glass = painted(&mut model);
+    assert!(glass.contains("housevendor@attic *  in 3"), "{glass}");
+    let window = Window::new();
+    click(&window, UNPRICE, |ctx| crate::ui::render(ctx, &mut model));
+    assert_eq!(
+        model.outbox.pop(),
+        Some(
+            Posted::act(json!({ "op": "price", "provider": "housevendor@attic", "model": "*" }))
+                .down(own().channel)
+        )
+    );
+}
+
 /// **Each control reaches its act**, down the section's channel.
 #[test]
 fn each_control_fires_its_act_down_the_section_s_channel() {

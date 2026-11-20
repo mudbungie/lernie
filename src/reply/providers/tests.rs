@@ -1,9 +1,9 @@
 //! The provider table: the four required fields, the block whose absence is the
 //! reading, and the offering that is a list of bare strings.
 
-use super::{CATALOG, KIND, MODELS, ProviderRow, offered, row};
+use super::{CATALOG, KIND, MODELS, Place, ProviderRow, offered, row};
 use crate::reply::{Read, Reply, read};
-use serde_json::json;
+use serde_json::{Value, json};
 
 /// A row that can be signed in to, as the corpus carries one.
 fn open() -> serde_json::Value {
@@ -27,6 +27,7 @@ fn a_row_carries_its_name_its_credential_fact_and_what_it_takes() {
             blocked: None,
             effort: true,
             priority: true,
+            on: None,
         }
     );
     assert!(read.signable());
@@ -169,5 +170,51 @@ fn a_row_is_bare_only_where_the_server_says_it_holds_no_credential() {
         "credential present",
     ] {
         assert!(!said(fact).bare(), "{fact}");
+    }
+}
+
+/// **Where a row lives is the server's statement** (REMOTE §5.7, edition 30;
+/// bl-d927): `client` and `row` beside the name on a machine's row, read as
+/// they are spelled — a client that carries the joiner included — and a row
+/// stating neither, or only one, is the server's own. Neither is ever read
+/// off the name, and a value of the wrong type refuses by its field.
+#[test]
+fn a_row_says_which_machine_it_is_on_and_the_name_is_not_read() {
+    let with = |extra: Value| {
+        let mut frame = open();
+        frame
+            .as_object_mut()
+            .expect("a row")
+            .extend(extra.as_object().expect("keys").clone());
+        frame["name"] = json!("housevendor@loft@annex");
+        frame
+    };
+    let far = row(&with(
+        json!({ "client": "loft@annex", "row": "housevendor" }),
+    ))
+    .expect("a machine's row");
+    assert_eq!(
+        Place::machine(far.on.as_ref()).as_deref(),
+        Some("loft@annex")
+    );
+    assert_eq!(Place::shown(far.on.as_ref(), &far.name), "housevendor");
+    for own in [
+        json!({}),
+        json!({ "client": "annex" }),
+        json!({ "row": "x" }),
+    ] {
+        let own = row(&with(own)).expect("the server's own row");
+        assert_eq!(Place::machine(own.on.as_ref()), None);
+        assert_eq!(
+            Place::shown(own.on.as_ref(), &own.name),
+            "housevendor@loft@annex"
+        );
+    }
+    for (bad, field) in [
+        (json!({ "client": 7, "row": "x" }), "client"),
+        (json!({ "client": "c", "row": 7 }), "row"),
+    ] {
+        let why = row(&with(bad)).expect_err("a mistyped half");
+        assert!(why.contains(field), "{why}");
     }
 }

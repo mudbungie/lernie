@@ -1,8 +1,9 @@
-//! The machine a provider's row is on: the reading of a name, the two lists
-//! it parts, and the walk machine → provider → model that ends in one write.
+//! The machine a provider's row is on: the server's statement of it, the two
+//! lists it parts, and the walk machine → provider → model that ends in one
+//! write.
 
-use super::{SERVER, of, row, split, word};
-use crate::test_support::window::{provider, selecting};
+use super::{SERVER, word};
+use crate::test_support::window::{place, provider, provider_on, selecting};
 use crate::ui::{Model, Pick, Selector};
 
 /// What an open list says, row by row.
@@ -14,22 +15,42 @@ fn texts(model: &Model) -> Vec<String> {
 fn fleet() -> Model {
     let mut model = selecting();
     let rows = model.providers.get_or_insert_default();
-    for name in ["housevendor@attic", "farvendor@attic", "housevendor@shed"] {
-        rows.push(provider(name));
+    for (row, client) in [
+        ("housevendor", "attic"),
+        ("farvendor", "attic"),
+        ("housevendor", "shed"),
+    ] {
+        rows.push(provider_on(row, client));
     }
     model
 }
 
-/// **A name is cut at its last joiner**, and one with nothing on a side of
-/// it is a bare row.
+/// **A name is never read for its machine**: a row the server states no
+/// client for is the server's own under its whole name, joiner and all, and
+/// a client whose own name carries the joiner is one machine, its row said
+/// as the server spelled it.
 #[test]
-fn a_name_is_cut_at_its_last_joiner() {
-    assert_eq!(split("housevendor"), ("housevendor", None));
-    assert_eq!(split("housevendor@attic"), ("housevendor", Some("attic")));
-    assert_eq!(split("a@b@attic"), ("a@b", Some("attic")));
-    assert_eq!(split("@attic"), ("@attic", None));
-    assert_eq!(split("housevendor@"), ("housevendor@", None));
-    assert_eq!((row("x@y"), of("x@y")), ("x", Some("y")));
+fn the_machine_is_the_servers_statement_and_never_the_names() {
+    let mut model = selecting();
+    let rows = model.providers.get_or_insert_default();
+    rows.push(provider("team@corp"));
+    rows.push(provider_on("housevendor", "loft@annex"));
+    model.drop_up(Selector::Machine);
+    assert_eq!(texts(&model), vec![SERVER, "loft@annex"]);
+    model.pick(0);
+    assert_eq!(
+        texts(&model),
+        vec!["housevendor", "othervendor", "team@corp"]
+    );
+    model.drop_up(Selector::Machine);
+    model.pick(1);
+    assert_eq!(texts(&model), vec!["housevendor"]);
+    assert_eq!(
+        model.choices()[0].pick,
+        Pick::Provider("housevendor@loft@annex".to_owned())
+    );
+    assert_eq!(model.machine_of("team@corp"), None);
+    assert_eq!(model.machine_of("held nowhere"), None);
     assert_eq!((word(None), word(Some("attic"))), (SERVER, "attic"));
 }
 
@@ -99,12 +120,14 @@ fn a_machine_opens_its_providers_and_only_a_model_writes() {
 }
 
 /// **A worker on a machine's row opens on that machine**, and its machine
-/// and its row are listed whether or not the table names them.
+/// and its row are listed whether or not the table names them — the role's
+/// own row states where it is, so a machine that is asleep is still named.
 #[test]
 fn a_worker_on_a_machine_opens_on_it() {
     let mut model = selecting();
     if let Some(worker) = model.roles.iter_mut().flatten().next() {
         worker.provider = "housevendor@cellar".to_owned();
+        worker.on = Some(place("housevendor", "cellar"));
     }
     model.drop_up(Selector::Machine);
     assert_eq!(texts(&model), vec![SERVER, "cellar"]);

@@ -29,6 +29,16 @@
 //! to the row rather than to any assignment, and the pane says what a row
 //! takes rather than deciding anything with them.
 //!
+//! # `on` is where the row lives, and the name is never read for it
+//!
+//! A row on a machine registered in the workspace is named `<row>@<client>`,
+//! and the server states both halves beside the name (REMOTE §5.7, edition
+//! 30; bl-d927) — [`Place`]. This seat groups by the one and labels by the
+//! other and sends the name back whole; it holds no rule for taking a name
+//! apart, because the server's reading is against a registry this end does
+//! not hold. Absent, the row is the server's own, which is also every row of
+//! a server older than the fields.
+//!
 //! # What is NOT here is the flow a row serves
 //!
 //! yog's own `ProviderRow` carries a `device` column — the headless flow's
@@ -51,6 +61,38 @@ pub(crate) const CATALOG: &str = "catalog";
 /// The kind token one row's offering answers to.
 pub(crate) const MODELS: &str = "models";
 
+/// **The machine a provider's name selects, and the row as that machine
+/// spells it** — the server's own reading of `<row>@<client>`, stated as two
+/// fields on every answer that names a provider (the table, the catalog and
+/// [`super::roles`]).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Place {
+    /// The registered machine the row is on.
+    pub client: String,
+    /// The row's name there: the whole name less its qualification.
+    pub row: String,
+}
+
+impl Place {
+    /// The two keys off a row. They ride together; either one absent is the
+    /// server's own row, and a value of the wrong type refuses by name.
+    pub(crate) fn read(obj: &Map<String, Value>) -> Result<Option<Self>, String> {
+        let client = fields::opt_text(obj, "client")?;
+        let row = fields::opt_text(obj, "row")?;
+        Ok(client.zip(row).map(|(client, row)| Self { client, row }))
+    }
+
+    /// The machine `on` names: the client, or `None` for the server.
+    pub fn machine(on: Option<&Self>) -> Option<String> {
+        on.map(|at| at.client.clone())
+    }
+
+    /// What a row called `name` is shown as under its machine's heading.
+    pub fn shown(on: Option<&Self>, name: &str) -> String {
+        on.map_or(name, |at| at.row.as_str()).to_owned()
+    }
+}
+
 /// One provider row, as this workspace resolves it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProviderRow {
@@ -64,6 +106,8 @@ pub struct ProviderRow {
     pub effort: bool,
     /// Whether it takes the priority lane.
     pub priority: bool,
+    /// The machine it is on, or `None` for the server's own.
+    pub on: Option<Place>,
 }
 
 impl ProviderRow {
@@ -115,6 +159,7 @@ pub(crate) fn row(value: &Value) -> Result<ProviderRow, String> {
         blocked: fields::opt_text(obj, "blocked")?,
         effort: fields::flag(obj, EFFORT)?,
         priority: fields::flag(obj, PRIORITY)?,
+        on: Place::read(obj)?,
     })
 }
 

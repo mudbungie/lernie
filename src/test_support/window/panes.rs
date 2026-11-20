@@ -66,7 +66,23 @@ pub(crate) fn provider(name: &str) -> crate::reply::providers::ProviderRow {
         blocked: None,
         effort: true,
         priority: true,
+        on: None,
     }
+}
+
+/// `row` on the registered machine `client`, as the server lists it: the
+/// name whole, and its two halves stated beside it.
+pub(crate) fn provider_on(row: &str, client: &str) -> crate::reply::providers::ProviderRow {
+    crate::reply::providers::ProviderRow {
+        on: Some(place(row, client)),
+        ..provider(&format!("{row}@{client}"))
+    }
+}
+
+/// The server's statement that a name is `row` on `client`.
+pub(crate) fn place(row: &str, client: &str) -> crate::reply::providers::Place {
+    let (client, row) = (client.to_owned(), row.to_owned());
+    crate::reply::providers::Place { client, row }
 }
 
 /// **The seated model with the login pane open and answered** (bl-e3c5): a row

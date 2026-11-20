@@ -47,6 +47,10 @@ pub struct RoleRow {
     pub priority: bool,
     /// How much reasoning it asks for, or `None` where it asks for none.
     pub effort: Option<String>,
+    /// The machine its provider row is on, or `None` for the server's own —
+    /// stated here too because a machine that is asleep lists no rows, and
+    /// the role still says where it runs ([`super::providers::Place`]).
+    pub on: Option<super::providers::Place>,
 }
 
 /// One row, strictly. Every field is required except the effort, and each
@@ -59,6 +63,7 @@ pub(crate) fn row(value: &Value) -> Result<RoleRow, String> {
         model: fields::text(obj, "model")?,
         priority: fields::flag(obj, "priority")?,
         effort: fields::opt_text(obj, "effort")?,
+        on: super::providers::Place::read(obj)?,
     })
 }
 

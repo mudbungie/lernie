@@ -268,7 +268,7 @@ fn a_list_stands_on_the_edge_it_opens_from() {
 fn the_machine_s_door_lists_the_server_and_each_client() {
     let window = Window::new();
     let mut model = selecting();
-    let far = crate::test_support::window::provider("housevendor@attic");
+    let far = crate::test_support::window::provider_on("housevendor", "attic");
     model.providers.get_or_insert_default().push(far);
     click_rule(&window, &mut model, &dropped(crate::ui::machine::SERVER));
     assert_eq!(

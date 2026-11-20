@@ -217,8 +217,8 @@ fn the_catalog_is_parted_by_machine() {
     let mut model = Model {
         catalog: Some(vec![
             provider("housevendor"),
-            provider("farvendor@attic"),
-            provider("housevendor@attic"),
+            crate::test_support::window::provider_on("farvendor", "attic"),
+            crate::test_support::window::provider_on("housevendor", "attic"),
         ]),
         login: Some(Login::default()),
         ..seated()

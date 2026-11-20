@@ -65,7 +65,7 @@
 //! now — **an act the operator runs on the box that HOLDS the workspace** — so what
 //! this pane adds is one sentence saying so, naming the channel and no address.
 
-use crate::reply::providers::ProviderRow;
+use crate::reply::providers::{Place, ProviderRow};
 use crate::ui::{Model, machine, theme};
 
 /// The followed run's own half of the pane — its lines, its exit and the
@@ -145,19 +145,20 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         Some(rows) => {
             // **Parted by machine** (DESIGN §4.44 item 3): the catalog is
             // every machine's rows end to end, each under its machine.
-            let mut machines: Vec<Option<&str>> = Vec::new();
+            let on = |row: &ProviderRow| Place::machine(row.on.as_ref());
+            let mut machines: Vec<Option<String>> = Vec::new();
             for row in &rows {
-                let on = machine::of(&row.name);
+                let on = on(row);
                 if !machines.contains(&on) {
                     machines.push(on);
                 }
             }
-            for on in machines {
-                theme::paint::section(ui, machine::word(on));
-                if let Some(there) = on {
+            for client in machines {
+                theme::paint::section(ui, machine::word(client.as_deref()));
+                if let Some(there) = &client {
                     ui.colored_label(theme::INK_WEAK, far(there));
                 }
-                for row in rows.iter().filter(|row| machine::of(&row.name) == on) {
+                for row in rows.iter().filter(|row| on(row) == client) {
                     provider(ui, model, row);
                 }
             }
@@ -170,7 +171,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
 /// and the two controls on it.
 fn provider(ui: &mut egui::Ui, model: &mut Model, row: &ProviderRow) {
     ui.separator();
-    ui.label(machine::row(&row.name));
+    ui.label(Place::shown(row.on.as_ref(), &row.name));
     let weak = theme::tone_ink(&crate::reply::convs::Tone::Weak);
     ui.colored_label(weak, row.fact.clone());
     if let Some(takes) = row.takes() {

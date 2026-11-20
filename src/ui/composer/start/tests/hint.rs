@@ -34,6 +34,7 @@ fn a_workspace_whose_worker_holds_no_credential_names_the_provider_and_the_doors
         blocked: None,
         effort: true,
         priority: true,
+        on: None,
     };
     let bare = Some("anthropic holds no credential".to_owned());
     let unlisted = Some("anthropic is on no row of this workspace".to_owned());
@@ -96,5 +97,6 @@ fn worker() -> crate::reply::roles::RoleRow {
         model: "m".to_owned(),
         priority: false,
         effort: None,
+        on: None,
     }
 }

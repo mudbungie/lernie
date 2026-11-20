@@ -4,14 +4,15 @@
 
 use super::super::{OFFERS, SIGN_IN, far, render};
 use crate::paint_probe::frame::Window;
-use crate::test_support::window::{click, pane, provider, seated};
+use crate::reply::providers::ProviderRow;
+use crate::test_support::window::{click, pane, provider, provider_on, seated};
 use crate::ui::{Login, Model, Posted};
 use serde_json::json;
 
-/// The pane open on a catalog of one row, `name`.
-fn listing(name: &str) -> Model {
+/// The pane open on a catalog of one row.
+fn listing(row: ProviderRow) -> Model {
     Model {
-        catalog: Some(vec![provider(name)]),
+        catalog: Some(vec![row]),
         login: Some(Login::default()),
         ..seated()
     }
@@ -21,7 +22,7 @@ fn listing(name: &str) -> Model {
 /// the machine's name — and the server's own rows say no such thing.
 #[test]
 fn a_row_on_another_machine_says_its_browser_opens_there() {
-    let mut model = listing("housevendor@attic");
+    let mut model = listing(provider_on("housevendor", "attic"));
     let painted = pane(|ui| {
         render(ui, &mut model);
     });
@@ -37,7 +38,7 @@ fn a_row_on_another_machine_says_its_browser_opens_there() {
     };
     let (heading, sentence, row) = (at("attic"), at(&said), at("housevendor"));
     assert!(heading < sentence && sentence < row, "{painted}");
-    let mut own = listing("housevendor");
+    let mut own = listing(provider("housevendor"));
     let painted = pane(|ui| {
         render(ui, &mut own);
     });
@@ -63,7 +64,7 @@ fn a_row_on_another_machine_is_signed_in_to_and_asked_by_its_qualified_name() {
             ),
         ),
     ] {
-        let mut model = listing("housevendor@attic");
+        let mut model = listing(provider_on("housevendor", "attic"));
         let window = Window::new();
         click(&window, label, |ctx| {
             egui::CentralPanel::default().show(ctx, |ui| {
@@ -75,7 +76,7 @@ fn a_row_on_another_machine_is_signed_in_to_and_asked_by_its_qualified_name() {
         let held = pane.following.or(pane.asking);
         assert_eq!(held.as_deref(), Some("housevendor@attic"), "{label}");
     }
-    let mut model = listing("housevendor@attic");
+    let mut model = listing(provider_on("housevendor", "attic"));
     model.post_signin("housevendor@attic");
     assert_eq!(model.following().as_deref(), Some("housevendor@attic"));
 }

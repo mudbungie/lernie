@@ -1,7 +1,7 @@
 //! **The conversation's five selectors** (DESIGN §4.42, item 11, as §4.44
 //! and §4.48 item 4 amend it): machine, provider, model, effort and priority
 //! — what this conversation talks to, each a dropup. The machine and the
-//! provider are one name read in two halves (`crate::ui::machine`).
+//! provider are one name whose two halves the server states (`crate::ui::machine`).
 //! The machine, the provider and the priority stand on the status bar ([`selectors`]); the model and the effort stand
 //! in the box as pills ([`pills`]). The workspace left the rule for the
 //! bar's foot (`crate::ui::bar`), because a workspace is not a fact of a
@@ -14,6 +14,7 @@
 //! evidence (`crate::ui::model::tuning::offers`' own rule).
 
 use super::{Door, Run, run};
+use crate::reply::providers::Place;
 use crate::ui::machine;
 use crate::ui::{Model, Reload, Selector, theme};
 
@@ -119,8 +120,9 @@ fn all(model: &Model) -> Vec<Run> {
     let worker = model.worker().cloned();
     let (row, on) = worker
         .as_ref()
-        .map(|w| machine::split(&w.provider))
-        .map(|(row, on)| (row.to_owned(), machine::word(on).to_owned()))
+        .map(|w| (w.on.as_ref(), w.provider.as_str()))
+        .map(|(on, name)| (Place::shown(on, name), Place::machine(on)))
+        .map(|(row, on)| (row, machine::word(on.as_deref()).to_owned()))
         .unzip();
     out.push(selector(model, Selector::Machine, on, NO_MACHINE));
     out.push(selector(model, Selector::Provider, row, NO_PROVIDER));

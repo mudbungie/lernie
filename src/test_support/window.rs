@@ -24,8 +24,8 @@ pub(crate) mod panes;
 pub(crate) use panes::{
     HELD_SAYS, asked, attempt, boarded, checked, clearing, column, commanded, configured, deposit,
     diff, doctored, drilled, figure, finding, fleeting, helped, hit, lineage, machine, machines,
-    mark, notch, own_row, pinned, priced, provider, queued, recorded, selecting, signing, step,
-    trailed, trailing, tuned, waiting,
+    mark, notch, own_row, pinned, place, priced, provider, provider_on, queued, recorded,
+    selecting, signing, step, trailed, trailing, tuned, waiting,
 };
 
 /// **A selector's run as the glass says it** (DESIGN §4.44 item 5): its
@@ -74,6 +74,7 @@ pub(crate) fn role(name: &str) -> RoleRow {
         model: "house-model-1".to_owned(),
         priority: false,
         effort: Some("medium".to_owned()),
+        on: None,
     }
 }
 

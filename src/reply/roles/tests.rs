@@ -27,6 +27,7 @@ fn a_row_carries_the_role_what_it_runs_on_and_how_it_is_tuned() {
             model: "house-model-1".to_owned(),
             priority: true,
             effort: Some("high".to_owned()),
+            on: None,
         }
     );
     assert_eq!(read.runs_on(), "housevendor  house-model-1");
@@ -93,4 +94,22 @@ fn the_frame_reads_as_the_listing_and_one_bad_row_fails_it_all() {
     broken["role"] = json!(null);
     let frame = json!({"kind": KIND, "ok": true, "rows": [tuned(), broken]});
     assert!(matches!(read(&frame), Read::Unreadable(_)), "one bad row");
+}
+
+/// **A role says which machine its provider is on** (REMOTE §5.7, edition 30;
+/// bl-d927), so a row on a machine that is asleep — and so on no listing —
+/// is still filed under it.
+#[test]
+fn a_role_on_a_machines_row_states_the_machine() {
+    let mut frame = tuned();
+    frame["provider"] = json!("housevendor@attic");
+    frame["client"] = json!("attic");
+    frame["row"] = json!("housevendor");
+    let read = row(&frame).expect("a role row");
+    assert_eq!(read.provider, "housevendor@attic");
+    let on = read.on.expect("its place");
+    assert_eq!(
+        (on.client.as_str(), on.row.as_str()),
+        ("attic", "housevendor")
+    );
 }

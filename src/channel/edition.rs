@@ -40,13 +40,13 @@
 pub(crate) const FLOOR: u32 = 18;
 
 /// What this build can spell — the newest stamp in its vendored corpus, its
-/// `retired` map included: 29 is the edition the `invocations` reply gained
-/// `superseded` at (yog bl-96e0), over the streamed run's `partial` and
-/// `since` at 28 (REMOTE §5.7).
+/// `retired` map included: 30 is the edition a provider's row and a role's
+/// gained `client` and `row`, the machine a qualified name selects (REMOTE
+/// §5.7; bl-d927).
 ///
 /// Stated in the preface beside the major so the far end knows what this one
 /// can read, and re-read from the corpus by [`tests`] on every run.
-pub(crate) const EDITION: u32 = 29;
+pub(crate) const EDITION: u32 = 30;
 
 /// **The post-floor ledger**: `(shape, field path, the edition it appeared
 /// at)`, for every path stamped above [`FLOOR`].
@@ -74,10 +74,12 @@ pub(crate) const STAMPS: &[(&str, &str, u32)] = &[
     ("reply/catalog", "/rows", 24),
     ("reply/catalog", "/rows/[]", 24),
     ("reply/catalog", "/rows/[]/blocked", 24),
+    ("reply/catalog", "/rows/[]/client", 30),
     ("reply/catalog", "/rows/[]/effort", 24),
     ("reply/catalog", "/rows/[]/fact", 24),
     ("reply/catalog", "/rows/[]/name", 24),
     ("reply/catalog", "/rows/[]/priority", 24),
+    ("reply/catalog", "/rows/[]/row", 30),
     ("reply/declined", "", 26),
     ("reply/declined", "/kind", 26),
     ("reply/declined", "/ok", 26),
@@ -119,6 +121,8 @@ pub(crate) const STAMPS: &[(&str, &str, u32)] = &[
     ("reply/prices", "/spent/micro_usd", 19),
     ("reply/prices", "/spent/unpriced_tokens", 19),
     ("reply/prices", "/spent/usd", 19),
+    ("reply/providers", "/rows/[]/client", 30),
+    ("reply/providers", "/rows/[]/row", 30),
     ("reply/rail", "/cards/[]/landed", 25),
     ("reply/rail", "/cards/[]/procedure", 25),
     ("reply/rail", "/cards/[]/role", 25),
@@ -126,6 +130,8 @@ pub(crate) const STAMPS: &[(&str, &str, u32)] = &[
     ("reply/rail", "/rows/[]/cost/micro_usd", 19),
     ("reply/rail", "/rows/[]/cost/unpriced_tokens", 19),
     ("reply/rail", "/rows/[]/cost/usd", 19),
+    ("reply/roles", "/rows/[]/client", 30),
+    ("reply/roles", "/rows/[]/row", 30),
     ("reply/routed", "/partial", 28),
     ("reply/routed", "/partial/stderr", 28),
     ("reply/routed", "/partial/stdout", 28),

@@ -142,7 +142,7 @@ impl Model {
         }
         self.uncover();
         let provider = self.worker().map(|row| row.provider.clone());
-        let on = provider.as_deref().and_then(machine::of).map(str::to_owned);
+        let on = provider.as_deref().and_then(|name| self.machine_of(name));
         self.open_on(selector, provider, on);
     }
 
@@ -203,7 +203,6 @@ impl Model {
             return;
         };
         let asked = self.dropup.take().and_then(|open| open.provider);
-        let on = |name: &str| machine::of(name).map(str::to_owned);
         match choice.pick {
             Pick::Workspace(aim) => {
                 self.servers.opening(&aim.channel);
@@ -215,7 +214,7 @@ impl Model {
             }
             Pick::Machine(machine) => self.open_on(Selector::Provider, asked, machine),
             Pick::Provider(name) => {
-                let machine = on(&name);
+                let machine = self.machine_of(&name);
                 self.open_on(Selector::Model, Some(name), machine);
             }
             Pick::Model(id) => {

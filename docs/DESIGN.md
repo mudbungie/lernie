@@ -469,8 +469,11 @@ this build's edition (the newest stamp in the corpus it vendors) and the ledger
 of the paths above the floor. **A removal moves the edition too**: `shapes.json`
 keeps what a server no longer answers under `retired`, each entry stamped with
 the edition it went at, so the newest stamp is read over the signatures AND
-that map — the edition is 27 on the strength of `enroll`'s retirement alone,
-with no surviving path stamped above 26 (bl-7ad1). Vendored on `PROTOCOL`'s own precedent rather
+that map — at bl-7ad1 the edition was 27 on the strength of `enroll`'s
+retirement alone. It is 30 now: the routed leg's stream (28) and
+`invocations`' `superseded` (29) — both machine-class and unpainted here,
+vendored by bl-4c80 — and `client` and `row` on the provider and role rows
+(30, bl-d927; §4.44 item 3). Vendored on `PROTOCOL`'s own precedent rather
 than derived at build time, and held equal to `corpus/shapes.json` by its own
 tests, both directions: a stamp with no row is as red as a row with no stamp.
 The corpus is `cfg(test)` apparatus and is not packaged, so the constants are
@@ -2911,7 +2914,7 @@ remedy above, which names the server's box, is the wrong box for it. Each
 client's heading therefore carries one sentence naming the machine
 (`login::far`), on a workspace this box holds as on one held elsewhere, and
 for every row under it for the reason just given: the flow does not cross the
-wire. The machine is named as the row's own name names it, never by address.
+wire. The machine is named as the row's own `client` field names it (§4.44 item 3), never by address.
 
 **The run-by-hand fallback is the server's sentence with one of ours beside
 it.** `fallback` is composed by the end that knows the workspace and arrives only on
@@ -5642,7 +5645,7 @@ as the keyboard's door and the whole seat's view.
 
    - **The machine's list** is the server — always, first, under the word
      `server`, this crate's own noun for the far end — then each client a
-     held provider name is on, in the table's order. Picking one **opens that
+     held provider row is on, in the table's order. Picking one **opens that
      machine's provider list and writes nothing**, as picking a provider
      opens its models: the write (`model <workspace> <role> <provider>
      <model>`) takes the pair, so it is the model's pick alone that fires.
@@ -5653,21 +5656,29 @@ as the keyboard's door and the whole seat's view.
      carries the table's own qualified name, so the wire is what it was.
    - **The machine is derived and held nowhere** (`ui/model/dropup/
      machine.rs`). The name in force is the role's and the names on offer are
-     the table's; the machine is read off either. The one fact held is which
+     the table's; each row says its own machine. The one fact held is which
      machine an open provider list is browsing (`Dropup::machine`), and it
      dies with the list.
-   - **The reading is the last `@` in the name, and that is not the server's
-     rule.** The server matches the workspace's registered clients, the
-     longest that fits, because neither a row's name nor a client's is barred
-     from carrying the joiner. The seat cannot: a `providers` row states a
-     name and no client, and the registered set is another read (`clients`)
-     that stands only while its page is open. The last joiner agrees with the
-     server wherever no client's name carries one and none of the server's
-     own rows does; where one does, a row is filed under the wrong machine
-     **on the glass only**, since nothing here composes a name. A `client`
-     field on the row is the remedy and it is the server's to add. A client
-     registered as `server` reads as the server's twin in the machine list;
-     the two are still two rows with two picks.
+   - **The machine is the server's statement, and the name is never read for
+     it** (bl-d927; yog bl-471d, REMOTE §5.7 at edition 30). Which client a
+     name selects is the server's reading — the workspace's registered
+     clients, the longest that fits, since neither a row's name nor a
+     client's is barred from carrying the joiner — and the server now states
+     it: every `providers`, `catalog` and `roles` row whose provider is on a
+     registered machine carries `client` and `row` beside the name
+     (`reply::providers::Place`), and a row carrying neither is the server's
+     own. The seat groups by `client`, says `row`, and sends the name back
+     whole; it holds no rule for taking a name apart. This seat used to cut
+     at the last `@`, which filed a row under the wrong machine wherever a
+     client's name or a server's own row carried one; that cut is deleted and
+     nothing replaces it. **Against a server older than edition 30 every row
+     reads as the server's own, under its whole name** — nothing hidden,
+     nothing attributed on a guess — and there is deliberately no fallback
+     cut, which would be the second derivation back again. `roles` states it
+     as well as the listings because a machine that is asleep lists no rows,
+     and the role in force must still say where it runs. A client registered
+     as `server` reads as the server's twin in the machine list; the two are
+     still two rows with two picks.
    - **The sign-in catalog is parted the same way** (`ui/login.rs`): the
      catalog's rows under one heading per machine, each said without its
      qualification, the sign-in and the offering still addressed by the
@@ -7376,7 +7387,7 @@ named.
 | `src/ui/status.rs` | **the status rule** (§4.42): the state slot — the notice, the selected conversation's word and age, or `ready` — the facts between it and the name, which facts fit at a width, and the name at the right end; the model and the name as doors, each the menu row it fires (item 10). | ~250 |
 | `src/ui/status/selectors.rs`, `status/diagnostics.rs`, `status/dropup.rs` | **the rule's line** (§4.42 item 11, §4.44 item 3): the five selectors (machine, provider, model, effort, priority) and their marks, the workspace's run the bar's foot paints, this conversation's diagnostics and the aimed server's dial sentence, and a selector's dropup — its list over the segment, its keys and its picks. | ~120 each |
 | `src/ui/status/waiting.rs` | **the seat-wide waiting count off the rule** (item 11, bl-4cac): leaving out a channel that will not dial, painted as the queue's door on the seat panel and at the switcher's head. | ~35 |
-| `src/ui/model/dropup.rs` | **a dropup between frames**: which selector is open, its cursor, whether its read has landed, the read it posts and what a pick fires (`dropup/choices.rs`: what each lists; `dropup/machine.rs`: the machine a provider's name is on, read off the name, and the two lists that parts — §4.44 item 3). | ~200 |
+| `src/ui/model/dropup.rs` | **a dropup between frames**: which selector is open, its cursor, whether its read has landed, the read it posts and what a pick fires (`dropup/choices.rs`: what each lists; `dropup/machine.rs`: the machine a provider's row is on, read off the row's own `client` and `row` fields and never off the name, and the two lists that parts — §4.44 item 3). | ~200 |
 | `src/ui/switcher.rs` | **the switcher** (§4.42): the roster as an overlay, opened by Ctrl+X or `/conversations`, kept open by the walk and closed by a choice — the paint; its acts are `model/walk.rs`'s. | ~45 |
 | `src/ui/model/walk.rs` | **the keyboard walk between frames** (§4.42 item 7, §4.44 item 2; bl-5b49): `Walk` — the reveal the list owes its selection, and the selection the switcher stood over — and the switcher's four acts: open, preview (the select without the tab), choose (the tab) and leave (the preview put down). Split from `held.rs` at the cap on the seam the walk draws. | ~110 |
 | `src/ui/tabs.rs` | **the head** (§4.44): the mark as the settings' door, the mode's door beside it (§4.48 item 8), and the strip — one tab per conversation opened in the aimed workspace, filled by `Model::select` alone, each with its close. | ~135 |

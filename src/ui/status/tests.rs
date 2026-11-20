@@ -62,6 +62,7 @@ fn the_runs_are_the_selectors_then_the_conversation() {
     assert_eq!(none, vec![READY]);
     if let Some(worker) = model.roles.iter_mut().flatten().next() {
         worker.provider = "housevendor@attic".to_owned();
+        worker.on = Some(crate::test_support::window::place("housevendor", "attic"));
     }
     assert_eq!(texts(&model)[..2], ["attic", "housevendor"]);
     let glass = painted(&mut model);

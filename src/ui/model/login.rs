@@ -1,5 +1,5 @@
 //! **The login pane between frames** (bl-e3c5; DESIGN §4.24) — what it is
-//! asking about, and the three acts its controls spend.
+//! asking about, and the four acts its controls spend.
 //!
 //! # Two subjects, and neither excludes the other
 //!
@@ -53,6 +53,10 @@ pub struct Login {
     /// answer — the answer is [`Model::offered`] — so the pane can say it is
     /// waiting under the row that asked instead of under all of them.
     pub asking: Option<String>,
+    /// **What has been pasted into the followed run's box and not yet sent**
+    /// (REMOTE §8.3's pasted-code sign-in). The pane's one draft: it is the
+    /// operator's text until the submit, and the server's from then on.
+    pub code: String,
 }
 
 impl Model {
@@ -95,8 +99,31 @@ impl Model {
             return;
         };
         pane.following = Some(provider.to_owned());
+        pane.code.clear();
         self.signin = None;
-        self.aimed_act(&crate::verbs::login, provider);
+        self.aimed_login(provider, None);
+    }
+
+    /// **The box a copied code is pasted into**, where the pane is open.
+    pub fn code_draft(&mut self) -> Option<&mut String> {
+        Some(&mut self.login.as_mut()?.code)
+    }
+
+    /// **Hand back what the human copied out of the browser** (REMOTE §8.3
+    /// step 4): `login` again for the same pair, with the draft as its `code`.
+    ///
+    /// **Verbatim but for the space around it.** The paste may be a bare
+    /// code, a `code#state`, or a whole address with its query — the far
+    /// brazen is the only reader it has, so nothing inside it is touched; a
+    /// trailing newline is the clipboard's and not the vendor's. The fold and
+    /// the lane are kept: this is the same run's second command line, and its
+    /// lines append to what is already painted. An empty box sends nothing.
+    pub fn post_code(&mut self, provider: &str) {
+        let pasted = self.code_draft().map(std::mem::take).unwrap_or_default();
+        let code = pasted.trim();
+        if !code.is_empty() {
+            self.aimed_login(provider, Some(code.to_owned()));
+        }
     }
 
     /// **Ask one row what it offers**, dropping whatever the last row answered.
@@ -119,18 +146,20 @@ impl Model {
         )));
     }
 
-    /// **Compose one act against the aimed workspace and one provider row**, or none
-    /// at all — the aim being the same gate [`begin_login`](Self::begin_login)
-    /// enforces, made unreachable here rather than merely unlikely.
-    ///
-    /// `&dyn Fn` rather than a generic, for `super::tuning::Model::tune`'s
-    /// reason: a bound would stamp one copy of this body out per call site.
-    fn aimed_act(&mut self, gesture: &dyn Fn(String, String) -> serde_json::Value, provider: &str) {
+    /// **Compose `login` against the aimed workspace and one provider row**,
+    /// or nothing at all — the aim being the same gate
+    /// [`begin_login`](Self::begin_login) enforces, made unreachable here
+    /// rather than merely unlikely. One act at two depths: bare it starts the
+    /// pair's sign-in, with a `code` it finishes the one that stands waiting.
+    fn aimed_login(&mut self, provider: &str, code: Option<String>) {
         let Some(Aim { address, .. }) = self.aim.clone() else {
             return;
         };
-        self.outbox
-            .push(super::Posted::act(gesture(address, provider.to_owned())));
+        self.outbox.push(super::Posted::act(crate::verbs::login(
+            address,
+            provider.to_owned(),
+            code,
+        )));
     }
 
     /// **Whether the aimed workspace is held on another box** — read off the

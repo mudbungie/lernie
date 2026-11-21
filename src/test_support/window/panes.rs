@@ -103,6 +103,7 @@ pub(crate) fn signing() -> Model {
         login: Some(Login {
             following: Some("housevendor".to_owned()),
             asking: Some("otherhouse".to_owned()),
+            ..Login::default()
         }),
         catalog: Some(vec![provider("housevendor"), blocked]),
         offered: Some(vec!["house-model-1".to_owned()]),
@@ -117,8 +118,10 @@ pub(crate) fn signing() -> Model {
                     err: false,
                 },
             ],
-            outcome: None,
-            fallback: None,
+            // **A run waiting for a code** (REMOTE §8.3, edition 31), so the
+            // one screen the sign-in is on carries every control it can.
+            authorize: Some("https://provider.invalid/auth".to_owned()),
+            ..crate::reply::login::Signin::default()
         }),
         ..seated()
     }

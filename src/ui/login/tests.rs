@@ -1,8 +1,8 @@
 //! What the login pane says, what it offers, and what one click on it composes.
 
 use super::{
-    ELSEWHERE, LOOPBACK, NO_PROVIDERS, NOT_ANSWERED, NOT_OFFERED, OFFERS, OFFERS_NOTHING, SIGN_IN,
-    WORD, render,
+    ELSEWHERE, NO_PROVIDERS, NOT_ANSWERED, NOT_OFFERED, OFFERS, OFFERS_NOTHING, SIGN_IN, WORD,
+    render,
 };
 /// A catalog row on another machine: what its heading says and what its two
 /// controls send.
@@ -128,10 +128,11 @@ fn an_offering_is_painted_under_the_row_that_asked_for_it() {
     );
 }
 
-/// **A workspace held elsewhere says so and states the loopback remedy**, off the
-/// channel stamp and with no address in either sentence.
+/// **A workspace held elsewhere says so**, off the channel stamp and with no
+/// address in the sentence — and states no remedy, because every sign-in is
+/// finished from this seat (REMOTE §8.3, edition 31).
 #[test]
-fn a_workspace_held_elsewhere_says_where_the_sign_in_runs_and_states_the_remedy() {
+fn a_workspace_held_elsewhere_says_where_the_sign_in_runs() {
     let mut here = signing();
     let painted = pane(|ui| {
         render(ui, &mut here);
@@ -142,9 +143,8 @@ fn a_workspace_held_elsewhere_says_where_the_sign_in_runs_and_states_the_remedy(
     let painted = pane(|ui| {
         render(ui, &mut model);
     });
-    for said in [ELSEWHERE, LOOPBACK] {
-        assert!(painted.contains(said), "{said:?}:\n{painted}");
-    }
+    assert!(painted.contains(ELSEWHERE), "{painted}");
+    assert!(!painted.contains("forward"), "{painted}");
 }
 
 /// Both controls compose the gesture the wire takes, and the click is what

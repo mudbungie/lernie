@@ -182,3 +182,49 @@ fn the_panes_four_answers_come_in_through_the_one_door() {
         "the run's lines"
     );
 }
+
+/// **Handing a code back is `login` again with `code`, verbatim** (REMOTE
+/// §8.3 step 4): nothing inside the paste is touched — a `#`, a `?` and an
+/// `&` are the vendor's — and only the space around it is the clipboard's.
+/// The run and the lane are kept, because this is the same run's second
+/// command line, and the box is spent.
+#[test]
+fn handing_a_code_back_composes_the_same_act_with_the_paste_verbatim() {
+    let pasted = "https://localhost.invalid/cb?code=a#b&state=c";
+    let mut model = signing();
+    let run = model.signin.clone();
+    *model.code_draft().expect("the pane's box") = format!("  {pasted}\n");
+    model.post_code("housevendor");
+    assert_eq!(
+        model.outbox,
+        vec![Posted::act(json!({"op": "login", "workspace": "home",
+                                "provider": "housevendor", "code": pasted}))]
+    );
+    assert_eq!(model.signin, run, "the run's lines stand");
+    assert_eq!(model.following().as_deref(), Some("housevendor"));
+    assert_eq!(
+        model.login.as_ref().map(|pane| pane.code.as_str()),
+        Some("")
+    );
+}
+
+/// **An empty box sends nothing, a shut pane has no box, and a fresh sign-in
+/// starts with an empty one** — a code is for one URL, and a restart mints
+/// another.
+#[test]
+fn an_empty_box_sends_nothing_and_a_restart_empties_it() {
+    let mut model = signing();
+    *model.code_draft().expect("the pane's box") = " \n".to_owned();
+    model.post_code("housevendor");
+    assert!(model.outbox.is_empty());
+    *model.code_draft().expect("the pane's box") = "stale".to_owned();
+    model.post_signin("housevendor");
+    assert_eq!(
+        model.login.as_ref().map(|pane| pane.code.as_str()),
+        Some("")
+    );
+    let mut shut = seated();
+    assert_eq!(shut.code_draft(), None);
+    shut.post_code("housevendor");
+    assert!(shut.outbox.is_empty());
+}

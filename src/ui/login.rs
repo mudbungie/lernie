@@ -26,29 +26,20 @@
 //! this sentence would be this end telling the operator where a credential is
 //! going to land.
 //!
-//! # The loopback remedy is stated, never built
+//! # Every sign-in is finished from this seat
 //!
-//! A row whose flow needs a browser at the SERVER's own loopback can only be
-//! completed from a browser on that box, or through a port-forward the operator
-//! sets up — *an operator act on boxes the operator administers*, and REMOTE
-//! §8.3 rules it is stated as a remedy and never made a channel feature.
+//! No flow opens a browser on the far box any more (REMOTE §8.3, edition 31):
+//! a row either streams a device code, finished in any browser anywhere, or
+//! stops on an authorize URL this seat opens and takes the code back for
+//! ([`run`]). So the pane states no remedy — the loopback sentence and the
+//! port-forward it named are deleted, not narrowed.
 //!
-//! **It is said for every row on a workspace held elsewhere, not for the browser-only
-//! ones**, and that is a limit rather than a choice: the `device` column is on
-//! yog's own provider row and not on the view that crosses the wire
-//! (`crate::reply::providers`), so this seat cannot tell the two apart. A
-//! stated remedy that is sometimes unnecessary beats a silence that is
-//! sometimes wrong.
-//!
-//! # A row on another machine says where its browser opens
+//! # A row on another machine says where its credential is kept
 //!
 //! A catalog row named `<row>@<client>` is that machine's own (REMOTE §5.7):
-//! the credential is minted and kept there, and a flow that opens a browser
-//! opens it **on that machine**, the one box where its redirect can land. So
-//! each client's heading carries [`far`], naming the machine. It is said for
-//! every row under the heading and not for the browser-only ones, for the
-//! loopback remedy's own reason: the flow a row serves does not cross the
-//! wire. It names the machine as the row's own name does, and no address.
+//! the credential is minted and kept there, and that is all each client's
+//! heading says ([`far`]). It names the machine as the row's own name does,
+//! and no address.
 //!
 //! # One control fires two ops, because following the run is part of starting it
 //!
@@ -86,7 +77,7 @@ pub const NO_PROVIDERS: &str =
 pub const SIGN_IN: &str = "sign in to this provider";
 /// What the sign-in does.
 pub const SIGN_IN_HELP: &str =
-    "starts this provider's sign-in on the server; its progress stands below";
+    "starts this provider's sign-in where it is kept; its progress stands below";
 /// The word on the control that asks a row what it offers.
 pub const OFFERS: &str = "what it offers…";
 /// What `what it offers…` does.
@@ -99,20 +90,11 @@ pub const OFFERS_NOTHING: &str = "this provider offers no model";
 pub const ELSEWHERE: &str = "this workspace lives on another box, and the sign-in \
                              runs there — the credential is kept there, not \
                              on this one";
-/// The §8.3 remedy for a row whose flow wants a browser at the server's own
-/// loopback, said wherever the server is not this box.
-pub const LOOPBACK: &str = "if the sign-in opens a web page, that page expects \
-                            a browser on the server's box: finish it there, or \
-                            forward the port by hand";
 
 /// **What a client's heading says about every sign-in under it**: where the
-/// credential is kept and where a browser flow opens (REMOTE §5.7).
+/// credential is kept (REMOTE §5.7).
 pub fn far(machine: &str) -> String {
-    format!(
-        "these providers are {machine}'s own: a sign-in keeps its credential \
-         there, and one that opens a browser opens it on {machine} — finish it \
-         at that box"
-    )
+    format!("these providers are {machine}'s own: a sign-in keeps its credential there")
 }
 
 /// Paint the page's rows and take the clicks on them. Answers whether there
@@ -129,11 +111,10 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
             format!("on {} — {}", aim.address, aim.channel),
         );
     }
-    // **Both sentences hang off one fact and are said once**, above the rows
-    // rather than on each: where the server is, is a property of the workspace.
+    // **Said once**, above the rows rather than on each: where the server
+    // is, is a property of the workspace.
     if model.elsewhere() {
         ui.colored_label(theme::tone_ink(&crate::reply::convs::Tone::Weak), ELSEWHERE);
-        ui.colored_label(theme::tone_ink(&crate::reply::convs::Tone::Weak), LOOPBACK);
     }
     match model.catalog.clone() {
         None => {

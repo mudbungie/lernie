@@ -1,5 +1,5 @@
 //! A catalog row named `<row>@<client>` (yog's `docs/REMOTE.md` §5.7): the
-//! sentence its machine's heading carries, and the qualified name both of its
+//! sentence its machine's heading carries, and the qualified name its
 //! controls put on the wire.
 
 use super::super::{OFFERS, SIGN_IN, far, render};
@@ -18,16 +18,17 @@ fn listing(row: ProviderRow) -> Model {
     }
 }
 
-/// **A client's heading says its browser opens on that machine**, once, under
-/// the machine's name — and the server's own rows say no such thing.
+/// **A client's heading says its credential is kept on that machine**, once,
+/// under the machine's name — and the server's own rows say no such thing.
 #[test]
-fn a_row_on_another_machine_says_its_browser_opens_there() {
+fn a_row_on_another_machine_says_its_credential_is_kept_there() {
     let mut model = listing(provider_on("housevendor", "attic"));
     let painted = pane(|ui| {
         render(ui, &mut model);
     });
     let said = far("attic");
-    assert!(said.contains("opens it on attic"), "{said}");
+    assert!(said.contains("attic's own"), "{said}");
+    assert!(!said.contains("browser"), "{said}");
     assert_eq!(painted.matches(&said).count(), 1, "{painted}");
     let lines: Vec<&str> = painted.lines().collect();
     let at = |text: &str| {
@@ -42,7 +43,7 @@ fn a_row_on_another_machine_says_its_browser_opens_there() {
     let painted = pane(|ui| {
         render(ui, &mut own);
     });
-    assert!(!painted.contains("opens it on"), "{painted}");
+    assert!(!painted.contains("keeps its credential"), "{painted}");
 }
 
 /// **Both controls send the qualified name**: the row is painted without its

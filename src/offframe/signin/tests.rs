@@ -28,7 +28,7 @@ fn watching() -> Model {
         }),
         login: Some(Login {
             following: Some("housevendor".to_owned()),
-            asking: None,
+            ..Login::default()
         }),
         ..Model::default()
     }
@@ -90,7 +90,7 @@ fn a_run_on_another_machine_is_followed_by_its_qualified_name() {
     let mut model = watching();
     model.login = Some(Login {
         following: Some("housevendor@attic".to_owned()),
-        asking: None,
+        ..Login::default()
     });
     let link = linked(&model);
     tick(&link, scratch.path());
@@ -128,6 +128,44 @@ fn a_second_read_replaces_rather_than_appending() {
         2,
         "the second read's first frame is the whole buffer, absorbed onto nothing"
     );
+}
+
+/// **A lane that ends on a waiting run is not a failure, and the re-ask
+/// replays the URL** (REMOTE §8.3, edition 31): a run waiting for a code is
+/// quiet, so its lane may end with no outcome — the next pass asks again and
+/// is told the same standing fact. Once the code is taken the newest frame
+/// states no `authorize`, and the fold stops offering one.
+#[test]
+fn a_lane_that_ends_on_a_waiting_run_replays_its_authorize_url() {
+    let scratch = Scratch::new();
+    let url = "https://provider.invalid/authorize?state=s";
+    let waiting = json!({"ok": true, "kind": "login", "authorize": url,
+                         "lines": [{"text": url, "err": false}]});
+    let _server = wired(
+        &scratch,
+        &flat(),
+        vec![
+            vec![waiting.clone()],
+            vec![waiting.clone()],
+            vec![
+                waiting,
+                json!({"ok": true, "kind": "login", "lines": [], "outcome": 0}),
+            ],
+        ],
+    );
+    let mut model = watching();
+    let link = linked(&model);
+    for _ in 0..2 {
+        tick(&link, scratch.path());
+        link.settle(&mut model);
+        let run = model.signin.clone().expect("the waiting run");
+        assert_eq!(run.awaited(), Some(url));
+        assert_eq!(model.notice, None, "a quiet lane is not a failure");
+    }
+    tick(&link, scratch.path());
+    link.settle(&mut model);
+    let run = model.signin.expect("the settled run");
+    assert_eq!((run.authorize, run.outcome), (None, Some(0)));
 }
 
 /// **Both halves of the subject can move**, and either ends the read: aiming at

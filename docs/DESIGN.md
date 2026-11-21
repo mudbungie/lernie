@@ -470,10 +470,11 @@ of the paths above the floor. **A removal moves the edition too**: `shapes.json`
 keeps what a server no longer answers under `retired`, each entry stamped with
 the edition it went at, so the newest stamp is read over the signatures AND
 that map — at bl-7ad1 the edition was 27 on the strength of `enroll`'s
-retirement alone. It is 30 now: the routed leg's stream (28) and
+retirement alone. It is 31 now: the routed leg's stream (28) and
 `invocations`' `superseded` (29) — both machine-class and unpainted here,
-vendored by bl-4c80 — and `client` and `row` on the provider and role rows
-(30, bl-d927; §4.44 item 3). Vendored on `PROTOCOL`'s own precedent rather
+vendored by bl-4c80 — `client` and `row` on the provider and role rows
+(30, bl-d927; §4.44 item 3), and the sign-in's `authorize` and `code` (31,
+bl-3502; §4.24). Vendored on `PROTOCOL`'s own precedent rather
 than derived at build time, and held equal to `corpus/shapes.json` by its own
 tests, both directions: a stamp with no row is as red as a row with no stamp.
 The corpus is `cfg(test)` apparatus and is not packaged, so the constants are
@@ -2893,28 +2894,64 @@ channel stamp (`ui::Channel::named_there`, §8.2). Two entries naming one
 listener are still two trust relationships, and an address in this sentence
 would be this end telling the operator where a credential is about to land.
 
-**The loopback remedy is STATED and never built** (REMOTE §8.3). A row whose
-flow wants a browser at the server's own loopback completes only from a browser
-on that box, or through a port-forward — *an operator act on boxes the operator
-administers*, which upstream rules is a remedy and not a channel feature.
-**It is said for every row on a workspace held elsewhere rather than for the
-browser-only ones**, and that is a limit rather than a choice: the `device`
-column is on yog's provider ROW and not on the view that crosses the wire
-(bl-7c9f), so this seat cannot tell the two apart. A stated remedy that is
-sometimes unnecessary beats a silence that is sometimes wrong. If the column
-ever reaches the view, the sentence narrows to the rows that need it and
-nothing else here moves.
+**Every sign-in is finished from this seat, and the loopback remedy is
+deleted** (REMOTE §8.3, edition 31; bl-3502). The server fires one bare command
+line per row and no flow opens a browser on the far box any more, so a run
+comes back one of two ways and the pane serves both with no knowledge of which
+row is which. A device-capable row streams a verification URL and a code, the
+human finishes in any browser, and the run settles by itself — unchanged. A row
+with no device endpoint stops on its authorize URL and **waits for a code**: the
+lane states `authorize` and no `outcome`. In the order it happens:
 
-**A row on another machine says its browser opens on that machine** (REMOTE
-§5.7; bl-4c80). The catalog lists each serving machine's rows as
-`<row>@<client>` (§4.44 item 3 parts them under one heading per machine). Such
-a row's credential is minted and kept on that machine, and a browser flow
-opens its browser there — the one box where the redirect can land — so the
-remedy above, which names the server's box, is the wrong box for it. Each
-client's heading therefore carries one sentence naming the machine
-(`login::far`), on a workspace this box holds as on one held elsewhere, and
-for every row under it for the reason just given: the flow does not cross the
-wire. The machine is named as the row's own `client` field names it (§4.44 item 3), never by address.
+1. The operator presses `sign in to this provider`. `login` is posted bare and
+   the lane opens on `login-tail`.
+2. The lane's frames paint as lines, as always. A frame carrying `authorize`
+   makes the run a waiting one (`Signin::awaited`: the URL, where there is no
+   outcome). **`authorize` is REPLACED by every frame, never accreted** — the
+   newest frame's word is the truth, present or absent — where `lines` append
+   and the two settled facts stick.
+3. Under the lines the pane offers `open the sign-in page`, `copy its address`
+   and a box with `finish the sign-in`. The first hands the URL to the
+   toolkit's own opener (`egui::Context::open_url`), which is the desktop's
+   browser; the second puts it on the clipboard, for a browser on another
+   device or a desktop with no opener. **Whether the vendor shows a code or
+   sends the browser to an address that does not load is the lane's own line
+   to say** — bz knows the row — and the pane restates neither.
+4. `finish the sign-in` posts `login` for the same workspace and row with
+   `code`: the box's text, trimmed of the space around it and otherwise
+   verbatim (`Model::post_code`), because the far brazen is its only reader.
+   The fold and the lane are kept — it is the same run's second command line.
+5. The lane's next frames append; `authorize` leaves, and the exit is the
+   outcome: 0 paints `signed in`, anything else the exit, the last line bz
+   said and the run-by-hand command, as before.
+
+**A waiting run is quiet, and a lane that ends with no outcome is not a
+failure.** The pass re-asks on the next beat (`offframe::pump`), the read
+starts from an empty fold and the server replays the buffer, `authorize`
+included — the rule the lane already had, with nothing added for this.
+
+**The key is the whole edition gate.** No server older than edition 31 writes
+`authorize`, and the box exists only under one, so this seat never sends `code`
+to a server that would read it as a restart — a derived gate, with no second
+record of the server's edition in the window. **A code with nothing waiting for
+it** — a run swept, settled, or replaced from another seat meanwhile — is
+refused by the server in its own words, naming the plain `login` that starts
+over; it reaches the bar like every other act's refusal, and the remedy is the
+row's own `sign in` control.
+
+**There is no typed spelling of the code in this seat.** `/login` is a page's
+word here and takes no provider, and argv's `login` is a row of exactly two
+named strings; an optional string is not a parameter (`Verb::stating`,
+`proposals`' precedent), so from a shell the code rides `lernie ask`.
+
+**A row on another machine says where its credential is kept, and nothing
+about a browser** (REMOTE §5.7; bl-4c80, narrowed by bl-3502). The catalog
+lists each serving machine's rows as `<row>@<client>` (§4.44 item 3 parts them
+under one heading per machine). Such a row's credential is minted and kept on
+that machine, which each client's heading says in one sentence
+(`login::far`); the sentence used to add that a browser flow opens there, and
+no flow does. The machine is named as the row's own `client` field names it
+(§4.44 item 3), never by address.
 
 **The run-by-hand fallback is the server's sentence with one of ours beside
 it.** `fallback` is composed by the end that knows the workspace and arrives only on
@@ -5682,12 +5719,11 @@ as the keyboard's door and the whole seat's view.
    - **The sign-in catalog is parted the same way** (`ui/login.rs`): the
      catalog's rows under one heading per machine, each said without its
      qualification, the sign-in and the offering still addressed by the
-     qualified name. **A client's heading says where its browser opens**
+     qualified name. **A client's heading says where its credential is kept**
      (bl-4c80; REMOTE §5.7): the credential of a row on another machine is
-     kept on that machine, and a flow that opens a browser opens it there, so
-     the heading carries one sentence naming the machine (`login::far`). It is
-     said per heading and not per browser-only row, for the loopback remedy's
-     own reason (§4.19): the flow a row serves does not cross the wire.
+     kept on that machine, so the heading carries one sentence naming the
+     machine (`login::far`). It says nothing about a browser since bl-3502:
+     every sign-in is finished from the seat (§4.24).
    - **Everything that SENDS a provider sends the table's own spelling**
      (bl-4c80), and each is held by a test with a row on another machine in
      it: the pick (`ui/model/dropup/machine/tests.rs`), `login` and `models`
@@ -7462,7 +7498,7 @@ picks the location by being written.
 |---|---|---|---|
 | `unsafe` block or `unsafe fn` | `src/sys.rs` | `unsafe-outside-sys.yml` | **absent, and expected to stay so.** A seat dials a socket, frames JSON and paints; upstream's raw effects are all server-side. An ask to create this file is an ask to explain what the seat is now doing. |
 | `Mutex` / `RwLock` | `src/state.rs` | `locks-outside-state.yml` | **occupied, by the tenant the rule was written for, and by one more** (§4.12, §4.49). The rule named this file before there was anything in it, and the off-frame threads filled it; the address list added the table of which endpoint worked for an entry this run, because that fact is shared by every thread and outlives the channel that learned it — the state this chokepoint exists to inventory, in the one file. |
-| Building and forking a child | `src/test_support/mint.rs` | `no-bare-command.yml`, `no-bare-fork.yml` | **occupied, by test scaffolding.** The seat forks nothing in production, so the rule names the one place that does rather than an aspirational file nothing would ever go in. If production ever needs a child, the location moves to `src/spawn.rs` in the commit that writes the first site — never a second entry, because two confined files are two inventories. |
+| Building and forking a child | `src/test_support/mint.rs` | `no-bare-command.yml`, `no-bare-fork.yml` | **occupied, by test scaffolding.** The seat's own code forks nothing in production, so the rule names the one place that does rather than an aspirational file nothing would ever go in. *(One child exists that is not this crate's: `open the sign-in page` (§4.24) hands a URL to `egui`'s opener, and the toolkit's `webbrowser` — approved with the window, `deny.toml` — launches the desktop's browser. No `Command` is built in `src` for it and the rules have nothing to confine.)* If production ever needs a child, the location moves to `src/spawn.rs` in the commit that writes the first site — never a second entry, because two confined files are two inventories. |
 
 There is **no fork lock**, and that is a fact about this tree rather than a
 disagreement with the hazard: ETXTBSY needs a write-then-exec pair, and the

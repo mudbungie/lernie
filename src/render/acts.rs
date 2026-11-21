@@ -114,6 +114,7 @@ pub(super) fn login(signin: &Signin) -> String {
                 signin.outcome.map(|code| code.to_string()).as_deref(),
             ),
             clause("fallback:", signin.fallback.as_deref()),
+            clause("waiting on a code from:", signin.awaited()),
         ]),
         signin.lines.iter().map(|said| said.text.clone()).collect(),
         "it said nothing",

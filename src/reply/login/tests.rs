@@ -134,3 +134,30 @@ fn the_frame_reads_as_a_sign_in_run() {
     };
     assert_eq!(run.lines.len(), 2);
 }
+
+/// **`authorize` is a standing fact, replaced by every frame** (REMOTE §8.3,
+/// edition 31): the newest frame's word is the truth, present or absent — so
+/// a newer URL supersedes an older one, and a frame that states none says the
+/// run no longer waits. It is never an offer on a run that has settled.
+#[test]
+fn the_authorize_url_is_replaced_by_every_frame_and_never_outlives_the_wait() {
+    let waiting = |url: &str| json!({"lines": [], "authorize": url});
+    let mut fold = body(&running()).expect("a run");
+    assert_eq!(fold.awaited(), None, "a device flow waits on no code");
+    fold.absorb(body(&waiting("https://provider.invalid/authorize?state=a")).expect("waiting"));
+    fold.absorb(body(&waiting("https://provider.invalid/authorize?state=b")).expect("again"));
+    assert_eq!(
+        fold.awaited(),
+        Some("https://provider.invalid/authorize?state=b"),
+        "the newest, not the first and not both"
+    );
+    let mut settled = fold.clone();
+    settled.outcome = Some(0);
+    assert_eq!(settled.awaited(), None, "a settled run offers nothing");
+    fold.absorb(body(&json!({"lines": [{"text": "exchanging", "err": true}]})).expect("a line"));
+    assert_eq!(fold.authorize, None, "the code was taken");
+    let mut wrong = running();
+    wrong["authorize"] = json!(7);
+    let said = body(&wrong).expect_err("an authorize of the wrong type");
+    assert!(said.contains("authorize"), "{said}");
+}

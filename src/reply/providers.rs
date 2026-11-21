@@ -43,11 +43,10 @@
 //!
 //! yog's own `ProviderRow` carries a `device` column — the headless flow's
 //! capability — and its rendered view does not, so the fact does not cross the
-//! wire (REMOTE §8.3, bl-7c9f). This seat therefore cannot tell a
-//! device-capable row from a browser-only one, and the pane says the loopback
-//! remedy for **every** row on a workspace held elsewhere rather than guessing which
-//! rows need it. A stated remedy that is sometimes unnecessary beats a silence
-//! that is sometimes wrong.
+//! wire (REMOTE §8.3, bl-7c9f). This seat does not need it: which flow
+//! answers is the row's own brazen's fact, and the run says which by what it
+//! streams — a device code, or the `authorize` URL a seat finishes
+//! (`crate::reply::login`, edition 31).
 
 use serde_json::{Map, Value};
 

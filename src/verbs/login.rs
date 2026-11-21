@@ -93,10 +93,10 @@ pub const LOGIN: Verb = Verb {
              at once with the run's standing rather than waiting the flow \
              out, and the lines are read with `login-tail`. A second sign-in \
              on a live pair replaces the first, which is the operator's own \
-             restart and the reason there is no cancel. A row whose flow \
-             needs a browser at the server's own loopback can only be \
-             completed from a browser on that box, or through a port-forward \
-             the operator sets up.",
+             restart and the reason there is no cancel. A run that stops on \
+             an `authorize` URL is waiting for a code: sign in at that URL \
+             in any browser, and hand back what it shows as the same act \
+             with a `code` field — `lernie ask` spells it from a shell.",
 };
 
 /// **The lane**: everything one sign-in has said, held open.
@@ -128,9 +128,15 @@ pub fn models(workspace: String, provider: String) -> Value {
     MODELS.built(vec![workspace, provider], &[])
 }
 
-/// **Start a sign-in** on one row of that workspace.
-pub fn login(workspace: String, provider: String) -> Value {
-    LOGIN.built(vec![workspace, provider], &[])
+/// **Start a sign-in** on one row of that workspace — or, with `code`,
+/// finish the one that stands waiting (REMOTE §8.3, edition 31).
+///
+/// **One act, and the key's absence is the start**: `code` is what the human
+/// copied out of the browser, handed over verbatim because the far brazen is
+/// the only reader it has. A door beside the row for `proposals`' reason — an
+/// optional string is not a parameter.
+pub fn login(workspace: String, provider: String, code: Option<String>) -> Value {
+    LOGIN.stating(vec![workspace, provider], "code", code)
 }
 
 /// **Hold the line on one sign-in's output.**

@@ -29,6 +29,15 @@
 //! `null` on the wire while the run is live, so neither is a gap here: a run
 //! with no outcome is a run that has not finished.
 //!
+//! # `authorize` is a standing fact, and it is REPLACED
+//!
+//! A run whose row has no device endpoint stops on the row's authorize URL
+//! and waits for a code (REMOTE §8.3, edition 31). The URL rides every frame
+//! written while it waits and is never written beside an `outcome`, so it is
+//! the one field here that neither accretes nor sticks: **the newest frame's
+//! word is the truth, present or absent**. It is the fact the pane acts on —
+//! the same URL is among the lines, and nothing here looks for it there.
+//!
 //! # A pair nobody has signed in to is one empty frame, never silence
 //!
 //! Upstream opens the lane on a `LoginView::default()`, which reads here as a
@@ -63,6 +72,10 @@ pub struct Signin {
     pub outcome: Option<i32>,
     /// The command to run by hand, set only on a non-zero exit.
     pub fallback: Option<String>,
+    /// **The URL a waiting run stands on**, or `None` where the run is not
+    /// waiting for a code. Opened in this seat's own browser; what the human
+    /// copies there goes back as `login`'s `code`.
+    pub authorize: Option<String>,
 }
 
 impl Signin {
@@ -74,17 +87,27 @@ impl Signin {
     /// since the last. The two settled facts **replace**, because a run settles
     /// once and the frame that carries the exit is the last one: a later frame
     /// that said nothing about them would otherwise unsettle a run this end has
-    /// already been told about.
+    /// already been told about. `authorize` is the later frame's outright: a
+    /// frame that does not state it is saying the run no longer waits.
     pub fn absorb(&mut self, mut later: Self) {
         self.lines.append(&mut later.lines);
         self.outcome = later.outcome.or(self.outcome.take());
         self.fallback = later.fallback.or(self.fallback.take());
+        self.authorize = later.authorize;
     }
 
     /// **Whether the run has settled.** Derived from the outcome rather than
     /// held beside it — one fact, one home.
     pub fn settled(&self) -> bool {
         self.outcome.is_some()
+    }
+
+    /// **The URL the run is waiting on**, where it is waiting. The server
+    /// never writes it beside an outcome; asked through the outcome anyway,
+    /// because a fold is this end's and a settled run offers nothing to
+    /// finish.
+    pub fn awaited(&self) -> Option<&str> {
+        self.authorize.as_deref().filter(|_| !self.settled())
     }
 }
 
@@ -102,12 +125,14 @@ fn line(value: &Value) -> Result<Line, String> {
     })
 }
 
-/// Read the reply: the lines, and the two facts a settled run carries.
+/// Read the reply: the lines, the two facts a settled run carries, and the
+/// one a waiting run does.
 pub(crate) fn signin(obj: &Map<String, Value>) -> Result<Signin, String> {
     Ok(Signin {
         lines: fields::list(obj, LINES, line)?,
         outcome: fields::opt_exit(obj, "outcome")?,
         fallback: fields::opt_text(obj, "fallback")?,
+        authorize: fields::opt_text(obj, "authorize")?,
     })
 }
 

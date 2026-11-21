@@ -19,9 +19,9 @@ use std::collections::BTreeMap;
 use serde_json::{Map, Value, json};
 
 use super::super::super::{
-    ANSWER, CREATE, DELIVER, DOCTOR, EFFORT, FAN, FORK, OPS, PREPARE, PRIORITY, PROMPT, PROPOSALS,
-    RETIRE, UPDATE, answer, create, deliver, doctor, effort, fan, find, fork, ops, prepare,
-    priority, prompt, proposals, retire, update,
+    ANSWER, CREATE, DELIVER, DOCTOR, EFFORT, FAN, FORK, LOGIN, OPS, PREPARE, PRIORITY, PROMPT,
+    PROPOSALS, RETIRE, UPDATE, answer, create, deliver, doctor, effort, fan, find, fork, login,
+    ops, prepare, priority, prompt, proposals, retire, update,
 };
 use super::{emitted, request};
 use crate::envelope;
@@ -132,6 +132,12 @@ fn rebuilt(frame: &Value) -> Option<Value> {
             text(obj, "verdict"),
             said(obj, crate::verbs::capability::SCOPE),
         ));
+    }
+    // **And the fourth** (bl-3502): `login` starts a sign-in bare and finishes
+    // one with the `code` a human copied back, one op at two depths.
+    if op == LOGIN.word {
+        let (workspace, provider) = (text(obj, envelope::WORKSPACE), text(obj, "provider"));
+        return Some(login(workspace, provider, said(obj, "code")));
     }
     if let Some(verb) = find(&op) {
         return from_row(verb, obj);

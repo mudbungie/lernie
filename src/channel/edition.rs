@@ -40,13 +40,13 @@
 pub(crate) const FLOOR: u32 = 18;
 
 /// What this build can spell — the newest stamp in its vendored corpus, its
-/// `retired` map included: 30 is the edition a provider's row and a role's
-/// gained `client` and `row`, the machine a qualified name selects (REMOTE
-/// §5.7; bl-d927).
+/// `retired` map included: 31 is the edition a sign-in's lane gained
+/// `authorize` and its act `code`, which is what lets any seat finish one
+/// (REMOTE §8.3; bl-3502).
 ///
 /// Stated in the preface beside the major so the far end knows what this one
 /// can read, and re-read from the corpus by [`tests`] on every run.
-pub(crate) const EDITION: u32 = 30;
+pub(crate) const EDITION: u32 = 31;
 
 /// **The post-floor ledger**: `(shape, field path, the edition it appeared
 /// at)`, for every path stamped above [`FLOOR`].
@@ -89,6 +89,7 @@ pub(crate) const STAMPS: &[(&str, &str, u32)] = &[
     ("reply/governing", "/workflow_mark/oid", 19),
     ("reply/governing", "/workflow_mark/short_oid", 19),
     ("reply/invocations", "/superseded", 29),
+    ("reply/login", "/authorize", 31),
     ("reply/offered", "", 26),
     ("reply/offered", "/expires", 26),
     ("reply/offered", "/kind", 26),
@@ -171,6 +172,7 @@ pub(crate) const STAMPS: &[(&str, &str, u32)] = &[
     ("request/decline", "/name", 26),
     ("request/decline", "/op", 26),
     ("request/decline", "/workspace", 26),
+    ("request/login", "/code", 31),
     ("request/offer", "", 26),
     ("request/offer", "/grade", 26),
     ("request/offer", "/name", 26),
